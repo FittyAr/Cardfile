@@ -2,7 +2,7 @@
 A new tab file in the style of the extinct Windows 3.1
 
 # Activando ambiente virtual
-'''
+```
 python -m venv venv
 o
 python -m venv c:\miproyecto\venv
