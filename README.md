@@ -39,3 +39,7 @@ pip freeze > requirements.txt
 # Otras librerias de interes:
 
 
+Estudiar:
+    Duck Typing
+    Enlaces Dinamicos y estaticos
+    Tipo real y dedicado
