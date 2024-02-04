@@ -1,6 +1,7 @@
+import uuid
 from sqlalchemy import Boolean, LargeBinary, create_engine, Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, sessionmaker
 from datetime import datetime
 
 # Crear la conexión a la base de datos SQLite
@@ -16,11 +17,11 @@ class Card(Base):
     Id = Column(Integer, primary_key=True, autoincrement=True)
     Name = Column(String)
     Text = Column(String)
-    UserId = Column(Integer, ForeignKey('Users.Id'))
+    UserId = Column(String, ForeignKey('Users.Id'))
     CreatedAt = Column(DateTime, default=datetime.now)
     Lock = Column(Boolean, default=False)
 
-    User = relationship('User', back_populates='CardFiles')
+    User = relationship('User', back_populates='card_files')
     attached_files = relationship('AttachedFile', back_populates='card')
     
     def __str__(self):
@@ -30,7 +31,7 @@ class Card(Base):
 class User(Base):
     __tablename__ = 'Users'
 
-    Id = Column(Integer, primary_key=True)
+    Id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4().hex))
     Name = Column(String)
     UserName = Column(String, nullable=False, unique=True)
     Normalized_UserName = Column(String, nullable=False, unique=True)
@@ -48,10 +49,10 @@ class User(Base):
 class AttachedFile(Base):
     __tablename__ = 'AttachedFiles'
 
-    Id = Column(Integer, primary_key=True)
+    Id = Column(Integer, primary_key=True, autoincrement=True)
     FileName = Column(String)
     File = Column(LargeBinary)
-    CardId = Column(Integer, ForeignKey('Cards.Id'))
+    CardId = Column(String, ForeignKey('Cards.Id'))
 
     card = relationship('Card', back_populates='attached_files')
     
@@ -60,3 +61,27 @@ class AttachedFile(Base):
 
 # Crear las tablas en la base de datos
 Base.metadata.create_all(engine)
+
+# Crear una sesión
+Session = sessionmaker(bind=engine)
+session = Session()
+
+# Crear un nuevo usuario
+new_user = User(
+    Id=str(uuid.uuid4().hex),
+    Name='John Doe',
+    UserName='john_doe',
+    Normalized_UserName='john_doe',
+    Password='password123',
+    Email='john@example.com',
+    Normalized_Email='john@example.com'
+)
+
+# Agregar el nuevo usuario a la sesión
+session.add(new_user)
+
+# Confirmar la transacción
+session.commit()
+
+# Cerrar la sesión
+session.close()

@@ -1,38 +1,55 @@
 from peewee import *
 
-# Definición de los modelos
-class Author(Model):
+# Define el modelo de la tabla Card
+class Card(Model):
+    # Define los campos de la tabla
+    id = AutoField()
     name = CharField()
+    text = TextField()
+    user_id = ForeignKeyField(User, backref='cards')
+    created_at = DateTimeField()
+    lock = BooleanField()
 
     class Meta:
         database = db
 
-class Book(Model):
-    title = CharField()
-    author = ForeignKeyField(Author, backref='books')
+# Define el modelo de la tabla User
+class User(Model):
+    # Define los campos de la tabla
+    id = AutoField()
+    name = CharField()
+    username = CharField()
+    normalized_username = CharField()
+    password = CharField()
+    email = CharField()
+    normalized_email = CharField()
+    created_at = DateTimeField()
 
     class Meta:
         database = db
-        
-# Crear las tablas en la base de datos
-#db.connect()
-#db.create_tables([Author, Book])
 
-# Crear algunos datos de ejemplo
-author1 = Author.create(name="Stephen King")
-author2 = Author.create(name="J.K. Rowling")
+# Define el modelo de la tabla AttachedFile
+class AttachedFile(Model):
+    # Define los campos de la tabla
+    id = AutoField()
+    filename = CharField()
+    file = BlobField()
+    card_file_id = ForeignKeyField(Card, backref='attached_files')
 
-book1 = Book.create(title="The Shining", author=author1)
-book2 = Book.create(title="Harry Potter and the Philosopher's Stone", author=author2)
+    class Meta:
+        database = db
 
-# Consultar datos
-print("Libros de Stephen King:")
-for book in author1.books:
-    print(book.title)
+# Crea la base de datos SQLite
+db = SqliteDatabase('database.db')
 
-print("Libros de J.K. Rowling:")
-for book in author2.books:
-    print(book.title)
+# Conecta a la base de datos
+db.connect()
 
-# Cerrar la conexión con la base de datos
-#db.close()
+# Crea las tablas si no existen
+db.create_tables([Card, User, AttachedFile])
+
+# Agrega un usuario inicial
+User.create(username='admin', password='password')
+
+# Cierra la conexión a la base de datos
+db.close()

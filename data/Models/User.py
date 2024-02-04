@@ -6,7 +6,7 @@ from sqlalchemy import DateTime
 #hashlib.sha256(b"El Libro De Python").hexdigest()   
 
 class User():
-    def __init__ (Name: str, UserName: str,Password: str, Email: str, self, CreatedAt: DateTime, Id: uuid.UUID = None):
+    def __init__ (Name: str, UserName: str, Password: str, Email: str, self, CreatedAt: DateTime, Id: uuid.UUID = None):
         self.__Id = Id if Id is not None else uuid.uuid4()
         self.__Name = Name
         self.__UserName = UserName.strip()
