@@ -17,13 +17,16 @@ python -m venv c:\miproyecto\venv
   .\venv\Scripts\Activate.ps1 (for PowerShell)
  ```
 # Install dependencies
+    python.exe -m pip install --upgrade pip
     pip install flet        flet.dev/
     pip install peewee      peewee-orm.com/
+    pip install SQLAlchemy      sqlalchemy.org/
 
 # Update dependencies (Only if necessary)
     python.exe -m pip install --upgrade pip
     pip install flet --upgrade
     pip install peewee --upgrade
+    pip install SQLAlchemy --upgrade
 
  # Archivo que contiene las dependencias de un proyecto (o ambiente virtual)
     Este archivo por convencion se suele llamar requirements.txt

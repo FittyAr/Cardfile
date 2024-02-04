@@ -1,16 +1,20 @@
 import uuid
 
+from sqlalchemy import DateTime
+
 # hashlib
 #hashlib.sha256(b"El Libro De Python").hexdigest()   
 
 class User():
-    def __init__ (Name: str, Password: str, Email: str, self, Id: uuid.UUID = None):
+    def __init__ (Name: str, UserName: str,Password: str, Email: str, self, CreatedAt: DateTime, Id: uuid.UUID = None):
         self.__Id = Id if Id is not None else uuid.uuid4()
         self.__Name = Name
-        self.__Normalized_Name = Name.strip().upper()
+        self.__UserName = UserName.strip()
+        self.__Normalized_UserName = UserName.strip().upper()
         self.__Password = Password.strip()
         self.__Email = Email.strip()
         self.__Normalized_Email = Email.strip().upper()
+        self.__CreatedAt = CreatedAt
         
         @property
         def Id(self):
@@ -19,8 +23,11 @@ class User():
         def Name(self):
             return self.__Name
         @property
-        def Normalized_Name(self):
-            return self.__Normalized_Name
+        def UserName(self):
+            return self.__UserName
+        @property
+        def Normalized_UserName(self):
+            return self.__Normalized_UserName
         @property
         def Password(self):
             return self.__Password
@@ -30,6 +37,9 @@ class User():
         @property
         def Normalized_Email(self):
             return self.__Normalized_Email
+        @property
+        def CreatedAt(self):
+            return self.__CreatedAt
         
         @Id.setter
         def Id(self, value: uuid.UUID):
@@ -37,9 +47,12 @@ class User():
         @Name.setter
         def Name(self, value: str):
             self.__Name = value
-        @Normalized_Name.setter
-        def Normalized_Name(self, value: str):
-            self.__Normalized_Name = value
+        @UserName.setter
+        def UserName(self, value: str):
+            self.__UserName = value.strip()
+        @Normalized_UserName.setter
+        def Normalized_UserName(self, value: str):
+            self.__Normalized_UserName = value.strip().upper()
         @Password.setter
         def Password(self, value: str):
             self.__Password = value.strip()
@@ -49,3 +62,6 @@ class User():
         @Normalized_Email.setter
         def Normalized_Email(self, value: str):
             self.__Normalized_Email = value.strip().upper()
+        @CreatedAt.setter
+        def CreatedAt(self, value: DateTime):
+            self.__CreatedAt = value

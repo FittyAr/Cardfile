@@ -15,8 +15,8 @@ class Book(Model):
         database = db
         
 # Crear las tablas en la base de datos
-db.connect()
-db.create_tables([Author, Book])
+#db.connect()
+#db.create_tables([Author, Book])
 
 # Crear algunos datos de ejemplo
 author1 = Author.create(name="Stephen King")
@@ -35,4 +35,4 @@ for book in author2.books:
     print(book.title)
 
 # Cerrar la conexión con la base de datos
-db.close()
+#db.close()
