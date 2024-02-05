@@ -1,3 +1,6 @@
 {
-    "SqLite_StringConnection": "http://json-schema.org/draft-04/schema#"
+    "__Comentario_StartMetod": "StartMetod acepta los valores Web, Desktop y Mobile",
+    "StartMetod": "Web",
+    "SqLite_StringConnection": "sqlite:///database.db"
+
 }
