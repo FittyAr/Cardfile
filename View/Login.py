@@ -2,25 +2,26 @@ from flet import Page, FletApp
 import sys, flet
 
 class Login(flet.UserControl):    
-    def build(self):
+    def __init__(self, page: Page):        
         app = FletApp("Login")
         
-        username_box = FletTextBox("Username")
-        password_box = FletTextBox("Password", password=True)
-        login_button = FletButton("Login")
+        username_box = flet.TextField(label="Username")
+        password_box = flet.TextField(label="Password", password=True)
+        login_button = flet.TextButton(text="Login")
         
         app.add(username_box)
         app.add(password_box)
         app.add(login_button)
         
         if sys.platform == "win32":
-            close_button = FletButton("Close")
+            close_button = flet.TextButton(text="Close")
             app.add(close_button)
         
         return app
 
 def main(page: Page):
     page.title = "Login"
-    page.add(Login())    
+    login=Login()
+    page.add(login)    
     
-flet.app(tarjet=main, view=flet.WEB_BROWSER)
+flet.app(target=main, view=flet.WEB_BROWSER)
