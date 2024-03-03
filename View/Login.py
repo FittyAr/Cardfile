@@ -50,10 +50,7 @@ class Login(flet.UserControl):    # hereda de la clase user control
 
 def main(page: Page):
     page.title = "Login"
-    page.vertical_alignment = flet.MainAxisAlignment.CENTER
-    login=Login(page)
-    page.add(login)
-    page.update()
+    page.add(Login(page))
 
 #flet.app(target=main)
 #flet.app(target=main, view=flet.WEB_BROWSER)
