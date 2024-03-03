@@ -1,9 +1,9 @@
 from flet import Page
 import sys, flet
 
-class Login(flet.UserControl):    
+class Login(flet.UserControl):    # hereda de la clase user control
     def __init__(self, page: Page):
-        super().__init__()
+        super().__init__()        # Con esto inicializamos el constructor de la clase UserControl
         self.page = page
 
     def login_click(self, sender):
@@ -12,10 +12,10 @@ class Login(flet.UserControl):
 
         """ if sys.platform == "win32": """
 
-    def build(self):
+    def build(self):   # UserControl exige la existencia de este metodo
         login_button = flet.TextButton(text="Login", on_click=self.login_click)
         close_button = flet.TextButton(text="Close")
-        
+
         container_login_button = flet.Container(login_button)        
         container_close_button = flet.Container(close_button)       
 
@@ -26,7 +26,12 @@ class Login(flet.UserControl):
         container_close_button.width = 140
         container_close_button.alignment = flet.alignment.center_right
 
-        row_buttons = flet.Row([container_login_button, container_close_button])
+        row_buttons = flet.Row(
+            [
+                container_login_button, 
+                container_close_button
+            ]
+        )
 
         self.login_item = [
              flet.TextField(label="Username"),
@@ -43,12 +48,12 @@ class Login(flet.UserControl):
 
         return container
 
-""" def main(page: Page):
+def main(page: Page):
     page.title = "Login"
     page.vertical_alignment = flet.MainAxisAlignment.CENTER
     login=Login(page)
     page.add(login)
-    page.update() """
+    page.update()
 
 #flet.app(target=main)
 #flet.app(target=main, view=flet.WEB_BROWSER)

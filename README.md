@@ -46,3 +46,8 @@ Estudiar:
     Duck Typing
     Enlaces Dinamicos y estaticos
     Tipo real y dedicado
+
+
+# Atajos de teclado utiles en VS Code
+
+    ctrl + j  =   Mostrar ocultar terminal
