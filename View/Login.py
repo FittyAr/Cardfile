@@ -1,23 +1,40 @@
-from flet import Page
 import sys, flet
+from flet import Page
+from flet_core.control_event import ControlEvent
 
 class Login(flet.UserControl):    # hereda de la clase user control
     def __init__(self, page: Page):
         super().__init__()        # Con esto inicializamos el constructor de la clase UserControl
         self.page = page
 
-    def login_click(self, sender):
+    def login_click(self) -> None:
         print("Login Clicked")
         #self.page.alert("Login Clicked")
 
+    def close_click(self) -> None:
+        print("Close Clicked")
+        #sys.exit()
+
         """ if sys.platform == "win32": """
 
-    def build(self):   # UserControl exige la existencia de este metodo
-        login_button = flet.TextButton(text="Login", on_click=self.login_click)
-        close_button = flet.TextButton(text="Close")
+    def Validate(self, e: ControlEvent) -> None:
+        if all([self.text_username.value, self.text_password.value]):
+            self.login_button.disabled = True
+        else:
+            self.login_button.disabled = False
+        self.page.update()
 
-        container_login_button = flet.Container(login_button)        
-        container_close_button = flet.Container(close_button)       
+    def Submit(self, e: ControlEvent) -> None:
+        print('Username: ', self.text_username.value)
+        print('Password: ', self.text_password.value)
+        self.page.clean()
+
+    # UserControl exige la existencia de este metodo
+    # retorna un objeto de tipo flet.Container
+    def build(self) -> flet.Container:   
+        container_login_button: flet.Container = flet.Container(self.login_button)
+        container_close_button: flet.Container = flet.Container(self.close_button)
+        container_check: flet.Container = flet.Container(self.checkbox_signup)
 
         #container_login_button.bgcolor = flet.colors.BLUE_GREY
         container_login_button.width = 150
@@ -25,17 +42,20 @@ class Login(flet.UserControl):    # hereda de la clase user control
         #container_close_button.bgcolor = flet.colors.BLUE_ACCENT
         container_close_button.width = 140
         container_close_button.alignment = flet.alignment.center_right
+        container_check.width = 150
+        container_check.alignment = flet.alignment.center
 
         row_buttons = flet.Row(
             [
                 container_login_button, 
-                container_close_button
+                container_close_button                
             ]
         )
 
         self.login_item = [
-             flet.TextField(label="Username"),
-             flet.TextField(label="Password", password=True),
+             self.text_username,
+             self.text_password,
+             container_check,
              row_buttons
         ]
 
@@ -48,9 +68,13 @@ class Login(flet.UserControl):    # hereda de la clase user control
 
         return container
 
-def main(page: Page):
+    login_button: flet.ElevatedButton = flet.ElevatedButton(text="Sign up", on_click=login_click, disabled=True)
+    close_button: flet.ElevatedButton = flet.ElevatedButton(text="Close", on_click=close_click)
+
+    text_username: flet.TextField = flet.TextField(label="Username", on_change=Validate, text_align=flet.TextAlign.LEFT)
+    text_password: flet.TextField = flet.TextField(label="Password", on_change=Validate, password=True)
+    checkbox_signup: flet.Checkbox = flet.Checkbox(label="I agree to stuff", value=False)
+
+def main(page: Page) -> None:
     page.title = "Login"
     page.add(Login(page))
-
-#flet.app(target=main)
-#flet.app(target=main, view=flet.WEB_BROWSER)
