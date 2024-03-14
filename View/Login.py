@@ -7,8 +7,13 @@ class Login(flet.UserControl):    # hereda de la clase user control
         super().__init__()        # Con esto inicializamos el constructor de la clase UserControl
         self.page = page
 
+    # , e: ControlEvent
     def login_click(self) -> None:
         print("Login Clicked")
+        # print('Username: ', self.text_username.value)
+        # print('Password: ', self.text_password.value)
+        self.page.go('/')
+        self.page.update()
         #self.page.alert("Login Clicked")
 
     def close_click(self) -> None:
@@ -23,11 +28,6 @@ class Login(flet.UserControl):    # hereda de la clase user control
         else:
             self.login_button.disabled = False
         self.page.update()
-
-    def Submit(self, e: ControlEvent) -> None:
-        print('Username: ', self.text_username.value)
-        print('Password: ', self.text_password.value)
-        self.page.clean()
 
     # UserControl exige la existencia de este metodo
     # retorna un objeto de tipo flet.Container
@@ -68,12 +68,12 @@ class Login(flet.UserControl):    # hereda de la clase user control
 
         return container
 
-    login_button: flet.ElevatedButton = flet.ElevatedButton(text="Sign up", on_click=login_click, disabled=True)
+    login_button: flet.ElevatedButton = flet.ElevatedButton(text="Sign up", on_click=login_click, disabled=False)
     close_button: flet.ElevatedButton = flet.ElevatedButton(text="Close", on_click=close_click)
 
     text_username: flet.TextField = flet.TextField(label="Username", on_change=Validate, text_align=flet.TextAlign.LEFT)
     text_password: flet.TextField = flet.TextField(label="Password", on_change=Validate, password=True)
-    checkbox_signup: flet.Checkbox = flet.Checkbox(label="I agree to stuff", value=False)
+    checkbox_signup: flet.Checkbox = flet.Checkbox(label="Remember me", value=False)
 
 def main(page: Page) -> None:
     page.title = "Login"
