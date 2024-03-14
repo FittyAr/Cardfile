@@ -51,3 +51,7 @@ Estudiar:
 # Atajos de teclado utiles en VS Code
 
     ctrl + j  =   Mostrar ocultar terminal
+    ctrk + k , ctrk + c = comentar codigo linea por linea
+    ctrk + k , ctrk + u = descomentar codigo linea por linea
+
+flet -r <name of file>.py
