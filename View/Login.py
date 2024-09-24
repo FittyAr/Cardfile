@@ -9,16 +9,16 @@ class Login(flet.UserControl):    # hereda de la clase user control
 
     # , e: ControlEvent
     def login_click(self) -> None:
-        print("Login Clicked")
         # print('Username: ', self.text_username.value)
         # print('Password: ', self.text_password.value)
-        self.page.go('/')
+        self.page.go('/Main')
         self.page.update()
         #self.page.alert("Login Clicked")
 
     def close_click(self) -> None:
         print("Close Clicked")
-        #sys.exit()
+        self.page.go('/Card')
+        self.page.update()
 
         """ if sys.platform == "win32": """
 
@@ -53,10 +53,10 @@ class Login(flet.UserControl):    # hereda de la clase user control
         )
 
         self.login_item = [
-             self.text_username,
-             self.text_password,
-             container_check,
-             row_buttons
+            self.text_username,
+            self.text_password,
+            container_check,
+            row_buttons
         ]
 
         column  = flet.Column(self.login_item)
@@ -65,7 +65,13 @@ class Login(flet.UserControl):    # hereda de la clase user control
 
         container = flet.Container(column)
         container.alignment = flet.alignment.center
-
+        
+        """
+        Card = flet.Card(container)
+        Card.width = 300
+        Card.height = 200
+        Card.elevation = 15
+        """
         return container
 
     login_button: flet.ElevatedButton = flet.ElevatedButton(text="Sign up", on_click=login_click, disabled=False)
