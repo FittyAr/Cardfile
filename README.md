@@ -1,8 +1,11 @@
 # Cardfile
 A new tab file in the style of the extinct Windows 3.1
 
-# Activando ambiente virtual
-Para crear un ambiente virtual, ejecuta uno de los siguientes comandos:
+## Configuración del Ambiente Virtual
+
+### Creación del Ambiente Virtual
+
+Ejecuta uno de los siguientes comandos:
 
 ```bash
 python -m venv venv
@@ -14,67 +17,89 @@ o
 python -m venv c:\miproyecto\venv
 ```
 
-Virtual Enviroment:
-- Es el concepto en Python para referirse a un proyecto aislado. Cada proyecto tiene un conjunto de librerías y versiones de Python asociadas.
+> **Nota**: Un ambiente virtual en Python es un proyecto aislado con su propio conjunto de librerías y versión de Python.
+
+### Activación del Ambiente Virtual
+
+**Nota**: Es el concepto en Python para referirse a un proyecto aislado. Cada proyecto tiene un conjunto de librerías y versiones de Python asociadas.
 
 # Luego activar el ambiente virtual
-- CMD
+- Para CMD
 
 ```bash
-.\venv\Scripts\Activate.bat (for CMD)
+.\venv\Scripts\Activate.bat
 ```
 
-- PowerShell
+- Para PowerShell
 
 ```powershell
-.\venv\Scripts\Activate.ps1 (for PowerShell)
+.\venv\Scripts\Activate.ps1
 ```
 
-# Install dependencies
-Ejecuta los siguientes comandos para instalar y actualizar las dependencias:
+## Gestión de Dependencias
+
+### Instalación de Dependencias
+
 ```bash
 python.exe -m pip install --upgrade pip
-pip install flet        flet.dev/
-pip install peewee      peewee-orm.com/
-pip install SQLAlchemy      sqlalchemy.org/
+pip install flet peewee SQLAlchemy
 ```
 
-# Update dependencies (Only if necessary)
+### Actualización de Dependencias (si es necesario)
+
 ```bash
 python.exe -m pip install --upgrade pip
-pip install flet --upgrade
-pip install peewee --upgrade
-pip install SQLAlchemy --upgrade
+pip install --upgrade flet peewee SQLAlchemy
 ```
 
-# Archivo `requirements.txt`
-Este archivo contiene las dependencias de un proyecto o ambiente virtual. Por convención, se llama requirements.txt.
+### Uso de `requirements.txt`
 
-- Para instalar esas dependencias: 
+**Nota**: Este archivo contiene las dependencias de un proyecto o ambiente virtual. Por convención, se llama requirements.txt.
+
+- Para instalar dependencias desde `requirements.txt`:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-- Para generar este archivo nuevo:
+- Para generar un nuevo `requirements.txt`:
 
 ```bash
 pip freeze > requirements.txt
 ```
-# Otras librerias de interes:
 
-Estudiar:
-    Duck Typing
-    Enlaces Dinamicos y estaticos
-    Tipo real y dedicado
+## Librerías de Interés
 
 
-# Atajos de teclado utiles en VS Code
+## Estudiar
 
-    ctrl + j  =   Mostrar ocultar terminal
-    ctrk + k , ctrk + c = comentar codigo linea por linea
-    ctrk + k , ctrk + u = descomentar codigo linea por linea
+- Duck Typing
+- Enlaces Dinámicos y Estáticos
+- Tipo Real y Dedicado
 
-flet -r <name of file>.py
 
+## Atajos de Teclado Útiles en VS Code
+
+- `Ctrl + J`: Mostrar/ocultar terminal
+- `Ctrl + K, Ctrl + C`: Comentar código línea por línea
+- `Ctrl + K, Ctrl + U`: Descomentar código línea por línea
+
+## Ejecución del Proyecto
+
+Para ejecutar el proyecto con Flet:
+
+```bash
+flet -r <nombre_del_archivo>.py
+```
+
+o simplemente:
+
+```bash
 flet run
+```
+
+## Enlaces Útiles
+
+- [Flet](https://flet.dev/)
+- [Peewee ORM](http://peewee-orm.com/)
+- [SQLAlchemy](https://www.sqlalchemy.org/)

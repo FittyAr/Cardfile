@@ -17,7 +17,7 @@ if not os.path.exists("database.db"):
 
 def main(page: Page) -> None:    
     page.title = "Card archiving with Flet and Python"
-    page.horizontal_alignment = flet.MainAxisAlignment.CENTER
+    page.horizontal_alignment = flet.CrossAxisAlignment.CENTER
     page.vertical_alignment = flet.MainAxisAlignment.CENTER
 
     def route_change(e: flet.RouteChangeEvent) -> None:
