@@ -38,9 +38,7 @@ pip install -r requirements.txt
 ```
 pip freeze > requirements.txt
 ```
-
 # Otras librerias de interes:
-
 
 Estudiar:
     Duck Typing

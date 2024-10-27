@@ -1,6 +1,9 @@
+
 import sys, flet
 from flet import Page
 from flet_core.control_event import ControlEvent
+from data.database.setup import init_db
+from data.repositories.usuario_repository import UsuarioRepository
 
 class Login(flet.UserControl):    # hereda de la clase user control
     def __init__(self, page: Page):
@@ -9,8 +12,12 @@ class Login(flet.UserControl):    # hereda de la clase user control
 
     # , e: ControlEvent
     def login_click(self) -> None:
-        # print('Username: ', self.text_username.value)
-        # print('Password: ', self.text_password.value)
+
+        init_db()
+        # Crear un repositorio de usuarios
+        usuario_repo = UsuarioRepository()
+        
+
         self.page.go('/Main')
         self.page.update()
         #self.page.alert("Login Clicked")
