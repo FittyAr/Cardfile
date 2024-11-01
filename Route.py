@@ -5,6 +5,7 @@ from View import Login, Card, Login2
 #from GitHub_examples.ModernNavBar import ModernNavBar
 
 from View.Login2 import login2_view
+from View.newUser import newUser_view
 
 def views_handler(page: Page):
     return {
@@ -56,14 +57,14 @@ def views_handler(page: Page):
             horizontal_alignment=flet.MainAxisAlignment.CENTER,
             spacing=26
         ),
-        '/Exit':flet.View(
-            route='/Exit',
+        '/newUser': flet.View(
+            route='/newUser',
             controls=[
-                flet.AppBar(title=flet.Text('Exit'), bgcolor=flet.colors.BLUE),
-                Login.Login(page),
+                flet.AppBar(title=flet.Text('Nuevo Usuario'), bgcolor=flet.colors.BLUE),
+                newUser_view(page),
             ],
-            vertical_alignment = flet.MainAxisAlignment.CENTER,
-            horizontal_alignment = flet.MainAxisAlignment.CENTER,
+            vertical_alignment=flet.MainAxisAlignment.CENTER,
+            horizontal_alignment=flet.MainAxisAlignment.CENTER,
             spacing=26
-        )
+        ),
     }

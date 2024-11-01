@@ -2,6 +2,7 @@ import flet as ft
 from data.database.connection import get_session
 from data.models.usuario import Usuario
 from datetime import datetime
+import bcrypt
 
 def login2_view(page: ft.Page):
     # Campos de texto
@@ -20,6 +21,16 @@ def login2_view(page: ft.Page):
         width=300,
     )
 
+    def verify_password(stored_hash: str, provided_password: str) -> bool:
+        """Verifica si la contraseña proporcionada coincide con el hash almacenado."""
+        try:
+            return bcrypt.checkpw(
+                provided_password.encode('utf-8'),
+                stored_hash.encode('utf-8')
+            )
+        except Exception:
+            return False
+
     def login_clicked(e):
         if username.value == "" or password.value == "":
             page.show_snack_bar(
@@ -29,13 +40,14 @@ def login2_view(page: ft.Page):
         
         session = get_session()
         try:
+            # Primero buscar usuario solo por email
             usuario = session.query(Usuario).filter(
                 Usuario.email == username.value,
-                Usuario.contraseña == password.value,
                 Usuario.is_active == True
             ).first()
             
-            if usuario:
+            # Verificar la contraseña
+            if usuario and verify_password(usuario.contraseña, password.value):
                 usuario.last_login = datetime.now()
                 session.commit()
                 
@@ -87,7 +99,7 @@ def login2_view(page: ft.Page):
     return ft.Container(
         width=400,
         height=300,
-        bgcolor=ft.colors.WHITE,
+        #bgcolor=ft.colors.WHITE,
         border_radius=10,
         padding=20,
         content=ft.Column(
