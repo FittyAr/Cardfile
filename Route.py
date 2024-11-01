@@ -1,8 +1,8 @@
 import flet
 from flet import Page
 
-from View import Login, Card
-from GitHub_examples.ModernNavBar import ModernNavBar
+from View import Login, Card, Login2
+#from GitHub_examples.ModernNavBar import ModernNavBar
 
 def views_handler(page: Page):
     return {
@@ -19,7 +19,7 @@ def views_handler(page: Page):
             route='/Main',
             controls=[
                 flet.AppBar(title=flet.Text('Home'), bgcolor=flet.colors.RED),
-                ModernNavBar(page)
+                #ModernNavBar(page)
             ],
             vertical_alignment = flet.MainAxisAlignment.CENTER,
             horizontal_alignment = flet.MainAxisAlignment.CENTER,
@@ -42,6 +42,16 @@ def views_handler(page: Page):
             ],
             vertical_alignment = flet.MainAxisAlignment.CENTER,
             horizontal_alignment = flet.MainAxisAlignment.CENTER,
+            spacing=26
+        ),
+        '/Login2': flet.View(
+            route='/Login2',
+            controls=[
+                flet.AppBar(title=flet.Text('Login2'), bgcolor=flet.colors.BLUE),
+                Login2.Login2(page),
+            ],
+            vertical_alignment=flet.MainAxisAlignment.CENTER,
+            horizontal_alignment=flet.MainAxisAlignment.CENTER,
             spacing=26
         ),
         '/Exit':flet.View(

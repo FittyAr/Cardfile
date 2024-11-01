@@ -36,7 +36,7 @@ def main(page: Page) -> None:
 
     page.on_route_change = route_change
     page.on_view_pop = view_pop
-    page.go('/Login')
+    page.go('/Login2')
 
     page.theme_mode = flet.ThemeMode.SYSTEM
     #UserControl_login(page)

@@ -1,14 +1,25 @@
-
 import sys, flet
 from flet import Page
 from flet_core.control_event import ControlEvent
+from flet_core import Control
 from data.database.setup import init_db
 from data.repositories.usuario_repository import UsuarioRepository
 
-class Login(flet.UserControl):    # hereda de la clase user control
+class Login(flet.Control):    # hereda de la clase user control
+    def _get_control_name(self):
+        return "login"  # Nombre único para identificar este control
+
     def __init__(self, page: Page):
-        super().__init__()        # Con esto inicializamos el constructor de la clase UserControl
+        super().__init__()
         self.page = page
+
+        # Mover la definición de los controles al constructor
+        self.login_button = flet.ElevatedButton(text="Sign up", on_click=self.login_click, disabled=False)
+        self.close_button = flet.ElevatedButton(text="Close", on_click=self.close_click)
+        self.text_username = flet.TextField(label="Username", on_change=self.Validate, text_align=flet.TextAlign.LEFT)
+        self.text_password = flet.TextField(label="Password", on_change=self.Validate, password=True)
+        self.checkbox_signup = flet.Checkbox(label="Remember me", value=False)
+
 
     # , e: ControlEvent
     def login_click(self) -> None:
@@ -36,9 +47,7 @@ class Login(flet.UserControl):    # hereda de la clase user control
             self.login_button.disabled = False
         self.page.update()
 
-    # UserControl exige la existencia de este metodo
-    # retorna un objeto de tipo flet.Container
-    def build(self) -> flet.Container:   
+    def _build(self) -> flet.Control: 
         container_login_button: flet.Container = flet.Container(self.login_button)
         container_close_button: flet.Container = flet.Container(self.close_button)
         container_check: flet.Container = flet.Container(self.checkbox_signup)
@@ -80,13 +89,6 @@ class Login(flet.UserControl):    # hereda de la clase user control
         Card.elevation = 15
         """
         return container
-
-    login_button: flet.ElevatedButton = flet.ElevatedButton(text="Sign up", on_click=login_click, disabled=False)
-    close_button: flet.ElevatedButton = flet.ElevatedButton(text="Close", on_click=close_click)
-
-    text_username: flet.TextField = flet.TextField(label="Username", on_change=Validate, text_align=flet.TextAlign.LEFT)
-    text_password: flet.TextField = flet.TextField(label="Password", on_change=Validate, password=True)
-    checkbox_signup: flet.Checkbox = flet.Checkbox(label="Remember me", value=False)
 
 def main(page: Page) -> None:
     page.title = "Login"
