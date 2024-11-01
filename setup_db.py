@@ -3,6 +3,7 @@ from data.repositories.usuario_repository import UsuarioRepository
 from data.models.usuario import Usuario
 from data.database.connection import engine
 from config import Config
+import bcrypt
 
 def initialize_db():
     # Inicializar la base de datos
@@ -14,8 +15,21 @@ def initialize_db():
     try:
         config = Config()
 
+        # Verificar si ya existe un usuario
+        if usuario_repo.get_all_usuarios():
+            print("La base de datos ya tiene usuarios registrados.")
+            return
+
+        # Obtener datos del usuario inicial desde la configuración
+        username = config.get("database.Init_Data.Username")
+        email = config.get("database.Init_Data.Email")
+        password = config.get("database.Init_Data.Password")
+
+        # Generar hash de la contraseña
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
         # Agregar un nuevo usuario
-        nuevo_usuario = Usuario(nombre=config.get("database.Init_Data.Username"), email=config.get("database.Init_Data.Email"), contraseña=config.get("database.Init_Data.Password"))
+        nuevo_usuario = Usuario(nombre=username, email=email, contraseña=hashed_password)
         usuario_repo.add_usuario(nuevo_usuario)
         print("Nuevo usuario agregado exitosamente.")
 

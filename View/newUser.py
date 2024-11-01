@@ -3,6 +3,7 @@ from data.database.connection import get_session
 from data.models.usuario import Usuario
 from datetime import datetime
 import bcrypt
+import re
 
 def newUser_view(page: ft.Page):
     # Campos de texto
@@ -43,6 +44,10 @@ def newUser_view(page: ft.Page):
         hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
         return hashed.decode('utf-8')  # Convertir bytes a string para almacenar
 
+    def is_valid_email(email: str) -> bool:
+        pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        return re.match(pattern, email) is not None
+
     def save_clicked(e):
         # Validaciones
         if not all([nombre.value, email.value, password.value, confirm_password.value]):
@@ -61,6 +66,12 @@ def newUser_view(page: ft.Page):
         if len(password.value) < 8:
             page.show_snack_bar(
                 ft.SnackBar(content=ft.Text("La contraseña debe tener al menos 8 caracteres"))
+            )
+            return
+        
+        if not is_valid_email(email.value):
+            page.show_snack_bar(
+                ft.SnackBar(content=ft.Text("Por favor ingrese un email válido"))
             )
             return
         
@@ -105,7 +116,7 @@ def newUser_view(page: ft.Page):
             page.update()
             
             # Opcional: redirigir al login
-            page.go("/Login2")
+            page.go("/Login")
             
         except Exception as e:
             session.rollback()
@@ -117,7 +128,7 @@ def newUser_view(page: ft.Page):
             session.close()
 
     def cancel_clicked(e):
-        page.go("/Login2")
+        page.go("/Login")
 
     # Botones
     btn_save = ft.ElevatedButton(
@@ -139,30 +150,47 @@ def newUser_view(page: ft.Page):
     # Contenedor principal
     return ft.Container(
         width=400,
-        height=500,
-        bgcolor=ft.colors.WHITE,
-        border_radius=10,
-        padding=20,
+        height=600,  # Un poco más alto para acomodar los campos extra
+        bgcolor=ft.colors.WHITE10,
+        border=ft.border.all(2, ft.colors.BLUE_200),
+        border_radius=15,
+        padding=30,
         content=ft.Column(
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=20,
             controls=[
-                ft.Text("Nuevo Usuario", size=24, weight=ft.FontWeight.BOLD),
+                ft.Icon(ft.icons.PERSON_ADD, size=50, color=ft.colors.BLUE),
+                ft.Text("Nuevo Usuario", size=28, weight=ft.FontWeight.BOLD),
                 ft.Divider(height=20, color=ft.colors.TRANSPARENT),
-                nombre,
-                ft.Divider(height=10, color=ft.colors.TRANSPARENT),
-                email,
-                ft.Divider(height=10, color=ft.colors.TRANSPARENT),
-                password,
-                ft.Divider(height=10, color=ft.colors.TRANSPARENT),
-                confirm_password,
+                
+                # Contenedor para los campos de entrada
+                ft.Container(
+                    content=ft.Column(
+                        spacing=15,
+                        controls=[
+                            nombre,
+                            email,
+                            password,
+                            confirm_password,
+                        ],
+                    ),
+                ),
+                
                 ft.Divider(height=20, color=ft.colors.TRANSPARENT),
-                ft.Row(
-                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                    controls=[
-                        btn_cancel,
-                        btn_save,
-                    ],
+                
+                # Contenedor para los botones
+                ft.Container(
+                    content=ft.Row(
+                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                        controls=[btn_cancel, btn_save],
+                    ),
+                ),
+                
+                ft.TextButton(
+                    text="¿Ya tienes cuenta? Inicia sesión aquí",
+                    on_click=lambda _: page.go("/Login")
                 ),
             ],
         ),
+        alignment=ft.alignment.center,
     ) 

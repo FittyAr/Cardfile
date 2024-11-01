@@ -1,52 +1,122 @@
-import flet
+import flet as ft
 from flet import Page
-from flet_core.control_event import ControlEvent
+from data.database.connection import get_session
+from data.models.ficha import Ficha
 
-class Card(flet.UserControl):
+class CardView(ft.UserControl):
     def __init__(self, page: Page):
         super().__init__()
         self.page = page
+        self.selected_ficha = None
+        self.fichas_list = None
+        self.title_label = None
+        self.description_text = None
 
-    def build(self) -> flet.Container:
+    def load_fichas(self):
+        """Carga las fichas del usuario actual desde la base de datos"""
+        session = get_session()
+        try:
+            user_id = self.page.session.get("user_id")
+            fichas = session.query(Ficha).filter(Ficha.usuario_id == user_id).all()
+            
+            # Actualizar ListView con las fichas
+            self.fichas_list.controls = [
+                ft.ListTile(
+                    leading=ft.Icon(ft.icons.DESCRIPTION),
+                    title=ft.Text(ficha.title),
+                    on_click=lambda e, ficha=ficha: self.select_ficha(ficha)
+                ) for ficha in fichas
+            ]
+            self.fichas_list.update()
+        except Exception as e:
+            print(f"Error cargando fichas: {str(e)}")
+        finally:
+            session.close()
+
+    def select_ficha(self, ficha):
+        """Maneja la selección de una ficha"""
+        self.selected_ficha = ficha
+        self.title_label.value = ficha.title
+        self.description_text.value = ficha.descripcion
+        self.update()
+
+    def build(self):
         # Panel izquierdo con ListView
-        list_view = flet.ListView(
-            items=[
-                flet.ListTile(text="Item 1"),
-                flet.ListTile(text="Item 2"),
-                flet.ListTile(text="Item 3"),
-                flet.ListTile(text="Item 4"),
-            ],
-            width=200
+        self.fichas_list = ft.ListView(
+            expand=1,
+            spacing=10,
+            padding=20,
+            height=500
         )
 
-        # Panel derecho con Label y cuadro de texto de varias líneas
-        right_panel = flet.Column(
-            controls=[
-                flet.Text(value="Título", size=20, weight="bold"),
-                flet.TextField(
-                    multiline=True,
-                    value="Este es un cuadro de texto de varias líneas.",
-                    width=300,
-                    height=200
-                )
-            ],
-            alignment=flet.alignment.center,
-            spacing=10
+        # Panel derecho con título y descripción
+        self.title_label = ft.Text(
+            value="Seleccione una ficha",
+            size=24,
+            weight=ft.FontWeight.BOLD,
+            color=ft.colors.BLUE
         )
 
-        # Contenedor principal con el VerticalDivider
-        main_container = flet.Row(
-            controls=[
-                list_view,
-                flet.VerticalDivider(),
-                right_panel
-            ],
-            alignment=flet.alignment.center,
-            spacing=10
+        self.description_text = ft.TextField(
+            multiline=True,
+            min_lines=10,
+            max_lines=20,
+            read_only=True,
+            border_color=ft.colors.BLUE_200,
+            bgcolor=ft.colors.WHITE10,
+            width=400
         )
 
+        # Panel derecho completo
+        right_panel = ft.Container(
+            content=ft.Column(
+                controls=[
+                    self.title_label,
+                    ft.Divider(height=20, color=ft.colors.TRANSPARENT),
+                    self.description_text
+                ],
+                spacing=10,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER
+            ),
+            padding=20
+        )
+
+        # Contenedor principal
+        main_container = ft.Container(
+            content=ft.Row(
+                controls=[
+                    # Panel izquierdo con borde
+                    ft.Container(
+                        content=ft.Column(
+                            controls=[
+                                ft.Text("Mis Fichas", size=20, weight=ft.FontWeight.BOLD),
+                                self.fichas_list
+                            ]
+                        ),
+                        width=300,
+                        border=ft.border.all(2, ft.colors.BLUE_200),
+                        border_radius=10,
+                        padding=10
+                    ),
+                    ft.VerticalDivider(width=20, color=ft.colors.TRANSPARENT),
+                    # Panel derecho con borde
+                    ft.Container(
+                        content=right_panel,
+                        border=ft.border.all(2, ft.colors.BLUE_200),
+                        border_radius=10,
+                        padding=10
+                    )
+                ],
+                alignment=ft.MainAxisAlignment.CENTER,
+                vertical_alignment=ft.CrossAxisAlignment.START
+            ),
+            padding=20
+        )
+
+        # Cargar fichas al iniciar
+        self.load_fichas()
+        
         return main_container
 
-def main(page: Page) -> None:
-    page.title = "Main Page"
-    page.add(Card(page))
+def card_view(page: Page):
+    return CardView(page)

@@ -25,9 +25,13 @@ def main(page: Page) -> None:
     page.horizontal_alignment = flet.CrossAxisAlignment.CENTER
     page.vertical_alignment = flet.MainAxisAlignment.CENTER
 
-    # Verificar si la base de datos existe
+    # Inicializar la base de datos si no existe
     if not os.path.exists("database.db"):
-        subprocess.run(["python", "setup_db.py"], check=True)
+        try:
+            initialize_db()
+        except Exception as e:
+            print(f"Error inicializando la base de datos: {str(e)}")
+            return
 
     def route_change(e: flet.RouteChangeEvent) -> None:
         print(e.route)
@@ -46,7 +50,7 @@ def main(page: Page) -> None:
     page.on_view_pop = view_pop
     
     # Decidir la ruta inicial basada en si es primera ejecución
-    initial_route = '/newUser' if check_first_run() else '/Login2'
+    initial_route = '/newUser' if check_first_run() else '/Login'
     page.go(initial_route)
 
     page.theme_mode = flet.ThemeMode.SYSTEM

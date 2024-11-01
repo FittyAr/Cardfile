@@ -1,95 +1,145 @@
-import sys, flet
-from flet import Page
-from flet_core.control_event import ControlEvent
-from flet_core import Control
-from data.database.setup import init_db
-from data.repositories.usuario_repository import UsuarioRepository
+import flet as ft
+from data.database.connection import get_session
+from data.models.usuario import Usuario
+from datetime import datetime
+import bcrypt
 
-class Login(flet.Control):    # hereda de la clase user control
-    def _get_control_name(self):
-        return "login"  # Nombre único para identificar este control
+def login_view(page: ft.Page):
+    # Campos de texto
+    username = ft.TextField(
+        label="Usuario",
+        border_color=ft.colors.BLUE,
+        width=300,
+        text_align=ft.TextAlign.LEFT,
+    )
+    
+    password = ft.TextField(
+        label="Contraseña",
+        password=True,
+        can_reveal_password=True,
+        border_color=ft.colors.BLUE,
+        width=300,
+    )
 
-    def __init__(self, page: Page):
-        super().__init__()
-        self.page = page
+    def verify_password(stored_hash: str, provided_password: str) -> bool:
+        """Verifica si la contraseña proporcionada coincide con el hash almacenado."""
+        try:
+            return bcrypt.checkpw(
+                provided_password.encode('utf-8'),
+                stored_hash.encode('utf-8')
+            )
+        except Exception:
+            return False
 
-        # Mover la definición de los controles al constructor
-        self.login_button = flet.ElevatedButton(text="Sign up", on_click=self.login_click, disabled=False)
-        self.close_button = flet.ElevatedButton(text="Close", on_click=self.close_click)
-        self.text_username = flet.TextField(label="Username", on_change=self.Validate, text_align=flet.TextAlign.LEFT)
-        self.text_password = flet.TextField(label="Password", on_change=self.Validate, password=True)
-        self.checkbox_signup = flet.Checkbox(label="Remember me", value=False)
-
-
-    # , e: ControlEvent
-    def login_click(self) -> None:
-
-        init_db()
-        # Crear un repositorio de usuarios
-        usuario_repo = UsuarioRepository()
+    def login_clicked(e):
+        if not username.value or not password.value:
+            snack = ft.SnackBar(content=ft.Text("Por favor complete todos los campos"))
+            page.show_snack_bar = snack
+            page.update()
+            return
         
+        session = get_session()
+        try:
+            # Mejorar la consulta para ser más específica
+            usuario = session.query(Usuario).filter(
+                Usuario.email == username.value.strip(),
+                Usuario.is_active == True
+            ).first()
+            
+            if usuario and verify_password(usuario.contraseña, password.value):
+                usuario.last_login = datetime.now()
+                session.commit()
+                
+                # Almacenar datos de sesión
+                page.client_storage.set("user_id", usuario.id)
+                page.client_storage.set("user_name", usuario.nombre)
+                
+                page.go("/Main")
+            else:
+                snack = ft.SnackBar(content=ft.Text("Usuario o contraseña incorrectos"))
+                page.show_snack_bar = snack
+                page.update()
 
-        self.page.go('/Main')
-        self.page.update()
-        #self.page.alert("Login Clicked")
+        except Exception as e:
+            session.rollback()
+            print(f"Error de login: {str(e)}")
+            snack = ft.SnackBar(content=ft.Text("Error al intentar iniciar sesión"))
+            page.show_snack_bar = snack
+            page.update()
+        finally:
+            session.close()
 
-    def close_click(self) -> None:
-        print("Close Clicked")
-        self.page.go('/Card')
-        self.page.update()
-
-        """ if sys.platform == "win32": """
-
-    def Validate(self, e: ControlEvent) -> None:
-        if all([self.text_username.value, self.text_password.value]):
-            self.login_button.disabled = True
+    def exit_clicked(e):
+        import sys
+        import platform
+        
+        if platform.system() == "Windows":
+            sys.exit(0)
         else:
-            self.login_button.disabled = False
-        self.page.update()
+            page.go("/")
 
-    def _build(self) -> flet.Control: 
-        container_login_button: flet.Container = flet.Container(self.login_button)
-        container_close_button: flet.Container = flet.Container(self.close_button)
-        container_check: flet.Container = flet.Container(self.checkbox_signup)
+    # Botones
+    btn_login = ft.ElevatedButton(
+        text="Ingresar",
+        width=140,
+        color=ft.colors.WHITE,
+        bgcolor=ft.colors.BLUE,
+        on_click=login_clicked
+    )
 
-        #container_login_button.bgcolor = flet.colors.BLUE_GREY
-        container_login_button.width = 150
-        container_login_button.alignment = flet.alignment.center_left
-        #container_close_button.bgcolor = flet.colors.BLUE_ACCENT
-        container_close_button.width = 140
-        container_close_button.alignment = flet.alignment.center_right
-        container_check.width = 150
-        container_check.alignment = flet.alignment.center
+    btn_exit = ft.ElevatedButton(
+        text="Salir",
+        width=140,
+        color=ft.colors.WHITE,
+        bgcolor=ft.colors.RED,
+        on_click=exit_clicked
+    )
 
-        row_buttons = flet.Row(
-            [
-                container_login_button, 
-                container_close_button                
-            ]
-        )
+    # Contenedor principal
+    return ft.Container(
+        width=400,
+        height=500,
+        bgcolor=ft.colors.WHITE10,
+        border=ft.border.all(2, ft.colors.BLUE_200),
+        border_radius=15,
+        padding=30,
+        content=ft.Column(
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=20,
+            controls=[
+                ft.Icon(ft.icons.PERSON_OUTLINE, size=50, color=ft.colors.BLUE),
+                ft.Text("Iniciar Sesión", size=28, weight=ft.FontWeight.BOLD),
+                ft.Divider(height=20, color=ft.colors.TRANSPARENT),
+                
+                # Contenedor para los campos de entrada
+                ft.Container(
+                    content=ft.Column(
+                        spacing=15,
+                        controls=[
+                            username,
+                            password,
+                        ],
+                    ),
+                ),
+                
+                ft.Divider(height=20, color=ft.colors.TRANSPARENT),
+                
+                # Contenedor para los botones
+                ft.Container(
+                    content=ft.Row(
+                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                        controls=[btn_exit, btn_login],
+                    ),
+                ),
+                
+                ft.TextButton(
+                    text="¿No tienes cuenta? Regístrate aquí",
+                    on_click=lambda _: page.go("/newUser")
+                ),
+            ],
+        ),
+        alignment=ft.alignment.center,
+    )
 
-        self.login_item = [
-            self.text_username,
-            self.text_password,
-            container_check,
-            row_buttons
-        ]
-
-        column  = flet.Column(self.login_item)
-        column.width = 300
-        column.height = 200
-
-        container = flet.Container(column)
-        container.alignment = flet.alignment.center
-        
-        """
-        Card = flet.Card(container)
-        Card.width = 300
-        Card.height = 200
-        Card.elevation = 15
-        """
-        return container
-
-def main(page: Page) -> None:
-    page.title = "Login"
-    page.add(Login(page))
+# Exportamos la función
+__all__ = ['login_view']
