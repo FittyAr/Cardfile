@@ -10,6 +10,7 @@ class Ficha(Base):
     title = Column(String(100), nullable=False)
     descripcion = Column(String, nullable=True)
     usuario_id = Column(Integer, ForeignKey('usuarios.id'), nullable=False)
+    is_active = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime, server_default=text('CURRENT_TIMESTAMP'), nullable=False)
     updated_at = Column(DateTime, server_default=text('CURRENT_TIMESTAMP'), onupdate=func.now(), nullable=False)
 

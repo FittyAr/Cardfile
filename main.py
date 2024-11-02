@@ -22,7 +22,7 @@ def check_first_run():
 
 def main(page: Page):
     # Actualizar la configuración de la ventana
-    page.title = "Mi Aplicación"
+    page.title = "CardFile"
     page.padding = 0
     page.spacing = 0
     page.window.width = 1000  # Nueva sintaxis

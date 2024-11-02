@@ -3,7 +3,12 @@ from data.database.connection import get_session
 from data.models.ficha import Ficha
 from datetime import datetime
 
-def new_card_view(page: ft.Page):
+def edit_card_view(page: ft.Page):
+    # Obtener la ficha seleccionada del almacenamiento
+    selected_ficha = page.client_storage.get("selected_ficha")
+    if not selected_ficha:
+        return ft.Text("Error: No hay ficha seleccionada")
+
     def save_clicked(e):
         if not card_name.value:
             page.show_snack_bar(
@@ -17,29 +22,28 @@ def new_card_view(page: ft.Page):
         
         session = get_session()
         try:
-            # Obtener el ID del usuario de la sesión
-            user_id = page.client_storage.get("user_id")
-            
-            # Crear nueva ficha
-            nueva_ficha = Ficha(
-                title=card_name.value.strip(),
-                descripcion="",  # Descripción inicial vacía
-                usuario_id=user_id,
-                created_at=datetime.now(),
-                updated_at=datetime.now()
-            )
-            
-            session.add(nueva_ficha)
-            session.commit()
-            
-            page.go("/Card")  # Volver a la vista principal
+            # Buscar y actualizar la ficha
+            ficha = session.query(Ficha).filter(Ficha.id == selected_ficha["id"]).first()
+            if ficha:
+                ficha.title = card_name.value.strip()
+                ficha.updated_at = datetime.now()
+                session.commit()
+                
+                page.show_snack_bar(
+                    ft.SnackBar(
+                        content=ft.Text("Ficha actualizada exitosamente"),
+                        bgcolor=ft.colors.GREEN_400,
+                        action="Ok"
+                    )
+                )
+                page.go("/Card")
             
         except Exception as e:
             session.rollback()
-            print(f"Error al guardar ficha: {str(e)}")
+            print(f"Error al actualizar ficha: {str(e)}")
             page.show_snack_bar(
                 ft.SnackBar(
-                    content=ft.Text("Error al guardar la ficha"),
+                    content=ft.Text("Error al actualizar la ficha"),
                     bgcolor=ft.colors.RED_400,
                     action="Ok"
                 )
@@ -48,21 +52,22 @@ def new_card_view(page: ft.Page):
             session.close()
 
     def cancel_clicked(e):
-        page.go("/Card")  # Volver a la vista principal sin guardar
+        page.go("/Card")
 
     # Campo para el nombre de la tarjeta
     card_name = ft.TextField(
         label="Nombre de la Tarjeta",
         border_color=ft.colors.BLUE,
         width=300,
-        on_submit=save_clicked,
         text_align=ft.TextAlign.LEFT,
-        autofocus=True
+        on_submit=save_clicked,
+        autofocus=True,
+        value=selected_ficha["title"] if selected_ficha else ""
     )
 
     # Botones
     btn_save = ft.ElevatedButton(
-        text="Guardar",
+        text="Actualizar",
         width=140,
         color=ft.colors.WHITE,
         bgcolor=ft.colors.BLUE,
@@ -88,15 +93,10 @@ def new_card_view(page: ft.Page):
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             spacing=20,
             controls=[
-                ft.Text("Nueva Tarjeta", size=24, weight=ft.FontWeight.BOLD),
+                ft.Text("Editar Tarjeta", size=24, weight=ft.FontWeight.BOLD),
                 ft.Divider(height=20, color=ft.colors.TRANSPARENT),
-                
-                # Campo de entrada
                 card_name,
-                
                 ft.Divider(height=20, color=ft.colors.TRANSPARENT),
-                
-                # Botones
                 ft.Row(
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                     controls=[btn_cancel, btn_save],
@@ -106,5 +106,4 @@ def new_card_view(page: ft.Page):
         alignment=ft.alignment.center,
     )
 
-# Exportamos la función
-__all__ = ['new_card_view'] 
+__all__ = ['edit_card_view'] 

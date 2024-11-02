@@ -6,49 +6,28 @@ from View.Card import card_view
 from View.Login import login_view
 from View.newUser import newUser_view
 from View.NewCard import new_card_view
+from View.EditCard import edit_card_view
 
 def views_handler(page: Page):
-    return {
-        '/': flet.View(
-            route='/',
-            controls=[
-                flet.AppBar(
-                    title=flet.Text('Inicio', size=20, weight=flet.FontWeight.BOLD),
-                    bgcolor=flet.colors.BLUE,
-                    center_title=True,
-                    actions=[
-                        flet.IconButton(flet.icons.BRIGHTNESS_4, on_click=lambda _: page.theme_mode == "dark"),
-                    ]
-                ),
-                flet.Container(
-                    content=flet.Column(
-                        controls=[],
-                        horizontal_alignment=flet.CrossAxisAlignment.CENTER,
-                    ),
-                    alignment=flet.alignment.center,
+    def edit_ficha():
+        """Navega a la vista de edición si hay una ficha seleccionada"""
+        # Obtener la ficha seleccionada del almacenamiento del cliente
+        selected_ficha = page.client_storage.get("selected_ficha")
+        if selected_ficha:
+            page.go("/editCard")
+        else:
+            page.show_snack_bar(
+                flet.SnackBar(
+                    content=flet.Text("Por favor seleccione una ficha para editar"),
+                    bgcolor=flet.colors.RED_400,
+                    action="Ok"
                 )
-            ],
-            vertical_alignment=flet.MainAxisAlignment.CENTER,
-            horizontal_alignment=flet.CrossAxisAlignment.CENTER,
-            padding=20,
-        ),
-        '/Main': flet.View(
-            route='/Main',
-            controls=[
-                flet.AppBar(title=flet.Text('Home'), bgcolor=flet.colors.RED),
-            ],
-            vertical_alignment=flet.MainAxisAlignment.CENTER,
-            horizontal_alignment=flet.CrossAxisAlignment.CENTER,
-            spacing=26
-        ),
+            )
+
+    return {
         '/Card': flet.View(
             route='/Card',
             controls=[
-                flet.AppBar(
-                    title=flet.Text('Mis Fichas', size=20, weight=flet.FontWeight.BOLD),
-                    bgcolor=flet.colors.BLUE,
-                    center_title=True
-                ),
                 card_view(page)
             ],
             vertical_alignment=flet.MainAxisAlignment.START,
@@ -64,15 +43,23 @@ def views_handler(page: Page):
                     ),
                     flet.FloatingActionButton(
                         icon=flet.icons.EDIT,
-                        on_click=lambda _: page.go("/newCard"),
+                        on_click=lambda _: edit_ficha(),
                         tooltip="Editar",
                         bgcolor=flet.colors.GREEN,
+                        disabled=True,
+                        data="edit_button"
                     ),
                     flet.FloatingActionButton(
                         icon=flet.icons.DELETE,
                         on_click=lambda e: page.delete_ficha(),
                         tooltip="Eliminar",
                         bgcolor=flet.colors.RED,
+                    ),
+                    flet.FloatingActionButton(
+                        icon=flet.icons.RECYCLING,    
+                        on_click=lambda e: page.recycle_ficha(),
+                        tooltip="Reciclar",
+                        bgcolor=flet.colors.GREEN,
                     ),
                     flet.FloatingActionButton(
                         icon=flet.icons.EXIT_TO_APP,
@@ -89,8 +76,7 @@ def views_handler(page: Page):
         '/Login': flet.View(
             route='/Login',
             controls=[
-                flet.AppBar(title=flet.Text('Login'), bgcolor=flet.colors.BLUE),
-                login_view(page),
+                login_view(page)
             ],
             vertical_alignment=flet.MainAxisAlignment.CENTER,
             horizontal_alignment=flet.CrossAxisAlignment.CENTER,
@@ -100,8 +86,7 @@ def views_handler(page: Page):
         '/newUser': flet.View(
             route='/newUser',
             controls=[
-                flet.AppBar(title=flet.Text('Nuevo Usuario'), bgcolor=flet.colors.BLUE),
-                newUser_view(page),
+                newUser_view(page)
             ],
             vertical_alignment=flet.MainAxisAlignment.CENTER,
             horizontal_alignment=flet.CrossAxisAlignment.CENTER,
@@ -111,8 +96,17 @@ def views_handler(page: Page):
         '/newCard': flet.View(  # Agregar la nueva ruta
             route='/newCard',
             controls=[
-                flet.AppBar(title=flet.Text('Nueva Tarjeta'), bgcolor=flet.colors.BLUE),
-                new_card_view(page),
+                new_card_view(page)
+            ],
+            vertical_alignment=flet.MainAxisAlignment.CENTER,
+            horizontal_alignment=flet.CrossAxisAlignment.CENTER,
+            spacing=26,
+            padding=flet.padding.all(20),
+        ),
+        '/editCard': flet.View(
+            route='/editCard',
+            controls=[
+                edit_card_view(page)
             ],
             vertical_alignment=flet.MainAxisAlignment.CENTER,
             horizontal_alignment=flet.CrossAxisAlignment.CENTER,
