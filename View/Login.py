@@ -80,7 +80,8 @@ def login_view(page: ft.Page):
         border_color=ft.colors.BLUE,
         width=300,
         text_align=ft.TextAlign.LEFT,
-        on_submit=login_clicked  # Llama a login_clicked al presionar Enter
+        on_submit=login_clicked,  # Llama a login_clicked al presionar Enter
+        value="test@test.test"  # Valor predeterminado para pruebas
     )
     
     password = ft.TextField(
@@ -89,7 +90,8 @@ def login_view(page: ft.Page):
         can_reveal_password=True,
         border_color=ft.colors.BLUE,
         width=300,
-        on_submit=login_clicked  # Llama a login_clicked al presionar Enter
+        on_submit=login_clicked,  # Llama a login_clicked al presionar Enter
+        value="abc123*-"  # Valor predeterminado para pruebas
     )
 
     # Botones

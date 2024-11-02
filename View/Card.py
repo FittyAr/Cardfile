@@ -5,6 +5,8 @@ from data.models.ficha import Ficha
 
 def card_view(page: Page):
     # Atributos
+    selected_ficha = None  # Variable para mantener la ficha seleccionada
+    
     fichas_list = ft.ListView(
         expand=1,
         spacing=10,
@@ -26,14 +28,69 @@ def card_view(page: Page):
         read_only=True,
         border_color=ft.colors.BLUE_200,
         bgcolor=ft.colors.WHITE10,
-        width=400
+        expand=True
     )
 
     def select_ficha(ficha):
         """Maneja la selección de una ficha"""
+        nonlocal selected_ficha  # Acceder a la variable externa
+        selected_ficha = ficha
         title_label.value = ficha.title
         description_text.value = ficha.descripcion
         page.update()
+
+    def delete_ficha_handler(e=None):
+        nonlocal selected_ficha  # Mover la declaración nonlocal al principio de la función
+        
+        if not selected_ficha:
+            page.show_snack_bar(
+                ft.SnackBar(
+                    content=ft.Text("Por favor seleccione una ficha para eliminar"),
+                    bgcolor=ft.colors.RED_400,
+                    action="Ok"
+                )
+            )
+            return
+
+        session = get_session()
+        try:
+            ficha = session.query(Ficha).filter(Ficha.id == selected_ficha.id).first()
+            if ficha:
+                session.delete(ficha)
+                session.commit()
+                
+                # Limpiar la selección
+                selected_ficha = None
+                title_label.value = "Seleccione una ficha"
+                description_text.value = ""
+                
+                # Recargar la lista de fichas
+                load_fichas()
+                
+                page.show_snack_bar(
+                    ft.SnackBar(
+                        content=ft.Text("Ficha eliminada exitosamente"),
+                        bgcolor=ft.colors.GREEN_400,
+                        action="Ok"
+                    )
+                )
+                page.update()
+            
+        except Exception as e:
+            session.rollback()
+            print(f"Error eliminando ficha: {str(e)}")
+            page.show_snack_bar(
+                ft.SnackBar(
+                    content=ft.Text("Error al eliminar la ficha"),
+                    bgcolor=ft.colors.RED_400,
+                    action="Ok"
+                )
+            )
+        finally:
+            session.close()
+
+    # Hacer la función accesible a nivel de página
+    page.delete_ficha = delete_ficha_handler
 
     def load_fichas():
         """Carga las fichas del usuario actual desde la base de datos"""
@@ -64,9 +121,11 @@ def card_view(page: Page):
                 description_text
             ],
             spacing=10,
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            expand=True
         ),
-        padding=20
+        padding=20,
+        expand=True
     )
 
     # Contenedor principal
@@ -90,11 +149,13 @@ def card_view(page: Page):
                     content=right_panel,
                     border=ft.border.all(2, ft.colors.BLUE_200),
                     border_radius=10,
-                    padding=10
+                    padding=10,
+                    expand=True
                 )
             ],
             alignment=ft.MainAxisAlignment.CENTER,
-            vertical_alignment=ft.CrossAxisAlignment.START
+            vertical_alignment=ft.CrossAxisAlignment.START,
+            expand=True
         ),
         padding=20
     )

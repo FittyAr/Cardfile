@@ -56,6 +56,14 @@ def views_handler(page: Page):
             padding=20,
             floating_action_button=flet.Row(
                 controls=[
+                    flet.Container(
+                        content=flet.TextField(
+                            label="Buscar",
+                            on_change=lambda e: print(e.control.value),
+                            expand=True
+                        ),
+                        expand=True
+                    ),
                     flet.FloatingActionButton(
                         icon=flet.icons.ADD,
                         on_click=lambda _: page.go("/newCard"),
@@ -69,6 +77,12 @@ def views_handler(page: Page):
                         bgcolor=flet.colors.GREEN,
                     ),
                     flet.FloatingActionButton(
+                        icon=flet.icons.DELETE,
+                        on_click=lambda e: page.delete_ficha(),
+                        tooltip="Eliminar",
+                        bgcolor=flet.colors.RED,
+                    ),
+                    flet.FloatingActionButton(
                         icon=flet.icons.EXIT_TO_APP,
                         on_click=lambda _: page.go("/Login"),
                         tooltip="Salir",
@@ -76,7 +90,8 @@ def views_handler(page: Page):
                     )
                 ],
                 alignment=flet.MainAxisAlignment.END,
-                spacing=10
+                spacing=10,
+                expand=True
             )
         ),
         '/Login': flet.View(
