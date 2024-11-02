@@ -69,14 +69,8 @@ def login_view(page: ft.Page):
         finally:
             session.close()
 
-    def exit_clicked(e):
-        import sys
-        import platform
-        
-        if platform.system() == "Windows":
-            sys.exit(0)
-        else:
-            page.go("/")
+    def exit_clicked(e=None):
+        page.window_destroy()
 
     # Botones
     btn_login = ft.ElevatedButton(
