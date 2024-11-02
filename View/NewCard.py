@@ -1,17 +1,51 @@
 import flet as ft
+from data.database.connection import get_session
+from data.models.ficha import Ficha
+from datetime import datetime
 
 def new_card_view(page: ft.Page):
     def save_clicked(e):
         if not card_name.value:
-            snack = ft.SnackBar(content=ft.Text("Por favor ingrese un nombre para la tarjeta"))
-            page.overlay.append(snack)
-            snack.open = True
-            page.update()
+            page.show_snack_bar(
+                ft.SnackBar(
+                    content=ft.Text("Por favor ingrese un nombre para la tarjeta"),
+                    bgcolor=ft.colors.RED_400,
+                    action="Ok"
+                )
+            )
             return
         
-        # Aquí irá la lógica para guardar en la base de datos
-        print(f"Guardando tarjeta: {card_name.value}")
-        page.go("/Card")  # Volver a la vista principal
+        session = get_session()
+        try:
+            # Obtener el ID del usuario de la sesión
+            user_id = page.client_storage.get("user_id")
+            
+            # Crear nueva ficha
+            nueva_ficha = Ficha(
+                title=card_name.value.strip(),
+                descripcion="",  # Descripción inicial vacía
+                usuario_id=user_id,
+                created_at=datetime.now(),
+                updated_at=datetime.now()
+            )
+            
+            session.add(nueva_ficha)
+            session.commit()
+            
+            page.go("/Card")  # Volver a la vista principal
+            
+        except Exception as e:
+            session.rollback()
+            print(f"Error al guardar ficha: {str(e)}")
+            page.show_snack_bar(
+                ft.SnackBar(
+                    content=ft.Text("Error al guardar la ficha"),
+                    bgcolor=ft.colors.RED_400,
+                    action="Ok"
+                )
+            )
+        finally:
+            session.close()
 
     def cancel_clicked(e):
         page.go("/Card")  # Volver a la vista principal sin guardar
@@ -45,7 +79,6 @@ def new_card_view(page: ft.Page):
     return ft.Container(
         width=400,
         height=300,
-        bgcolor=ft.colors.WHITE,
         border=ft.border.all(2, ft.colors.BLUE_200),
         border_radius=15,
         padding=30,

@@ -20,10 +20,13 @@ def check_first_run():
     finally:
         session.close()
 
-def main(page: Page) -> None:    
-    page.title = "Card archiving with Flet and Python"
-    page.horizontal_alignment = flet.CrossAxisAlignment.CENTER
-    page.vertical_alignment = flet.MainAxisAlignment.CENTER
+def main(page: Page):
+    # Actualizar la configuración de la ventana
+    page.title = "Mi Aplicación"
+    page.padding = 0
+    page.spacing = 0
+    page.window.width = 1000  # Nueva sintaxis
+    page.window.height = 800  # Nueva sintaxis
 
     # Inicializar la base de datos si no existe
     if not os.path.exists("database.db"):

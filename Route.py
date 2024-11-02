@@ -53,7 +53,31 @@ def views_handler(page: Page):
             ],
             vertical_alignment=flet.MainAxisAlignment.START,
             horizontal_alignment=flet.CrossAxisAlignment.CENTER,
-            padding=20
+            padding=20,
+            floating_action_button=flet.Row(
+                controls=[
+                    flet.FloatingActionButton(
+                        icon=flet.icons.ADD,
+                        on_click=lambda _: page.go("/newCard"),
+                        tooltip="Agregar nueva tarjeta",
+                        bgcolor=flet.colors.BLUE,
+                    ),
+                    flet.FloatingActionButton(
+                        icon=flet.icons.EDIT,
+                        on_click=lambda _: page.go("/newCard"),
+                        tooltip="Editar",
+                        bgcolor=flet.colors.GREEN,
+                    ),
+                    flet.FloatingActionButton(
+                        icon=flet.icons.EXIT_TO_APP,
+                        on_click=lambda _: page.go("/Login"),
+                        tooltip="Salir",
+                        bgcolor=flet.colors.RED,
+                    )
+                ],
+                alignment=flet.MainAxisAlignment.END,
+                spacing=10
+            )
         ),
         '/Login': flet.View(
             route='/Login',

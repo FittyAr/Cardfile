@@ -8,8 +8,13 @@ def login_view(page: ft.Page):
     # Función de inicio de sesión
     def login_clicked(e):
         if not username.value or not password.value:
-            snack = ft.SnackBar(content=ft.Text("Por favor complete todos los campos"))
-            page.show_snack_bar = snack
+            page.show_snack_bar(
+                ft.SnackBar(
+                    content=ft.Text("Por favor complete todos los campos"),
+                    bgcolor=ft.colors.RED_400,
+                    action="Ok"
+                )
+            )
             page.update()
             return
         
@@ -31,15 +36,26 @@ def login_view(page: ft.Page):
                 
                 page.go("/Card")
             else:
-                snack = ft.SnackBar(content=ft.Text("Usuario o contraseña incorrectos"))
-                page.show_snack_bar = snack
+                page.show_snack_bar(
+                    ft.SnackBar(
+                        content=ft.Text("Usuario o contraseña incorrectos"),
+                        bgcolor=ft.colors.RED_400,
+                        action="Ok"
+                    )
+                )
+                password.value = ""
                 page.update()
 
         except Exception as e:
             session.rollback()
             print(f"Error de login: {str(e)}")
-            snack = ft.SnackBar(content=ft.Text("Error al intentar iniciar sesión"))
-            page.show_snack_bar = snack
+            page.show_snack_bar(
+                ft.SnackBar(
+                    content=ft.Text("Error al intentar iniciar sesión"),
+                    bgcolor=ft.colors.RED_400,
+                    action="Ok"
+                )
+            )
             page.update()
         finally:
             session.close()

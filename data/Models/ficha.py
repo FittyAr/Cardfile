@@ -8,7 +8,7 @@ class Ficha(Base):
 
     id = Column(Integer, primary_key=True)
     title = Column(String(100), nullable=False)
-    descripcion = Column(String, nullable=False)
+    descripcion = Column(String, nullable=True)
     usuario_id = Column(Integer, ForeignKey('usuarios.id'), nullable=False)
     created_at = Column(DateTime, server_default=text('CURRENT_TIMESTAMP'), nullable=False)
     updated_at = Column(DateTime, server_default=text('CURRENT_TIMESTAMP'), onupdate=func.now(), nullable=False)
