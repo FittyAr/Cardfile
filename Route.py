@@ -7,6 +7,7 @@ from View.Login import login_view
 from View.newUser import newUser_view
 from View.NewCard import new_card_view
 from View.EditCard import edit_card_view
+from View.Recycle import recycle_view
 
 def views_handler(page: Page):
     def edit_ficha():
@@ -57,8 +58,8 @@ def views_handler(page: Page):
                     ),
                     flet.FloatingActionButton(
                         icon=flet.icons.RECYCLING,    
-                        on_click=lambda e: page.recycle_ficha(),
-                        tooltip="Reciclar",
+                        on_click=lambda _: page.go("/recycle"),
+                        tooltip="Papelera de reciclaje",
                         bgcolor=flet.colors.GREEN,
                     ),
                     flet.FloatingActionButton(
@@ -107,6 +108,16 @@ def views_handler(page: Page):
             route='/editCard',
             controls=[
                 edit_card_view(page)
+            ],
+            vertical_alignment=flet.MainAxisAlignment.CENTER,
+            horizontal_alignment=flet.CrossAxisAlignment.CENTER,
+            spacing=26,
+            padding=flet.padding.all(20),
+        ),
+        '/recycle': flet.View(
+            route='/recycle',
+            controls=[
+                recycle_view(page)
             ],
             vertical_alignment=flet.MainAxisAlignment.CENTER,
             horizontal_alignment=flet.CrossAxisAlignment.CENTER,

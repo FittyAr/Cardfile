@@ -113,7 +113,7 @@ def card_view(page: Page):
     )
 
     def select_ficha(ficha):
-        """Maneja la selección de una ficha"""
+        """Maneja la selecci��n de una ficha"""
         nonlocal selected_ficha, should_save
         
         # Guardar la ficha seleccionada en el almacenamiento del cliente
@@ -188,7 +188,8 @@ def card_view(page: Page):
                 try:
                     ficha = session.query(Ficha).filter(Ficha.id == selected_ficha.id).first()
                     if ficha:
-                        session.delete(ficha)
+                        # En lugar de eliminar, desactivamos la ficha
+                        ficha.is_active = False
                         session.commit()
                         
                         # Limpiar la selección y deshabilitar controles
@@ -207,7 +208,7 @@ def card_view(page: Page):
                     
                 except Exception as e:
                     session.rollback()
-                    print(f"Error eliminando ficha: {str(e)}")
+                    print(f"Error desactivando ficha: {str(e)}")
                     page.show_snack_bar(
                         ft.SnackBar(
                             content=ft.Text("Error al eliminar la ficha"),
@@ -243,11 +244,15 @@ def card_view(page: Page):
     page.delete_ficha = delete_ficha_handler
 
     def load_fichas():
-        """Carga las fichas del usuario actual desde la base de datos"""
+        """Carga las fichas activas del usuario actual desde la base de datos"""
         session = get_session()
         try:
             user_id = page.client_storage.get("user_id")
-            fichas = session.query(Ficha).filter(Ficha.usuario_id == user_id).all()
+            # Modificar la consulta para obtener solo fichas activas
+            fichas = session.query(Ficha).filter(
+                Ficha.usuario_id == user_id,
+                Ficha.is_active == True  # Solo fichas activas
+            ).all()
             
             fichas_list.controls = [
                 ft.ListTile(
