@@ -113,7 +113,7 @@ def card_view(page: Page):
     )
 
     def select_ficha(ficha):
-        """Maneja la selecci��n de una ficha"""
+        """Maneja la selección de una ficha"""
         nonlocal selected_ficha, should_save
         
         # Guardar la ficha seleccionada en el almacenamiento del cliente
@@ -126,12 +126,6 @@ def card_view(page: Page):
         # Habilitar el switch cuando se selecciona una ficha
         edit_switch.controls[1].disabled = False
         
-        # Habilitar el botón de editar
-        for control in page.views[-1].floating_action_button.controls:
-            if getattr(control, 'data', None) == "edit_button":
-                control.disabled = False
-                break
-
         # Si hay una ficha seleccionada anteriormente y hay cambios sin guardar
         if selected_ficha and description_text.value != selected_ficha.descripcion:
             if not description_text.read_only:  # Si estaba en modo edición
@@ -157,9 +151,9 @@ def card_view(page: Page):
                 selected_ficha = ficha_actualizada
                 title_label.value = ficha_actualizada.title
                 description_text.value = ficha_actualizada.descripcion
-                description_text.read_only = True  # Asegurar que comience en modo lectura
-                edit_switch.controls[1].value = False  # Resetear el switch a modo lectura
-                should_save = False  # Detener el guardado automático si estaba activo
+                description_text.read_only = True
+                edit_switch.controls[1].value = False
+                should_save = False
                 print(f"✅ Ficha {ficha_actualizada.id} cargada con éxito")
         except Exception as e:
             print(f"❌ Error cargando ficha: {str(e)}")
@@ -245,23 +239,25 @@ def card_view(page: Page):
 
     def load_fichas():
         """Carga las fichas activas del usuario actual desde la base de datos"""
-        session = get_session()
         try:
+            session = get_session()
             user_id = page.client_storage.get("user_id")
-            # Modificar la consulta para obtener solo fichas activas
             fichas = session.query(Ficha).filter(
                 Ficha.usuario_id == user_id,
-                Ficha.is_active == True  # Solo fichas activas
+                Ficha.is_active == True
             ).all()
             
-            fichas_list.controls = [
+            # Crear los controles antes de asignarlos
+            controls = [
                 ft.ListTile(
                     leading=ft.Icon(ft.icons.DESCRIPTION),
                     title=ft.Text(ficha.title),
                     on_click=lambda e, ficha=ficha: select_ficha(ficha)
                 ) for ficha in fichas
             ]
-            fichas_list.update()
+            
+            # Asignar los controles al ListView
+            fichas_list.controls = controls
             page.update()
         except Exception as e:
             print(f"Error cargando fichas: {str(e)}")
@@ -290,9 +286,7 @@ def card_view(page: Page):
         """Limpia la selección actual"""
         nonlocal selected_ficha, should_save
         
-        # Limpiar la ficha seleccionada del almacenamiento del cliente
         page.client_storage.remove("selected_ficha")
-        
         selected_ficha = None
         title_label.value = ""
         description_text.value = ""
@@ -300,13 +294,6 @@ def card_view(page: Page):
         edit_switch.controls[1].disabled = True
         edit_switch.controls[1].value = False
         should_save = False
-        
-        # Deshabilitar el botón de editar
-        for control in page.views[-1].floating_action_button.controls:
-            if getattr(control, 'data', None) == "edit_button":
-                control.disabled = True
-                break
-                
         page.update()
 
     # Panel derecho completo
@@ -333,8 +320,8 @@ def card_view(page: Page):
                 ft.Container(
                     content=ft.Column(
                         controls=[
-                            search_field,  # Solo el campo de búsqueda
-                            ft.Divider(height=10, color=ft.colors.TRANSPARENT),  # Espacio entre búsqueda y lista
+                            search_field,
+                            ft.Divider(height=10, color=ft.colors.TRANSPARENT),
                             fichas_list
                         ]
                     ),
@@ -359,15 +346,9 @@ def card_view(page: Page):
         padding=20
     )
 
-    # Configurar el botón flotante
-    page.floating_action_button = ft.FloatingActionButton(
-        icon=ft.icons.ADD,
-        on_click=lambda _: page.go("/newCard"),
-        tooltip="Agregar nueva tarjeta",
-        bgcolor=ft.colors.BLUE,
-    )
-
-    # Cargar fichas al iniciar
-    load_fichas()
+    # Cargar fichas después de que la vista esté montada
+    def on_view_mount():
+        load_fichas()
     
+    main_view.did_mount = on_view_mount
     return main_view

@@ -136,7 +136,7 @@ def recycle_view(page: ft.Page):
     # Botones
     btn_cancel = ft.ElevatedButton(
         text="Cancelar",
-        width=100,
+        width=120,
         color=ft.colors.WHITE,
         bgcolor=ft.colors.BLUE,
         on_click=cancel_clicked
@@ -144,7 +144,7 @@ def recycle_view(page: ft.Page):
 
     btn_restore = ft.ElevatedButton(
         text="Restaurar",
-        width=100,
+        width=120,
         color=ft.colors.WHITE,
         bgcolor=ft.colors.GREEN,
         on_click=restore_clicked,

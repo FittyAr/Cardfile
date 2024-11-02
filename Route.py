@@ -10,20 +10,31 @@ from View.EditCard import edit_card_view
 from View.Recycle import recycle_view
 
 def views_handler(page: Page):
-    def edit_ficha():
-        """Navega a la vista de edición si hay una ficha seleccionada"""
-        # Obtener la ficha seleccionada del almacenamiento del cliente
-        selected_ficha = page.client_storage.get("selected_ficha")
-        if selected_ficha:
-            page.go("/editCard")
-        else:
-            page.show_snack_bar(
-                flet.SnackBar(
-                    content=flet.Text("Por favor seleccione una ficha para editar"),
-                    bgcolor=flet.colors.RED_400,
-                    action="Ok"
+    def handle_navigation_change(e):
+        """Maneja los cambios en la barra de navegación"""
+        index = e.control.selected_index
+        
+        if index == 0:  # Nueva tarjeta
+            page.go("/newCard")
+        elif index == 1:  # Editar
+            selected_ficha = page.client_storage.get("selected_ficha")
+            if selected_ficha:
+                page.go("/editCard")
+            else:
+                page.show_snack_bar(
+                    flet.SnackBar(
+                        content=flet.Text("Por favor seleccione una ficha para editar"),
+                        bgcolor=flet.colors.RED_400,
+                        action="Ok"
+                    )
                 )
-            )
+        elif index == 2:  # Eliminar
+            if hasattr(page, 'delete_ficha'):
+                page.delete_ficha()
+        elif index == 3:  # Papelera
+            page.go("/recycle")
+        elif index == 4:  # Salir
+            page.go("/Login")
 
     return {
         '/Card': flet.View(
@@ -34,44 +45,38 @@ def views_handler(page: Page):
             vertical_alignment=flet.MainAxisAlignment.START,
             horizontal_alignment=flet.CrossAxisAlignment.CENTER,
             padding=20,
-            floating_action_button=flet.Row(
-                controls=[
-                    flet.FloatingActionButton(
+            navigation_bar=flet.NavigationBar(
+                selected_index=0,
+                destinations=[
+                    flet.NavigationBarDestination(
                         icon=flet.icons.ADD,
-                        on_click=lambda _: page.go("/newCard"),
-                        tooltip="Agregar nueva tarjeta",
-                        bgcolor=flet.colors.BLUE,
+                        selected_icon=flet.icons.ADD_CIRCLE,
+                        label="Nueva",
                     ),
-                    flet.FloatingActionButton(
+                    flet.NavigationBarDestination(
                         icon=flet.icons.EDIT,
-                        on_click=lambda _: edit_ficha(),
-                        tooltip="Editar",
-                        bgcolor=flet.colors.GREEN,
-                        disabled=True,
-                        data="edit_button"
+                        selected_icon=flet.icons.EDIT_ROUNDED,
+                        label="Editar",
                     ),
-                    flet.FloatingActionButton(
+                    flet.NavigationBarDestination(
                         icon=flet.icons.DELETE,
-                        on_click=lambda e: page.delete_ficha(),
-                        tooltip="Eliminar",
-                        bgcolor=flet.colors.RED,
+                        selected_icon=flet.icons.DELETE_FOREVER,
+                        label="Eliminar",
                     ),
-                    flet.FloatingActionButton(
-                        icon=flet.icons.RECYCLING,    
-                        on_click=lambda _: page.go("/recycle"),
-                        tooltip="Papelera de reciclaje",
-                        bgcolor=flet.colors.GREEN,
+                    flet.NavigationBarDestination(
+                        icon=flet.icons.RECYCLING,
+                        selected_icon=flet.icons.RECYCLING_ROUNDED,
+                        label="Papelera",
                     ),
-                    flet.FloatingActionButton(
+                    flet.NavigationBarDestination(
                         icon=flet.icons.EXIT_TO_APP,
-                        on_click=lambda _: page.go("/Login"),
-                        tooltip="Salir",
-                        bgcolor=flet.colors.RED,
-                    )
+                        selected_icon=flet.icons.EXIT_TO_APP_ROUNDED,
+                        label="Salir",
+                    ),
                 ],
-                alignment=flet.MainAxisAlignment.END,
-                spacing=10,
-                expand=True
+                on_change=handle_navigation_change,
+                bgcolor=flet.colors.SURFACE_VARIANT,
+                height=65,
             )
         ),
         '/Login': flet.View(
