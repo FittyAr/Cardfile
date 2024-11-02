@@ -56,14 +56,6 @@ def views_handler(page: Page):
             padding=20,
             floating_action_button=flet.Row(
                 controls=[
-                    flet.Container(
-                        content=flet.TextField(
-                            label="Buscar",
-                            on_change=lambda e: print(e.control.value),
-                            expand=True
-                        ),
-                        expand=True
-                    ),
                     flet.FloatingActionButton(
                         icon=flet.icons.ADD,
                         on_click=lambda _: page.go("/newCard"),

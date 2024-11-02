@@ -31,6 +31,14 @@ def card_view(page: Page):
         expand=True
     )
 
+    # Agregar el campo de búsqueda
+    search_field = ft.TextField(
+        label="Buscar",
+        on_change=lambda e: print(e.control.value),
+        expand=True,
+        border_color=ft.colors.BLUE_200,
+    )
+
     def select_ficha(ficha):
         """Maneja la selección de una ficha"""
         nonlocal selected_ficha  # Acceder a la variable externa
@@ -135,7 +143,8 @@ def card_view(page: Page):
                 ft.Container(
                     content=ft.Column(
                         controls=[
-                            ft.Text("Mis Fichas", size=20, weight=ft.FontWeight.BOLD),
+                            search_field,  # Solo el campo de búsqueda
+                            ft.Divider(height=10, color=ft.colors.TRANSPARENT),  # Espacio entre búsqueda y lista
                             fichas_list
                         ]
                     ),
