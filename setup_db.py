@@ -30,7 +30,7 @@ def initialize_db():
 
         # Agregar un nuevo usuario
         nuevo_usuario = Usuario(nombre=username, email=email, contraseña=hashed_password)
-        usuario_repo.add_usuario(nuevo_usuario)
+        #usuario_repo.add_usuario(nuevo_usuario)
         print("Nuevo usuario agregado exitosamente.")
 
         # Obtener todos los usuarios

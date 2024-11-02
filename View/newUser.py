@@ -64,9 +64,11 @@ def newUser_view(page: ft.Page):
         
         # Validar longitud mínima de contraseña
         if len(password.value) < 8:
-            page.show_snack_bar(
-                ft.SnackBar(content=ft.Text("La contraseña debe tener al menos 8 caracteres"))
+            page.snack_bar = ft.SnackBar(
+                content=ft.Text("La contraseña debe tener al menos 8 caracteres")
             )
+            page.snack_bar.open = True
+            page.update()
             return
         
         if not is_valid_email(email.value):

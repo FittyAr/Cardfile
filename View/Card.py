@@ -3,6 +3,9 @@ from flet import Page
 from data.database.connection import get_session
 from data.models.ficha import Ficha
 
+
+
+
 class CardView(ft.UserControl):
     def __init__(self, page: Page):
         super().__init__()
@@ -115,7 +118,15 @@ class CardView(ft.UserControl):
 
         # Cargar fichas al iniciar
         self.load_fichas()
-        
+
+        # Crear y agregar el botón flotante
+        self.page.floating_action_button = ft.FloatingActionButton(
+            icon=ft.icons.ADD,
+            on_click=lambda _: self.page.go("/newCard"),
+            tooltip="Agregar nueva tarjeta",  # Tooltip para el botón
+            bgcolor=ft.colors.BLUE,  # Color de fondo del botón
+        )
+
         return main_container
 
 def card_view(page: Page):

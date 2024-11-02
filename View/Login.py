@@ -5,32 +5,7 @@ from datetime import datetime
 import bcrypt
 
 def login_view(page: ft.Page):
-    # Campos de texto
-    username = ft.TextField(
-        label="Usuario",
-        border_color=ft.colors.BLUE,
-        width=300,
-        text_align=ft.TextAlign.LEFT,
-    )
-    
-    password = ft.TextField(
-        label="Contraseña",
-        password=True,
-        can_reveal_password=True,
-        border_color=ft.colors.BLUE,
-        width=300,
-    )
-
-    def verify_password(stored_hash: str, provided_password: str) -> bool:
-        """Verifica si la contraseña proporcionada coincide con el hash almacenado."""
-        try:
-            return bcrypt.checkpw(
-                provided_password.encode('utf-8'),
-                stored_hash.encode('utf-8')
-            )
-        except Exception:
-            return False
-
+    # Función de inicio de sesión
     def login_clicked(e):
         if not username.value or not password.value:
             snack = ft.SnackBar(content=ft.Text("Por favor complete todos los campos"))
@@ -54,7 +29,7 @@ def login_view(page: ft.Page):
                 page.client_storage.set("user_id", usuario.id)
                 page.client_storage.set("user_name", usuario.nombre)
                 
-                page.go("/Main")
+                page.go("/Card")
             else:
                 snack = ft.SnackBar(content=ft.Text("Usuario o contraseña incorrectos"))
                 page.show_snack_bar = snack
@@ -69,8 +44,37 @@ def login_view(page: ft.Page):
         finally:
             session.close()
 
+    def verify_password(stored_hash: str, provided_password: str) -> bool:
+        """Verifica si la contraseña proporcionada coincide con el hash almacenado."""
+        try:
+            return bcrypt.checkpw(
+                provided_password.encode('utf-8'),
+                stored_hash.encode('utf-8')
+            )
+        except Exception:
+            return False
+
     def exit_clicked(e=None):
         page.window_destroy()
+
+    # Campos de texto
+    username = ft.TextField(
+        label="Usuario",
+        hint_text="ejemplo@correo.com",
+        border_color=ft.colors.BLUE,
+        width=300,
+        text_align=ft.TextAlign.LEFT,
+        on_submit=login_clicked  # Llama a login_clicked al presionar Enter
+    )
+    
+    password = ft.TextField(
+        label="Contraseña",
+        password=True,
+        can_reveal_password=True,
+        border_color=ft.colors.BLUE,
+        width=300,
+        on_submit=login_clicked  # Llama a login_clicked al presionar Enter
+    )
 
     # Botones
     btn_login = ft.ElevatedButton(

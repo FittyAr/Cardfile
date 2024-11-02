@@ -1,13 +1,11 @@
 import flet
 from flet import Page
 
-from View import Login, Card
+from View import Login, Card, newUser
 from View.Card import card_view
-#from GitHub_examples.ModernNavBar import ModernNavBar
-
-from View import Login
 from View.Login import login_view
 from View.newUser import newUser_view
+from View.NewCard import new_card_view
 
 def views_handler(page: Page):
     return {
@@ -22,7 +20,6 @@ def views_handler(page: Page):
                         flet.IconButton(flet.icons.BRIGHTNESS_4, on_click=lambda _: page.theme_mode == "dark"),
                     ]
                 ),
-                # Contenedor centrado para el contenido
                 flet.Container(
                     content=flet.Column(
                         controls=[],
@@ -74,6 +71,17 @@ def views_handler(page: Page):
             controls=[
                 flet.AppBar(title=flet.Text('Nuevo Usuario'), bgcolor=flet.colors.BLUE),
                 newUser_view(page),
+            ],
+            vertical_alignment=flet.MainAxisAlignment.CENTER,
+            horizontal_alignment=flet.CrossAxisAlignment.CENTER,
+            spacing=26,
+            padding=flet.padding.all(20),
+        ),
+        '/newCard': flet.View(  # Agregar la nueva ruta
+            route='/newCard',
+            controls=[
+                flet.AppBar(title=flet.Text('Nueva Tarjeta'), bgcolor=flet.colors.BLUE),
+                new_card_view(page),
             ],
             vertical_alignment=flet.MainAxisAlignment.CENTER,
             horizontal_alignment=flet.CrossAxisAlignment.CENTER,
