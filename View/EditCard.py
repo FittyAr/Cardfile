@@ -2,9 +2,12 @@ import flet as ft
 from data.database.connection import get_session
 from data.models.ficha import Ficha
 from datetime import datetime
+from config.config import Config
 
 def edit_card_view(page: ft.Page):
-    # Obtener la ficha seleccionada del almacenamiento
+    # Inicializar Config
+    config = Config()
+    
     selected_ficha = page.client_storage.get("selected_ficha")
     if not selected_ficha:
         return ft.Text("Error: No hay ficha seleccionada")
@@ -13,7 +16,7 @@ def edit_card_view(page: ft.Page):
         if not card_name.value:
             page.show_snack_bar(
                 ft.SnackBar(
-                    content=ft.Text("Por favor ingrese un nombre para la tarjeta"),
+                    content=ft.Text(config.get_text("edit_card.name.empty_error")),
                     bgcolor=ft.colors.RED_400,
                     action="Ok"
                 )
@@ -22,7 +25,6 @@ def edit_card_view(page: ft.Page):
         
         session = get_session()
         try:
-            # Buscar y actualizar la ficha
             ficha = session.query(Ficha).filter(Ficha.id == selected_ficha["id"]).first()
             if ficha:
                 ficha.title = card_name.value.strip()
@@ -31,7 +33,7 @@ def edit_card_view(page: ft.Page):
                 
                 page.show_snack_bar(
                     ft.SnackBar(
-                        content=ft.Text("Ficha actualizada exitosamente"),
+                        content=ft.Text(config.get_text("edit_card.messages.success")),
                         bgcolor=ft.colors.GREEN_400,
                         action="Ok"
                     )
@@ -43,7 +45,7 @@ def edit_card_view(page: ft.Page):
             print(f"Error al actualizar ficha: {str(e)}")
             page.show_snack_bar(
                 ft.SnackBar(
-                    content=ft.Text("Error al actualizar la ficha"),
+                    content=ft.Text(config.get_text("edit_card.messages.error")),
                     bgcolor=ft.colors.RED_400,
                     action="Ok"
                 )
@@ -56,7 +58,7 @@ def edit_card_view(page: ft.Page):
 
     # Campo para el nombre de la tarjeta
     card_name = ft.TextField(
-        label="Nombre de la Tarjeta",
+        label=config.get_text("edit_card.name.label"),
         border_color=ft.colors.BLUE,
         width=300,
         text_align=ft.TextAlign.LEFT,
@@ -67,7 +69,7 @@ def edit_card_view(page: ft.Page):
 
     # Botones
     btn_save = ft.ElevatedButton(
-        text="Actualizar",
+        text=config.get_text("edit_card.buttons.update"),
         width=140,
         color=ft.colors.WHITE,
         bgcolor=ft.colors.BLUE,
@@ -75,7 +77,7 @@ def edit_card_view(page: ft.Page):
     )
 
     btn_cancel = ft.ElevatedButton(
-        text="Cancelar",
+        text=config.get_text("edit_card.buttons.cancel"),
         width=140,
         color=ft.colors.WHITE,
         bgcolor=ft.colors.RED,
@@ -93,7 +95,11 @@ def edit_card_view(page: ft.Page):
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             spacing=20,
             controls=[
-                ft.Text("Editar Tarjeta", size=24, weight=ft.FontWeight.BOLD),
+                ft.Text(
+                    config.get_text("edit_card.title"),
+                    size=24,
+                    weight=ft.FontWeight.BOLD
+                ),
                 ft.Divider(height=20, color=ft.colors.TRANSPARENT),
                 card_name,
                 ft.Divider(height=20, color=ft.colors.TRANSPARENT),

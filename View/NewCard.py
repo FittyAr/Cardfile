@@ -2,13 +2,17 @@ import flet as ft
 from data.database.connection import get_session
 from data.models.ficha import Ficha
 from datetime import datetime
+from config.config import Config
 
 def new_card_view(page: ft.Page):
+    # Siempre crear una nueva instancia de Config
+    config = Config()
+
     def save_clicked(e):
         if not card_name.value:
             page.show_snack_bar(
                 ft.SnackBar(
-                    content=ft.Text("Por favor ingrese un nombre para la tarjeta"),
+                    content=ft.Text(config.get_text("new_card.name.empty_error")),
                     bgcolor=ft.colors.RED_400,
                     action="Ok"
                 )
@@ -17,13 +21,11 @@ def new_card_view(page: ft.Page):
         
         session = get_session()
         try:
-            # Obtener el ID del usuario de la sesión
             user_id = page.client_storage.get("user_id")
             
-            # Crear nueva ficha
             nueva_ficha = Ficha(
                 title=card_name.value.strip(),
-                descripcion="",  # Descripción inicial vacía
+                descripcion="",
                 usuario_id=user_id,
                 created_at=datetime.now(),
                 updated_at=datetime.now()
@@ -32,14 +34,14 @@ def new_card_view(page: ft.Page):
             session.add(nueva_ficha)
             session.commit()
             
-            page.go("/Card")  # Volver a la vista principal
+            page.go("/Card")
             
         except Exception as e:
             session.rollback()
             print(f"Error al guardar ficha: {str(e)}")
             page.show_snack_bar(
                 ft.SnackBar(
-                    content=ft.Text("Error al guardar la ficha"),
+                    content=ft.Text(config.get_text("new_card.errors.save_error")),
                     bgcolor=ft.colors.RED_400,
                     action="Ok"
                 )
@@ -48,11 +50,11 @@ def new_card_view(page: ft.Page):
             session.close()
 
     def cancel_clicked(e):
-        page.go("/Card")  # Volver a la vista principal sin guardar
+        page.go("/Card")
 
     # Campo para el nombre de la tarjeta
     card_name = ft.TextField(
-        label="Nombre de la Tarjeta",
+        label=config.get_text("new_card.name.label"),
         border_color=ft.colors.BLUE,
         width=300,
         on_submit=save_clicked,
@@ -62,7 +64,7 @@ def new_card_view(page: ft.Page):
 
     # Botones
     btn_save = ft.ElevatedButton(
-        text="Guardar",
+        text=config.get_text("new_card.buttons.save"),
         width=140,
         color=ft.colors.WHITE,
         bgcolor=ft.colors.BLUE,
@@ -70,7 +72,7 @@ def new_card_view(page: ft.Page):
     )
 
     btn_cancel = ft.ElevatedButton(
-        text="Cancelar",
+        text=config.get_text("new_card.buttons.cancel"),
         width=140,
         color=ft.colors.WHITE,
         bgcolor=ft.colors.RED,
@@ -88,15 +90,14 @@ def new_card_view(page: ft.Page):
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             spacing=20,
             controls=[
-                ft.Text("Nueva Tarjeta", size=24, weight=ft.FontWeight.BOLD),
+                ft.Text(
+                    config.get_text("new_card.title"),
+                    size=24,
+                    weight=ft.FontWeight.BOLD
+                ),
                 ft.Divider(height=20, color=ft.colors.TRANSPARENT),
-                
-                # Campo de entrada
                 card_name,
-                
                 ft.Divider(height=20, color=ft.colors.TRANSPARENT),
-                
-                # Botones
                 ft.Row(
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                     controls=[btn_cancel, btn_save],

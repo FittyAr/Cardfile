@@ -1,0 +1,133 @@
+{
+    "login": {
+        "title": "Iniciar Sesión",
+        "username": {
+            "label": "Usuario",
+            "hint": "ejemplo@correo.com"
+        },
+        "password": {
+            "label": "Contraseña",
+            "hint": "Ingrese su contraseña"
+        },
+        "buttons": {
+            "login": "Ingresar",
+            "exit": "Salir"
+        },
+        "register_link": "¿No tienes cuenta? Regístrate aquí",
+        "errors": {
+            "empty_fields": "Por favor complete todos los campos",
+            "invalid_credentials": "Usuario o contraseña incorrectos",
+            "login_error": "Error al intentar iniciar sesión"
+        }
+    },
+    "new_user": {
+        "title": "Nuevo Usuario",
+        "fields": {
+            "name": {
+                "label": "Nombre"
+            },
+            "email": {
+                "label": "Email"
+            },
+            "password": {
+                "label": "Contraseña"
+            },
+            "confirm_password": {
+                "label": "Confirmar Contraseña"
+            }
+        },
+        "buttons": {
+            "save": "Guardar",
+            "cancel": "Cancelar"
+        },
+        "login_link": "¿Ya tienes cuenta? Inicia sesión aquí",
+        "errors": {
+            "empty_fields": "Por favor complete todos los campos",
+            "passwords_dont_match": "Las contraseñas no coinciden",
+            "password_length": "La contraseña debe tener al menos 8 caracteres",
+            "invalid_email": "Por favor ingrese un email válido",
+            "email_exists": "El email ya está registrado",
+            "create_error": "Error al crear el usuario"
+        },
+        "success": {
+            "user_created": "Usuario creado exitosamente"
+        }
+    },
+    "card": {
+        "title": "Seleccione una ficha",
+        "search": {
+            "label": "Buscar",
+            "hint": "Escriba para buscar..."
+        },
+        "read_mode": "Modo lectura",
+        "delete": {
+            "no_selection": "Por favor seleccione una ficha para eliminar",
+            "confirm_title": "Confirmar eliminación",
+            "confirm_message": "¿Está seguro que desea eliminar esta ficha?",
+            "success": "Ficha eliminada exitosamente",
+            "error": "Error al eliminar la ficha"
+        },
+        "buttons": {
+            "yes": "Sí",
+            "no": "No",
+            "ok": "Ok"
+        }
+    },
+    "navigation": {
+        "new": "Nueva",
+        "edit": "Editar",
+        "delete": "Eliminar",
+        "recycle": "Papelera",
+        "exit": "Salir",
+        "errors": {
+            "select_card_edit": "Por favor seleccione una ficha para editar"
+        }
+    },
+    "new_card": {
+        "title": "Nueva Tarjeta",
+        "name": {
+            "label": "Nombre de la Tarjeta",
+            "empty_error": "Por favor ingrese un nombre para la tarjeta"
+        },
+        "buttons": {
+            "save": "Guardar",
+            "cancel": "Cancelar"
+        },
+        "errors": {
+            "save_error": "Error al guardar la ficha"
+        }
+    },
+    "edit_card": {
+        "title": "Editar Tarjeta",
+        "name": {
+            "label": "Nombre de la Tarjeta",
+            "empty_error": "Por favor ingrese un nombre para la tarjeta"
+        },
+        "buttons": {
+            "update": "Actualizar",
+            "cancel": "Cancelar"
+        },
+        "messages": {
+            "success": "Ficha actualizada exitosamente",
+            "error": "Error al actualizar la ficha"
+        }
+    },
+    "recycle": {
+        "title": "Papelera de Reciclaje",
+        "buttons": {
+            "restore": "Restaurar",
+            "delete": "Eliminar",
+            "cancel": "Cancelar"
+        },
+        "messages": {
+            "restore_success": "Ficha restaurada exitosamente",
+            "restore_error": "Error al restaurar la ficha",
+            "delete_success": "Ficha eliminada permanentemente",
+            "delete_error": "Error al eliminar la ficha"
+        },
+        "delete_confirmation": {
+            "title": "Confirmar eliminación permanente",
+            "message": "¿Está seguro que desea eliminar permanentemente esta ficha? Esta acción no se puede deshacer."
+        }
+    }
+}

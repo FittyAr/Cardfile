@@ -1,0 +1,133 @@
+{
+    "login": {
+        "title": "Login",
+        "username": {
+            "label": "Username",
+            "hint": "example@email.com"
+        },
+        "password": {
+            "label": "Password",
+            "hint": "Enter your password"
+        },
+        "buttons": {
+            "login": "Login",
+            "exit": "Exit"
+        },
+        "register_link": "Don't have an account? Register here",
+        "errors": {
+            "empty_fields": "Please fill in all fields",
+            "invalid_credentials": "Invalid username or password",
+            "login_error": "Error trying to login"
+        }
+    },
+    "new_user": {
+        "title": "New User",
+        "fields": {
+            "name": {
+                "label": "Name"
+            },
+            "email": {
+                "label": "Email"
+            },
+            "password": {
+                "label": "Password"
+            },
+            "confirm_password": {
+                "label": "Confirm Password"
+            }
+        },
+        "buttons": {
+            "save": "Save",
+            "cancel": "Cancel"
+        },
+        "login_link": "Already have an account? Login here",
+        "errors": {
+            "empty_fields": "Please fill in all fields",
+            "passwords_dont_match": "Passwords don't match",
+            "password_length": "Password must be at least 8 characters long",
+            "invalid_email": "Please enter a valid email",
+            "email_exists": "Email is already registered",
+            "create_error": "Error creating user"
+        },
+        "success": {
+            "user_created": "User created successfully"
+        }
+    },
+    "card": {
+        "title": "Select a card",
+        "search": {
+            "label": "Search",
+            "hint": "Type to search..."
+        },
+        "read_mode": "Read mode",
+        "delete": {
+            "no_selection": "Please select a card to delete",
+            "confirm_title": "Confirm deletion",
+            "confirm_message": "Are you sure you want to delete this card?",
+            "success": "Card successfully deleted",
+            "error": "Error deleting card"
+        },
+        "buttons": {
+            "yes": "Yes",
+            "no": "No",
+            "ok": "Ok"
+        }
+    },
+    "navigation": {
+        "new": "New",
+        "edit": "Edit",
+        "delete": "Delete",
+        "recycle": "Recycle Bin",
+        "exit": "Exit",
+        "errors": {
+            "select_card_edit": "Please select a card to edit"
+        }
+    },
+    "new_card": {
+        "title": "New Card",
+        "name": {
+            "label": "Card Name",
+            "empty_error": "Please enter a name for the card"
+        },
+        "buttons": {
+            "save": "Save",
+            "cancel": "Cancel"
+        },
+        "errors": {
+            "save_error": "Error saving card"
+        }
+    },
+    "edit_card": {
+        "title": "Edit Card",
+        "name": {
+            "label": "Card Name",
+            "empty_error": "Please enter a name for the card"
+        },
+        "buttons": {
+            "update": "Update",
+            "cancel": "Cancel"
+        },
+        "messages": {
+            "success": "Card updated successfully",
+            "error": "Error updating card"
+        }
+    },
+    "recycle": {
+        "title": "Recycle Bin",
+        "buttons": {
+            "restore": "Restore",
+            "delete": "Delete",
+            "cancel": "Cancel"
+        },
+        "messages": {
+            "restore_success": "Card restored successfully",
+            "restore_error": "Error restoring card",
+            "delete_success": "Card permanently deleted",
+            "delete_error": "Error deleting card"
+        },
+        "delete_confirmation": {
+            "title": "Confirm permanent deletion",
+            "message": "Are you sure you want to permanently delete this card? This action cannot be undone."
+        }
+    }
+}

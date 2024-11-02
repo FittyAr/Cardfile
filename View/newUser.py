@@ -4,25 +4,41 @@ from data.models.usuario import Usuario
 from datetime import datetime
 import bcrypt
 import re
+import json
+import os
+from config.config import Config
+
+def load_translations(lang='es'):
+    """Carga las traducciones del idioma especificado"""
+    config = Config()
+    file_path = os.path.join(config.get("app.language.path", "./lang"), f'{lang}.json')
+    with open(file_path, 'r', encoding='utf-8') as file:
+        return json.load(file)
 
 def newUser_view(page: ft.Page):
+    # Obtener la configuración global
+    config = Config()
+    # Cargar traducciones usando el idioma configurado
+    translations = load_translations(config.current_language)
+    t = translations['new_user']
+
     # Campos de texto
     nombre = ft.TextField(
-        label="Nombre",
+        label=t['fields']['name']['label'],
         border_color=ft.colors.BLUE,
         width=300,
         text_align=ft.TextAlign.LEFT,
     )
     
     email = ft.TextField(
-        label="Email",
+        label=t['fields']['email']['label'],
         border_color=ft.colors.BLUE,
         width=300,
         text_align=ft.TextAlign.LEFT,
     )
     
     password = ft.TextField(
-        label="Contraseña",
+        label=t['fields']['password']['label'],
         password=True,
         can_reveal_password=True,
         border_color=ft.colors.BLUE,
@@ -30,7 +46,7 @@ def newUser_view(page: ft.Page):
     )
     
     confirm_password = ft.TextField(
-        label="Confirmar Contraseña",
+        label=t['fields']['confirm_password']['label'],
         password=True,
         can_reveal_password=True,
         border_color=ft.colors.BLUE,
@@ -52,20 +68,20 @@ def newUser_view(page: ft.Page):
         # Validaciones
         if not all([nombre.value, email.value, password.value, confirm_password.value]):
             page.show_snack_bar(
-                ft.SnackBar(content=ft.Text("Por favor complete todos los campos"))
+                ft.SnackBar(content=ft.Text(t['errors']['empty_fields']))
             )
             return
             
         if password.value != confirm_password.value:
             page.show_snack_bar(
-                ft.SnackBar(content=ft.Text("Las contraseñas no coinciden"))
+                ft.SnackBar(content=ft.Text(t['errors']['passwords_dont_match']))
             )
             return
         
         # Validar longitud mínima de contraseña
         if len(password.value) < 8:
             page.snack_bar = ft.SnackBar(
-                content=ft.Text("La contraseña debe tener al menos 8 caracteres")
+                content=ft.Text(t['errors']['password_length'])
             )
             page.snack_bar.open = True
             page.update()
@@ -73,7 +89,7 @@ def newUser_view(page: ft.Page):
         
         if not is_valid_email(email.value):
             page.show_snack_bar(
-                ft.SnackBar(content=ft.Text("Por favor ingrese un email válido"))
+                ft.SnackBar(content=ft.Text(t['errors']['invalid_email']))
             )
             return
         
@@ -86,7 +102,7 @@ def newUser_view(page: ft.Page):
             
             if existing_user:
                 page.show_snack_bar(
-                    ft.SnackBar(content=ft.Text("El email ya está registrado"))
+                    ft.SnackBar(content=ft.Text(t['errors']['email_exists']))
                 )
                 return
             
@@ -107,7 +123,7 @@ def newUser_view(page: ft.Page):
             
             # Mostrar mensaje de éxito
             page.show_snack_bar(
-                ft.SnackBar(content=ft.Text("Usuario creado exitosamente"))
+                ft.SnackBar(content=ft.Text(t['success']['user_created']))
             )
             
             # Limpiar campos
@@ -124,7 +140,7 @@ def newUser_view(page: ft.Page):
             session.rollback()
             print(f"Error al crear usuario: {str(e)}")
             page.show_snack_bar(
-                ft.SnackBar(content=ft.Text("Error al crear el usuario"))
+                ft.SnackBar(content=ft.Text(t['errors']['create_error']))
             )
         finally:
             session.close()
@@ -134,7 +150,7 @@ def newUser_view(page: ft.Page):
 
     # Botones
     btn_save = ft.ElevatedButton(
-        text="Guardar",
+        text=t['buttons']['save'],
         width=140,
         color=ft.colors.WHITE,
         bgcolor=ft.colors.BLUE,
@@ -142,7 +158,7 @@ def newUser_view(page: ft.Page):
     )
 
     btn_cancel = ft.ElevatedButton(
-        text="Cancelar",
+        text=t['buttons']['cancel'],
         width=140,
         color=ft.colors.WHITE,
         bgcolor=ft.colors.RED,
@@ -162,7 +178,7 @@ def newUser_view(page: ft.Page):
             spacing=20,
             controls=[
                 ft.Icon(ft.icons.PERSON_ADD, size=50, color=ft.colors.BLUE),
-                ft.Text("Nuevo Usuario", size=28, weight=ft.FontWeight.BOLD),
+                ft.Text(t['title'], size=28, weight=ft.FontWeight.BOLD),
                 ft.Divider(height=20, color=ft.colors.TRANSPARENT),
                 
                 # Contenedor para los campos de entrada
@@ -189,7 +205,7 @@ def newUser_view(page: ft.Page):
                 ),
                 
                 ft.TextButton(
-                    text="¿Ya tienes cuenta? Inicia sesión aquí",
+                    text=t['login_link'],
                     on_click=lambda _: page.go("/Login")
                 ),
             ],

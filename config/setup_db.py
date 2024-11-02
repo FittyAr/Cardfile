@@ -2,7 +2,7 @@ from data.database.setup import init_db
 from data.repositories.usuario_repository import UsuarioRepository
 from data.models.usuario import Usuario
 from data.database.connection import engine
-from config import Config
+from config.config import Config
 import bcrypt
 
 def initialize_db():

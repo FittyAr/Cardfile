@@ -8,8 +8,13 @@ from View.newUser import newUser_view
 from View.NewCard import new_card_view
 from View.EditCard import edit_card_view
 from View.Recycle import recycle_view
+from config.config import Config
 
 def views_handler(page: Page):
+    # Obtener configuración y traducciones
+    config = Config()
+    t = config.translations['navigation']
+
     def handle_navigation_change(e):
         """Maneja los cambios en la barra de navegación"""
         index = e.control.selected_index
@@ -23,9 +28,9 @@ def views_handler(page: Page):
             else:
                 page.show_snack_bar(
                     flet.SnackBar(
-                        content=flet.Text("Por favor seleccione una ficha para editar"),
+                        content=flet.Text(t['errors']['select_card_edit']),
                         bgcolor=flet.colors.RED_400,
-                        action="Ok"
+                        action=t['buttons']['ok']
                     )
                 )
         elif index == 2:  # Eliminar
@@ -51,27 +56,27 @@ def views_handler(page: Page):
                     flet.NavigationBarDestination(
                         icon=flet.icons.ADD,
                         selected_icon=flet.icons.ADD_CIRCLE,
-                        label="Nueva",
+                        label=t['new'],
                     ),
                     flet.NavigationBarDestination(
                         icon=flet.icons.EDIT,
                         selected_icon=flet.icons.EDIT_ROUNDED,
-                        label="Editar",
+                        label=t['edit'],
                     ),
                     flet.NavigationBarDestination(
                         icon=flet.icons.DELETE,
                         selected_icon=flet.icons.DELETE_FOREVER,
-                        label="Eliminar",
+                        label=t['delete'],
                     ),
                     flet.NavigationBarDestination(
                         icon=flet.icons.RECYCLING,
                         selected_icon=flet.icons.RECYCLING_ROUNDED,
-                        label="Papelera",
+                        label=t['recycle'],
                     ),
                     flet.NavigationBarDestination(
                         icon=flet.icons.EXIT_TO_APP,
                         selected_icon=flet.icons.EXIT_TO_APP_ROUNDED,
-                        label="Salir",
+                        label=t['exit'],
                     ),
                 ],
                 on_change=handle_navigation_change,

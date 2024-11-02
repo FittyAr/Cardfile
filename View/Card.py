@@ -5,6 +5,7 @@ from data.models.ficha import Ficha
 import threading
 import time
 from typing import Optional
+from config.config import Config
 
 def card_view(page: Page):
     # Atributos
@@ -19,8 +20,13 @@ def card_view(page: Page):
         height=500
     )
     
+    # Obtener configuración y traducciones
+    config = Config()
+    t = config.translations['card']
+    
+    # Actualizar los textos estáticos
     title_label = ft.Text(
-        value="Seleccione una ficha",
+        value=t['title'],
         size=24,
         weight=ft.FontWeight.BOLD,
         color=ft.colors.BLUE
@@ -57,12 +63,12 @@ def card_view(page: Page):
         
     edit_switch = ft.Row(
         controls=[
-            ft.Text("Modo lectura:"),
+            ft.Text(t['read_mode']),
             ft.Switch(
                 value=False,
                 on_change=toggle_readonly,
                 active_color=ft.colors.BLUE,
-                disabled=True  # Inicialmente deshabilitado
+                disabled=True
             )
         ],
         alignment=ft.MainAxisAlignment.END
@@ -105,11 +111,11 @@ def card_view(page: Page):
 
     # Actualizar el campo de búsqueda para usar la función de filtrado
     search_field = ft.TextField(
-        label="Buscar",
+        label=t['search']['label'],
         on_change=filter_fichas,  # Conectar la función de filtrado
         expand=True,
         border_color=ft.colors.BLUE_200,
-        hint_text="Escriba para buscar...",  # Texto de ayuda
+        hint_text=t['search']['hint'],  # Texto de ayuda
     )
 
     def select_ficha(ficha):
@@ -168,16 +174,16 @@ def card_view(page: Page):
         if not selected_ficha:
             page.show_snack_bar(
                 ft.SnackBar(
-                    content=ft.Text("Por favor seleccione una ficha para eliminar"),
+                    content=ft.Text(t['delete']['no_selection']),
                     bgcolor=ft.colors.RED_400,
-                    action="Ok"
+                    action=t['buttons']['ok']
                 )
             )
             return
 
         def confirm_delete(e):
             nonlocal selected_ficha
-            if e.control.text == "Sí":
+            if e.control.text == t['buttons']['yes']:
                 session = get_session()
                 try:
                     ficha = session.query(Ficha).filter(Ficha.id == selected_ficha.id).first()
@@ -194,9 +200,9 @@ def card_view(page: Page):
                         
                         page.show_snack_bar(
                             ft.SnackBar(
-                                content=ft.Text("Ficha eliminada exitosamente"),
+                                content=ft.Text(t['delete']['success']),
                                 bgcolor=ft.colors.GREEN_400,
-                                action="Ok"
+                                action=t['buttons']['ok']
                             )
                         )
                     
@@ -205,9 +211,9 @@ def card_view(page: Page):
                     print(f"Error desactivando ficha: {str(e)}")
                     page.show_snack_bar(
                         ft.SnackBar(
-                            content=ft.Text("Error al eliminar la ficha"),
+                            content=ft.Text(t['delete']['error']),
                             bgcolor=ft.colors.RED_400,
-                            action="Ok"
+                            action=t['buttons']['ok']
                         )
                     )
                 finally:
@@ -220,11 +226,11 @@ def card_view(page: Page):
         # Crear el diálogo de confirmación
         dlg_modal = ft.AlertDialog(
             modal=True,
-            title=ft.Text("Confirmar eliminación"),
-            content=ft.Text("¿Está seguro que desea eliminar esta ficha?"),
+            title=ft.Text(t['delete']['confirm_title']),
+            content=ft.Text(t['delete']['confirm_message']),
             actions=[
-                ft.TextButton("No", on_click=confirm_delete),
-                ft.TextButton("Sí", on_click=confirm_delete),
+                ft.TextButton(t['buttons']['no'], on_click=confirm_delete),
+                ft.TextButton(t['buttons']['yes'], on_click=confirm_delete),
             ],
             actions_alignment=ft.MainAxisAlignment.END,
         )

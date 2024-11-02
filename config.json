@@ -27,6 +27,11 @@
         "__Comentario_StartMetod": "StartMetod acepta los valores Web, Desktop y Mobile",
         "StartMetod": "Web",
         "debug": true,
-        "secret_key": "your_secret_key"
+        "secret_key": "your_secret_key",
+        "language": {
+            "default": "es",
+            "path": "./lang",
+            "available": ["es", "en"]
+        }
     }
 }

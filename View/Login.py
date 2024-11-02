@@ -3,14 +3,16 @@ from data.database.connection import get_session
 from data.models.usuario import Usuario
 from datetime import datetime
 import bcrypt
+from config.config import Config
 
 def login_view(page: ft.Page):
-    # Función de inicio de sesión
+    config = Config()
+    
     def login_clicked(e):
         if not username.value or not password.value:
             page.show_snack_bar(
                 ft.SnackBar(
-                    content=ft.Text("Por favor complete todos los campos"),
+                    content=ft.Text(config.get_text("login.errors.empty_fields")),
                     bgcolor=ft.colors.RED_400,
                     action="Ok"
                 )
@@ -20,7 +22,6 @@ def login_view(page: ft.Page):
         
         session = get_session()
         try:
-            # Mejorar la consulta para ser más específica
             usuario = session.query(Usuario).filter(
                 Usuario.email == username.value.strip(),
                 Usuario.is_active == True
@@ -29,16 +30,13 @@ def login_view(page: ft.Page):
             if usuario and verify_password(usuario.contraseña, password.value):
                 usuario.last_login = datetime.now()
                 session.commit()
-                
-                # Almacenar datos de sesión
                 page.client_storage.set("user_id", usuario.id)
                 page.client_storage.set("user_name", usuario.nombre)
-                
                 page.go("/Card")
             else:
                 page.show_snack_bar(
                     ft.SnackBar(
-                        content=ft.Text("Usuario o contraseña incorrectos"),
+                        content=ft.Text(config.get_text("login.errors.invalid_credentials")),
                         bgcolor=ft.colors.RED_400,
                         action="Ok"
                     )
@@ -51,7 +49,7 @@ def login_view(page: ft.Page):
             print(f"Error de login: {str(e)}")
             page.show_snack_bar(
                 ft.SnackBar(
-                    content=ft.Text("Error al intentar iniciar sesión"),
+                    content=ft.Text(config.get_text("login.errors.login_error")),
                     bgcolor=ft.colors.RED_400,
                     action="Ok"
                 )
@@ -71,32 +69,30 @@ def login_view(page: ft.Page):
             return False
 
     def exit_clicked(e=None):
-        page.window_destroy()
+        page.window.destroy()
 
-    # Campos de texto
     username = ft.TextField(
-        label="Usuario",
-        hint_text="ejemplo@correo.com",
+        label=config.get_text("login.username.label"),
+        hint_text=config.get_text("login.username.hint"),
         border_color=ft.colors.BLUE,
         width=300,
         text_align=ft.TextAlign.LEFT,
-        on_submit=login_clicked,  # Llama a login_clicked al presionar Enter
-        value="test@test.test"  # Valor predeterminado para pruebas
+        on_submit=login_clicked,
+        value="test@test.test"
     )
     
     password = ft.TextField(
-        label="Contraseña",
+        label=config.get_text("login.password.label"),
         password=True,
         can_reveal_password=True,
         border_color=ft.colors.BLUE,
         width=300,
-        on_submit=login_clicked,  # Llama a login_clicked al presionar Enter
-        value="abc123*-"  # Valor predeterminado para pruebas
+        on_submit=login_clicked,
+        value="abc123*-"
     )
 
-    # Botones
     btn_login = ft.ElevatedButton(
-        text="Ingresar",
+        text=config.get_text("login.buttons.login"),
         width=140,
         color=ft.colors.WHITE,
         bgcolor=ft.colors.BLUE,
@@ -104,14 +100,13 @@ def login_view(page: ft.Page):
     )
 
     btn_exit = ft.ElevatedButton(
-        text="Salir",
+        text=config.get_text("login.buttons.exit"),
         width=140,
         color=ft.colors.WHITE,
         bgcolor=ft.colors.RED,
         on_click=exit_clicked
     )
 
-    # Contenedor principal
     return ft.Container(
         width=400,
         height=500,
@@ -124,10 +119,8 @@ def login_view(page: ft.Page):
             spacing=20,
             controls=[
                 ft.Icon(ft.icons.PERSON_OUTLINE, size=50, color=ft.colors.BLUE),
-                ft.Text("Iniciar Sesión", size=28, weight=ft.FontWeight.BOLD),
+                ft.Text(config.get_text("login.title"), size=28, weight=ft.FontWeight.BOLD),
                 ft.Divider(height=20, color=ft.colors.TRANSPARENT),
-                
-                # Contenedor para los campos de entrada
                 ft.Container(
                     content=ft.Column(
                         spacing=15,
@@ -137,19 +130,15 @@ def login_view(page: ft.Page):
                         ],
                     ),
                 ),
-                
                 ft.Divider(height=20, color=ft.colors.TRANSPARENT),
-                
-                # Contenedor para los botones
                 ft.Container(
                     content=ft.Row(
                         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                         controls=[btn_exit, btn_login],
                     ),
                 ),
-                
                 ft.TextButton(
-                    text="¿No tienes cuenta? Regístrate aquí",
+                    text=config.get_text("login.register_link"),
                     on_click=lambda _: page.go("/newUser")
                 ),
             ],
@@ -157,5 +146,4 @@ def login_view(page: ft.Page):
         alignment=ft.alignment.center,
     )
 
-# Exportamos la función
 __all__ = ['login_view']

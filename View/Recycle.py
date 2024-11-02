@@ -1,8 +1,11 @@
 import flet as ft
 from data.database.connection import get_session
 from data.models.ficha import Ficha
+from config.config import Config
 
 def recycle_view(page: ft.Page):
+    # Inicializar Config
+    config = Config()
     selected_ficha = None
 
     def load_inactive_fichas():
@@ -15,15 +18,20 @@ def recycle_view(page: ft.Page):
                 Ficha.is_active == False
             ).all()
             
-            fichas_list.controls = [
+            # Crear los controles antes de asignarlos
+            controls = [
                 ft.ListTile(
                     leading=ft.Icon(ft.icons.DELETE_OUTLINE),
                     title=ft.Text(ficha.title),
                     on_click=lambda e, f=ficha: select_ficha(f)
                 ) for ficha in fichas
             ]
-            fichas_list.update()
-            page.update()
+            
+            # Asignar los controles al ListView
+            if fichas_list.controls is not None:  # Verificar que el ListView esté inicializado
+                fichas_list.controls = controls
+                fichas_list.update()
+                page.update()
         except Exception as e:
             print(f"Error cargando fichas inactivas: {str(e)}")
         finally:
@@ -52,7 +60,7 @@ def recycle_view(page: ft.Page):
                 load_inactive_fichas()
                 page.show_snack_bar(
                     ft.SnackBar(
-                        content=ft.Text("Ficha restaurada exitosamente"),
+                        content=ft.Text(config.get_text("recycle.messages.restore_success")),
                         bgcolor=ft.colors.GREEN_400,
                         action="Ok"
                     )
@@ -62,7 +70,7 @@ def recycle_view(page: ft.Page):
             print(f"Error restaurando ficha: {str(e)}")
             page.show_snack_bar(
                 ft.SnackBar(
-                    content=ft.Text("Error al restaurar la ficha"),
+                    content=ft.Text(config.get_text("recycle.messages.restore_error")),
                     bgcolor=ft.colors.RED_400,
                     action="Ok"
                 )
@@ -76,7 +84,7 @@ def recycle_view(page: ft.Page):
             return
 
         def confirm_delete(e):
-            if e.control.text == "Sí":
+            if e.control.text == config.get_text("card.buttons.yes"):
                 session = get_session()
                 try:
                     ficha = session.query(Ficha).filter(Ficha.id == selected_ficha.id).first()
@@ -86,7 +94,7 @@ def recycle_view(page: ft.Page):
                         load_inactive_fichas()
                         page.show_snack_bar(
                             ft.SnackBar(
-                                content=ft.Text("Ficha eliminada permanentemente"),
+                                content=ft.Text(config.get_text("recycle.messages.delete_success")),
                                 bgcolor=ft.colors.GREEN_400,
                                 action="Ok"
                             )
@@ -96,7 +104,7 @@ def recycle_view(page: ft.Page):
                     print(f"Error eliminando ficha: {str(e)}")
                     page.show_snack_bar(
                         ft.SnackBar(
-                            content=ft.Text("Error al eliminar la ficha"),
+                            content=ft.Text(config.get_text("recycle.messages.delete_error")),
                             bgcolor=ft.colors.RED_400,
                             action="Ok"
                         )
@@ -109,11 +117,11 @@ def recycle_view(page: ft.Page):
 
         dlg_modal = ft.AlertDialog(
             modal=True,
-            title=ft.Text("Confirmar eliminación permanente"),
-            content=ft.Text("¿Está seguro que desea eliminar permanentemente esta ficha? Esta acción no se puede deshacer."),
+            title=ft.Text(config.get_text("recycle.delete_confirmation.title")),
+            content=ft.Text(config.get_text("recycle.delete_confirmation.message")),
             actions=[
-                ft.TextButton("No", on_click=confirm_delete),
-                ft.TextButton("Sí", on_click=confirm_delete),
+                ft.TextButton(config.get_text("card.buttons.no"), on_click=confirm_delete),
+                ft.TextButton(config.get_text("card.buttons.yes"), on_click=confirm_delete),
             ],
             actions_alignment=ft.MainAxisAlignment.END,
         )
@@ -135,15 +143,15 @@ def recycle_view(page: ft.Page):
 
     # Botones
     btn_cancel = ft.ElevatedButton(
-        text="Cancelar",
+        text=config.get_text("recycle.buttons.cancel"),
         width=120,
         color=ft.colors.WHITE,
         bgcolor=ft.colors.BLUE,
-        on_click=cancel_clicked
+        on_click=lambda e: page.go("/Card")
     )
 
     btn_restore = ft.ElevatedButton(
-        text="Restaurar",
+        text=config.get_text("recycle.buttons.restore"),
         width=120,
         color=ft.colors.WHITE,
         bgcolor=ft.colors.GREEN,
@@ -152,7 +160,7 @@ def recycle_view(page: ft.Page):
     )
 
     btn_delete = ft.ElevatedButton(
-        text="Eliminar",
+        text=config.get_text("recycle.buttons.delete"),
         width=100,
         color=ft.colors.WHITE,
         bgcolor=ft.colors.RED,
@@ -173,7 +181,11 @@ def recycle_view(page: ft.Page):
             spacing=20,
             controls=[
                 ft.Icon(ft.icons.RECYCLING, size=50, color=ft.colors.BLUE),
-                ft.Text("Papelera de Reciclaje", size=28, weight=ft.FontWeight.BOLD),
+                ft.Text(
+                    config.get_text("recycle.title"),
+                    size=28,
+                    weight=ft.FontWeight.BOLD
+                ),
                 ft.Divider(height=20, color=ft.colors.TRANSPARENT),
                 
                 # Lista de fichas inactivas
@@ -199,10 +211,13 @@ def recycle_view(page: ft.Page):
         alignment=ft.alignment.center,
     )
 
-    # Cargar fichas inactivas al iniciar
-    load_inactive_fichas()
+    # En lugar de cargar directamente, usar did_mount
+    def on_view_mount():
+        load_inactive_fichas()
+    
+    main_view.did_mount = on_view_mount
     
     return main_view
 
 # Exportamos la función
-__all__ = ['recycle_view'] 
+__all__ = ['recycle_view']
