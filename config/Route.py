@@ -1,4 +1,4 @@
-import flet
+import flet as ft
 from flet import Page
 
 from View import Login, Card, newUser
@@ -8,6 +8,7 @@ from View.newUser import newUser_view
 from View.NewCard import new_card_view
 from View.EditCard import edit_card_view
 from View.Recycle import recycle_view
+from View.Navigation import create_navigation_bar
 from config.config import Config
 
 def views_handler(page: Page):
@@ -27,9 +28,9 @@ def views_handler(page: Page):
                 page.go("/editCard")
             else:
                 page.show_snack_bar(
-                    flet.SnackBar(
-                        content=flet.Text(t['errors']['select_card_edit']),
-                        bgcolor=flet.colors.RED_400,
+                    ft.SnackBar(
+                        content=ft.Text(t['errors']['select_card_edit']),
+                        bgcolor=ft.colors.RED_400,
                         action=t['buttons']['ok']
                     )
                 )
@@ -41,97 +42,54 @@ def views_handler(page: Page):
         elif index == 4:  # Salir
             page.go("/Login")
 
+    # Crear diccionario de vistas
     return {
-        '/Card': flet.View(
+        '/Card': ft.View(
             route='/Card',
-            controls=[
-                card_view(page)
-            ],
-            vertical_alignment=flet.MainAxisAlignment.START,
-            horizontal_alignment=flet.CrossAxisAlignment.CENTER,
+            controls=[card_view(page)],
+            vertical_alignment=ft.MainAxisAlignment.START,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             padding=20,
-            navigation_bar=flet.NavigationBar(
-                selected_index=0,
-                destinations=[
-                    flet.NavigationBarDestination(
-                        icon=flet.icons.ADD,
-                        selected_icon=flet.icons.ADD_CIRCLE,
-                        label=t['new'],
-                    ),
-                    flet.NavigationBarDestination(
-                        icon=flet.icons.EDIT,
-                        selected_icon=flet.icons.EDIT_ROUNDED,
-                        label=t['edit'],
-                    ),
-                    flet.NavigationBarDestination(
-                        icon=flet.icons.DELETE,
-                        selected_icon=flet.icons.DELETE_FOREVER,
-                        label=t['delete'],
-                    ),
-                    flet.NavigationBarDestination(
-                        icon=flet.icons.RECYCLING,
-                        selected_icon=flet.icons.RECYCLING_ROUNDED,
-                        label=t['recycle'],
-                    ),
-                    flet.NavigationBarDestination(
-                        icon=flet.icons.EXIT_TO_APP,
-                        selected_icon=flet.icons.EXIT_TO_APP_ROUNDED,
-                        label=t['exit'],
-                    ),
-                ],
-                on_change=handle_navigation_change,
-                bgcolor=flet.colors.SURFACE_VARIANT,
-                height=65,
-            )
+            navigation_bar=create_navigation_bar(page, handle_navigation_change)
         ),
-        '/Login': flet.View(
+        '/Login': ft.View(
             route='/Login',
-            controls=[
-                login_view(page)
-            ],
-            vertical_alignment=flet.MainAxisAlignment.CENTER,
-            horizontal_alignment=flet.CrossAxisAlignment.CENTER,
+            controls=[login_view(page)],
+            vertical_alignment=ft.MainAxisAlignment.CENTER,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             spacing=26,
-            padding=flet.padding.all(20),
+            padding=ft.padding.all(20),
         ),
-        '/newUser': flet.View(
+        '/newUser': ft.View(
             route='/newUser',
-            controls=[
-                newUser_view(page)
-            ],
-            vertical_alignment=flet.MainAxisAlignment.CENTER,
-            horizontal_alignment=flet.CrossAxisAlignment.CENTER,
+            controls=[newUser_view(page)],
+            vertical_alignment=ft.MainAxisAlignment.CENTER,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             spacing=26,
-            padding=flet.padding.all(20),
+            padding=ft.padding.all(20),
         ),
-        '/newCard': flet.View(  # Agregar la nueva ruta
+        '/newCard': ft.View(
             route='/newCard',
-            controls=[
-                new_card_view(page)
-            ],
-            vertical_alignment=flet.MainAxisAlignment.CENTER,
-            horizontal_alignment=flet.CrossAxisAlignment.CENTER,
+            controls=[new_card_view(page)],
+            vertical_alignment=ft.MainAxisAlignment.CENTER,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             spacing=26,
-            padding=flet.padding.all(20),
+            padding=ft.padding.all(20),
         ),
-        '/editCard': flet.View(
+        '/editCard': ft.View(
             route='/editCard',
-            controls=[
-                edit_card_view(page)
-            ],
-            vertical_alignment=flet.MainAxisAlignment.CENTER,
-            horizontal_alignment=flet.CrossAxisAlignment.CENTER,
+            controls=[edit_card_view(page)],
+            vertical_alignment=ft.MainAxisAlignment.CENTER,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             spacing=26,
-            padding=flet.padding.all(20),
+            padding=ft.padding.all(20),
         ),
-        '/recycle': flet.View(
+        '/recycle': ft.View(
             route='/recycle',
-            controls=[
-                recycle_view(page)
-            ],
-            vertical_alignment=flet.MainAxisAlignment.CENTER,
-            horizontal_alignment=flet.CrossAxisAlignment.CENTER,
+            controls=[recycle_view(page)],
+            vertical_alignment=ft.MainAxisAlignment.CENTER,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             spacing=26,
-            padding=flet.padding.all(20),
+            padding=ft.padding.all(20),
         ),
     }
