@@ -110,7 +110,7 @@ def login_view(page: ft.Page):
         width=300,
         text_align=ft.TextAlign.LEFT,
         on_submit=login_clicked,
-        value="test@test.test"
+        #value="test@test.test"
     )
     
     password = ft.TextField(
@@ -120,7 +120,7 @@ def login_view(page: ft.Page):
         border_color=ft.colors.BLUE,
         width=300,
         on_submit=login_clicked,
-        value="abc123*-"
+        #value="abc123*-"
     )
 
     btn_login = ft.ElevatedButton(
