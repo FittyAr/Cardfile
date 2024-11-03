@@ -1,0 +1,133 @@
+{
+    "login": {
+        "title": "Connexion",
+        "username": {
+            "label": "Utilisateur",
+            "hint": "exemple@email.com"
+        },
+        "password": {
+            "label": "Mot de passe",
+            "hint": "Entrez votre mot de passe"
+        },
+        "buttons": {
+            "login": "Se connecter",
+            "exit": "Quitter"
+        },
+        "register_link": "Pas de compte ? Inscrivez-vous ici",
+        "errors": {
+            "empty_fields": "Veuillez remplir tous les champs",
+            "invalid_credentials": "Nom d'utilisateur ou mot de passe incorrect",
+            "login_error": "Erreur lors de la connexion"
+        }
+    },
+    "new_user": {
+        "title": "Nouvel Utilisateur",
+        "fields": {
+            "name": {
+                "label": "Nom"
+            },
+            "email": {
+                "label": "Email"
+            },
+            "password": {
+                "label": "Mot de passe"
+            },
+            "confirm_password": {
+                "label": "Confirmer le mot de passe"
+            }
+        },
+        "buttons": {
+            "save": "Enregistrer",
+            "cancel": "Annuler"
+        },
+        "login_link": "Déjà un compte ? Connectez-vous ici",
+        "errors": {
+            "empty_fields": "Veuillez remplir tous les champs",
+            "passwords_dont_match": "Les mots de passe ne correspondent pas",
+            "password_length": "Le mot de passe doit contenir au moins 8 caractères",
+            "invalid_email": "Veuillez entrer un email valide",
+            "email_exists": "Cet email est déjà enregistré",
+            "create_error": "Erreur lors de la création de l'utilisateur"
+        },
+        "success": {
+            "user_created": "Utilisateur créé avec succès"
+        }
+    },
+    "card": {
+        "title": "Sélectionnez une carte",
+        "search": {
+            "label": "Rechercher",
+            "hint": "Tapez pour rechercher..."
+        },
+        "read_mode": "Mode lecture",
+        "delete": {
+            "no_selection": "Veuillez sélectionner une carte à supprimer",
+            "confirm_title": "Confirmer la suppression",
+            "confirm_message": "Êtes-vous sûr de vouloir supprimer cette carte ?",
+            "success": "Carte supprimée avec succès",
+            "error": "Erreur lors de la suppression de la carte"
+        },
+        "buttons": {
+            "yes": "Oui",
+            "no": "Non",
+            "ok": "Ok"
+        }
+    },
+    "navigation": {
+        "new": "Nouveau",
+        "edit": "Modifier",
+        "delete": "Supprimer",
+        "recycle": "Corbeille",
+        "exit": "Quitter",
+        "errors": {
+            "select_card_edit": "Veuillez sélectionner une carte à modifier"
+        }
+    },
+    "new_card": {
+        "title": "Nouvelle Carte",
+        "name": {
+            "label": "Nom de la Carte",
+            "empty_error": "Veuillez entrer un nom pour la carte"
+        },
+        "buttons": {
+            "save": "Enregistrer",
+            "cancel": "Annuler"
+        },
+        "errors": {
+            "save_error": "Erreur lors de l'enregistrement de la carte"
+        }
+    },
+    "edit_card": {
+        "title": "Modifier la Carte",
+        "name": {
+            "label": "Nom de la Carte",
+            "empty_error": "Veuillez entrer un nom pour la carte"
+        },
+        "buttons": {
+            "update": "Mettre à jour",
+            "cancel": "Annuler"
+        },
+        "messages": {
+            "success": "Carte mise à jour avec succès",
+            "error": "Erreur lors de la mise à jour de la carte"
+        }
+    },
+    "recycle": {
+        "title": "Corbeille",
+        "buttons": {
+            "restore": "Restaurer",
+            "delete": "Supprimer",
+            "cancel": "Annuler"
+        },
+        "messages": {
+            "restore_success": "Carte restaurée avec succès",
+            "restore_error": "Erreur lors de la restauration de la carte",
+            "delete_success": "Carte supprimée permanentement",
+            "delete_error": "Erreur lors de la suppression de la carte"
+        },
+        "delete_confirmation": {
+            "title": "Confirmer la suppression permanente",
+            "message": "Êtes-vous sûr de vouloir supprimer permanentement cette carte ? Cette action ne peut être annulée."
+        }
+    }
+} 

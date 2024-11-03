@@ -1,0 +1,133 @@
+{
+    "login": {
+        "title": "登录",
+        "username": {
+            "label": "用户名",
+            "hint": "示例@邮箱.com"
+        },
+        "password": {
+            "label": "密码",
+            "hint": "请输入密码"
+        },
+        "buttons": {
+            "login": "登录",
+            "exit": "退出"
+        },
+        "register_link": "没有账号？在此注册",
+        "errors": {
+            "empty_fields": "请填写所有字段",
+            "invalid_credentials": "用户名或密码无效",
+            "login_error": "登录尝试出错"
+        }
+    },
+    "new_user": {
+        "title": "新用户",
+        "fields": {
+            "name": {
+                "label": "姓名"
+            },
+            "email": {
+                "label": "邮箱"
+            },
+            "password": {
+                "label": "密码"
+            },
+            "confirm_password": {
+                "label": "确认密码"
+            }
+        },
+        "buttons": {
+            "save": "保存",
+            "cancel": "取消"
+        },
+        "login_link": "已有账号？在此登录",
+        "errors": {
+            "empty_fields": "请填写所有字段",
+            "passwords_dont_match": "密码不匹配",
+            "password_length": "密码长度必须至少为8个字符",
+            "invalid_email": "请输入有效的邮箱地址",
+            "email_exists": "邮箱已被注册",
+            "create_error": "创建用户时出错"
+        },
+        "success": {
+            "user_created": "用户创建成功"
+        }
+    },
+    "card": {
+        "title": "选择卡片",
+        "search": {
+            "label": "搜索",
+            "hint": "输入搜索内容..."
+        },
+        "read_mode": "阅读模式",
+        "delete": {
+            "no_selection": "请选择要删除的卡片",
+            "confirm_title": "确认删除",
+            "confirm_message": "确定要删除这张卡片吗？",
+            "success": "卡片删除成功",
+            "error": "删除卡片时出错"
+        },
+        "buttons": {
+            "yes": "是",
+            "no": "否",
+            "ok": "确定"
+        }
+    },
+    "navigation": {
+        "new": "新建",
+        "edit": "编辑",
+        "delete": "删除",
+        "recycle": "回收站",
+        "exit": "退出",
+        "errors": {
+            "select_card_edit": "请选择要编辑的卡片"
+        }
+    },
+    "new_card": {
+        "title": "新卡片",
+        "name": {
+            "label": "卡片名称",
+            "empty_error": "请输入卡片名称"
+        },
+        "buttons": {
+            "save": "保存",
+            "cancel": "取消"
+        },
+        "errors": {
+            "save_error": "保存卡片时出错"
+        }
+    },
+    "edit_card": {
+        "title": "编辑卡片",
+        "name": {
+            "label": "卡片名称",
+            "empty_error": "请输入卡片名称"
+        },
+        "buttons": {
+            "update": "更新",
+            "cancel": "取消"
+        },
+        "messages": {
+            "success": "卡片更新成功",
+            "error": "更新卡片时出错"
+        }
+    },
+    "recycle": {
+        "title": "回收站",
+        "buttons": {
+            "restore": "恢复",
+            "delete": "删除",
+            "cancel": "取消"
+        },
+        "messages": {
+            "restore_success": "卡片恢复成功",
+            "restore_error": "恢复卡片时出错",
+            "delete_success": "卡片已永久删除",
+            "delete_error": "删除卡片时出错"
+        },
+        "delete_confirmation": {
+            "title": "确认永久删除",
+            "message": "确定要永久删除这张卡片吗？此操作无法撤消。"
+        }
+    }
+} 

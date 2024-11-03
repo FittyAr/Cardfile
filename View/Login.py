@@ -8,6 +8,38 @@ from config.config import Config
 def login_view(page: ft.Page):
     config = Config()
     
+    def change_language(e):
+        selected_lang = language_dd.value
+        if config.set_language(selected_lang):
+            # Actualizar todos los textos en la vista
+            username.label = config.get_text("login.username.label")
+            username.hint_text = config.get_text("login.username.hint")
+            password.label = config.get_text("login.password.label")
+            btn_login.text = config.get_text("login.buttons.login")
+            btn_exit.text = config.get_text("login.buttons.exit")
+            register_link.text = config.get_text("login.register_link")
+            title_text.value = config.get_text("login.title")
+            page.update()
+
+    # Dropdown para selección de idioma
+    language_options = [
+        ft.dropdown.Option(opt["value"], opt["text"])
+        for opt in config.get_language_options()
+    ]
+    
+    language_dd = ft.Dropdown(
+        width=120,
+        options=language_options,
+        value=config.current_language,
+        on_change=change_language,
+    )
+
+    title_text = ft.Text(
+        config.get_text("login.title"),
+        size=28,
+        weight=ft.FontWeight.BOLD
+    )
+
     def login_clicked(e):
         if not username.value or not password.value:
             page.show_snack_bar(
@@ -107,6 +139,12 @@ def login_view(page: ft.Page):
         on_click=exit_clicked
     )
 
+    register_link = ft.TextButton(
+        text=config.get_text("login.register_link"),
+        on_click=lambda _: page.go("/newUser")
+    )
+
+    # Modificar el return para incluir el selector de idioma
     return ft.Container(
         width=400,
         height=500,
@@ -118,8 +156,16 @@ def login_view(page: ft.Page):
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             spacing=20,
             controls=[
+                # Agregar el selector de idioma en la parte superior
+                ft.Container(
+                    content=ft.Row(
+                        alignment=ft.MainAxisAlignment.END,
+                        controls=[language_dd],
+                    ),
+                    padding=ft.padding.only(bottom=10),
+                ),
                 ft.Icon(ft.icons.PERSON_OUTLINE, size=50, color=ft.colors.BLUE),
-                ft.Text(config.get_text("login.title"), size=28, weight=ft.FontWeight.BOLD),
+                title_text,
                 ft.Divider(height=20, color=ft.colors.TRANSPARENT),
                 ft.Container(
                     content=ft.Column(
@@ -137,10 +183,7 @@ def login_view(page: ft.Page):
                         controls=[btn_exit, btn_login],
                     ),
                 ),
-                ft.TextButton(
-                    text=config.get_text("login.register_link"),
-                    on_click=lambda _: page.go("/newUser")
-                ),
+                register_link,
             ],
         ),
         alignment=ft.alignment.center,
