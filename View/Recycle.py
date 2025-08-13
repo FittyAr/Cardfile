@@ -58,23 +58,23 @@ def recycle_view(page: ft.Page):
                 ficha.is_active = True
                 session.commit()
                 load_inactive_fichas()
-                page.show_snack_bar(
-                    ft.SnackBar(
-                        content=ft.Text(config.get_text("recycle.messages.restore_success")),
-                        bgcolor=ft.Colors.GREEN_400,
-                        action="Ok"
-                    )
+                page.snack_bar = ft.SnackBar(
+                    content=ft.Text(config.get_text("recycle.messages.restore_success")),
+                    bgcolor=ft.Colors.GREEN_400,
+                    action="Ok"
                 )
+                page.snack_bar.open = True
+                page.update()
         except Exception as e:
             session.rollback()
             print(f"Error restaurando ficha: {str(e)}")
-            page.show_snack_bar(
-                ft.SnackBar(
-                    content=ft.Text(config.get_text("recycle.messages.restore_error")),
-                    bgcolor=ft.colors.RED_400,
-                    action="Ok"
-                )
+            page.snack_bar = ft.SnackBar(
+                content=ft.Text(config.get_text("recycle.messages.restore_error")),
+                bgcolor=ft.Colors.RED_400,
+                action="Ok"
             )
+            page.snack_bar.open = True
+            page.update()
         finally:
             session.close()
 
@@ -92,23 +92,23 @@ def recycle_view(page: ft.Page):
                         session.delete(ficha)
                         session.commit()
                         load_inactive_fichas()
-                        page.show_snack_bar(
-                            ft.SnackBar(
-                        content=ft.Text(config.get_text("recycle.messages.delete_success")),
-                        bgcolor=ft.Colors.GREEN_400,
-                                action="Ok"
-                            )
+                        page.snack_bar = ft.SnackBar(
+                            content=ft.Text(config.get_text("recycle.messages.delete_success")),
+                            bgcolor=ft.Colors.GREEN_400,
+                            action="Ok"
                         )
+                        page.snack_bar.open = True
+                        page.update()
                 except Exception as e:
                     session.rollback()
                     print(f"Error eliminando ficha: {str(e)}")
-                    page.show_snack_bar(
-                        ft.SnackBar(
-                            content=ft.Text(config.get_text("recycle.messages.delete_error")),
-                            bgcolor=ft.Colors.RED_400,
-                            action="Ok"
-                        )
+                    page.snack_bar = ft.SnackBar(
+                        content=ft.Text(config.get_text("recycle.messages.delete_error")),
+                        bgcolor=ft.Colors.RED_400,
+                        action="Ok"
                     )
+                    page.snack_bar.open = True
+                    page.update()
                 finally:
                     session.close()
             

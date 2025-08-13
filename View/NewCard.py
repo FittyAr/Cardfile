@@ -10,13 +10,13 @@ def new_card_view(page: ft.Page):
 
     def save_clicked(e):
         if not card_name.value:
-            page.show_snack_bar(
-                ft.SnackBar(
-                    content=ft.Text(config.get_text("new_card.name.empty_error")),
-                    bgcolor=ft.Colors.RED_400,
-                    action="Ok"
-                )
+            page.snack_bar = ft.SnackBar(
+                content=ft.Text(config.get_text("new_card.name.empty_error")),
+                bgcolor=ft.Colors.RED_400,
+                action="Ok"
             )
+            page.snack_bar.open = True
+            page.update()
             return
         
         session = get_session()
@@ -39,13 +39,13 @@ def new_card_view(page: ft.Page):
         except Exception as e:
             session.rollback()
             print(f"Error al guardar ficha: {str(e)}")
-            page.show_snack_bar(
-                ft.SnackBar(
-                    content=ft.Text(config.get_text("new_card.errors.save_error")),
-                    bgcolor=ft.Colors.RED_400,
-                    action="Ok"
-                )
+            page.snack_bar = ft.SnackBar(
+                content=ft.Text(config.get_text("new_card.errors.save_error")),
+                bgcolor=ft.Colors.RED_400,
+                action="Ok"
             )
+            page.snack_bar.open = True
+            page.update()
         finally:
             session.close()
 

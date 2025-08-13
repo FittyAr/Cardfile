@@ -42,13 +42,13 @@ def login_view(page: ft.Page):
 
     def login_clicked(e):
         if not username.value or not password.value:
-            page.show_snack_bar(
-                ft.SnackBar(
-                    content=ft.Text(config.get_text("login.errors.empty_fields")),
-                    bgcolor=ft.Colors.RED_400,
-                    action="Ok"
-                )
+            page.snack_bar = ft.SnackBar(
+                content=ft.Text(config.get_text("login.errors.empty_fields")),
+                bgcolor=ft.Colors.RED_400,
+                action="Ok"
             )
+            page.snack_bar.open = True
+            page.update()
             page.update()
             return
         
@@ -66,26 +66,24 @@ def login_view(page: ft.Page):
                 page.client_storage.set("user_name", usuario.nombre)
                 page.go("/Card")
             else:
-                page.show_snack_bar(
-                    ft.SnackBar(
-                        content=ft.Text(config.get_text("login.errors.invalid_credentials")),
-                        bgcolor=ft.Colors.RED_400,
-                        action="Ok"
-                    )
+                page.snack_bar = ft.SnackBar(
+                    content=ft.Text(config.get_text("login.errors.invalid_credentials")),
+                    bgcolor=ft.Colors.RED_400,
+                    action="Ok"
                 )
+                page.snack_bar.open = True
                 password.value = ""
                 page.update()
 
         except Exception as e:
             session.rollback()
             print(f"Error de login: {str(e)}")
-            page.show_snack_bar(
-                ft.SnackBar(
-                    content=ft.Text(config.get_text("login.errors.login_error")),
-                    bgcolor=ft.Colors.RED_400,
-                    action="Ok"
-                )
+            page.snack_bar = ft.SnackBar(
+                content=ft.Text(config.get_text("login.errors.login_error")),
+                bgcolor=ft.Colors.RED_400,
+                action="Ok"
             )
+            page.snack_bar.open = True
             page.update()
         finally:
             session.close()

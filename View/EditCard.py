@@ -14,13 +14,13 @@ def edit_card_view(page: ft.Page):
 
     def save_clicked(e):
         if not card_name.value:
-            page.show_snack_bar(
-                ft.SnackBar(
-                    content=ft.Text(config.get_text("edit_card.name.empty_error")),
-                    bgcolor=ft.Colors.RED_400,
-                    action="Ok"
-                )
+            page.snack_bar = ft.SnackBar(
+                content=ft.Text(config.get_text("edit_card.name.empty_error")),
+                bgcolor=ft.Colors.RED_400,
+                action="Ok"
             )
+            page.snack_bar.open = True
+            page.update()
             return
         
         session = get_session()
@@ -31,25 +31,25 @@ def edit_card_view(page: ft.Page):
                 ficha.updated_at = datetime.now()
                 session.commit()
                 
-                page.show_snack_bar(
-                    ft.SnackBar(
-                        content=ft.Text(config.get_text("edit_card.messages.success")),
-                        bgcolor=ft.Colors.GREEN_400,
-                        action="Ok"
-                    )
+                page.snack_bar = ft.SnackBar(
+                    content=ft.Text(config.get_text("edit_card.messages.success")),
+                    bgcolor=ft.Colors.GREEN_400,
+                    action="Ok"
                 )
+                page.snack_bar.open = True
+                page.update()
                 page.go("/Card")
             
         except Exception as e:
             session.rollback()
             print(f"Error al actualizar ficha: {str(e)}")
-            page.show_snack_bar(
-                ft.SnackBar(
-                    content=ft.Text(config.get_text("edit_card.messages.error")),
-                    bgcolor=ft.Colors.RED_400,
-                    action="Ok"
-                )
+            page.snack_bar = ft.SnackBar(
+                content=ft.Text(config.get_text("edit_card.messages.error")),
+                bgcolor=ft.Colors.RED_400,
+                action="Ok"
             )
+            page.snack_bar.open = True
+            page.update()
         finally:
             session.close()
 

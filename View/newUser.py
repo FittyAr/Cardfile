@@ -67,30 +67,28 @@ def newUser_view(page: ft.Page):
     def save_clicked(e):
         # Validaciones
         if not all([nombre.value, email.value, password.value, confirm_password.value]):
-            page.show_snack_bar(
-                ft.SnackBar(content=ft.Text(t['errors']['empty_fields']))
-            )
+            page.snack_bar = ft.SnackBar(content=ft.Text(t['errors']['empty_fields']))
+            page.snack_bar.open = True
+            page.update()
             return
             
         if password.value != confirm_password.value:
-            page.show_snack_bar(
-                ft.SnackBar(content=ft.Text(t['errors']['passwords_dont_match']))
-            )
+            page.snack_bar = ft.SnackBar(content=ft.Text(t['errors']['passwords_dont_match']))
+            page.snack_bar.open = True
+            page.update()
             return
         
         # Validar longitud mínima de contraseña
         if len(password.value) < 8:
-            page.snack_bar = ft.SnackBar(
-                content=ft.Text(t['errors']['password_length'])
-            )
+            page.snack_bar = ft.SnackBar(content=ft.Text(t['errors']['password_length']))
             page.snack_bar.open = True
             page.update()
             return
         
         if not is_valid_email(email.value):
-            page.show_snack_bar(
-                ft.SnackBar(content=ft.Text(t['errors']['invalid_email']))
-            )
+            page.snack_bar = ft.SnackBar(content=ft.Text(t['errors']['invalid_email']))
+            page.snack_bar.open = True
+            page.update()
             return
         
         session = get_session()
@@ -101,9 +99,9 @@ def newUser_view(page: ft.Page):
             ).first()
             
             if existing_user:
-                page.show_snack_bar(
-                    ft.SnackBar(content=ft.Text(t['errors']['email_exists']))
-                )
+                page.snack_bar = ft.SnackBar(content=ft.Text(t['errors']['email_exists']))
+                page.snack_bar.open = True
+                page.update()
                 return
             
             # Crear nuevo usuario con contraseña hasheada
@@ -122,9 +120,9 @@ def newUser_view(page: ft.Page):
             session.commit()
             
             # Mostrar mensaje de éxito
-            page.show_snack_bar(
-                ft.SnackBar(content=ft.Text(t['success']['user_created']))
-            )
+            page.snack_bar = ft.SnackBar(content=ft.Text(t['success']['user_created']))
+            page.snack_bar.open = True
+            page.update()
             
             # Limpiar campos
             nombre.value = ""
@@ -139,9 +137,9 @@ def newUser_view(page: ft.Page):
         except Exception as e:
             session.rollback()
             print(f"Error al crear usuario: {str(e)}")
-            page.show_snack_bar(
-                ft.SnackBar(content=ft.Text(t['errors']['create_error']))
-            )
+            page.snack_bar = ft.SnackBar(content=ft.Text(t['errors']['create_error']))
+            page.snack_bar.open = True
+            page.update()
         finally:
             session.close()
 

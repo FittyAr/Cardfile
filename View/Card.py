@@ -172,13 +172,13 @@ def card_view(page: Page):
         nonlocal selected_ficha
         
         if not selected_ficha:
-            page.show_snack_bar(
-                ft.SnackBar(
-                    content=ft.Text(t['delete']['no_selection']),
-                    bgcolor=ft.Colors.RED_400,
-                    action=t['buttons']['ok']
-                )
+            page.snack_bar = ft.SnackBar(
+                content=ft.Text(t['delete']['no_selection']),
+                bgcolor=ft.Colors.RED_400,
+                action=t['buttons']['ok']
             )
+            page.snack_bar.open = True
+            page.update()
             return
 
         def confirm_delete(e):
@@ -198,24 +198,24 @@ def card_view(page: Page):
                         # Recargar la lista de fichas
                         load_fichas()
                         
-                        page.show_snack_bar(
-                            ft.SnackBar(
-                                content=ft.Text(t['delete']['success']),
-                                bgcolor=ft.Colors.GREEN_400,
-                                action=t['buttons']['ok']
-                            )
+                        page.snack_bar = ft.SnackBar(
+                            content=ft.Text(t['delete']['success']),
+                            bgcolor=ft.Colors.GREEN_400,
+                            action=t['buttons']['ok']
                         )
+                        page.snack_bar.open = True
+                        page.update()
                     
                 except Exception as e:
                     session.rollback()
                     print(f"Error desactivando ficha: {str(e)}")
-                    page.show_snack_bar(
-                        ft.SnackBar(
-                            content=ft.Text(t['delete']['error']),
-                            bgcolor=ft.Colors.RED_400,
-                            action=t['buttons']['ok']
-                        )
+                    page.snack_bar = ft.SnackBar(
+                        content=ft.Text(t['delete']['error']),
+                        bgcolor=ft.Colors.RED_400,
+                        action=t['buttons']['ok']
                     )
+                    page.snack_bar.open = True
+                    page.update()
                 finally:
                     session.close()
             

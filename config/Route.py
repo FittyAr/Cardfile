@@ -27,13 +27,13 @@ def views_handler(page: Page):
             if selected_ficha:
                 page.go("/editCard")
             else:
-                page.show_snack_bar(
-                    ft.SnackBar(
-                        content=ft.Text(t['errors']['select_card_edit']),
-                        bgcolor=ft.Colors.RED_400,
-                        action=t['buttons']['ok']
-                    )
+                page.snack_bar = ft.SnackBar(
+                    content=ft.Text(t['errors']['select_card_edit']),
+                    bgcolor=ft.Colors.RED_400,
+                    action=t['buttons']['ok']
                 )
+                page.snack_bar.open = True
+                page.update()
         elif index == 2:  # Eliminar
             if hasattr(page, 'delete_ficha'):
                 page.delete_ficha()
