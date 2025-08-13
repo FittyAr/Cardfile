@@ -358,10 +358,9 @@ def card_view(page: Page):
         try:
             session = get_session()
             user_id = page.client_storage.get("user_id")
-            # Cachear todas las fichas activas del usuario
+            # Cachear todas las fichas del usuario (activas e inactivas)
             cached = session.query(Ficha).filter(
-                Ficha.usuario_id == user_id,
-                Ficha.is_active == True
+                Ficha.usuario_id == user_id
             ).all()
             fichas_cache.clear()
             fichas_cache.extend(cached)
