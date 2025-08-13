@@ -26,6 +26,9 @@ def card_view(page: Page):
         padding=20,
         height=500
     )
+    # Caché y debounce para búsqueda
+    fichas_cache: list[Ficha] = []
+    search_debounce_timer: Optional[threading.Timer] = None
     
     # Obtener configuración y traducciones
     config = Config()
@@ -172,45 +175,39 @@ def card_view(page: Page):
         alignment=ft.MainAxisAlignment.END
     )
 
-    # Agregar el campo de búsqueda
-    def filter_fichas(e):
-        """Filtra las fichas basado en el texto de búsqueda"""
-        search_text = e.control.value.lower().strip() if e.control.value else ""
-        session = get_session()
-        try:
-            user_id = page.client_storage.get("user_id")
-            # Obtener todas las fichas del usuario
-            fichas = session.query(Ficha).filter(Ficha.usuario_id == user_id).all()
-            
-            # Si no hay texto de búsqueda, mostrar todas las fichas
-            if not search_text:
-                filtered_fichas = fichas
-            else:
-                # Filtrar las fichas que contienen el texto de búsqueda en el título
-                filtered_fichas = [
-                    ficha for ficha in fichas 
-                    if search_text in ficha.title.lower()
-                ]
-            
-            # Actualizar la lista con las fichas filtradas
-            fichas_list.controls = [
-                ft.ListTile(
-                    leading=ft.Icon(ft.Icons.DESCRIPTION),
-                    title=ft.Text(ficha.title),
-                    on_click=lambda e, ficha=ficha: select_ficha(ficha)
-                ) for ficha in filtered_fichas
-            ]
-            fichas_list.update()
-            page.update()
-        except Exception as e:
-            print(f"Error filtrando fichas: {str(e)}")
-        finally:
-            session.close()
+    # Agregar el campo de búsqueda con debounce y caché
+    def apply_filter_and_render(search_text: str):
+        search_text = (search_text or "").lower().strip()
+        if not search_text:
+            filtered = fichas_cache
+        else:
+            filtered = [f for f in fichas_cache if (f.title or "").lower().find(search_text) >= 0]
+        fichas_list.controls = [
+            ft.ListTile(
+                leading=ft.Icon(ft.Icons.DESCRIPTION),
+                title=ft.Text(f.title),
+                on_click=lambda e, ficha=f: select_ficha(ficha)
+            ) for f in filtered
+        ]
+        fichas_list.update()
+        page.update()
+
+    def search_changed(e):
+        nonlocal search_debounce_timer
+        if search_debounce_timer:
+            try:
+                search_debounce_timer.cancel()
+            except Exception:
+                pass
+        query = e.control.value
+        search_debounce_timer = threading.Timer(0.3, lambda: apply_filter_and_render(query))
+        search_debounce_timer.daemon = True
+        search_debounce_timer.start()
 
     # Actualizar el campo de búsqueda para usar la función de filtrado
     search_field = ft.TextField(
         label=t['search']['label'],
-        on_change=filter_fichas,  # Conectar la función de filtrado
+        on_change=search_changed,  # Conectar la función de filtrado con debounce
         expand=True,
         border_color=ft.Colors.BLUE_200,
         hint_text=t['search']['hint'],  # Texto de ayuda
@@ -228,7 +225,7 @@ def card_view(page: Page):
         })
         
         # Habilitar el switch cuando se selecciona una ficha
-        edit_switch.controls[1].disabled = False
+        edit_switch.controls[2].disabled = False
         # Inicializar estado de guardado
         last_saved_value = ficha.descripcion or ""
         has_unsaved_changes = False
@@ -267,7 +264,7 @@ def card_view(page: Page):
                 title_label.value = ficha_actualizada.title
                 description_text.value = ficha_actualizada.descripcion
                 description_text.read_only = True
-                edit_switch.controls[1].value = False
+                edit_switch.controls[2].value = False
                 should_save = False
                 # Reset estado al cargar
                 last_saved_value = ficha_actualizada.descripcion or ""
@@ -361,23 +358,15 @@ def card_view(page: Page):
         try:
             session = get_session()
             user_id = page.client_storage.get("user_id")
-            fichas = session.query(Ficha).filter(
+            # Cachear todas las fichas activas del usuario
+            cached = session.query(Ficha).filter(
                 Ficha.usuario_id == user_id,
                 Ficha.is_active == True
             ).all()
-            
-            # Crear los controles antes de asignarlos
-            controls = [
-                ft.ListTile(
-                    leading=ft.Icon(ft.Icons.DESCRIPTION),
-                    title=ft.Text(ficha.title),
-                    on_click=lambda e, ficha=ficha: select_ficha(ficha)
-                ) for ficha in fichas
-            ]
-            
-            # Asignar los controles al ListView
-            fichas_list.controls = controls
-            page.update()
+            fichas_cache.clear()
+            fichas_cache.extend(cached)
+            # Render según el texto actual del buscador
+            apply_filter_and_render(search_field.value)
         except Exception as e:
             print(f"Error cargando fichas: {str(e)}")
         finally:
@@ -418,8 +407,8 @@ def card_view(page: Page):
         title_label.value = ""
         description_text.value = ""
         description_text.read_only = True
-        edit_switch.controls[1].disabled = True
-        edit_switch.controls[1].value = False
+        edit_switch.controls[2].disabled = True
+        edit_switch.controls[2].value = False
         should_save = False
         page.update()
 
@@ -480,7 +469,7 @@ def card_view(page: Page):
 
     def on_view_unmount():
         # Guardar lo pendiente y limpiar timers/hilos y handlers
-        nonlocal save_thread, should_save, debounce_timer
+        nonlocal save_thread, should_save, debounce_timer, search_debounce_timer
         try:
             if debounce_timer:
                 try:
@@ -488,6 +477,12 @@ def card_view(page: Page):
                 except Exception:
                     pass
                 debounce_timer = None
+            if search_debounce_timer:
+                try:
+                    search_debounce_timer.cancel()
+                except Exception:
+                    pass
+                search_debounce_timer = None
             save_if_needed()
         finally:
             should_save = False
