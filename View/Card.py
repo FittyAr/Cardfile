@@ -218,7 +218,7 @@ def card_view(page: Page):
 
     def select_ficha(ficha):
         """Maneja la selección de una ficha"""
-        nonlocal selected_ficha, should_save
+        nonlocal selected_ficha, should_save, debounce_timer, last_saved_value, has_unsaved_changes
         
         # Guardar la ficha seleccionada en el almacenamiento del cliente
         page.client_storage.set("selected_ficha", {
