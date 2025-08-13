@@ -10,8 +10,15 @@ from config.config import Config
 def card_view(page: Page):
     # Atributos
     selected_ficha = None  # Variable para mantener la ficha seleccionada
-    save_thread: Optional[threading.Thread] = None
-    should_save = False
+    save_thread: Optional[threading.Thread] = None  # hilo de autosave periódico
+    should_save = False  # indicador de autosave en ejecución
+    # Parámetros de guardado
+    DEBOUNCE_SECONDS = 1.0
+    PERIODIC_AUTOSAVE_SECONDS = 15
+    # Estado de guardado
+    last_saved_value: str = ""
+    has_unsaved_changes = False
+    debounce_timer: Optional[threading.Timer] = None
     
     fichas_list = ft.ListView(
         expand=1,
@@ -39,36 +46,127 @@ def card_view(page: Page):
         read_only=True,
         border_color=ft.Colors.BLUE_200,
         bgcolor=ft.Colors.WHITE10,
-        expand=True
+        expand=True,
+        on_change=lambda e: description_changed()
     )
+
+    # Indicador de estado de guardado
+    save_status_icon = ft.Icon(ft.Icons.CHECK_CIRCLE, size=14, color=ft.Colors.GREEN_400)
+    save_status_text = ft.Text("Guardado", size=12)
+    save_status = ft.Row([save_status_icon, save_status_text], spacing=6, alignment=ft.MainAxisAlignment.END)
+
+    def set_status(state: str):
+        # estados: idle, dirty, saving, saved, error
+        if state == "dirty":
+            save_status_icon.name = ft.Icons.EDIT
+            save_status_icon.color = ft.Colors.AMBER_400
+            save_status_text.value = "Cambios sin guardar"
+        elif state == "saving":
+            save_status_icon.name = ft.Icons.SYNC
+            save_status_icon.color = ft.Colors.BLUE_400
+            save_status_text.value = "Guardando..."
+        elif state == "saved":
+            save_status_icon.name = ft.Icons.CHECK_CIRCLE
+            save_status_icon.color = ft.Colors.GREEN_400
+            save_status_text.value = "Guardado"
+        elif state == "error":
+            save_status_icon.name = ft.Icons.ERROR
+            save_status_icon.color = ft.Colors.RED_400
+            save_status_text.value = "Error al guardar"
+        else:  # idle
+            save_status_icon.name = ft.Icons.INFO
+            save_status_icon.color = ft.Colors.SURFACE_TINT
+            save_status_text.value = "Listo"
+        save_status.update()
+
+    def save_if_needed():
+        nonlocal last_saved_value, has_unsaved_changes
+        if not selected_ficha:
+            return
+        value = description_text.value or ""
+        if value == last_saved_value and not has_unsaved_changes:
+            return
+        set_status("saving")
+        session = get_session()
+        try:
+            ficha = session.query(Ficha).filter(Ficha.id == selected_ficha.id).first()
+            if ficha:
+                ficha.descripcion = value
+                session.commit()
+                last_saved_value = value
+                has_unsaved_changes = False
+                set_status("saved")
+        except Exception as ex:
+            try:
+                session.rollback()
+            except Exception:
+                pass
+            print(f"Error en guardado (debounce/autosave): {str(ex)}")
+            set_status("error")
+        finally:
+            session.close()
+            page.update()
+
+    def description_changed():
+        nonlocal has_unsaved_changes, debounce_timer
+        has_unsaved_changes = True
+        set_status("dirty")
+        if debounce_timer:
+            try:
+                debounce_timer.cancel()
+            except Exception:
+                pass
+        debounce_timer = threading.Timer(DEBOUNCE_SECONDS, save_if_needed)
+        debounce_timer.daemon = True
+        debounce_timer.start()
 
     # Agregar el control deslizante y su función manejadora
     def toggle_readonly(e):
         """Maneja el cambio del switch de modo lectura"""
-        nonlocal save_thread, should_save
+        nonlocal save_thread, should_save, debounce_timer
         description_text.read_only = not description_text.read_only
-        
-        if not description_text.read_only:  # Si se activa el modo edición
+        if not description_text.read_only:  # entra en modo edición
+            set_status("idle")
             should_save = True
-            save_thread = threading.Thread(target=auto_save)
-            save_thread.daemon = True  # El hilo se cerrará cuando el programa principal termine
-            save_thread.start()
-        else:  # Si se desactiva el modo edición
+            if not save_thread:
+                save_thread = threading.Thread(target=periodic_autosave)
+                save_thread.daemon = True
+                save_thread.start()
+            edit_mode_label.value = "Modo edición"
+            edit_mode_icon.name = ft.Icons.LOCK_OPEN
+            description_text.border_color = ft.Colors.AMBER_400
+        else:  # vuelve a modo lectura
             should_save = False
             if save_thread:
-                save_thread.join(timeout=1.1)  # Esperar a que termine el último guardado
-                save_thread = None
-        
+                try:
+                    save_if_needed()
+                finally:
+                    save_thread.join(timeout=1.1)
+                    save_thread = None
+            edit_mode_label.value = "Modo lectura"
+            edit_mode_icon.name = ft.Icons.LOCK
+            description_text.border_color = ft.Colors.BLUE_200
+            if debounce_timer:
+                try:
+                    debounce_timer.cancel()
+                except Exception:
+                    pass
+                debounce_timer = None
+        edit_mode_label.update()
         description_text.update()
         
+    edit_mode_label = ft.Text("Modo lectura")
+    edit_mode_icon = ft.Icon(ft.Icons.LOCK, color=ft.Colors.BLUE_400)
     edit_switch = ft.Row(
         controls=[
-            ft.Text(t['read_mode']),
+            edit_mode_icon,
+            edit_mode_label,
             ft.Switch(
                 value=False,
                 on_change=toggle_readonly,
                 active_color=ft.Colors.BLUE,
-                disabled=True
+                disabled=True,
+                tooltip="Activar/Desactivar edición"
             )
         ],
         alignment=ft.MainAxisAlignment.END
@@ -131,6 +229,17 @@ def card_view(page: Page):
         
         # Habilitar el switch cuando se selecciona una ficha
         edit_switch.controls[1].disabled = False
+        # Inicializar estado de guardado
+        last_saved_value = ficha.descripcion or ""
+        has_unsaved_changes = False
+        set_status("idle")
+        # Cancelar debounce pendiente
+        if debounce_timer:
+            try:
+                debounce_timer.cancel()
+            except Exception:
+                pass
+            debounce_timer = None
         
         # Si hay una ficha seleccionada anteriormente y hay cambios sin guardar
         if selected_ficha and description_text.value != selected_ficha.descripcion:
@@ -160,6 +269,10 @@ def card_view(page: Page):
                 description_text.read_only = True
                 edit_switch.controls[1].value = False
                 should_save = False
+                # Reset estado al cargar
+                last_saved_value = ficha_actualizada.descripcion or ""
+                has_unsaved_changes = False
+                set_status("idle")
                 print(f"✅ Ficha {ficha_actualizada.id} cargada con éxito")
         except Exception as e:
             print(f"❌ Error cargando ficha: {str(e)}")
@@ -270,23 +383,31 @@ def card_view(page: Page):
         finally:
             session.close()
 
-    def auto_save():
-        """Función que se ejecuta en un hilo separado para guardar periódicamente"""
-        nonlocal should_save, selected_ficha
+    def periodic_autosave():
+        """Hilo de autosave periódico durante la edición"""
+        nonlocal should_save
         while should_save:
-            if selected_ficha and description_text.value != selected_ficha.descripcion:
-                session = get_session()
-                try:
-                    ficha = session.query(Ficha).filter(Ficha.id == selected_ficha.id).first()
-                    if ficha:
-                        ficha.descripcion = description_text.value
-                        session.commit()
-                        print("Guardado automático realizado")
-                except Exception as e:
-                    print(f"Error en guardado automático: {str(e)}")
-                finally:
-                    session.close()
-            time.sleep(1)  # Esperar 1 segundo
+            time.sleep(PERIODIC_AUTOSAVE_SECONDS)
+            try:
+                save_if_needed()
+            except Exception as ex:
+                print(f"Error en autosave periódico: {str(ex)}")
+
+    # Guardado forzado (atajo de teclado Ctrl+S)
+    def force_save_now(e=None):
+        save_if_needed()
+        page.snack_bar = ft.SnackBar(content=ft.Text("Cambios guardados"), bgcolor=ft.Colors.GREEN_400)
+        page.snack_bar.open = True
+        page.update()
+
+    def on_keyboard(e: ft.KeyboardEvent):
+        try:
+            key = (e.key or "").lower()
+            if getattr(e, "ctrl", False) and key == "s":
+                force_save_now(e)
+        except Exception:
+            pass
+    page.on_keyboard_event = on_keyboard
 
     def clear_selection():
         """Limpia la selección actual"""
@@ -308,6 +429,7 @@ def card_view(page: Page):
             controls=[
                 title_label,
                 edit_switch,  # Agregar el switch aquí
+                save_status,
                 ft.Divider(height=20, color=ft.Colors.TRANSPARENT),
                 description_text
             ],
@@ -355,6 +477,29 @@ def card_view(page: Page):
     # Cargar fichas después de que la vista esté montada
     def on_view_mount():
         load_fichas()
-    
+
+    def on_view_unmount():
+        # Guardar lo pendiente y limpiar timers/hilos y handlers
+        nonlocal save_thread, should_save, debounce_timer
+        try:
+            if debounce_timer:
+                try:
+                    debounce_timer.cancel()
+                except Exception:
+                    pass
+                debounce_timer = None
+            save_if_needed()
+        finally:
+            should_save = False
+            if save_thread:
+                try:
+                    save_thread.join(timeout=0.3)
+                except Exception:
+                    pass
+                save_thread = None
+            # Liberar handler de teclado si corresponde a esta vista
+            page.on_keyboard_event = None
+
     main_view.did_mount = on_view_mount
+    main_view.will_unmount = on_view_unmount
     return main_view
