@@ -25,14 +25,14 @@ def newUser_view(page: ft.Page):
     # Campos de texto
     nombre = ft.TextField(
         label=t['fields']['name']['label'],
-        border_color=ft.colors.BLUE,
+        border_color=ft.Colors.BLUE,
         width=300,
         text_align=ft.TextAlign.LEFT,
     )
     
     email = ft.TextField(
         label=t['fields']['email']['label'],
-        border_color=ft.colors.BLUE,
+        border_color=ft.Colors.BLUE,
         width=300,
         text_align=ft.TextAlign.LEFT,
     )
@@ -41,7 +41,7 @@ def newUser_view(page: ft.Page):
         label=t['fields']['password']['label'],
         password=True,
         can_reveal_password=True,
-        border_color=ft.colors.BLUE,
+        border_color=ft.Colors.BLUE,
         width=300,
     )
     
@@ -49,7 +49,7 @@ def newUser_view(page: ft.Page):
         label=t['fields']['confirm_password']['label'],
         password=True,
         can_reveal_password=True,
-        border_color=ft.colors.BLUE,
+        border_color=ft.Colors.BLUE,
         width=300,
     )
 
@@ -152,16 +152,16 @@ def newUser_view(page: ft.Page):
     btn_save = ft.ElevatedButton(
         text=t['buttons']['save'],
         width=140,
-        color=ft.colors.WHITE,
-        bgcolor=ft.colors.BLUE,
+        color=ft.Colors.WHITE,
+        bgcolor=ft.Colors.BLUE,
         on_click=save_clicked
     )
 
     btn_cancel = ft.ElevatedButton(
         text=t['buttons']['cancel'],
         width=140,
-        color=ft.colors.WHITE,
-        bgcolor=ft.colors.RED,
+        color=ft.Colors.WHITE,
+        bgcolor=ft.Colors.RED,
         on_click=cancel_clicked
     )
 
@@ -169,17 +169,17 @@ def newUser_view(page: ft.Page):
     return ft.Container(
         width=400,
         height=600,  # Un poco más alto para acomodar los campos extra
-        bgcolor=ft.colors.WHITE10,
-        border=ft.border.all(2, ft.colors.BLUE_200),
+        bgcolor=ft.Colors.WHITE10,
+        border=ft.border.all(2, ft.Colors.BLUE_200),
         border_radius=15,
         padding=30,
         content=ft.Column(
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             spacing=20,
             controls=[
-                ft.Icon(ft.icons.PERSON_ADD, size=50, color=ft.colors.BLUE),
+                ft.Icon(ft.Icons.PERSON_ADD, size=50, color=ft.Colors.BLUE),
                 ft.Text(t['title'], size=28, weight=ft.FontWeight.BOLD),
-                ft.Divider(height=20, color=ft.colors.TRANSPARENT),
+                ft.Divider(height=20, color=ft.Colors.TRANSPARENT),
                 
                 # Contenedor para los campos de entrada
                 ft.Container(
@@ -194,7 +194,7 @@ def newUser_view(page: ft.Page):
                     ),
                 ),
                 
-                ft.Divider(height=20, color=ft.colors.TRANSPARENT),
+                ft.Divider(height=20, color=ft.Colors.TRANSPARENT),
                 
                 # Contenedor para los botones
                 ft.Container(

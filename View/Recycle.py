@@ -21,7 +21,7 @@ def recycle_view(page: ft.Page):
             # Crear los controles antes de asignarlos
             controls = [
                 ft.ListTile(
-                    leading=ft.Icon(ft.icons.DELETE_OUTLINE),
+                    leading=ft.Icon(ft.Icons.DELETE_OUTLINE),
                     title=ft.Text(ficha.title),
                     on_click=lambda e, f=ficha: select_ficha(f)
                 ) for ficha in fichas
@@ -61,7 +61,7 @@ def recycle_view(page: ft.Page):
                 page.show_snack_bar(
                     ft.SnackBar(
                         content=ft.Text(config.get_text("recycle.messages.restore_success")),
-                        bgcolor=ft.colors.GREEN_400,
+                        bgcolor=ft.Colors.GREEN_400,
                         action="Ok"
                     )
                 )
@@ -94,8 +94,8 @@ def recycle_view(page: ft.Page):
                         load_inactive_fichas()
                         page.show_snack_bar(
                             ft.SnackBar(
-                                content=ft.Text(config.get_text("recycle.messages.delete_success")),
-                                bgcolor=ft.colors.GREEN_400,
+                        content=ft.Text(config.get_text("recycle.messages.delete_success")),
+                        bgcolor=ft.Colors.GREEN_400,
                                 action="Ok"
                             )
                         )
@@ -105,7 +105,7 @@ def recycle_view(page: ft.Page):
                     page.show_snack_bar(
                         ft.SnackBar(
                             content=ft.Text(config.get_text("recycle.messages.delete_error")),
-                            bgcolor=ft.colors.RED_400,
+                            bgcolor=ft.Colors.RED_400,
                             action="Ok"
                         )
                     )
@@ -145,16 +145,16 @@ def recycle_view(page: ft.Page):
     btn_cancel = ft.ElevatedButton(
         text=config.get_text("recycle.buttons.cancel"),
         width=120,
-        color=ft.colors.WHITE,
-        bgcolor=ft.colors.BLUE,
+        color=ft.Colors.WHITE,
+        bgcolor=ft.Colors.BLUE,
         on_click=lambda e: page.go("/Card")
     )
 
     btn_restore = ft.ElevatedButton(
         text=config.get_text("recycle.buttons.restore"),
         width=120,
-        color=ft.colors.WHITE,
-        bgcolor=ft.colors.GREEN,
+        color=ft.Colors.WHITE,
+        bgcolor=ft.Colors.GREEN,
         on_click=restore_clicked,
         disabled=True
     )
@@ -162,8 +162,8 @@ def recycle_view(page: ft.Page):
     btn_delete = ft.ElevatedButton(
         text=config.get_text("recycle.buttons.delete"),
         width=100,
-        color=ft.colors.WHITE,
-        bgcolor=ft.colors.RED,
+        color=ft.Colors.WHITE,
+        bgcolor=ft.Colors.RED,
         on_click=delete_clicked,
         disabled=True
     )
@@ -172,32 +172,32 @@ def recycle_view(page: ft.Page):
     main_view = ft.Container(
         width=400,
         height=500,
-        bgcolor=ft.colors.WHITE10,
-        border=ft.border.all(2, ft.colors.BLUE_200),
+        bgcolor=ft.Colors.WHITE10,
+        border=ft.border.all(2, ft.Colors.BLUE_200),
         border_radius=15,
         padding=30,
         content=ft.Column(
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             spacing=20,
             controls=[
-                ft.Icon(ft.icons.RECYCLING, size=50, color=ft.colors.BLUE),
+                ft.Icon(ft.Icons.RECYCLING, size=50, color=ft.Colors.BLUE),
                 ft.Text(
                     config.get_text("recycle.title"),
                     size=28,
                     weight=ft.FontWeight.BOLD
                 ),
-                ft.Divider(height=20, color=ft.colors.TRANSPARENT),
+                ft.Divider(height=20, color=ft.Colors.TRANSPARENT),
                 
                 # Lista de fichas inactivas
                 ft.Container(
                     content=fichas_list,
-                    border=ft.border.all(2, ft.colors.BLUE_200),
+                    border=ft.border.all(2, ft.Colors.BLUE_200),
                     border_radius=10,
                     padding=10,
                     expand=True
                 ),
                 
-                ft.Divider(height=20, color=ft.colors.TRANSPARENT),
+                ft.Divider(height=20, color=ft.Colors.TRANSPARENT),
                 
                 # Contenedor para los botones
                 ft.Container(

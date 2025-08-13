@@ -30,7 +30,7 @@ def views_handler(page: Page):
                 page.show_snack_bar(
                     ft.SnackBar(
                         content=ft.Text(t['errors']['select_card_edit']),
-                        bgcolor=ft.colors.RED_400,
+                        bgcolor=ft.Colors.RED_400,
                         action=t['buttons']['ok']
                     )
                 )

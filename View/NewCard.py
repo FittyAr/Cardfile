@@ -13,7 +13,7 @@ def new_card_view(page: ft.Page):
             page.show_snack_bar(
                 ft.SnackBar(
                     content=ft.Text(config.get_text("new_card.name.empty_error")),
-                    bgcolor=ft.colors.RED_400,
+                    bgcolor=ft.Colors.RED_400,
                     action="Ok"
                 )
             )
@@ -42,7 +42,7 @@ def new_card_view(page: ft.Page):
             page.show_snack_bar(
                 ft.SnackBar(
                     content=ft.Text(config.get_text("new_card.errors.save_error")),
-                    bgcolor=ft.colors.RED_400,
+                    bgcolor=ft.Colors.RED_400,
                     action="Ok"
                 )
             )
@@ -55,7 +55,7 @@ def new_card_view(page: ft.Page):
     # Campo para el nombre de la tarjeta
     card_name = ft.TextField(
         label=config.get_text("new_card.name.label"),
-        border_color=ft.colors.BLUE,
+        border_color=ft.Colors.BLUE,
         width=300,
         on_submit=save_clicked,
         text_align=ft.TextAlign.LEFT,
@@ -66,16 +66,16 @@ def new_card_view(page: ft.Page):
     btn_save = ft.ElevatedButton(
         text=config.get_text("new_card.buttons.save"),
         width=140,
-        color=ft.colors.WHITE,
-        bgcolor=ft.colors.BLUE,
+        color=ft.Colors.WHITE,
+        bgcolor=ft.Colors.BLUE,
         on_click=save_clicked
     )
 
     btn_cancel = ft.ElevatedButton(
         text=config.get_text("new_card.buttons.cancel"),
         width=140,
-        color=ft.colors.WHITE,
-        bgcolor=ft.colors.RED,
+        color=ft.Colors.WHITE,
+        bgcolor=ft.Colors.RED,
         on_click=cancel_clicked
     )
 
@@ -83,7 +83,7 @@ def new_card_view(page: ft.Page):
     return ft.Container(
         width=400,
         height=300,
-        border=ft.border.all(2, ft.colors.BLUE_200),
+        border=ft.border.all(2, ft.Colors.BLUE_200),
         border_radius=15,
         padding=30,
         content=ft.Column(
@@ -95,9 +95,9 @@ def new_card_view(page: ft.Page):
                     size=24,
                     weight=ft.FontWeight.BOLD
                 ),
-                ft.Divider(height=20, color=ft.colors.TRANSPARENT),
+                ft.Divider(height=20, color=ft.Colors.TRANSPARENT),
                 card_name,
-                ft.Divider(height=20, color=ft.colors.TRANSPARENT),
+                ft.Divider(height=20, color=ft.Colors.TRANSPARENT),
                 ft.Row(
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                     controls=[btn_cancel, btn_save],

@@ -45,7 +45,7 @@ def login_view(page: ft.Page):
             page.show_snack_bar(
                 ft.SnackBar(
                     content=ft.Text(config.get_text("login.errors.empty_fields")),
-                    bgcolor=ft.colors.RED_400,
+                    bgcolor=ft.Colors.RED_400,
                     action="Ok"
                 )
             )
@@ -69,7 +69,7 @@ def login_view(page: ft.Page):
                 page.show_snack_bar(
                     ft.SnackBar(
                         content=ft.Text(config.get_text("login.errors.invalid_credentials")),
-                        bgcolor=ft.colors.RED_400,
+                        bgcolor=ft.Colors.RED_400,
                         action="Ok"
                     )
                 )
@@ -82,7 +82,7 @@ def login_view(page: ft.Page):
             page.show_snack_bar(
                 ft.SnackBar(
                     content=ft.Text(config.get_text("login.errors.login_error")),
-                    bgcolor=ft.colors.RED_400,
+                    bgcolor=ft.Colors.RED_400,
                     action="Ok"
                 )
             )
@@ -106,7 +106,7 @@ def login_view(page: ft.Page):
     username = ft.TextField(
         label=config.get_text("login.username.label"),
         hint_text=config.get_text("login.username.hint"),
-        border_color=ft.colors.BLUE,
+        border_color=ft.Colors.BLUE,
         width=300,
         text_align=ft.TextAlign.LEFT,
         on_submit=login_clicked,
@@ -117,7 +117,7 @@ def login_view(page: ft.Page):
         label=config.get_text("login.password.label"),
         password=True,
         can_reveal_password=True,
-        border_color=ft.colors.BLUE,
+        border_color=ft.Colors.BLUE,
         width=300,
         on_submit=login_clicked,
         #value="abc123*-"
@@ -126,16 +126,16 @@ def login_view(page: ft.Page):
     btn_login = ft.ElevatedButton(
         text=config.get_text("login.buttons.login"),
         width=140,
-        color=ft.colors.WHITE,
-        bgcolor=ft.colors.BLUE,
+        color=ft.Colors.WHITE,
+        bgcolor=ft.Colors.BLUE,
         on_click=login_clicked
     )
 
     btn_exit = ft.ElevatedButton(
         text=config.get_text("login.buttons.exit"),
         width=140,
-        color=ft.colors.WHITE,
-        bgcolor=ft.colors.RED,
+        color=ft.Colors.WHITE,
+        bgcolor=ft.Colors.RED,
         on_click=exit_clicked
     )
 
@@ -148,8 +148,8 @@ def login_view(page: ft.Page):
     return ft.Container(
         width=400,
         height=500,
-        bgcolor=ft.colors.WHITE10,
-        border=ft.border.all(2, ft.colors.BLUE_200),
+        bgcolor=ft.Colors.WHITE10,
+        border=ft.border.all(2, ft.Colors.BLUE_200),
         border_radius=15,
         padding=30,
         content=ft.Column(
@@ -164,9 +164,9 @@ def login_view(page: ft.Page):
                     ),
                     padding=ft.padding.only(bottom=10),
                 ),
-                ft.Icon(ft.icons.PERSON_OUTLINE, size=50, color=ft.colors.BLUE),
+                ft.Icon(ft.Icons.PERSON_OUTLINE, size=50, color=ft.Colors.BLUE),
                 title_text,
-                ft.Divider(height=20, color=ft.colors.TRANSPARENT),
+                ft.Divider(height=20, color=ft.Colors.TRANSPARENT),
                 ft.Container(
                     content=ft.Column(
                         spacing=15,
@@ -176,7 +176,7 @@ def login_view(page: ft.Page):
                         ],
                     ),
                 ),
-                ft.Divider(height=20, color=ft.colors.TRANSPARENT),
+                ft.Divider(height=20, color=ft.Colors.TRANSPARENT),
                 ft.Container(
                     content=ft.Row(
                         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,

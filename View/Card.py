@@ -29,7 +29,7 @@ def card_view(page: Page):
         value=t['title'],
         size=24,
         weight=ft.FontWeight.BOLD,
-        color=ft.colors.BLUE
+        color=ft.Colors.BLUE
     )
 
     description_text = ft.TextField(
@@ -37,8 +37,8 @@ def card_view(page: Page):
         min_lines=16,
         max_lines=16,
         read_only=True,
-        border_color=ft.colors.BLUE_200,
-        bgcolor=ft.colors.WHITE10,
+        border_color=ft.Colors.BLUE_200,
+        bgcolor=ft.Colors.WHITE10,
         expand=True
     )
 
@@ -67,7 +67,7 @@ def card_view(page: Page):
             ft.Switch(
                 value=False,
                 on_change=toggle_readonly,
-                active_color=ft.colors.BLUE,
+                active_color=ft.Colors.BLUE,
                 disabled=True
             )
         ],
@@ -97,7 +97,7 @@ def card_view(page: Page):
             # Actualizar la lista con las fichas filtradas
             fichas_list.controls = [
                 ft.ListTile(
-                    leading=ft.Icon(ft.icons.DESCRIPTION),
+                    leading=ft.Icon(ft.Icons.DESCRIPTION),
                     title=ft.Text(ficha.title),
                     on_click=lambda e, ficha=ficha: select_ficha(ficha)
                 ) for ficha in filtered_fichas
@@ -114,7 +114,7 @@ def card_view(page: Page):
         label=t['search']['label'],
         on_change=filter_fichas,  # Conectar la función de filtrado
         expand=True,
-        border_color=ft.colors.BLUE_200,
+        border_color=ft.Colors.BLUE_200,
         hint_text=t['search']['hint'],  # Texto de ayuda
     )
 
@@ -175,7 +175,7 @@ def card_view(page: Page):
             page.show_snack_bar(
                 ft.SnackBar(
                     content=ft.Text(t['delete']['no_selection']),
-                    bgcolor=ft.colors.RED_400,
+                    bgcolor=ft.Colors.RED_400,
                     action=t['buttons']['ok']
                 )
             )
@@ -201,7 +201,7 @@ def card_view(page: Page):
                         page.show_snack_bar(
                             ft.SnackBar(
                                 content=ft.Text(t['delete']['success']),
-                                bgcolor=ft.colors.GREEN_400,
+                                bgcolor=ft.Colors.GREEN_400,
                                 action=t['buttons']['ok']
                             )
                         )
@@ -212,7 +212,7 @@ def card_view(page: Page):
                     page.show_snack_bar(
                         ft.SnackBar(
                             content=ft.Text(t['delete']['error']),
-                            bgcolor=ft.colors.RED_400,
+                            bgcolor=ft.Colors.RED_400,
                             action=t['buttons']['ok']
                         )
                     )
@@ -256,7 +256,7 @@ def card_view(page: Page):
             # Crear los controles antes de asignarlos
             controls = [
                 ft.ListTile(
-                    leading=ft.Icon(ft.icons.DESCRIPTION),
+                    leading=ft.Icon(ft.Icons.DESCRIPTION),
                     title=ft.Text(ficha.title),
                     on_click=lambda e, ficha=ficha: select_ficha(ficha)
                 ) for ficha in fichas
@@ -308,7 +308,7 @@ def card_view(page: Page):
             controls=[
                 title_label,
                 edit_switch,  # Agregar el switch aquí
-                ft.Divider(height=20, color=ft.colors.TRANSPARENT),
+                ft.Divider(height=20, color=ft.Colors.TRANSPARENT),
                 description_text
             ],
             spacing=10,
@@ -327,19 +327,19 @@ def card_view(page: Page):
                     content=ft.Column(
                         controls=[
                             search_field,
-                            ft.Divider(height=10, color=ft.colors.TRANSPARENT),
+                            ft.Divider(height=10, color=ft.Colors.TRANSPARENT),
                             fichas_list
                         ]
                     ),
                     width=300,
-                    border=ft.border.all(2, ft.colors.BLUE_200),
+                    border=ft.border.all(2, ft.Colors.BLUE_200),
                     border_radius=10,
                     padding=10
                 ),
-                ft.VerticalDivider(width=20, color=ft.colors.TRANSPARENT),
+                ft.VerticalDivider(width=20, color=ft.Colors.TRANSPARENT),
                 ft.Container(
                     content=right_panel,
-                    border=ft.border.all(2, ft.colors.BLUE_200),
+                    border=ft.border.all(2, ft.Colors.BLUE_200),
                     border_radius=10,
                     padding=10,
                     expand=True
