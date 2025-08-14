@@ -53,6 +53,18 @@ def card_view(page: Page):
         on_change=lambda e: description_changed()
     )
 
+    # Vista de Markdown (renderizado)
+    markdown_view = ft.Markdown(
+        value="",
+        selectable=True,
+        extension_set=ft.MarkdownExtensionSet.GITHUB_WEB,
+        code_theme=ft.MarkdownCodeTheme.GITHUB,
+        auto_follow_links=True,
+        shrink_wrap=False,
+        fit_content=False,
+        visible=True
+    )
+
     # Indicador de estado de guardado
     save_status_icon = ft.Icon(ft.Icons.CHECK_CIRCLE, size=14, color=ft.Colors.GREEN_400)
     save_status_text = ft.Text("Guardado", size=12)
@@ -156,7 +168,7 @@ def card_view(page: Page):
                     pass
                 debounce_timer = None
         edit_mode_label.update()
-        description_text.update()
+        update_editor_visibility()
         
     edit_mode_label = ft.Text("Modo lectura")
     edit_mode_icon = ft.Icon(ft.Icons.LOCK, color=ft.Colors.BLUE_400)
@@ -174,6 +186,44 @@ def card_view(page: Page):
         ],
         alignment=ft.MainAxisAlignment.END
     )
+
+    # Switch para mostrar/ocultar código Markdown durante la edición
+    def on_show_code_toggle(e):
+        update_editor_visibility()
+
+    show_code_switch = ft.Switch(
+        value=True,
+        on_change=on_show_code_toggle,
+        active_color=ft.Colors.BLUE,
+        disabled=True,
+        tooltip="Mostrar/ocultar código Markdown"
+    )
+    code_toggle_row = ft.Row(
+        controls=[ft.Text("Mostrar código"), show_code_switch],
+        alignment=ft.MainAxisAlignment.END
+    )
+
+    def update_editor_visibility():
+        # En modo lectura mostrar solo Markdown; en edición, alternar con el switch
+        if description_text.read_only:
+            markdown_view.value = description_text.value or ""
+            markdown_view.visible = True
+            description_text.visible = False
+            show_code_switch.disabled = True
+        else:
+            show_code_switch.disabled = False
+            if show_code_switch.value:
+                # Mostrar código
+                description_text.visible = True
+                markdown_view.visible = False
+            else:
+                # Mostrar preview Markdown
+                markdown_view.value = description_text.value or ""
+                markdown_view.visible = True
+                description_text.visible = False
+        markdown_view.update()
+        description_text.update()
+        code_toggle_row.update()
 
     # Agregar el campo de búsqueda con debounce y caché
     def apply_filter_and_render(search_text: str):
@@ -230,6 +280,9 @@ def card_view(page: Page):
         last_saved_value = ficha.descripcion or ""
         has_unsaved_changes = False
         set_status("idle")
+        # Habilitar toggle de código y actualizar visibilidad
+        show_code_switch.disabled = False
+        update_editor_visibility()
         # Cancelar debounce pendiente
         if debounce_timer:
             try:
@@ -270,6 +323,9 @@ def card_view(page: Page):
                 last_saved_value = ficha_actualizada.descripcion or ""
                 has_unsaved_changes = False
                 set_status("idle")
+                show_code_switch.disabled = True
+                show_code_switch.value = True  # por defecto mostrar código al entrar a edición
+                update_editor_visibility()
                 print(f"✅ Ficha {ficha_actualizada.id} cargada con éxito")
         except Exception as e:
             print(f"❌ Error cargando ficha: {str(e)}")
@@ -419,7 +475,9 @@ def card_view(page: Page):
                 edit_switch,  # Agregar el switch aquí
                 save_status,
                 ft.Divider(height=20, color=ft.Colors.TRANSPARENT),
-                description_text
+                code_toggle_row,
+                description_text,
+                markdown_view
             ],
             spacing=10,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
