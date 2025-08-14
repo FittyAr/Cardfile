@@ -25,6 +25,7 @@ def create_markdown_preview() -> ft.Markdown:
 def create_markdown_toolbar(
     target_field: ft.TextField,
     on_modified: Optional[Callable[[], None]] = None,
+    show_code_switch: Optional[ft.Switch] = None,
 ) -> ft.Container:
     def _append(text: str) -> None:
         target_field.value = (target_field.value or "") + text
@@ -104,6 +105,13 @@ def create_markdown_toolbar(
             on_click=lambda e: _append("\n- [ ] tarea\n"),
         ),
     ]
+
+    # Integrar el switch "Mostrar código" dentro de la barra si se proporciona
+    if show_code_switch is not None:
+        label = ft.Text("Mostrar código")
+        buttons.append(ft.VerticalDivider(width=10, color=ft.Colors.TRANSPARENT))
+        buttons.append(label)
+        buttons.append(show_code_switch)
 
     bar = ft.Container(
         content=ft.Row(controls=buttons, wrap=True, alignment=ft.MainAxisAlignment.START, spacing=6),

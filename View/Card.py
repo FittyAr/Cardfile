@@ -69,36 +69,30 @@ def card_view(page: Page):
 
     # Editor Markdown: barra + preview
     markdown_preview = create_markdown_preview()
-    markdown_toolbar = create_markdown_toolbar(description_text, on_modified=description_changed)
-
-    # Toggle para mostrar código en modo edición
+    # Toggle para mostrar código en modo edición (se integrará en toolbar)
     def on_show_code_toggle(e):
         update_editor_visibility()
-
     show_code_switch = ft.Switch(
-        value=True,
+        value=False,
         on_change=on_show_code_toggle,
         active_color=ft.Colors.BLUE,
         tooltip="Mostrar/ocultar código",
         visible=False,
     )
-    code_toggle_row = ft.Row(
-        controls=[ft.Text("Mostrar código"), show_code_switch],
-        alignment=ft.MainAxisAlignment.END,
-        visible=False,
-    )
+    markdown_toolbar = create_markdown_toolbar(description_text, on_modified=description_changed, show_code_switch=show_code_switch)
 
+    # Toggle para mostrar código en modo edición
     def update_editor_visibility():
         # En modo lectura mostrar solo Markdown; en edición, alternar con el switch
         if description_text.read_only:
             markdown_toolbar.visible = False
-            code_toggle_row.visible = False
+            show_code_switch.visible = False
             markdown_preview.value = description_text.value or ""
             markdown_preview.visible = True
             description_text.visible = False
         else:
             markdown_toolbar.visible = True
-            code_toggle_row.visible = True
+            show_code_switch.visible = True
             if show_code_switch.value:
                 description_text.visible = True
                 markdown_preview.visible = False
@@ -107,7 +101,7 @@ def card_view(page: Page):
                 markdown_preview.visible = True
                 description_text.visible = False
         markdown_toolbar.update()
-        code_toggle_row.update()
+        show_code_switch.update()
         markdown_preview.update()
         description_text.update()
         page.update()
@@ -115,7 +109,7 @@ def card_view(page: Page):
     # Estados iniciales seguros (vista en modo lectura, sin código)
     description_text.visible = False
     markdown_toolbar.visible = False
-    code_toggle_row.visible = False
+    show_code_switch.visible = False
     markdown_preview.visible = True
 
     # Indicador de estado de guardado
@@ -479,7 +473,6 @@ def card_view(page: Page):
                 save_status,
                 ft.Divider(height=20, color=ft.Colors.TRANSPARENT),
                 markdown_toolbar,
-                code_toggle_row,
                 description_text,
                 markdown_preview
             ],
