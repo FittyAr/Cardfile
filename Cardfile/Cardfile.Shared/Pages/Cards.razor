@@ -2,141 +2,449 @@
 @using Cardfile.Shared.Models
 @using Microsoft.FluentUI.AspNetCore.Components
 
-<FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
-    <FluentLabel Typo="Typography.H3" Color="Color.Accent">My Cards</FluentLabel>
-    
-    @if (cards.Count == 0)
+<PageTitle>My Cards</PageTitle>
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="30" Style="padding: 20px;">
+    <!-- Header -->
+    <FluentCard Style="padding: 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+            <FluentIcon Value="@(new Icons.Regular.Size24.Library())" /> 
+            <FluentLabel Typo="Typography.H3" Style="margin: 0; font-weight: 600;">My Card Collection</FluentLabel>
+        </FluentStack>
+        
+        <FluentStack Orientation="Orientation.Horizontal" VerticalGap="15" Style="margin-top: 20px;">
+            <FluentTextField @bind-Value="searchTerm" 
+                           Placeholder="Search cards..."
+                           Style="flex-grow: 1; max-width: 400px;"
+                           IconStart="@(new Icons.Regular.Size20.Search())"
+                           @oninput="OnSearchChanged" />
+            
+            <FluentButton Appearance="Appearance.Accent" 
+                         IconStart="@(new Icons.Regular.Size20.Add())"
+                         @onclick="ShowAddCard">
+                Add New Card
+            </FluentButton>
+        </FluentStack>
+    </FluentCard>
+
+    <!-- Statistics Cards -->
+    <FluentGrid Spacing="3">
+        <FluentGridItem xs="12" sm="6" md="3">
+            <FluentCard Style="padding: 25px; text-align: center; background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);">
+                <FluentIcon Value="@(new Icons.Regular.Size32.Library())" />
+                <FluentLabel Typo="Typography.H4" Style="margin: 10px 0 5px 0; font-weight: 600;">@cards.Count</FluentLabel>
+                <FluentLabel Typo="Typography.Body" Color="Color.Neutral">Total Cards</FluentLabel>
+            </FluentCard>
+        </FluentGridItem>
+        
+        <FluentGridItem xs="12" sm="6" md="3">
+            <FluentCard Style="padding: 25px; text-align: center; background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
+                <FluentIcon Value="@(new Icons.Regular.Size32.Tag())" />
+                <FluentLabel Typo="Typography.H4" Style="margin: 10px 0 5px 0; font-weight: 600;">@GetUniqueTags().Count()</FluentLabel>
+                <FluentLabel Typo="Typography.Body" Color="Color.Neutral">Unique Tags</FluentLabel>
+            </FluentCard>
+        </FluentGridItem>
+        
+        <FluentGridItem xs="12" sm="6" md="3">
+            <FluentCard Style="padding: 25px; text-align: center; background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);">
+                <FluentIcon Value="@(new Icons.Regular.Size32.Calendar())" />
+                <FluentLabel Typo="Typography.H4" Style="margin: 10px 0 5px 0; font-weight: 600;">@GetRecentCards().Count()</FluentLabel>
+                <FluentLabel Typo="Typography.Body" Color="Color.Neutral">Recent Cards</FluentLabel>
+            </FluentCard>
+        </FluentGridItem>
+        
+        <FluentGridItem xs="12" sm="6" md="3">
+            <FluentCard Style="padding: 25px; text-align: center; background: linear-gradient(135deg, #d299c2 0%, #fef9d7 100%);">
+                <FluentIcon Value="@(new Icons.Regular.Size32.Edit())" />
+                <FluentLabel Typo="Typography.H4" Style="margin: 10px 0 5px 0; font-weight: 600;">@GetRecentlyUpdated().Count()</FluentLabel>
+                <FluentLabel Typo="Typography.Body" Color="Color.Neutral">Recently Updated</FluentLabel>
+            </FluentCard>
+        </FluentGridItem>
+    </FluentGrid>
+
+    <!-- Filters and Sorting -->
+    <FluentCard Style="padding: 20px;">
+        <FluentStack Orientation="Orientation.Horizontal" VerticalGap="15" Wrap="true">
+            <FluentSelect TOption="string" @bind-Value="sortBy" Style="min-width: 150px;">
+                <FluentOption Value="newest">Newest First</FluentOption>
+                <FluentOption Value="oldest">Oldest First</FluentOption>
+                <FluentOption Value="title">By Title</FluentOption>
+                <FluentOption Value="updated">Recently Updated</FluentOption>
+            </FluentSelect>
+            
+            <FluentSelect TOption="string" @bind-Value="filterTag" Style="min-width: 150px;">
+                <FluentOption Value="">All Tags</FluentOption>
+                @foreach (var tag in GetUniqueTags())
+                {
+                    <FluentOption Value="@tag">@tag</FluentOption>
+                }
+            </FluentSelect>
+            
+            <FluentButton Appearance="Appearance.Neutral" 
+                         @onclick="ClearFilters">
+                Clear Filters
+            </FluentButton>
+        </FluentStack>
+    </FluentCard>
+
+    <!-- Cards Grid -->
+    @if (!GetFilteredCards().Any())
     {
-        <FluentMessageBar Intent="MessageIntent.Info">
-            <FluentIcon Value="@(new Icons.Regular.Size20.Info())" Slot="icon" />
-            No cards found. Create your first card to get started!
-        </FluentMessageBar>
+        <FluentCard Style="padding: 60px; text-align: center; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);">
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="20" HorizontalAlignment="HorizontalAlignment.Center">
+                <div style="font-size: 48px; color: var(--neutral-foreground-rest); text-align: center;">🔍</div>
+                <FluentLabel Typo="Typography.H4" Color="Color.Neutral">No cards found</FluentLabel>
+                <FluentLabel Typo="Typography.Body" Color="Color.Neutral" Style="max-width: 400px;">
+                    Try adjusting your search terms or filters, or create your first card to get started.
+                </FluentLabel>
+                <FluentButton Appearance="Appearance.Accent" 
+                             @onclick="ShowAddCard">
+                    Create Your First Card
+                </FluentButton>
+            </FluentStack>
+        </FluentCard>
     }
     else
     {
-        <FluentGrid Spacing="3" Justify="JustifyContent.FlexStart">
-            @foreach (var card in cards)
+        <FluentGrid Spacing="3">
+            @foreach (var card in GetFilteredCards())
             {
                 <FluentGridItem xs="12" sm="6" md="4" lg="3">
-                    <FluentCard Style="height: 100%; min-height: 200px;">
-                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
-                            <FluentLabel Typo="Typography.H6" Color="Color.Accent">@card.Title</FluentLabel>
-                            <FluentLabel Typo="Typography.Body" Style="flex-grow: 1;">@card.Content</FluentLabel>
-                            
-                            <FluentDivider />
-                            
-                            <FluentStack Orientation="Orientation.Vertical" VerticalGap="5">
-                                <FluentLabel Typo="Typography.Body" Color="Color.Neutral">
-                                    <FluentIcon Value="@(new Icons.Regular.Size16.Calendar())" /> 
-                                    Created: @card.CreatedAt.ToShortDateString()
+                    <FluentCard Style="height: 100%; min-height: 280px; transition: all 0.3s ease; cursor: pointer; position: relative;"
+                              @onclick="() => SelectCard(card)"
+                              Class="card-hover">
+                        
+                        <!-- Card Header -->
+                        <div style="padding: 20px 20px 15px 20px; border-bottom: 1px solid #f0f0f0;">
+                            <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+                                <FluentLabel Typo="Typography.H6" Color="Color.Accent" Style="flex-grow: 1; margin: 0; font-weight: 600;">
+                                    @card.Title
                                 </FluentLabel>
-                                @if (card.UpdatedAt != null)
-                                {
-                                    <FluentLabel Typo="Typography.Body" Color="Color.Neutral">
-                                        <FluentIcon Value="@(new Icons.Regular.Size16.Edit())" /> 
-                                        Updated: @card.UpdatedAt?.ToShortDateString()
-                                    </FluentLabel>
-                                }
+                                
+                                <FluentMenuButton Icon="@(new Icons.Regular.Size16.MoreVertical())" 
+                                                 Appearance="Appearance.Stealth">
+                                    <FluentMenuItem @onclick="() => EditCard(card)">
+                                        <FluentIcon Value="@(new Icons.Regular.Size16.Edit())" Slot="start" />
+                                        Edit
+                                    </FluentMenuItem>
+                                    <FluentMenuItem @onclick="() => DuplicateCard(card)">
+                                        <FluentIcon Value="@(new Icons.Regular.Size16.DocumentCopy())" Slot="start" />
+                                        Duplicate
+                                    </FluentMenuItem>
+                                    <FluentDivider />
+                                    <FluentMenuItem @onclick="() => DeleteCard(card)">
+                                        <FluentIcon Value="@(new Icons.Regular.Size16.Delete())" Slot="start" />
+                                        Delete
+                                    </FluentMenuItem>
+                                </FluentMenuButton>
                             </FluentStack>
-                            
-                            @if (card.CardTags?.Any() == true)
-                            {
-                                <FluentStack Orientation="Orientation.Horizontal" Wrap="true" HorizontalGap="5">
-                                    @foreach (var tag in card.CardTags.Select(ct => ct.Tag))
+                        </div>
+                        
+                        <!-- Card Content -->
+                        <div style="padding: 15px 20px; flex-grow: 1;">
+                            <FluentLabel Typo="Typography.Body" Style="line-height: 1.6; color: #666; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;">
+                                @card.Content
+                            </FluentLabel>
+                        </div>
+                        
+                        <!-- Card Footer -->
+                        <div style="padding: 15px 20px 20px 20px; border-top: 1px solid #f0f0f0;">
+                            <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                                 @if (card.CardTags?.Any() == true)
+                                 {
+                                     <FluentStack Orientation="Orientation.Horizontal" VerticalGap="5" Wrap="true">
+                                         @foreach (var cardTag in card.CardTags.Take(3))
+                                         {
+                                             <FluentBadge Appearance="Appearance.Accent" Style="font-size: 11px;">@cardTag.Tag.Name</FluentBadge>
+                                         }
+                                         @if (card.CardTags.Count() > 3)
+                                         {
+                                             <FluentBadge Appearance="Appearance.Neutral" Style="font-size: 11px;">+@(card.CardTags.Count() - 3) more</FluentBadge>
+                                         }
+                                     </FluentStack>
+                                 }
+                                
+                                <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+                                    <FluentIcon Value="@(new Icons.Regular.Size16.Calendar())" />
+                                    <FluentLabel Color="Color.Neutral" Style="font-size: 12px;">
+                                        @card.CreatedAt.ToString("MMM dd, yyyy")
+                                    </FluentLabel>
+                                    @if (card.UpdatedAt.HasValue && card.UpdatedAt != card.CreatedAt)
                                     {
-                                        <FluentBadge Appearance="Appearance.Filled" Color="Color.Brand">@tag.Name</FluentBadge>
+                                        <FluentIcon Value="@(new Icons.Regular.Size16.Edit())" />
+                                        <FluentLabel Color="Color.Neutral" Style="font-size: 12px;">
+                                            @card.UpdatedAt.Value.ToString("MMM dd")
+                                        </FluentLabel>
                                     }
                                 </FluentStack>
-                            }
-                        </FluentStack>
+                            </FluentStack>
+                        </div>
                     </FluentCard>
                 </FluentGridItem>
             }
         </FluentGrid>
     }
-    
-    <FluentButton Appearance="Appearance.Accent" IconStart="@(new Icons.Regular.Size20.Add())" @onclick="ShowAddCard">
-        Add New Card
-    </FluentButton>
-
-    @if (showAddCard)
-    {
-        <FluentCard Style="margin-top: 20px; padding: 20px;">
-            <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
-                <FluentLabel Typo="Typography.H5" Color="Color.Accent">
-                    <FluentIcon Value="@(new Icons.Regular.Size20.Add())" /> Add New Card
-                </FluentLabel>
-                
-                <EditForm Model="newCard" OnValidSubmit="AddCard">
-                    <DataAnnotationsValidator />
-                    <FluentValidationSummary />
-                    
-                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
-                        <FluentTextField @bind-Value="newCard.Title" 
-                                       Label="Title" 
-                                       Placeholder="Enter card title..."
-                                       Required="true"
-                                       Style="width: 100%;" />
-                        
-                        <FluentTextArea @bind-Value="newCard.Content" 
-                                      Label="Content" 
-                                      Placeholder="Enter card content..."
-                                      Rows="4"
-                                      Resize="TextAreaResize.Vertical"
-                                      Style="width: 100%;" />
-                        
-                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10" Wrap="true">
-                            <FluentButton Type="ButtonType.Submit" 
-                                        Appearance="Appearance.Accent" 
-                                        IconStart="@(new Icons.Regular.Size20.Save())">
-                                Save Card
-                            </FluentButton>
-                            <FluentButton Type="ButtonType.Button" 
-                                        Appearance="Appearance.Neutral" 
-                                        IconStart="@(new Icons.Regular.Size20.Dismiss())" 
-                                        @onclick="HideAddCard">
-                                Cancel
-                            </FluentButton>
-                        </FluentStack>
-                    </FluentStack>
-                </EditForm>
-            </FluentStack>
-        </FluentCard>
-    }
 </FluentStack>
+
+<!-- Add/Edit Card Modal -->
+<FluentDialog @bind-Hidden="@hideAddCard" 
+             Modal="true" 
+             TrapFocus="true"
+             Style="--dialog-width: 600px; --dialog-height: auto;">
+    <FluentDialogHeader>
+        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+            <div style="font-size: 20px; color: var(--accent-foreground-rest);">📝</div>
+            <FluentLabel Typo="Typography.H4" Style="margin: 0;">
+                Card Details
+            </FluentLabel>
+        </FluentStack>
+    </FluentDialogHeader>
+    
+    <FluentDialogBody>
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
+            <FluentTextField @bind-Value="newCard.Title" 
+                           Label="Card Title" 
+                           Placeholder="Enter a descriptive title..."
+                           Required="true"
+                           Style="width: 100%;" />
+            
+            <FluentTextArea @bind-Value="newCard.Content" 
+                          Label="Card Content" 
+                          Placeholder="Enter the main content of your card..."
+                          Required="true"
+                          Rows="6"
+                          Style="width: 100%;" />
+            
+            <FluentTextField @bind-Value="newTagInput" 
+                           Label="Tags (comma separated)" 
+                           Placeholder="tag1, tag2, tag3..."
+                           Style="width: 100%;" />
+            
+            @if (!string.IsNullOrEmpty(newTagInput))
+            {
+                <FluentStack Orientation="Orientation.Horizontal" VerticalGap="5" Wrap="true">
+                    <FluentLabel>Preview tags:</FluentLabel>
+                    @foreach (var tag in newTagInput.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim()))
+                    {
+                        <FluentBadge Appearance="Appearance.Accent" Style="font-size: 11px;">@tag</FluentBadge>
+                    }
+                </FluentStack>
+            }
+        </FluentStack>
+    </FluentDialogBody>
+    
+    <FluentDialogFooter>
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10" HorizontalAlignment="HorizontalAlignment.Right">
+            <FluentButton Appearance="Appearance.Neutral" 
+                         @onclick="HideAddCard">
+                Cancel
+            </FluentButton>
+            <FluentButton Appearance="Appearance.Accent" 
+                         @onclick="SaveCard">
+                Save Card
+            </FluentButton>
+        </FluentStack>
+    </FluentDialogFooter>
+</FluentDialog>
+
+<style>
+    .card-hover:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .selected-card {
+        border: 2px solid var(--accent-fill-rest);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+</style>
 
 @code {
     private List<Card> cards = new();
     private Card newCard = new();
-    private bool showAddCard = false;
+    private Card? editingCard = null;
+    private Card? selectedCard = null;
+    private string searchTerm = string.Empty;
+    private string sortBy = "newest";
+    private string filterTag = string.Empty;
+    private string newTagInput = string.Empty;
+    private bool hideAddCard = true;
 
     protected override void OnInitialized()
     {
-        // Aqu� se debe cargar la lista de tarjetas del usuario
-        // Por ahora, se simula con datos de ejemplo
+        LoadSampleData();
+    }
+
+    private void LoadSampleData()
+    {
         cards = new List<Card>
         {
-            new Card { Title = "Sample Card 1", Content = "This is a sample card.", CreatedAt = DateTime.UtcNow },
-            new Card { Title = "Sample Card 2", Content = "Another card.", CreatedAt = DateTime.UtcNow }
+            new Card
+            {
+                Id = Guid.NewGuid(),
+                Title = "Welcome to Cards",
+                Content = "This is your first card! You can use cards to organize your thoughts, ideas, and important information.",
+                CreatedAt = DateTime.Now.AddDays(-5),
+                UpdatedAt = DateTime.Now.AddDays(-2)
+            },
+            new Card
+            {
+                Id = Guid.NewGuid(),
+                Title = "Project Ideas",
+                Content = "Collection of project ideas for future development. Include web applications, mobile apps, and desktop tools.",
+                CreatedAt = DateTime.Now.AddDays(-3)
+            },
+            new Card
+            {
+                Id = Guid.NewGuid(),
+                Title = "Learning Resources",
+                Content = "Important learning resources and tutorials for skill development.",
+                CreatedAt = DateTime.Now.AddDays(-1)
+            }
         };
     }
 
     private void ShowAddCard()
     {
-        showAddCard = true;
+        editingCard = null;
         newCard = new Card();
+        newTagInput = string.Empty;
+        hideAddCard = false;
     }
 
     private void HideAddCard()
     {
-        showAddCard = false;
+        hideAddCard = true;
+        editingCard = null;
+        newCard = new Card();
+        newTagInput = string.Empty;
     }
 
-    private void AddCard()
+    private void EditCard(Card card)
     {
-        // Aqu� se debe agregar la l�gica real para guardar la tarjeta
-        newCard.CreatedAt = DateTime.UtcNow;
-        cards.Add(newCard);
-        showAddCard = false;
+        editingCard = card;
+        newCard = new Card
+        {
+            Id = card.Id,
+            Title = card.Title,
+            Content = card.Content,
+            CreatedAt = card.CreatedAt,
+            UpdatedAt = card.UpdatedAt
+        };
+        newTagInput = string.Empty;
+        hideAddCard = false;
+    }
+
+    private void SaveCard()
+    {
+        if (string.IsNullOrWhiteSpace(newCard.Title) || string.IsNullOrWhiteSpace(newCard.Content))
+            return;
+
+        // Process tags - simplified for now
+        // Tags functionality will be implemented with proper CardTag relationships
+
+        if (editingCard != null)
+        {
+            // Update existing card
+            var existingCard = cards.FirstOrDefault(c => c.Id == editingCard.Id);
+            if (existingCard != null)
+            {
+                existingCard.Title = newCard.Title;
+                existingCard.Content = newCard.Content;
+                // Tags update will be implemented with proper CardTag relationships
+                existingCard.UpdatedAt = DateTime.Now;
+            }
+        }
+        else
+        {
+            // Add new card
+            newCard.Id = Guid.NewGuid();
+            newCard.CreatedAt = DateTime.Now;
+            cards.Add(newCard);
+        }
+
+        HideAddCard();
+    }
+
+    private void DeleteCard(Card card)
+    {
+        cards.Remove(card);
+        if (selectedCard?.Id == card.Id)
+        {
+            selectedCard = null;
+        }
+    }
+
+    private void DuplicateCard(Card card)
+    {
+        var duplicatedCard = new Card
+        {
+            Id = Guid.NewGuid(),
+            Title = $"{card.Title} (Copy)",
+            Content = card.Content,
+            CreatedAt = DateTime.Now
+        };
+        cards.Add(duplicatedCard);
+    }
+
+    private void SelectCard(Card card)
+    {
+        selectedCard = selectedCard?.Id == card.Id ? null : card;
+    }
+
+    private void OnSearchChanged(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? string.Empty;
+    }
+
+    private void ClearFilters()
+    {
+        searchTerm = string.Empty;
+        filterTag = string.Empty;
+        sortBy = "newest";
+    }
+
+    private IEnumerable<Card> GetFilteredCards()
+    {
+        var filtered = cards.AsEnumerable();
+
+        // Apply search filter
+        if (!string.IsNullOrEmpty(searchTerm))
+        {
+            filtered = filtered.Where(c => 
+                c.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                (c.Content?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false));
+        }
+
+        // Apply tag filter - simplified for now
+        // Tag filtering will be implemented with proper CardTag relationships
+
+        // Apply sorting
+        filtered = sortBy switch
+        {
+            "oldest" => filtered.OrderBy(c => c.CreatedAt),
+            "title" => filtered.OrderBy(c => c.Title),
+            "updated" => filtered.OrderByDescending(c => c.UpdatedAt ?? c.CreatedAt),
+            _ => filtered.OrderByDescending(c => c.CreatedAt)
+        };
+
+        return filtered;
+    }
+
+    private IEnumerable<string> GetUniqueTags()
+    {
+        // Simplified for now - will be implemented with proper CardTag relationships
+        return new List<string> { "work", "personal", "ideas" };
+    }
+
+    private IEnumerable<Card> GetRecentCards()
+    {
+        return cards.Where(c => c.CreatedAt >= DateTime.Now.AddDays(-7));
+    }
+
+    private IEnumerable<Card> GetRecentlyUpdated()
+    {
+        return cards.Where(c => c.UpdatedAt.HasValue && c.UpdatedAt >= DateTime.Now.AddDays(-7));
     }
 }
