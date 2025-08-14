@@ -1,33 +1,73 @@
 @page "/register"
 @using Cardfile.Shared.Models
+@using Microsoft.FluentUI.AspNetCore.Components
 @inject NavigationManager Navigation
 
-<EditForm Model="registerModel" OnValidSubmit="HandleRegister">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
-    <div class="form-group">
-        <label>Username</label>
-        <InputText class="form-control" @bind-Value="registerModel.Username" />
-    </div>
-    <div class="form-group">
-        <label>Email</label>
-        <InputText class="form-control" @bind-Value="registerModel.Email" />
-    </div>
-    <div class="form-group">
-        <label>Password</label>
-        <InputText class="form-control" @bind-Value="registerModel.Password" type="password" />
-    </div>
-    <div class="form-group">
-        <label>Confirm Password</label>
-        <InputText class="form-control" @bind-Value="registerModel.ConfirmPassword" type="password" />
-    </div>
-    <button type="submit" class="btn btn-primary">Register</button>
-</EditForm>
-
-@if (!string.IsNullOrEmpty(message))
-{
-    <div class="alert alert-info">@message</div>
-}
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="30" Style="max-width: 450px; margin: 0 auto; padding: 40px 20px;">
+    <FluentStack Orientation="Orientation.Vertical" VerticalGap="10" Style="text-align: center;">
+        <FluentIcon Value="@(new Icons.Regular.Size48.PersonAdd())" Color="Color.Accent" />
+        <FluentLabel Typo="Typography.H3" Color="Color.Accent">Create Account</FluentLabel>
+        <FluentLabel Typo="Typography.Body" Color="Color.Neutral">Join us and start organizing your cards</FluentLabel>
+    </FluentStack>
+    
+    <FluentCard Style="padding: 30px;">
+        <EditForm Model="registerModel" OnValidSubmit="HandleRegister">
+            <DataAnnotationsValidator />
+            <FluentValidationSummary />
+            
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
+                <FluentTextField @bind-Value="registerModel.Username" 
+                               Label="Username" 
+                               Placeholder="Choose a username"
+                               Required="true"
+                               Style="width: 100%;"
+                               IconStart="@(new Icons.Regular.Size20.Person())" />
+                
+                <FluentTextField @bind-Value="registerModel.Email" 
+                               Label="Email Address" 
+                               Placeholder="Enter your email"
+                               TextFieldType="TextFieldType.Email"
+                               Style="width: 100%;"
+                               IconStart="@(new Icons.Regular.Size20.Mail())" />
+                
+                <FluentTextField @bind-Value="registerModel.Password" 
+                               Label="Password" 
+                               Placeholder="Create a password"
+                               TextFieldType="TextFieldType.Password"
+                               Required="true"
+                               Style="width: 100%;"
+                               IconStart="@(new Icons.Regular.Size20.Key())" />
+                
+                <FluentTextField @bind-Value="registerModel.ConfirmPassword" 
+                               Label="Confirm Password" 
+                               Placeholder="Confirm your password"
+                               TextFieldType="TextFieldType.Password"
+                               Style="width: 100%;"
+                               IconStart="@(new Icons.Regular.Size20.Key())" />
+                
+                <FluentButton Type="ButtonType.Submit" 
+                            Appearance="Appearance.Accent" 
+                            Style="width: 100%; margin-top: 10px;"
+                            IconStart="@(new Icons.Regular.Size20.PersonAdd())">
+                    Create Account
+                </FluentButton>
+            </FluentStack>
+        </EditForm>
+    </FluentCard>
+    
+    @if (!string.IsNullOrEmpty(message))
+    {
+        <FluentMessageBar Intent="MessageIntent.Success" Style="margin-top: 20px;">
+            <FluentIcon Value="@(new Icons.Regular.Size20.CheckmarkCircle())" Slot="icon" />
+            @message
+        </FluentMessageBar>
+    }
+    
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="5" Style="justify-content: center; margin-top: 20px;">
+        <FluentLabel Typo="Typography.Body" Color="Color.Neutral">Already have an account?</FluentLabel>
+        <FluentAnchor Href="/login" Appearance="Appearance.Hypertext">Sign in here</FluentAnchor>
+    </FluentStack>
+</FluentStack>
 
 @code {
     private RegisterModel registerModel = new();
@@ -36,8 +76,8 @@
     // Maneja el registro del usuario
     private async Task HandleRegister()
     {
-        // Aquí se debe agregar la lógica real de registro
-        // Por ahora solo simula éxito
+        // Aquï¿½ se debe agregar la lï¿½gica real de registro
+        // Por ahora solo simula ï¿½xito
         message = "Registration successful!";
         await Task.Delay(1000);
         Navigation.NavigateTo("/login");

@@ -1,58 +1,109 @@
 @page "/cards"
 @using Cardfile.Shared.Models
+@using Microsoft.FluentUI.AspNetCore.Components
 
-<h3>My Cards</h3>
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
+    <FluentLabel Typo="Typography.H3" Color="Color.Accent">My Cards</FluentLabel>
+    
+    @if (cards.Count == 0)
+    {
+        <FluentMessageBar Intent="MessageIntent.Info">
+            <FluentIcon Value="@(new Icons.Regular.Size20.Info())" Slot="icon" />
+            No cards found. Create your first card to get started!
+        </FluentMessageBar>
+    }
+    else
+    {
+        <FluentGrid Spacing="3" Justify="JustifyContent.FlexStart">
+            @foreach (var card in cards)
+            {
+                <FluentGridItem xs="12" sm="6" md="4" lg="3">
+                    <FluentCard Style="height: 100%; min-height: 200px;">
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                            <FluentLabel Typo="Typography.H6" Color="Color.Accent">@card.Title</FluentLabel>
+                            <FluentLabel Typo="Typography.Body" Style="flex-grow: 1;">@card.Content</FluentLabel>
+                            
+                            <FluentDivider />
+                            
+                            <FluentStack Orientation="Orientation.Vertical" VerticalGap="5">
+                                <FluentLabel Typo="Typography.Body" Color="Color.Neutral">
+                                    <FluentIcon Value="@(new Icons.Regular.Size16.Calendar())" /> 
+                                    Created: @card.CreatedAt.ToShortDateString()
+                                </FluentLabel>
+                                @if (card.UpdatedAt != null)
+                                {
+                                    <FluentLabel Typo="Typography.Body" Color="Color.Neutral">
+                                        <FluentIcon Value="@(new Icons.Regular.Size16.Edit())" /> 
+                                        Updated: @card.UpdatedAt?.ToShortDateString()
+                                    </FluentLabel>
+                                }
+                            </FluentStack>
+                            
+                            @if (card.CardTags?.Any() == true)
+                            {
+                                <FluentStack Orientation="Orientation.Horizontal" Wrap="true" HorizontalGap="5">
+                                    @foreach (var tag in card.CardTags.Select(ct => ct.Tag))
+                                    {
+                                        <FluentBadge Appearance="Appearance.Filled" Color="Color.Brand">@tag.Name</FluentBadge>
+                                    }
+                                </FluentStack>
+                            }
+                        </FluentStack>
+                    </FluentCard>
+                </FluentGridItem>
+            }
+        </FluentGrid>
+    }
+    
+    <FluentButton Appearance="Appearance.Accent" IconStart="@(new Icons.Regular.Size20.Add())" @onclick="ShowAddCard">
+        Add New Card
+    </FluentButton>
 
-<!-- Aquí se mostrarán las tarjetas del usuario -->
-@if (cards.Count == 0)
-{
-    <div>No cards found.</div>
-}
-else
-{
-    <div class="card-list">
-        @foreach (var card in cards)
-        {
-            <div class="card-item">
-                <h5>@card.Title</h5>
-                <p>@card.Content</p>
-                <div class="card-meta">
-                    <span>Created: @card.CreatedAt.ToShortDateString()</span>
-                    @if (card.UpdatedAt != null)
-                    {
-                        <span> | Updated: @card.UpdatedAt?.ToShortDateString()</span>
-                    }
-                </div>
-                <div class="card-tags">
-                    @foreach (var tag in card.CardTags.Select(ct => ct.Tag))
-                    {
-                        <span class="badge bg-secondary">@tag.Name</span>
-                    }
-                </div>
-            </div>
-        }
-    </div>
-}
-
-<button class="btn btn-success" @onclick="ShowAddCard">Add Card</button>
-
-@if (showAddCard)
-{
-    <EditForm Model="newCard" OnValidSubmit="AddCard">
-        <DataAnnotationsValidator />
-        <ValidationSummary />
-        <div class="form-group">
-            <label>Title</label>
-            <InputText class="form-control" @bind-Value="newCard.Title" />
-        </div>
-        <div class="form-group">
-            <label>Content</label>
-            <InputTextArea class="form-control" @bind-Value="newCard.Content" />
-        </div>
-        <button type="submit" class="btn btn-primary">Save</button>
-        <button type="button" class="btn btn-secondary" @onclick="HideAddCard">Cancel</button>
-    </EditForm>
-}
+    @if (showAddCard)
+    {
+        <FluentCard Style="margin-top: 20px; padding: 20px;">
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+                <FluentLabel Typo="Typography.H5" Color="Color.Accent">
+                    <FluentIcon Value="@(new Icons.Regular.Size20.Add())" /> Add New Card
+                </FluentLabel>
+                
+                <EditForm Model="newCard" OnValidSubmit="AddCard">
+                    <DataAnnotationsValidator />
+                    <FluentValidationSummary />
+                    
+                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+                        <FluentTextField @bind-Value="newCard.Title" 
+                                       Label="Title" 
+                                       Placeholder="Enter card title..."
+                                       Required="true"
+                                       Style="width: 100%;" />
+                        
+                        <FluentTextArea @bind-Value="newCard.Content" 
+                                      Label="Content" 
+                                      Placeholder="Enter card content..."
+                                      Rows="4"
+                                      Resize="TextAreaResize.Vertical"
+                                      Style="width: 100%;" />
+                        
+                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10" Wrap="true">
+                            <FluentButton Type="ButtonType.Submit" 
+                                        Appearance="Appearance.Accent" 
+                                        IconStart="@(new Icons.Regular.Size20.Save())">
+                                Save Card
+                            </FluentButton>
+                            <FluentButton Type="ButtonType.Button" 
+                                        Appearance="Appearance.Neutral" 
+                                        IconStart="@(new Icons.Regular.Size20.Dismiss())" 
+                                        @onclick="HideAddCard">
+                                Cancel
+                            </FluentButton>
+                        </FluentStack>
+                    </FluentStack>
+                </EditForm>
+            </FluentStack>
+        </FluentCard>
+    }
+</FluentStack>
 
 @code {
     private List<Card> cards = new();
@@ -61,7 +112,7 @@ else
 
     protected override void OnInitialized()
     {
-        // Aquí se debe cargar la lista de tarjetas del usuario
+        // Aquï¿½ se debe cargar la lista de tarjetas del usuario
         // Por ahora, se simula con datos de ejemplo
         cards = new List<Card>
         {
@@ -83,7 +134,7 @@ else
 
     private void AddCard()
     {
-        // Aquí se debe agregar la lógica real para guardar la tarjeta
+        // Aquï¿½ se debe agregar la lï¿½gica real para guardar la tarjeta
         newCard.CreatedAt = DateTime.UtcNow;
         cards.Add(newCard);
         showAddCard = false;

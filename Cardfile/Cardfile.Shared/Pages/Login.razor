@@ -1,25 +1,59 @@
 @page "/login"
 @using Cardfile.Shared.Models
+@using Microsoft.FluentUI.AspNetCore.Components
 @inject NavigationManager Navigation
 
-<EditForm Model="loginModel" OnValidSubmit="HandleLogin">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
-    <div class="form-group">
-        <label>Username</label>
-        <InputText class="form-control" @bind-Value="loginModel.Username" />
-    </div>
-    <div class="form-group">
-        <label>Password</label>
-        <InputText class="form-control" @bind-Value="loginModel.Password" type="password" />
-    </div>
-    <button type="submit" class="btn btn-primary">Login</button>
-</EditForm>
-
-@if (!string.IsNullOrEmpty(message))
-{
-    <div class="alert alert-danger">@message</div>
-}
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="30" Style="max-width: 400px; margin: 0 auto; padding: 40px 20px;">
+    <FluentStack Orientation="Orientation.Vertical" VerticalGap="10" Style="text-align: center;">
+        <FluentIcon Value="@(new Icons.Regular.Size48.Person())" Color="Color.Accent" />
+        <FluentLabel Typo="Typography.H3" Color="Color.Accent">Welcome Back</FluentLabel>
+        <FluentLabel Typo="Typography.Body" Color="Color.Neutral">Sign in to your account</FluentLabel>
+    </FluentStack>
+    
+    <FluentCard Style="padding: 30px;">
+        <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+            <DataAnnotationsValidator />
+            <FluentValidationSummary />
+            
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
+                <FluentTextField @bind-Value="loginModel.Username" 
+                               Label="Username" 
+                               Placeholder="Enter your username"
+                               Required="true"
+                               Style="width: 100%;"
+                               IconStart="@(new Icons.Regular.Size20.Person())" />
+                
+                <FluentTextField @bind-Value="loginModel.Password" 
+                               Label="Password" 
+                               Placeholder="Enter your password"
+                               TextFieldType="TextFieldType.Password"
+                               Required="true"
+                               Style="width: 100%;"
+                               IconStart="@(new Icons.Regular.Size20.Key())" />
+                
+                <FluentButton Type="ButtonType.Submit" 
+                            Appearance="Appearance.Accent" 
+                            Style="width: 100%; margin-top: 10px;"
+                            IconStart="@(new Icons.Regular.Size20.ArrowEnter())">
+                    Sign In
+                </FluentButton>
+            </FluentStack>
+        </EditForm>
+    </FluentCard>
+    
+    @if (!string.IsNullOrEmpty(message))
+    {
+        <FluentMessageBar Intent="MessageIntent.Error" Style="margin-top: 20px;">
+            <FluentIcon Value="@(new Icons.Regular.Size20.ErrorCircle())" Slot="icon" />
+            @message
+        </FluentMessageBar>
+    }
+    
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="5" Style="justify-content: center; margin-top: 20px;">
+        <FluentLabel Typo="Typography.Body" Color="Color.Neutral">Don't have an account?</FluentLabel>
+        <FluentAnchor Href="/register" Appearance="Appearance.Hypertext">Sign up here</FluentAnchor>
+    </FluentStack>
+</FluentStack>
 
 @code {
     private LoginModel loginModel = new();
@@ -28,8 +62,8 @@
     // Maneja el login del usuario
     private async Task HandleLogin()
     {
-        // Aquí se debe agregar la lógica real de login
-        // Por ahora solo simula éxito si username y password no están vacíos
+        // Aquï¿½ se debe agregar la lï¿½gica real de login
+        // Por ahora solo simula ï¿½xito si username y password no estï¿½n vacï¿½os
         if (!string.IsNullOrWhiteSpace(loginModel.Username) && !string.IsNullOrWhiteSpace(loginModel.Password))
         {
             Navigation.NavigateTo("/cards");
