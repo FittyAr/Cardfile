@@ -27,8 +27,7 @@ def card_view(page: Page):
         padding=20,
         height=500
     )
-    # Caché y debounce para búsqueda
-    fichas_cache: list[Ficha] = []
+    # Debounce para búsqueda (sin caché)
     search_debounce_timer: Optional[threading.Timer] = None
     
     # Obtener configuración y traducciones
@@ -225,22 +224,33 @@ def card_view(page: Page):
         alignment=ft.MainAxisAlignment.END
     )
 
-    # Agregar el campo de búsqueda con debounce y caché
-    def apply_filter_and_render(search_text: str):
-        search_text = (search_text or "").lower().strip()
-        if not search_text:
-            filtered = fichas_cache
-        else:
-            filtered = [f for f in fichas_cache if (f.title or "").lower().find(search_text) >= 0]
+    # Render helper
+    def render_fichas_list(fichas: list[Ficha]):
         fichas_list.controls = [
             ft.ListTile(
                 leading=ft.Icon(ft.Icons.DESCRIPTION),
                 title=ft.Text(f.title),
                 on_click=lambda e, ficha=f: select_ficha(ficha)
-            ) for f in filtered
+            ) for f in fichas
         ]
         fichas_list.update()
         page.update()
+
+    # Búsqueda con debounce (consulta directa a BD)
+    def fetch_and_render(search_text: str):
+        search_text = (search_text or "").strip()
+        session = get_session()
+        try:
+            user_id = page.client_storage.get("user_id")
+            q = session.query(Ficha).filter(Ficha.usuario_id == user_id)
+            if search_text:
+                q = q.filter(Ficha.title.ilike(f"%{search_text}%"))
+            fichas = q.all()
+            render_fichas_list(fichas)
+        except Exception as e:
+            print(f"Error filtrando fichas: {str(e)}")
+        finally:
+            session.close()
 
     def search_changed(e):
         nonlocal search_debounce_timer
@@ -250,7 +260,7 @@ def card_view(page: Page):
             except Exception:
                 pass
         query = e.control.value
-        search_debounce_timer = threading.Timer(0.3, lambda: apply_filter_and_render(query))
+        search_debounce_timer = threading.Timer(0.3, lambda: fetch_and_render(query))
         search_debounce_timer.daemon = True
         search_debounce_timer.start()
 
@@ -411,14 +421,8 @@ def card_view(page: Page):
         try:
             session = get_session()
             user_id = page.client_storage.get("user_id")
-            # Cachear todas las fichas del usuario (activas e inactivas)
-            cached = session.query(Ficha).filter(
-                Ficha.usuario_id == user_id
-            ).all()
-            fichas_cache.clear()
-            fichas_cache.extend(cached)
-            # Render según el texto actual del buscador
-            apply_filter_and_render(search_field.value)
+            fichas = session.query(Ficha).filter(Ficha.usuario_id == user_id).all()
+            render_fichas_list(fichas)
         except Exception as e:
             print(f"Error cargando fichas: {str(e)}")
         finally:
