@@ -80,13 +80,26 @@ def card_view(page: Page):
     )
     markdown_toolbar = create_markdown_toolbar(description_text, on_modified=description_changed, show_code_switch=show_code_switch)
 
+    # Utilidad: saneo ligero de Markdown para preview (no modifica el valor guardado)
+    import re
+    def sanitize_for_preview(md: str) -> str:
+        if not md:
+            return ""
+        # Negrita con espacios: ** texto ** -> **texto**
+        md = re.sub(r"\*\*\s+([^*][^*]*?)\s+\*\*", r"**\1**", md)
+        # Tachado con espacios: ~~ texto ~~ -> ~~texto~~
+        md = re.sub(r"~~\s+([^~][^~]*?)\s+~~", r"~~\1~~", md)
+        # Código inline con espacios: ` texto ` -> `texto`
+        md = re.sub(r"`\s+([^`][^`]*?)\s+`", r"`\1`", md)
+        return md
+
     # Toggle para mostrar código en modo edición
     def update_editor_visibility():
         # En modo lectura mostrar solo Markdown; en edición, alternar con el switch
         if description_text.read_only:
             markdown_toolbar.visible = False
             show_code_switch.visible = False
-            markdown_preview.value = description_text.value or ""
+            markdown_preview.value = sanitize_for_preview(description_text.value or "")
             markdown_preview.visible = True
             description_text.visible = False
         else:
@@ -96,7 +109,7 @@ def card_view(page: Page):
                 description_text.visible = True
                 markdown_preview.visible = False
             else:
-                markdown_preview.value = description_text.value or ""
+                markdown_preview.value = sanitize_for_preview(description_text.value or "")
                 markdown_preview.visible = True
                 description_text.visible = False
         markdown_toolbar.update()
@@ -292,7 +305,6 @@ def card_view(page: Page):
         set_status("idle")
         # Estado de visibilidad inicial en modo lectura (no mostrar código)
         show_code_switch.value = False
-        update_editor_visibility()
         # Cancelar debounce pendiente
         if debounce_timer:
             try:
@@ -333,6 +345,8 @@ def card_view(page: Page):
                 last_saved_value = ficha_actualizada.descripcion or ""
                 has_unsaved_changes = False
                 set_status("idle")
+                # Sincronizar UI con el nuevo contenido seleccionado
+                update_editor_visibility()
                 print(f"✅ Ficha {ficha_actualizada.id} cargada con éxito")
         except Exception as e:
             print(f"❌ Error cargando ficha: {str(e)}")
