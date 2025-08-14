@@ -54,6 +54,10 @@ def card_view(page: Page):
         debounce_timer = threading.Timer(DEBOUNCE_SECONDS, save_if_needed)
         debounce_timer.daemon = True
         debounce_timer.start()
+        # Live preview cuando se edita en modo preview (switch OFF)
+        if not description_text.read_only and not show_code_switch.value:
+            markdown_preview.value = sanitize_for_preview(description_text.value or "")
+            markdown_preview.update()
 
     description_text = ft.TextField(
         multiline=True,
