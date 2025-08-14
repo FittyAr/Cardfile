@@ -71,6 +71,47 @@ def card_view(page: Page):
     markdown_preview = create_markdown_preview()
     markdown_toolbar = create_markdown_toolbar(description_text, on_modified=description_changed)
 
+    # Toggle para mostrar código en modo edición
+    def on_show_code_toggle(e):
+        update_editor_visibility()
+
+    show_code_switch = ft.Switch(
+        value=True,
+        on_change=on_show_code_toggle,
+        active_color=ft.Colors.BLUE,
+        tooltip="Mostrar/ocultar código",
+        visible=False,
+    )
+    code_toggle_row = ft.Row(
+        controls=[ft.Text("Mostrar código"), show_code_switch],
+        alignment=ft.MainAxisAlignment.END,
+        visible=False,
+    )
+
+    def update_editor_visibility():
+        # En modo lectura mostrar solo Markdown; en edición, alternar con el switch
+        if description_text.read_only:
+            markdown_toolbar.visible = False
+            code_toggle_row.visible = False
+            markdown_preview.value = description_text.value or ""
+            markdown_preview.visible = True
+            description_text.visible = False
+        else:
+            markdown_toolbar.visible = True
+            code_toggle_row.visible = True
+            if show_code_switch.value:
+                description_text.visible = True
+                markdown_preview.visible = False
+            else:
+                markdown_preview.value = description_text.value or ""
+                markdown_preview.visible = True
+                description_text.visible = False
+        markdown_toolbar.update()
+        code_toggle_row.update()
+        markdown_preview.update()
+        description_text.update()
+        page.update()
+
     # Indicador de estado de guardado
     save_status_icon = ft.Icon(ft.Icons.CHECK_CIRCLE, size=14, color=ft.Colors.GREEN_400)
     save_status_text = ft.Text("Guardado", size=12)
@@ -162,16 +203,7 @@ def card_view(page: Page):
                 debounce_timer = None
         edit_mode_label.update()
         # Alternar visibilidad de controles según modo (ver/edición)
-        if description_text.read_only:
-            markdown_toolbar.visible = False
-            markdown_preview.value = description_text.value or ""
-            markdown_preview.visible = True
-        else:
-            markdown_toolbar.visible = True
-            markdown_preview.visible = False
-        markdown_toolbar.update()
-        markdown_preview.update()
-        description_text.update()
+        update_editor_visibility()
         
     edit_mode_label = ft.Text("Modo lectura")
     edit_mode_icon = ft.Icon(ft.Icons.LOCK, color=ft.Colors.BLUE_400)
@@ -245,6 +277,9 @@ def card_view(page: Page):
         last_saved_value = ficha.descripcion or ""
         has_unsaved_changes = False
         set_status("idle")
+        # Estado de visibilidad inicial en modo lectura
+        show_code_switch.value = True
+        update_editor_visibility()
         # Cancelar debounce pendiente
         if debounce_timer:
             try:
@@ -434,9 +469,10 @@ def card_view(page: Page):
                 edit_switch,  # Agregar el switch aquí
                 save_status,
                 ft.Divider(height=20, color=ft.Colors.TRANSPARENT),
-                 markdown_toolbar,
-                 description_text,
-                 markdown_preview
+                markdown_toolbar,
+                code_toggle_row,
+                description_text,
+                markdown_preview
             ],
             spacing=10,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
