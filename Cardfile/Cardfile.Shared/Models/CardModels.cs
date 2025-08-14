@@ -29,6 +29,10 @@ namespace Cardfile.Shared.Models
 
         // Relación con etiquetas (muchos a muchos)
         public ICollection<CardTag> CardTags { get; set; } = new List<CardTag>();
+
+        // Relación con el usuario propietario de la tarjeta
+        public Guid UserId { get; set; } // Id del usuario propietario
+        public User User { get; set; } = null!; // Navegación al usuario
     }
 
     // Modelo para etiquetas
@@ -85,6 +89,9 @@ namespace Cardfile.Shared.Models
 
         // Fecha de creación del usuario
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        // Relación con las tarjetas del usuario
+        public ICollection<Card> Cards { get; set; } = new List<Card>();
     }
 
     // Modelo para configuración de la aplicación
