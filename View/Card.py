@@ -112,6 +112,12 @@ def card_view(page: Page):
         description_text.update()
         page.update()
 
+    # Estados iniciales seguros (vista en modo lectura, sin código)
+    description_text.visible = False
+    markdown_toolbar.visible = False
+    code_toggle_row.visible = False
+    markdown_preview.visible = True
+
     # Indicador de estado de guardado
     save_status_icon = ft.Icon(ft.Icons.CHECK_CIRCLE, size=14, color=ft.Colors.GREEN_400)
     save_status_text = ft.Text("Guardado", size=12)
@@ -202,7 +208,10 @@ def card_view(page: Page):
                     pass
                 debounce_timer = None
         edit_mode_label.update()
-        # Alternar visibilidad de controles según modo (ver/edición)
+        # Forzar visibilidad consistente al cambiar modo
+        if description_text.read_only:
+            # Modo lectura
+            show_code_switch.value = False
         update_editor_visibility()
         
     edit_mode_label = ft.Text("Modo lectura")
@@ -277,8 +286,8 @@ def card_view(page: Page):
         last_saved_value = ficha.descripcion or ""
         has_unsaved_changes = False
         set_status("idle")
-        # Estado de visibilidad inicial en modo lectura
-        show_code_switch.value = True
+        # Estado de visibilidad inicial en modo lectura (no mostrar código)
+        show_code_switch.value = False
         update_editor_visibility()
         # Cancelar debounce pendiente
         if debounce_timer:
