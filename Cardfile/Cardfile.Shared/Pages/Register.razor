@@ -1,0 +1,60 @@
+@page "/register"
+@using Cardfile.Shared.Models
+@inject NavigationManager Navigation
+
+<EditForm Model="registerModel" OnValidSubmit="HandleRegister">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="form-group">
+        <label>Username</label>
+        <InputText class="form-control" @bind-Value="registerModel.Username" />
+    </div>
+    <div class="form-group">
+        <label>Email</label>
+        <InputText class="form-control" @bind-Value="registerModel.Email" />
+    </div>
+    <div class="form-group">
+        <label>Password</label>
+        <InputText class="form-control" @bind-Value="registerModel.Password" type="password" />
+    </div>
+    <div class="form-group">
+        <label>Confirm Password</label>
+        <InputText class="form-control" @bind-Value="registerModel.ConfirmPassword" type="password" />
+    </div>
+    <button type="submit" class="btn btn-primary">Register</button>
+</EditForm>
+
+@if (!string.IsNullOrEmpty(message))
+{
+    <div class="alert alert-info">@message</div>
+}
+
+@code {
+    private RegisterModel registerModel = new();
+    private string? message;
+
+    // Maneja el registro del usuario
+    private async Task HandleRegister()
+    {
+        // Aquí se debe agregar la lógica real de registro
+        // Por ahora solo simula éxito
+        message = "Registration successful!";
+        await Task.Delay(1000);
+        Navigation.NavigateTo("/login");
+    }
+
+    // Modelo de registro para la vista
+    public class RegisterModel
+    {
+        [Required]
+        [MaxLength(100)]
+        public string Username { get; set; } = string.Empty;
+        [EmailAddress]
+        public string? Email { get; set; }
+        [Required]
+        [MinLength(6)]
+        public string Password { get; set; } = string.Empty;
+        [Compare("Password", ErrorMessage = "Passwords do not match.")]
+        public string? ConfirmPassword { get; set; }
+    }
+}

@@ -1,0 +1,91 @@
+@page "/cards"
+@using Cardfile.Shared.Models
+
+<h3>My Cards</h3>
+
+<!-- Aquí se mostrarán las tarjetas del usuario -->
+@if (cards.Count == 0)
+{
+    <div>No cards found.</div>
+}
+else
+{
+    <div class="card-list">
+        @foreach (var card in cards)
+        {
+            <div class="card-item">
+                <h5>@card.Title</h5>
+                <p>@card.Content</p>
+                <div class="card-meta">
+                    <span>Created: @card.CreatedAt.ToShortDateString()</span>
+                    @if (card.UpdatedAt != null)
+                    {
+                        <span> | Updated: @card.UpdatedAt?.ToShortDateString()</span>
+                    }
+                </div>
+                <div class="card-tags">
+                    @foreach (var tag in card.CardTags.Select(ct => ct.Tag))
+                    {
+                        <span class="badge bg-secondary">@tag.Name</span>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<button class="btn btn-success" @onclick="ShowAddCard">Add Card</button>
+
+@if (showAddCard)
+{
+    <EditForm Model="newCard" OnValidSubmit="AddCard">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <div class="form-group">
+            <label>Title</label>
+            <InputText class="form-control" @bind-Value="newCard.Title" />
+        </div>
+        <div class="form-group">
+            <label>Content</label>
+            <InputTextArea class="form-control" @bind-Value="newCard.Content" />
+        </div>
+        <button type="submit" class="btn btn-primary">Save</button>
+        <button type="button" class="btn btn-secondary" @onclick="HideAddCard">Cancel</button>
+    </EditForm>
+}
+
+@code {
+    private List<Card> cards = new();
+    private Card newCard = new();
+    private bool showAddCard = false;
+
+    protected override void OnInitialized()
+    {
+        // Aquí se debe cargar la lista de tarjetas del usuario
+        // Por ahora, se simula con datos de ejemplo
+        cards = new List<Card>
+        {
+            new Card { Title = "Sample Card 1", Content = "This is a sample card.", CreatedAt = DateTime.UtcNow },
+            new Card { Title = "Sample Card 2", Content = "Another card.", CreatedAt = DateTime.UtcNow }
+        };
+    }
+
+    private void ShowAddCard()
+    {
+        showAddCard = true;
+        newCard = new Card();
+    }
+
+    private void HideAddCard()
+    {
+        showAddCard = false;
+    }
+
+    private void AddCard()
+    {
+        // Aquí se debe agregar la lógica real para guardar la tarjeta
+        newCard.CreatedAt = DateTime.UtcNow;
+        cards.Add(newCard);
+        showAddCard = false;
+    }
+}

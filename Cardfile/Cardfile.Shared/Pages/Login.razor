@@ -1,0 +1,52 @@
+@page "/login"
+@using Cardfile.Shared.Models
+@inject NavigationManager Navigation
+
+<EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="form-group">
+        <label>Username</label>
+        <InputText class="form-control" @bind-Value="loginModel.Username" />
+    </div>
+    <div class="form-group">
+        <label>Password</label>
+        <InputText class="form-control" @bind-Value="loginModel.Password" type="password" />
+    </div>
+    <button type="submit" class="btn btn-primary">Login</button>
+</EditForm>
+
+@if (!string.IsNullOrEmpty(message))
+{
+    <div class="alert alert-danger">@message</div>
+}
+
+@code {
+    private LoginModel loginModel = new();
+    private string? message;
+
+    // Maneja el login del usuario
+    private async Task HandleLogin()
+    {
+        // Aquí se debe agregar la lógica real de login
+        // Por ahora solo simula éxito si username y password no están vacíos
+        if (!string.IsNullOrWhiteSpace(loginModel.Username) && !string.IsNullOrWhiteSpace(loginModel.Password))
+        {
+            Navigation.NavigateTo("/cards");
+        }
+        else
+        {
+            message = "Invalid username or password.";
+        }
+        await Task.CompletedTask;
+    }
+
+    // Modelo de login para la vista
+    public class LoginModel
+    {
+        [Required]
+        public string Username { get; set; } = string.Empty;
+        [Required]
+        public string Password { get; set; } = string.Empty;
+    }
+}
