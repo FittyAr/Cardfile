@@ -1,10 +1,14 @@
 @inherits LayoutComponentBase
+@inject IAppSettingsService AppSettingsService
 <FluentLayout>
     <FluentHeader>
         Cardfile
     </FluentHeader>
     <FluentStack Class="main" Orientation="Orientation.Horizontal" Width="100%">
-        <NavMenu />
+        @if (isConfigured)
+        {
+            <NavMenu />
+        }
         <FluentBodyContent Class="body-content">
             <div class="content">
                 @Body
@@ -25,3 +29,28 @@
     <a href="" class="reload">Reload</a>
     <a class="dismiss">🗙</a>
 </div>
+
+@code {
+    /// <summary>
+    /// Flag indicating whether the application has been configured at least once.
+    /// If false, the side navigation menu (NavMenu) will be hidden in this layout.
+    /// </summary>
+    private bool isConfigured = false;
+
+    /// <summary>
+    /// Loads the current configuration state from the application settings service.
+    /// This determines if the navigation menu should be rendered.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isConfigured = await AppSettingsService.IsConfiguredAsync();
+        }
+        catch
+        {
+            // In case of any error reading configuration, default to hidden menu.
+            isConfigured = false;
+        }
+    }
+}

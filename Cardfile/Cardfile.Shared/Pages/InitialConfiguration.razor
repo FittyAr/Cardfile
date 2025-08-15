@@ -10,125 +10,210 @@
 <PageTitle>Configuración Inicial - Cardfile</PageTitle>
 
 <div class="initial-config-container">
-    <div class="config-card">
+    <FluentCard class="config-card">
         <div class="config-header">
-            <h1>🗃️ Configuración Inicial</h1>
+            <FluentIcon Value="@(new Icons.Regular.Size48.FolderPerson())" Color="Color.Neutral" />
+            <h1>Configuración Inicial</h1>
             <p>Bienvenido a Cardfile. Configura dónde deseas almacenar tus datos.</p>
         </div>
 
-        <div class="config-form">
-            <div class="form-section">
-                <h3>Tipo de Base de Datos</h3>
-                <div class="radio-group">
-                    <label class="radio-option @(selectedDatabaseType == "SQLite" ? "selected" : "")">
-                        <input type="radio" name="databaseType" value="SQLite" @onchange="OnDatabaseTypeChanged" checked="@(selectedDatabaseType == "SQLite")" />
-                        <span class="radio-text">
-                            <strong>SQLite</strong>
-                            <small>Recomendado para uso local</small>
-                        </span>
-                    </label>
-                    <label class="radio-option @(selectedDatabaseType == "MySQL" ? "selected" : "")">
-                        <input type="radio" name="databaseType" value="MySQL" @onchange="OnDatabaseTypeChanged" checked="@(selectedDatabaseType == "MySQL")" />
-                        <span class="radio-text">
-                            <strong>MySQL</strong>
-                            <small>Base de datos MySQL</small>
-                        </span>
-                    </label>
-                    <label class="radio-option @(selectedDatabaseType == "MariaDB" ? "selected" : "")">
-                        <input type="radio" name="databaseType" value="MariaDB" @onchange="OnDatabaseTypeChanged" checked="@(selectedDatabaseType == "MariaDB")" />
-                        <span class="radio-text">
-                            <strong>MariaDB</strong>
-                            <small>Base de datos MariaDB</small>
-                        </span>
-                    </label>
-                    <label class="radio-option @(selectedDatabaseType == "MsSQL" ? "selected" : "")">
-                        <input type="radio" name="databaseType" value="MsSQL" @onchange="OnDatabaseTypeChanged" checked="@(selectedDatabaseType == "MsSQL")" />
-                        <span class="radio-text">
-                            <strong>Microsoft SQL Server</strong>
-                            <small>Base de datos SQL Server</small>
-                        </span>
-                    </label>
-                </div>
-            </div>
+        <FluentStack Orientation="Orientation.Vertical" class="config-form">
+            <!-- Tipo de Base de Datos -->
+            <FluentStack Orientation="Orientation.Vertical" class="form-section">
+                <FluentLabel Typography="Typography.PaneHeader">Tipo de Base de Datos</FluentLabel>
+                <!-- Layout en 2 columnas para mejor aprovechamiento del espacio -->
+                <div class="radio-grid">
+                    <FluentCard class='@GetRadioCardClass("SQLite")' 
+                              @onclick='() => SelectDatabaseType("SQLite")'>
+                        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+                            <FluentIcon Value="@(new Icons.Regular.Size20.DatabaseSearch())" Color="Color.Accent" />
+                            <FluentStack Orientation="Orientation.Vertical">
+                                <FluentLabel Weight="FontWeight.Bold">SQLite</FluentLabel>
+                                <FluentLabel Typography="Typography.Caption" Color="Color.Neutral">Recomendado para uso local</FluentLabel>
+                            </FluentStack>
+                        </FluentStack>
+                    </FluentCard>
 
+                    <FluentCard class='@GetRadioCardClass("MySQL")' 
+                              @onclick='() => SelectDatabaseType("MySQL")'>
+                        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+                            <FluentIcon Value="@(new Icons.Regular.Size20.Database())" Color="Color.Info" />
+                            <FluentStack Orientation="Orientation.Vertical">
+                                <FluentLabel Weight="FontWeight.Bold">MySQL</FluentLabel>
+                                <FluentLabel Typography="Typography.Caption" Color="Color.Neutral">Base de datos MySQL</FluentLabel>
+                            </FluentStack>
+                        </FluentStack>
+                    </FluentCard>
+
+                    <FluentCard class='@GetRadioCardClass("MariaDB")' 
+                              @onclick='() => SelectDatabaseType("MariaDB")'>
+                        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+                            <FluentIcon Value="@(new Icons.Regular.Size20.DatabaseLightning())" Color="Color.Success" />
+                            <FluentStack Orientation="Orientation.Vertical">
+                                <FluentLabel Weight="FontWeight.Bold">MariaDB</FluentLabel>
+                                <FluentLabel Typography="Typography.Caption" Color="Color.Neutral">Base de datos MariaDB</FluentLabel>
+                            </FluentStack>
+                        </FluentStack>
+                    </FluentCard>
+
+                    <FluentCard class='@GetRadioCardClass("PostgreSQL")' 
+                              @onclick='() => SelectDatabaseType("PostgreSQL")'>
+                        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+                            <FluentIcon Value="@(new Icons.Regular.Size20.Database())" Color="Color.Warning" />
+                            <FluentStack Orientation="Orientation.Vertical">
+                                <FluentLabel Weight="FontWeight.Bold">PostgreSQL</FluentLabel>
+                                <FluentLabel Typography="Typography.Caption" Color="Color.Neutral">Base de datos PostgreSQL</FluentLabel>
+                            </FluentStack>
+                        </FluentStack>
+                    </FluentCard>
+
+                    <FluentCard class='@GetRadioCardClass("MsSQL")' 
+                              @onclick='() => SelectDatabaseType("MsSQL")'>
+                        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+                            <FluentIcon Value="@(new Icons.Regular.Size20.DatabaseWindow())" Color="Color.Error" />
+                            <FluentStack Orientation="Orientation.Vertical">
+                                <FluentLabel Weight="FontWeight.Bold">Microsoft SQL Server</FluentLabel>
+                                <FluentLabel Typography="Typography.Caption" Color="Color.Neutral">Base de datos SQL Server</FluentLabel>
+                            </FluentStack>
+                        </FluentStack>
+                    </FluentCard>
+                </div>
+            </FluentStack>
+
+            <!-- Configuración de Conexión -->
             @if (selectedDatabaseType != "SQLite")
             {
-                <div class="form-section">
-                    <h3>Configuración de Conexión</h3>
-                    <div class="input-group">
-                        <label>Servidor:</label>
-                        <input type="text" @bind="connectionConfig.Host" placeholder="localhost" />
-                    </div>
-                    <div class="input-group">
-                        <label>Puerto:</label>
-                        <input type="number" @bind="connectionConfig.Port" placeholder="3306" />
-                    </div>
-                    <div class="input-group">
-                        <label>Nombre de la Base de Datos:</label>
-                        <input type="text" @bind="connectionConfig.DatabaseName" placeholder="cardfile_db" />
-                    </div>
-                    <div class="input-group">
-                        <label>Usuario:</label>
-                        <input type="text" @bind="connectionConfig.Username" placeholder="root" />
-                    </div>
-                    <div class="input-group">
-                        <label>Contraseña:</label>
-                        <input type="password" @bind="connectionConfig.Password" />
-                    </div>
-                </div>
+                <FluentStack Orientation="Orientation.Vertical" class="form-section">
+                    <FluentLabel Typography="Typography.PaneHeader">Configuración de Conexión</FluentLabel>
+                    <FluentStack Orientation="Orientation.Vertical">
+                        <FluentTextField @bind-Value="connectionConfig.Host" 
+                                       Label="Servidor" 
+                                       Placeholder="localhost" 
+                                       IconStart="@(new Icons.Regular.Size16.Server())" />
+
+                        <FluentNumberField @bind-Value="connectionConfig.Port" 
+                                         Label="Puerto" 
+                                         Placeholder="@GetDefaultPort()"
+                                         IconStart="@(new Icons.Regular.Size16.PlugConnected())" />
+
+                        <FluentTextField @bind-Value="connectionConfig.DatabaseName" 
+                                       Label="Nombre de la Base de Datos" 
+                                       Placeholder="cardfile_db" 
+                                       IconStart="@(new Icons.Regular.Size16.Database())" />
+
+                        <FluentTextField @bind-Value="connectionConfig.Username" 
+                                       Label="Usuario" 
+                                       Placeholder="root" 
+                                       IconStart="@(new Icons.Regular.Size16.Person())" />
+
+                        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Bottom">
+                            <FluentTextField @bind-Value="connectionConfig.Password" 
+                                           Label="Contraseña" 
+                                           TextFieldType="@passwordFieldType"
+                                           Style="flex: 1;"
+                                           IconStart="@(new Icons.Regular.Size16.LockClosed())" />
+                            <FluentButton Appearance="Appearance.Stealth" 
+                                        OnClick="TogglePasswordVisibility"
+                                        Style="height: 32px; margin-left: 8px;">
+                                <FluentIcon Value="@((Icon)(passwordFieldType == TextFieldType.Password ? new Icons.Regular.Size16.Eye() : new Icons.Regular.Size16.EyeOff()))" 
+                                          Color="Color.Accent" />
+                            </FluentButton>
+                        </FluentStack>
+                    </FluentStack>
+                </FluentStack>
             }
 
-            <div class="form-section">
-                <h3>Configuración de Usuario Inicial</h3>
-                <div class="input-group">
-                    <label>Nombre de Usuario:</label>
-                    <input type="text" @bind="initialUser.Username" placeholder="admin" />
-                </div>
-                <div class="input-group">
-                    <label>Correo Electrónico:</label>
-                    <input type="email" @bind="initialUser.Email" placeholder="admin@cardfile.com" />
-                </div>
-                <div class="input-group">
-                    <label>Contraseña:</label>
-                    <input type="password" @bind="initialUser.Password" />
-                </div>
-                <div class="input-group">
-                    <label>Confirmar Contraseña:</label>
-                    <input type="password" @bind="confirmPassword" />
-                </div>
-            </div>
+            <!-- Configuración de Usuario Inicial -->
+            <FluentStack Orientation="Orientation.Vertical" class="form-section">
+                <FluentLabel Typography="Typography.PaneHeader">Configuración de Usuario Inicial</FluentLabel>
+                <FluentStack Orientation="Orientation.Vertical">
+                    <FluentTextField @bind-Value="initialUser.Username" 
+                                   Label="Nombre de Usuario" 
+                                   Placeholder="admin" 
+                                   Required="true"
+                                   IconStart="@(new Icons.Regular.Size16.Person())" />
 
-            <div class="form-section">
-                <h3>Idioma</h3>
-                <select @bind="selectedLanguage" class="language-select">
-                    <option value="es">Español</option>
-                    <option value="en">English</option>
-                    <option value="pt_BR">Português (Brasil)</option>
-                    <option value="fr">Français</option>
-                </select>
-            </div>
+                    <FluentTextField @bind-Value="initialUser.Email" 
+                                   Label="Correo Electrónico" 
+                                   Placeholder="admin@cardfile.com" 
+                                   TextFieldType="TextFieldType.Email"
+                                   Required="true"
+                                   IconStart="@(new Icons.Regular.Size16.Mail())" />
 
+                    <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Bottom">
+                        <FluentTextField @bind-Value="initialUser.Password" 
+                                       Label="Contraseña" 
+                                       TextFieldType="@userPasswordFieldType"
+                                       Required="true"
+                                       Style="flex: 1;"
+                                       IconStart="@(new Icons.Regular.Size16.LockClosed())" />
+                        <FluentButton Appearance="Appearance.Stealth" 
+                                    OnClick="ToggleUserPasswordVisibility"
+                                    Style="height: 32px; margin-left: 8px;">
+                            <FluentIcon Value="@((Icon)(userPasswordFieldType == TextFieldType.Password ? new Icons.Regular.Size16.Eye() : new Icons.Regular.Size16.EyeOff()))" 
+                                      Color="Color.Accent" />
+                        </FluentButton>
+                    </FluentStack>
+
+                    <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Bottom">
+                        <FluentTextField @bind-Value="confirmPassword" 
+                                       Label="Confirmar Contraseña" 
+                                       TextFieldType="@confirmPasswordFieldType"
+                                       Required="true"
+                                       Style="flex: 1;"
+                                       IconStart="@(new Icons.Regular.Size16.LockClosed())" />
+                        <FluentButton Appearance="Appearance.Stealth" 
+                                    OnClick="ToggleConfirmPasswordVisibility"
+                                    Style="height: 32px; margin-left: 8px;">
+                            <FluentIcon Value="@((Icon)(confirmPasswordFieldType == TextFieldType.Password ? new Icons.Regular.Size16.Eye() : new Icons.Regular.Size16.EyeOff()))" 
+                                      Color="Color.Accent" />
+                        </FluentButton>
+                    </FluentStack>
+                </FluentStack>
+            </FluentStack>
+
+            <!-- Idioma -->
+            <FluentStack Orientation="Orientation.Vertical" class="form-section">
+                <FluentLabel Typography="Typography.PaneHeader">Idioma</FluentLabel>
+                <FluentSelect @bind-Value="selectedLanguage" 
+                            Items="@languageOptions" 
+                            OptionText="@(item => item.Text)" 
+                            OptionValue="@(item => item.Value)"
+                            Appearance="Appearance.Outline">
+                    <FluentIcon Value="@(new Icons.Regular.Size16.LocalLanguage())" Slot="start" Color="Color.Neutral" />
+                </FluentSelect>
+            </FluentStack>
+
+            <!-- Mensaje de Error -->
             @if (!string.IsNullOrEmpty(errorMessage))
             {
-                <div class="error-message">
-                    ⚠️ @errorMessage
-                </div>
+                <FluentMessageBar Intent="@MessageIntent.Error" class="error-message">
+                    <FluentIcon Value="@(new Icons.Regular.Size16.ErrorCircle())" Color="Color.Error" />
+                    @errorMessage
+                </FluentMessageBar>
             }
 
-            <div class="form-actions">
-                <button class="save-button" @onclick="SaveConfigurationAsync" disabled="@isLoading">
+            <!-- Botón de Guardar -->
+            <FluentStack class="form-actions">
+                <FluentButton Type="ButtonType.Submit" 
+                            Appearance="Appearance.Accent" 
+                            Loading="@isLoading"
+                            OnClick="SaveConfigurationAsync"
+                            class="save-button">
                     @if (isLoading)
                     {
-                        <span>⏳ Configurando...</span>
+                        <FluentIcon Value="@(new Icons.Regular.Size16.ArrowClockwise())" Color="Color.Fill" />
+                        <span>Configurando...</span>
                     }
                     else
                     {
-                        <span>💾 Guardar Configuración</span>
+                        <FluentIcon Value="@(new Icons.Regular.Size16.Save())" Color="Color.Fill" />
+                        <span>Guardar Configuración</span>
                     }
-                </button>
-            </div>
-        </div>
-    </div>
+                </FluentButton>
+            </FluentStack>
+        </FluentStack>
+    </FluentCard>
 </div>
 
 <style>
@@ -138,160 +223,96 @@
         align-items: center;
         min-height: 100vh;
         padding: 20px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, var(--accent-fill-rest) 0%, var(--neutral-fill-strong-rest) 100%);
     }
 
     .config-card {
-        max-width: 600px;
+        max-width: 750px; /* Aumentado para acomodar 2 columnas */
         width: 100%;
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        background: var(--neutral-layer-floating);
+        border-radius: var(--control-corner-radius);
+        box-shadow: var(--elevation-shadow-card-rest);
         overflow: hidden;
     }
 
     .config-header {
         text-align: center;
         padding: 40px 30px 20px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
+        background: linear-gradient(135deg, var(--accent-fill-rest) 0%, var(--neutral-fill-strong-rest) 100%);
+        color: var(--neutral-foreground-on-accent);
     }
 
-    .config-header h1 {
-        margin: 0 0 10px;
-        font-size: 2rem;
-        font-weight: 600;
+    /* Grid en 2 columnas para los radio buttons */
+    .radio-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        width: 100%;
     }
 
-    .config-header p {
-        margin: 0;
-        opacity: 0.9;
-        font-size: 1.1rem;
+    /* Responsive: en pantallas pequeñas volver a 1 columna */
+    @@media (max-width: 768px) {
+        .radio-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .config-card {
+            max-width: 650px;
+        }
+    }
+
+    .radio-card {
+        padding: 12px;
+        border: 1px solid var(--neutral-stroke-rest);
+        border-radius: var(--control-corner-radius);
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .radio-card:hover {
+        border-color: var(--accent-fill-rest);
+        box-shadow: var(--elevation-shadow-tooltip);
+        transform: translateY(-2px);
+    }
+
+    .radio-card.selected {
+        border-color: var(--accent-fill-rest);
+        box-shadow: var(--elevation-shadow-dialog);
+        background: color-mix(in srgb, var(--accent-fill-rest) 10%, transparent);
+    }
+
+    .radio-card:focus-visible {
+        outline: 2px solid var(--focus-stroke-outer);
+        outline-offset: 2px;
+    }
+
+    /* Eliminado: reglas para fluent-radio ya no son necesarias */
+    /* .radio-card fluent-radio {
+        width: 100%;
+    } */
+    .form-section {
+        gap: 12px;
+        margin-bottom: 24px;
     }
 
     .config-form {
         padding: 30px;
-    }
-
-    .form-section {
-        margin-bottom: 25px;
-    }
-
-    .form-section h3 {
-        margin: 0 0 15px;
-        color: #333;
-        font-size: 1.2rem;
-        font-weight: 500;
-    }
-
-    .radio-group {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .radio-option {
-        display: flex;
-        align-items: center;
-        padding: 12px;
-        border: 2px solid #e0e0e0;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .radio-option:hover {
-        border-color: #667eea;
-        background-color: #f8f9ff;
-    }
-
-    .radio-option.selected {
-        border-color: #667eea;
-        background-color: #f0f2ff;
-    }
-
-    .radio-option input[type="radio"] {
-        margin-right: 12px;
-        accent-color: #667eea;
-    }
-
-    .radio-text {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .radio-text strong {
-        color: #333;
-        font-weight: 600;
-    }
-
-    .radio-text small {
-        color: #666;
-        font-size: 0.9rem;
-    }
-
-    .input-group {
-        margin-bottom: 15px;
-    }
-
-    .input-group label {
-        display: block;
-        margin-bottom: 5px;
-        color: #333;
-        font-weight: 500;
-    }
-
-    .input-group input, .language-select {
-        width: 100%;
-        padding: 10px 12px;
-        border: 2px solid #e0e0e0;
-        border-radius: 6px;
-        font-size: 14px;
-        transition: border-color 0.2s ease;
-        box-sizing: border-box;
-    }
-
-    .input-group input:focus, .language-select:focus {
-        outline: none;
-        border-color: #667eea;
-    }
-
-    .error-message {
-        background-color: #fee;
-        color: #c33;
-        padding: 12px;
-        border-radius: 6px;
-        margin: 15px 0;
-        border-left: 4px solid #c33;
+        gap: 24px;
     }
 
     .form-actions {
-        margin-top: 30px;
-        padding-top: 20px;
-        border-top: 1px solid #eee;
+        justify-content: center;
+        margin-top: 20px;
     }
 
     .save-button {
-        width: 100%;
-        padding: 15px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: transform 0.2s ease;
+        min-width: 200px;
+        height: 44px;
+        gap: 8px;
     }
 
-    .save-button:hover:not(:disabled) {
-        transform: translateY(-2px);
-    }
-
-    .save-button:disabled {
-        opacity: 0.7;
-        cursor: not-allowed;
+    .error-message {
+        margin: 16px 0;
     }
 </style>
 
@@ -302,12 +323,45 @@
     private bool isLoading = false;
     private string confirmPassword = string.Empty;
 
+    // Password visibility toggles <mcreference link="https://github.com/microsoft/fluentui-blazor/discussions/1122" index="1">1</mcreference>
+    private TextFieldType passwordFieldType = TextFieldType.Password;
+    private TextFieldType userPasswordFieldType = TextFieldType.Password;
+    private TextFieldType confirmPasswordFieldType = TextFieldType.Password;
+
+    private void SelectDatabaseType(string databaseType)
+    {
+        if (selectedDatabaseType == databaseType)
+            return;
+
+        selectedDatabaseType = databaseType;
+        connectionConfig.Port = GetDefaultPortInt();
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Obtiene la clase CSS para la tarjeta de base de datos según su estado de selección.
+    /// </summary>
+    /// <param name="databaseType">Tipo de base de datos</param>
+    /// <returns>Clases CSS para la tarjeta</returns>
+    private string GetRadioCardClass(string databaseType)
+    {
+        return selectedDatabaseType == databaseType ? "radio-card selected" : "radio-card";
+    }
+
     private DatabaseConnectionConfig connectionConfig = new();
     private InitialUserConfig initialUser = new()
     {
         Username = "admin",
         Email = "admin@cardfile.com",
         Password = "admin123"
+    };
+
+    private readonly List<LanguageOption> languageOptions = new()
+    {
+        new() { Value = "es", Text = "Español" },
+        new() { Value = "en", Text = "English" },
+        new() { Value = "pt_BR", Text = "Português (Brasil)" },
+        new() { Value = "fr", Text = "Français" }
     };
 
     /// <summary>
@@ -328,14 +382,67 @@
         {
             // Ignorar errores y permitir continuar con la página
         }
+
+        // Set default port based on database type
+        connectionConfig.Port = GetDefaultPortInt();
     }
 
     /// <summary>
-    /// Maneja el cambio de tipo de base de datos
+    /// Obtiene el puerto por defecto para el tipo de base de datos seleccionado
     /// </summary>
-    private void OnDatabaseTypeChanged(ChangeEventArgs e)
+    private string GetDefaultPort()
     {
-        selectedDatabaseType = e.Value?.ToString() ?? "SQLite";
+        return selectedDatabaseType switch
+        {
+            "MySQL" or "MariaDB" => "3306",
+            "PostgreSQL" => "5432",
+            "MsSQL" => "1433",
+            _ => "3306"
+        };
+    }
+
+    /// <summary>
+    /// Obtiene el puerto por defecto como entero
+    /// </summary>
+    private int GetDefaultPortInt()
+    {
+        return selectedDatabaseType switch
+        {
+            "MySQL" or "MariaDB" => 3306,
+            "PostgreSQL" => 5432,
+            "MsSQL" => 1433,
+            _ => 3306
+        };
+    }
+
+    /// <summary>
+    /// Alternar visibilidad de contraseña de conexión
+    /// </summary>
+    private void TogglePasswordVisibility()
+    {
+        passwordFieldType = passwordFieldType == TextFieldType.Password 
+            ? TextFieldType.Text 
+            : TextFieldType.Password;
+    }
+
+    /// <summary>
+    /// Alternar visibilidad de contraseña de usuario
+    /// </summary>
+    private void ToggleUserPasswordVisibility()
+    {
+        userPasswordFieldType = userPasswordFieldType == TextFieldType.Password 
+            ? TextFieldType.Text 
+            : TextFieldType.Password;
+    }
+
+    /// <summary>
+    /// Alternar visibilidad de confirmación de contraseña
+    /// </summary>
+    private void ToggleConfirmPasswordVisibility()
+    {
+        confirmPasswordFieldType = confirmPasswordFieldType == TextFieldType.Password 
+            ? TextFieldType.Text 
+            : TextFieldType.Password;
     }
 
     /// <summary>
@@ -352,6 +459,12 @@
             if (!ValidateConfiguration())
             {
                 return;
+            }
+
+            // Update port based on database type if not manually changed
+            if (connectionConfig.Port == GetDefaultPortInt() || connectionConfig.Port == 0)
+            {
+                connectionConfig.Port = GetDefaultPortInt();
             }
 
             // Crear configuración AppSettings para appsettings.json
@@ -466,6 +579,7 @@
             "SQLite" => "Data Source=cardfile.db",
             "MySQL" => $"Server={connectionConfig.Host};Port={connectionConfig.Port};Database={connectionConfig.DatabaseName};Uid={connectionConfig.Username};Pwd={connectionConfig.Password};",
             "MariaDB" => $"Server={connectionConfig.Host};Port={connectionConfig.Port};Database={connectionConfig.DatabaseName};Uid={connectionConfig.Username};Pwd={connectionConfig.Password};",
+            "PostgreSQL" => $"Host={connectionConfig.Host};Port={connectionConfig.Port};Database={connectionConfig.DatabaseName};Username={connectionConfig.Username};Password={connectionConfig.Password};",
             "MsSQL" => $"Server={connectionConfig.Host},{connectionConfig.Port};Database={connectionConfig.DatabaseName};User Id={connectionConfig.Username};Password={connectionConfig.Password};TrustServerCertificate=true;",
             _ => "Data Source=cardfile.db"
         };
@@ -492,5 +606,13 @@
         public string Email { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
     }
-}
+
+    /// <summary>
+    /// Opción de idioma para el selector
+    /// </summary>
+    private class LanguageOption
+    {
+        public string Value { get; set; } = string.Empty;
+        public string Text { get; set; } = string.Empty;
+    }
 }
