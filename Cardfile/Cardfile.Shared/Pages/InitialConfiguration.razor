@@ -1,0 +1,453 @@
+@page "/initial-config"
+@using Cardfile.Shared.Models
+@using Cardfile.Shared.Services
+@using Microsoft.FluentUI.AspNetCore.Components
+@inject IAppConfigService AppConfigService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Configuración Inicial - Cardfile</PageTitle>
+
+<div class="initial-config-container">
+    <div class="config-card">
+        <div class="config-header">
+            <h1>🗃️ Configuración Inicial</h1>
+            <p>Bienvenido a Cardfile. Configura dónde deseas almacenar tus datos.</p>
+        </div>
+
+        <div class="config-form">
+            <div class="form-section">
+                <h3>Tipo de Base de Datos</h3>
+                <div class="radio-group">
+                    <label class="radio-option @(selectedDatabaseType == "SQLite" ? "selected" : "")">
+                        <input type="radio" name="databaseType" value="SQLite" @onchange="OnDatabaseTypeChanged" checked="@(selectedDatabaseType == "SQLite")" />
+                        <span class="radio-text">
+                            <strong>SQLite</strong>
+                            <small>Recomendado para uso local</small>
+                        </span>
+                    </label>
+                    <label class="radio-option @(selectedDatabaseType == "MySQL" ? "selected" : "")">
+                        <input type="radio" name="databaseType" value="MySQL" @onchange="OnDatabaseTypeChanged" checked="@(selectedDatabaseType == "MySQL")" />
+                        <span class="radio-text">
+                            <strong>MySQL</strong>
+                            <small>Base de datos MySQL</small>
+                        </span>
+                    </label>
+                    <label class="radio-option @(selectedDatabaseType == "MariaDB" ? "selected" : "")">
+                        <input type="radio" name="databaseType" value="MariaDB" @onchange="OnDatabaseTypeChanged" checked="@(selectedDatabaseType == "MariaDB")" />
+                        <span class="radio-text">
+                            <strong>MariaDB</strong>
+                            <small>Base de datos MariaDB</small>
+                        </span>
+                    </label>
+                    <label class="radio-option @(selectedDatabaseType == "MsSQL" ? "selected" : "")">
+                        <input type="radio" name="databaseType" value="MsSQL" @onchange="OnDatabaseTypeChanged" checked="@(selectedDatabaseType == "MsSQL")" />
+                        <span class="radio-text">
+                            <strong>Microsoft SQL Server</strong>
+                            <small>Base de datos SQL Server</small>
+                        </span>
+                    </label>
+                </div>
+            </div>
+
+            @if (selectedDatabaseType != "SQLite")
+            {
+                <div class="form-section">
+                    <h3>Configuración de Conexión</h3>
+                    <div class="input-group">
+                        <label>Servidor:</label>
+                        <input type="text" @bind="connectionConfig.Host" placeholder="localhost" />
+                    </div>
+                    <div class="input-group">
+                        <label>Puerto:</label>
+                        <input type="number" @bind="connectionConfig.Port" placeholder="3306" />
+                    </div>
+                    <div class="input-group">
+                        <label>Nombre de la Base de Datos:</label>
+                        <input type="text" @bind="connectionConfig.DatabaseName" placeholder="cardfile_db" />
+                    </div>
+                    <div class="input-group">
+                        <label>Usuario:</label>
+                        <input type="text" @bind="connectionConfig.Username" placeholder="root" />
+                    </div>
+                    <div class="input-group">
+                        <label>Contraseña:</label>
+                        <input type="password" @bind="connectionConfig.Password" />
+                    </div>
+                </div>
+            }
+
+            <div class="form-section">
+                <h3>Configuración de Usuario Inicial</h3>
+                <div class="input-group">
+                    <label>Nombre de Usuario:</label>
+                    <input type="text" @bind="initialUser.Username" placeholder="admin" />
+                </div>
+                <div class="input-group">
+                    <label>Correo Electrónico:</label>
+                    <input type="email" @bind="initialUser.Email" placeholder="admin@cardfile.com" />
+                </div>
+                <div class="input-group">
+                    <label>Contraseña:</label>
+                    <input type="password" @bind="initialUser.Password" />
+                </div>
+                <div class="input-group">
+                    <label>Confirmar Contraseña:</label>
+                    <input type="password" @bind="confirmPassword" />
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Idioma</h3>
+                <select @bind="selectedLanguage" class="language-select">
+                    <option value="es">Español</option>
+                    <option value="en">English</option>
+                    <option value="pt_BR">Português (Brasil)</option>
+                    <option value="fr">Français</option>
+                </select>
+            </div>
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="error-message">
+                    ⚠️ @errorMessage
+                </div>
+            }
+
+            <div class="form-actions">
+                <button class="save-button" @onclick="SaveConfigurationAsync" disabled="@isLoading">
+                    @if (isLoading)
+                    {
+                        <span>⏳ Configurando...</span>
+                    }
+                    else
+                    {
+                        <span>💾 Guardar Configuración</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .initial-config-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .config-card {
+        max-width: 600px;
+        width: 100%;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .config-header {
+        text-align: center;
+        padding: 40px 30px 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .config-header h1 {
+        margin: 0 0 10px;
+        font-size: 2rem;
+        font-weight: 600;
+    }
+
+    .config-header p {
+        margin: 0;
+        opacity: 0.9;
+        font-size: 1.1rem;
+    }
+
+    .config-form {
+        padding: 30px;
+    }
+
+    .form-section {
+        margin-bottom: 25px;
+    }
+
+    .form-section h3 {
+        margin: 0 0 15px;
+        color: #333;
+        font-size: 1.2rem;
+        font-weight: 500;
+    }
+
+    .radio-group {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .radio-option {
+        display: flex;
+        align-items: center;
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .radio-option:hover {
+        border-color: #667eea;
+        background-color: #f8f9ff;
+    }
+
+    .radio-option.selected {
+        border-color: #667eea;
+        background-color: #f0f2ff;
+    }
+
+    .radio-option input[type="radio"] {
+        margin-right: 12px;
+        accent-color: #667eea;
+    }
+
+    .radio-text {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .radio-text strong {
+        color: #333;
+        font-weight: 600;
+    }
+
+    .radio-text small {
+        color: #666;
+        font-size: 0.9rem;
+    }
+
+    .input-group {
+        margin-bottom: 15px;
+    }
+
+    .input-group label {
+        display: block;
+        margin-bottom: 5px;
+        color: #333;
+        font-weight: 500;
+    }
+
+    .input-group input, .language-select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: border-color 0.2s ease;
+        box-sizing: border-box;
+    }
+
+    .input-group input:focus, .language-select:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+
+    .error-message {
+        background-color: #fee;
+        color: #c33;
+        padding: 12px;
+        border-radius: 6px;
+        margin: 15px 0;
+        border-left: 4px solid #c33;
+    }
+
+    .form-actions {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+    }
+
+    .save-button {
+        width: 100%;
+        padding: 15px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+    }
+
+    .save-button:hover:not(:disabled) {
+        transform: translateY(-2px);
+    }
+
+    .save-button:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+</style>
+
+@code {
+    private string selectedDatabaseType = "SQLite";
+    private string selectedLanguage = "es";
+    private string errorMessage = string.Empty;
+    private bool isLoading = false;
+    private string confirmPassword = string.Empty;
+
+    private DatabaseConnectionConfig connectionConfig = new();
+    private InitialUserConfig initialUser = new()
+    {
+        Username = "admin",
+        Email = "admin@cardfile.com",
+        Password = "admin123"
+    };
+
+    /// <summary>
+    /// Maneja el cambio de tipo de base de datos
+    /// </summary>
+    private void OnDatabaseTypeChanged(ChangeEventArgs e)
+    {
+        selectedDatabaseType = e.Value?.ToString() ?? "SQLite";
+    }
+
+    /// <summary>
+    /// Guarda la configuración inicial de la aplicación
+    /// </summary>
+    private async Task SaveConfigurationAsync()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = string.Empty;
+
+            // Validar datos
+            if (!ValidateConfiguration())
+            {
+                return;
+            }
+
+            // Crear configuración
+            var appConfig = new AppConfig
+            {
+                Id = Guid.NewGuid(),
+                DatabaseType = selectedDatabaseType,
+                Language = selectedLanguage,
+                ConnectionString = BuildConnectionString()
+            };
+
+            // Guardar configuración
+            await AppConfigService.AddAsync(appConfig);
+
+            // Marcar como configurado en localStorage
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", "cardfile_configured", "true");
+
+            // Redirigir a la página principal
+            Navigation.NavigateTo("/", true);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error al guardar la configuración: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    /// <summary>
+    /// Valida la configuración antes de guardarla
+    /// </summary>
+    private bool ValidateConfiguration()
+    {
+        if (string.IsNullOrWhiteSpace(initialUser.Username))
+        {
+            errorMessage = "El nombre de usuario es requerido.";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(initialUser.Email))
+        {
+            errorMessage = "El correo electrónico es requerido.";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(initialUser.Password))
+        {
+            errorMessage = "La contraseña es requerida.";
+            return false;
+        }
+
+        if (initialUser.Password != confirmPassword)
+        {
+            errorMessage = "Las contraseñas no coinciden.";
+            return false;
+        }
+
+        if (selectedDatabaseType != "SQLite")
+        {
+            if (string.IsNullOrWhiteSpace(connectionConfig.Host))
+            {
+                errorMessage = "El servidor es requerido para bases de datos remotas.";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(connectionConfig.DatabaseName))
+            {
+                errorMessage = "El nombre de la base de datos es requerido.";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(connectionConfig.Username))
+            {
+                errorMessage = "El usuario de la base de datos es requerido.";
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Construye la cadena de conexión basada en el tipo de base de datos seleccionado
+    /// </summary>
+    private string BuildConnectionString()
+    {
+        return selectedDatabaseType switch
+        {
+            "SQLite" => "Data Source=cardfile.db",
+            "MySQL" => $"Server={connectionConfig.Host};Port={connectionConfig.Port};Database={connectionConfig.DatabaseName};Uid={connectionConfig.Username};Pwd={connectionConfig.Password};",
+            "MariaDB" => $"Server={connectionConfig.Host};Port={connectionConfig.Port};Database={connectionConfig.DatabaseName};Uid={connectionConfig.Username};Pwd={connectionConfig.Password};",
+            "MsSQL" => $"Server={connectionConfig.Host},{connectionConfig.Port};Database={connectionConfig.DatabaseName};User Id={connectionConfig.Username};Password={connectionConfig.Password};TrustServerCertificate=true;",
+            _ => "Data Source=cardfile.db"
+        };
+    }
+
+    /// <summary>
+    /// Configuración de conexión a base de datos
+    /// </summary>
+    private class DatabaseConnectionConfig
+    {
+        public string Host { get; set; } = "localhost";
+        public int Port { get; set; } = 3306;
+        public string DatabaseName { get; set; } = "cardfile_db";
+        public string Username { get; set; } = "root";
+        public string Password { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Configuración de usuario inicial
+    /// </summary>
+    private class InitialUserConfig
+    {
+        public string Username { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+    }
+}

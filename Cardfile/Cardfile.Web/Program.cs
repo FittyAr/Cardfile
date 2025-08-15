@@ -13,6 +13,9 @@ builder.Services.AddFluentUIComponents();
 // Add device-specific services used by the Cardfile.Shared project
 builder.Services.AddSingleton<IFormFactor, FormFactor>();
 
+// Add application services
+builder.Services.AddSingleton<IAppConfigService, AppConfigService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

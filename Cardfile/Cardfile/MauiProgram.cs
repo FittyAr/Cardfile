@@ -20,6 +20,9 @@ namespace Cardfile
             // Add device-specific services used by the Cardfile.Shared project
             builder.Services.AddSingleton<IFormFactor, FormFactor>();
 
+            // Add application services
+            builder.Services.AddSingleton<IAppConfigService, AppConfigService>();
+
             builder.Services.AddMauiBlazorWebView();
             builder.Services.AddFluentUIComponents();
 

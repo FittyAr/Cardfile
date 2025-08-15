@@ -5,7 +5,7 @@ using Cardfile.Shared.Models;
 
 namespace Cardfile.Shared.Services
 {
-    // Interfaz para operaciones CRUD genéricas
+    // Interfaz para operaciones CRUD genï¿½ricas
     public interface IRepository<T> where T : class
     {
         Task<IEnumerable<T>> GetAllAsync();
@@ -15,28 +15,41 @@ namespace Cardfile.Shared.Services
         Task DeleteAsync(Guid id);
     }
 
-    // Interfaz específica para Card
+    // Interfaz especï¿½fica para Card
     public interface ICardService : IRepository<Card>
     {
-        // Métodos adicionales específicos de Card pueden agregarse aquí
+        // Mï¿½todos adicionales especï¿½ficos de Card pueden agregarse aquï¿½
     }
 
-    // Interfaz específica para Tag
+    // Interfaz especï¿½fica para Tag
     public interface ITagService : IRepository<Tag>
     {
-        // Métodos adicionales específicos de Tag pueden agregarse aquí
+        // Mï¿½todos adicionales especï¿½ficos de Tag pueden agregarse aquï¿½
     }
 
-    // Interfaz específica para User
+    // Interfaz especï¿½fica para User
     public interface IUserService : IRepository<User>
     {
         Task<User?> GetByUsernameAsync(string username);
         Task<bool> ValidatePasswordAsync(string username, string password);
     }
 
-    // Interfaz específica para AppConfig
+    // Interfaz especÃ­fica para AppConfig
     public interface IAppConfigService : IRepository<AppConfig>
     {
+        /// <summary>
+        /// Obtiene la configuraciÃ³n actual de la aplicaciÃ³n
+        /// </summary>
         Task<AppConfig?> GetCurrentConfigAsync();
+
+        /// <summary>
+        /// Establece una configuraciÃ³n como la actual
+        /// </summary>
+        Task SetCurrentConfigAsync(AppConfig config);
+
+        /// <summary>
+        /// Verifica si la aplicaciÃ³n ya ha sido configurada
+        /// </summary>
+        Task<bool> IsConfiguredAsync();
     }
 }
