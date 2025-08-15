@@ -3,6 +3,7 @@
 @using Cardfile.Shared.Services
 @using Microsoft.FluentUI.AspNetCore.Components
 @inject IAppConfigService AppConfigService
+@inject IAppSettingsService AppSettingsService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 
@@ -310,6 +311,26 @@
     };
 
     /// <summary>
+    /// Verifica si la aplicación ya fue configurada y, de ser así, redirige a Home para evitar que se muestre esta página.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var isConfigured = await AppSettingsService.IsConfiguredAsync();
+            if (isConfigured)
+            {
+                // Si ya está configurado, redirigir a Home para evitar acceso automático aquí
+                Navigation.NavigateTo("/", true);
+            }
+        }
+        catch
+        {
+            // Ignorar errores y permitir continuar con la página
+        }
+    }
+
+    /// <summary>
     /// Maneja el cambio de tipo de base de datos
     /// </summary>
     private void OnDatabaseTypeChanged(ChangeEventArgs e)
@@ -333,20 +354,41 @@
                 return;
             }
 
-            // Crear configuración
+            // Crear configuración AppSettings para appsettings.json
+            var settings = new AppSettings
+            {
+                IsConfigured = true,
+                Language = selectedLanguage,
+                DatabaseConfiguration = new DatabaseConfiguration
+                {
+                    DatabaseType = selectedDatabaseType,
+                    ConnectionString = BuildConnectionString(),
+                    AdditionalSettings = new Dictionary<string, string>()
+                },
+                LastUser = new LastUserInfo
+                {
+                    Username = initialUser.Username,
+                    Email = initialUser.Email,
+                    RememberCredentials = true,
+                    LastLogin = DateTime.UtcNow
+                }
+            };
+
+            // Guardar configuración persistente
+            await AppSettingsService.SaveSettingsAsync(settings);
+
+            // Además, guardar una AppConfig mínima para compatibilidad con servicios existentes si aplica
             var appConfig = new AppConfig
             {
                 Id = Guid.NewGuid(),
                 DatabaseType = selectedDatabaseType,
                 Language = selectedLanguage,
-                ConnectionString = BuildConnectionString()
+                ConnectionString = BuildConnectionString(),
+                RememberUser = true,
+                RememberPassword = false,
+                LastUser = initialUser.Username
             };
-
-            // Guardar configuración
             await AppConfigService.AddAsync(appConfig);
-
-            // Marcar como configurado en localStorage
-            await JSRuntime.InvokeVoidAsync("localStorage.setItem", "cardfile_configured", "true");
 
             // Redirigir a la página principal
             Navigation.NavigateTo("/", true);
@@ -450,4 +492,5 @@
         public string Email { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
     }
+}
 }

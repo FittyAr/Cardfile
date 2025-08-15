@@ -15,6 +15,7 @@ builder.Services.AddSingleton<IFormFactor, FormFactor>();
 
 // Add application services
 builder.Services.AddSingleton<IAppConfigService, AppConfigService>();
+builder.Services.AddSingleton<IAppSettingsService, AppSettingsService>();
 
 var app = builder.Build();
 

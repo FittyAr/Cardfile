@@ -6,6 +6,7 @@
 @inject IAppConfigService AppConfigService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject IAppSettingsService AppSettingsService
 
 <PageTitle>Home - Cardfile</PageTitle>
 
@@ -165,10 +166,10 @@ else
     {
         try
         {
-            // Verificar si la aplicación ya ha sido configurada
-            var isConfigured = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "cardfile_configured");
-            
-            if (string.IsNullOrEmpty(isConfigured))
+            // Verificar configuración en appsettings.json
+            var isConfigured = await AppSettingsService.IsConfiguredAsync();
+
+            if (!isConfigured)
             {
                 // Primera vez - mostrar configuración inicial
                 showInitialConfig = true;
@@ -176,7 +177,14 @@ else
             else
             {
                 // Ya configurado - cargar configuración actual
-                currentConfig = await AppConfigService.GetCurrentConfigAsync();
+                var settings = await AppSettingsService.GetCurrentSettingsAsync();
+                currentConfig = new AppConfig
+                {
+                    Id = Guid.NewGuid(),
+                    DatabaseType = settings?.DatabaseConfiguration.DatabaseType ?? "SQLite",
+                    ConnectionString = settings?.DatabaseConfiguration.ConnectionString,
+                    Language = settings?.Language
+                };
                 showInitialConfig = false;
             }
         }

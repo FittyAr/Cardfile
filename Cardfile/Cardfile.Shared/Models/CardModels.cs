@@ -8,37 +8,37 @@ namespace Cardfile.Shared.Models
     // Este modelo es compatible con diferentes proveedores de base de datos
     public class Card
     {
-        // Identificador único de la tarjeta
+        // Identificador ï¿½nico de la tarjeta
         [Key]
         public Guid Id { get; set; }
 
-        // Título de la tarjeta
+        // Tï¿½tulo de la tarjeta
         [Required]
         [MaxLength(200)]
         public string Title { get; set; } = string.Empty;
 
-        // Contenido o descripción de la tarjeta
+        // Contenido o descripciï¿½n de la tarjeta
         [MaxLength(2000)]
         public string? Content { get; set; }
 
-        // Fecha de creación de la tarjeta
+        // Fecha de creaciï¿½n de la tarjeta
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        // Fecha de última modificación
+        // Fecha de ï¿½ltima modificaciï¿½n
         public DateTime? UpdatedAt { get; set; }
 
-        // Relación con etiquetas (muchos a muchos)
+        // Relaciï¿½n con etiquetas (muchos a muchos)
         public ICollection<CardTag> CardTags { get; set; } = new List<CardTag>();
 
-        // Relación con el usuario propietario de la tarjeta
+        // Relaciï¿½n con el usuario propietario de la tarjeta
         public Guid UserId { get; set; } // Id del usuario propietario
-        public User User { get; set; } = null!; // Navegación al usuario
+        public User User { get; set; } = null!; // Navegaciï¿½n al usuario
     }
 
     // Modelo para etiquetas
     public class Tag
     {
-        // Identificador único de la etiqueta
+        // Identificador ï¿½nico de la etiqueta
         [Key]
         public Guid Id { get; set; }
 
@@ -47,11 +47,11 @@ namespace Cardfile.Shared.Models
         [MaxLength(100)]
         public string Name { get; set; } = string.Empty;
 
-        // Relación con tarjetas (muchos a muchos)
+        // Relaciï¿½n con tarjetas (muchos a muchos)
         public ICollection<CardTag> CardTags { get; set; } = new List<CardTag>();
     }
 
-    // Entidad de unión para la relación muchos a muchos entre Card y Tag
+    // Entidad de uniï¿½n para la relaciï¿½n muchos a muchos entre Card y Tag
     public class CardTag
     {
         // Id de la tarjeta
@@ -66,7 +66,7 @@ namespace Cardfile.Shared.Models
     // Modelo para usuarios del sistema (login)
     public class User
     {
-        // Identificador único del usuario
+        // Identificador ï¿½nico del usuario
         [Key]
         public Guid Id { get; set; }
 
@@ -75,29 +75,29 @@ namespace Cardfile.Shared.Models
         [MaxLength(100)]
         public string Username { get; set; } = string.Empty;
 
-        // Correo electrónico
+        // Correo electrï¿½nico
         [MaxLength(200)]
         public string? Email { get; set; }
 
-        // Contraseña hasheada
+        // Contraseï¿½a hasheada
         [Required]
         [MaxLength(500)]
         public string PasswordHash { get; set; } = string.Empty;
 
-        // Indica si el usuario está activo
+        // Indica si el usuario estï¿½ activo
         public bool IsActive { get; set; } = true;
 
-        // Fecha de creación del usuario
+        // Fecha de creaciï¿½n del usuario
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        // Relación con las tarjetas del usuario
+        // Relaciï¿½n con las tarjetas del usuario
         public ICollection<Card> Cards { get; set; } = new List<Card>();
     }
 
-    // Modelo para configuración de la aplicación
+    // Modelo para configuraciï¿½n de la aplicaciï¿½n
     public class AppConfig
     {
-        // Identificador único de la configuración
+        // Identificador ï¿½nico de la configuraciï¿½n
         [Key]
         public Guid Id { get; set; }
 
@@ -106,7 +106,7 @@ namespace Cardfile.Shared.Models
         [MaxLength(50)]
         public string DatabaseType { get; set; } = "SQLite";
 
-        // Cadena de conexión personalizada (si aplica)
+        // Cadena de conexiï¿½n personalizada (si aplica)
         [MaxLength(1000)]
         public string? ConnectionString { get; set; }
 
@@ -117,11 +117,21 @@ namespace Cardfile.Shared.Models
         // Recordar usuario
         public bool RememberUser { get; set; } = false;
 
-        // Recordar contraseña
+        // Recordar contraseï¿½a
         public bool RememberPassword { get; set; } = false;
 
-        // Último usuario recordado
+        // ï¿½ltimo usuario recordado
         [MaxLength(100)]
         public string? LastUser { get; set; }
+
+        // Correo del ï¿½ltimo usuario
+        [MaxLength(200)]
+        public string? LastUserEmail { get; set; }
+
+        // Fecha del ï¿½ltimo login
+        public DateTime? LastLoginDate { get; set; }
+
+        // Indica si se deben recordar las credenciales
+        public bool RememberCredentials { get; set; } = false;
     }
 }

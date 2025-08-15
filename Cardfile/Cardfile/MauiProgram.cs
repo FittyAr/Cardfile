@@ -22,6 +22,7 @@ namespace Cardfile
 
             // Add application services
             builder.Services.AddSingleton<IAppConfigService, AppConfigService>();
+            builder.Services.AddSingleton<IAppSettingsService, AppSettingsService>();
 
             builder.Services.AddMauiBlazorWebView();
             builder.Services.AddFluentUIComponents();
