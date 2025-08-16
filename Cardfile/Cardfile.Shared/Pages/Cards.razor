@@ -1,6 +1,8 @@
 @page "/cards"
 @using Cardfile.Shared.Models
 @using Microsoft.FluentUI.AspNetCore.Components
+@inject Cardfile.Shared.Services.ICardService CardService
+@inject Cardfile.Shared.Services.ITagService TagService
 
 <PageTitle>My Cards</PageTitle>
 
@@ -40,7 +42,7 @@
         <FluentGridItem xs="12" sm="6" md="3">
             <FluentCard Style="padding: 25px; text-align: center; background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
                 <FluentIcon Value="@(new Icons.Regular.Size32.Tag())" />
-                <FluentLabel Typo="Typography.H4" Style="margin: 10px 0 5px 0; font-weight: 600;">@GetUniqueTags().Count()</FluentLabel>
+                <FluentLabel Typo="Typography.H4" Style="margin: 10px 0 5px 0; font-weight: 600;">@uniqueTags.Count</FluentLabel>
                 <FluentLabel Typo="Typography.Body" Color="Color.Neutral">Unique Tags</FluentLabel>
             </FluentCard>
         </FluentGridItem>
@@ -74,7 +76,7 @@
             
             <FluentSelect TOption="string" @bind-Value="filterTag" Style="min-width: 150px;">
                 <FluentOption Value="">All Tags</FluentOption>
-                @foreach (var tag in GetUniqueTags())
+                @foreach (var tag in uniqueTags)
                 {
                     <FluentOption Value="@tag">@tag</FluentOption>
                 }
@@ -127,12 +129,12 @@
                                         <FluentIcon Value="@(new Icons.Regular.Size16.Edit())" Slot="start" />
                                         Edit
                                     </FluentMenuItem>
-                                    <FluentMenuItem @onclick="() => DuplicateCard(card)">
+                                    <FluentMenuItem @onclick="async () => await DuplicateCardAsync(card)">
                                         <FluentIcon Value="@(new Icons.Regular.Size16.DocumentCopy())" Slot="start" />
                                         Duplicate
                                     </FluentMenuItem>
                                     <FluentDivider />
-                                    <FluentMenuItem @onclick="() => DeleteCard(card)">
+                                    <FluentMenuItem @onclick="() => ConfirmDelete(card)">
                                         <FluentIcon Value="@(new Icons.Regular.Size16.Delete())" Slot="start" />
                                         Delete
                                     </FluentMenuItem>
@@ -155,7 +157,7 @@
                                      <FluentStack Orientation="Orientation.Horizontal" VerticalGap="5" Wrap="true">
                                          @foreach (var cardTag in card.CardTags.Take(3))
                                          {
-                                             <FluentBadge Appearance="Appearance.Accent" Style="font-size: 11px;">@cardTag.Tag.Name</FluentBadge>
+                                             <FluentBadge Appearance="Appearance.Accent" Style="font-size: 11px;">@cardTag.Tag?.Name</FluentBadge>
                                          }
                                          @if (card.CardTags.Count() > 3)
                                          {
@@ -167,13 +169,13 @@
                                 <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
                                     <FluentIcon Value="@(new Icons.Regular.Size16.Calendar())" />
                                     <FluentLabel Color="Color.Neutral" Style="font-size: 12px;">
-                                        @card.CreatedAt.ToString("MMM dd, yyyy")
+                                        @card.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")
                                     </FluentLabel>
                                     @if (card.UpdatedAt.HasValue && card.UpdatedAt != card.CreatedAt)
                                     {
                                         <FluentIcon Value="@(new Icons.Regular.Size16.Edit())" />
                                         <FluentLabel Color="Color.Neutral" Style="font-size: 12px;">
-                                            @card.UpdatedAt.Value.ToString("MMM dd")
+                                            @card.UpdatedAt.Value.ToLocalTime().ToString("MMM dd")
                                         </FluentLabel>
                                     }
                                 </FluentStack>
@@ -224,7 +226,7 @@
             {
                 <FluentStack Orientation="Orientation.Horizontal" VerticalGap="5" Wrap="true">
                     <FluentLabel>Preview tags:</FluentLabel>
-                    @foreach (var tag in newTagInput.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim()))
+                    @foreach (var tag in ParseTags(newTagInput))
                     {
                         <FluentBadge Appearance="Appearance.Accent" Style="font-size: 11px;">@tag</FluentBadge>
                     }
@@ -240,9 +242,31 @@
                 Cancel
             </FluentButton>
             <FluentButton Appearance="Appearance.Accent" 
-                         @onclick="SaveCard">
+                         @onclick="SaveCardAsync">
                 Save Card
             </FluentButton>
+        </FluentStack>
+    </FluentDialogFooter>
+</FluentDialog>
+
+<!-- Confirm Delete Dialog -->
+<FluentDialog @bind-Hidden="confirmDeleteHidden"
+              Modal="true"
+              TrapFocus="true"
+              Style="--dialog-width: 420px; --dialog-height: auto;">
+    <FluentDialogHeader>
+        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="8">
+            <FluentIcon Value="@(new Icons.Regular.Size20.Warning())" />
+            <FluentLabel Typo="Typography.H5">Delete Card</FluentLabel>
+        </FluentStack>
+    </FluentDialogHeader>
+    <FluentDialogBody>
+        <FluentLabel>Are you sure you want to delete "@cardToDelete?.Title"?</FluentLabel>
+    </FluentDialogBody>
+    <FluentDialogFooter>
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Right" HorizontalGap="8">
+            <FluentButton Appearance="Appearance.Neutral" @onclick="() => confirmDeleteHidden = true">Cancel</FluentButton>
+            <FluentButton Appearance="Appearance.Accent" @onclick="DeleteCardConfirmedAsync">Delete</FluentButton>
         </FluentStack>
     </FluentDialogFooter>
 </FluentDialog>
@@ -262,6 +286,7 @@
 
 @code {
     private List<Card> cards = new();
+    private HashSet<string> uniqueTags = new();
     private Card newCard = new();
     private Card? editingCard = null;
     private Card? selectedCard = null;
@@ -270,39 +295,48 @@
     private string filterTag = string.Empty;
     private string newTagInput = string.Empty;
     private bool hideAddCard = true;
+    private bool confirmDeleteHidden = true;
+    private Card? cardToDelete;
+    private string? errorMessage;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        LoadSampleData();
+        await LoadCardsAsync();
     }
 
-    private void LoadSampleData()
+    private async Task LoadCardsAsync()
     {
-        cards = new List<Card>
+        try
         {
-            new Card
-            {
-                Id = Guid.NewGuid(),
-                Title = "Welcome to Cards",
-                Content = "This is your first card! You can use cards to organize your thoughts, ideas, and important information.",
-                CreatedAt = DateTime.Now.AddDays(-5),
-                UpdatedAt = DateTime.Now.AddDays(-2)
-            },
-            new Card
-            {
-                Id = Guid.NewGuid(),
-                Title = "Project Ideas",
-                Content = "Collection of project ideas for future development. Include web applications, mobile apps, and desktop tools.",
-                CreatedAt = DateTime.Now.AddDays(-3)
-            },
-            new Card
-            {
-                Id = Guid.NewGuid(),
-                Title = "Learning Resources",
-                Content = "Important learning resources and tutorials for skill development.",
-                CreatedAt = DateTime.Now.AddDays(-1)
-            }
-        };
+            var list = await CardService.GetAllAsync();
+            cards = list.ToList();
+            RecomputeUniqueTags();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading cards: {ex.Message}";
+        }
+        StateHasChanged();
+    }
+
+    private void RecomputeUniqueTags()
+    {
+        uniqueTags = cards
+            .SelectMany(c => c.CardTags ?? Enumerable.Empty<CardTag>())
+            .Where(ct => ct.Tag != null && !string.IsNullOrWhiteSpace(ct.Tag.Name))
+            .Select(ct => ct.Tag!.Name)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(n => n)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private IEnumerable<string> ParseTags(string input)
+    {
+        return (input ?? string.Empty)
+            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(t => t.Trim())
+            .Where(t => !string.IsNullOrWhiteSpace(t))
+            .Distinct(StringComparer.OrdinalIgnoreCase);
     }
 
     private void ShowAddCard()
@@ -330,62 +364,51 @@
             Title = card.Title,
             Content = card.Content,
             CreatedAt = card.CreatedAt,
-            UpdatedAt = card.UpdatedAt
+            UpdatedAt = card.UpdatedAt,
+            UserId = card.UserId
         };
-        newTagInput = string.Empty;
+        // Preload tag names to input
+        var tagNames = card.CardTags?.Select(ct => ct.Tag?.Name).Where(n => !string.IsNullOrWhiteSpace(n)) ?? Enumerable.Empty<string?>();
+        newTagInput = string.Join(", ", tagNames!);
         hideAddCard = false;
     }
 
-    private void SaveCard()
+    private async Task SaveCardAsync()
     {
         if (string.IsNullOrWhiteSpace(newCard.Title) || string.IsNullOrWhiteSpace(newCard.Content))
             return;
 
-        // Process tags - simplified for now
-        // Tags functionality will be implemented with proper CardTag relationships
-
-        if (editingCard != null)
+        // Build CardTags from input
+        var tagNames = ParseTags(newTagInput);
+        newCard.CardTags = tagNames.Select(name => new CardTag
         {
-            // Update existing card
-            var existingCard = cards.FirstOrDefault(c => c.Id == editingCard.Id);
-            if (existingCard != null)
+            Tag = new Tag { Name = name }
+        }).ToList();
+
+        try
+        {
+            if (editingCard != null)
             {
-                existingCard.Title = newCard.Title;
-                existingCard.Content = newCard.Content;
-                // Tags update will be implemented with proper CardTag relationships
-                existingCard.UpdatedAt = DateTime.Now;
+                newCard.Id = editingCard.Id;
+                newCard.CreatedAt = editingCard.CreatedAt;
+                // Preserve the UserId to satisfy FK (or fallback at service level)
+                newCard.UserId = editingCard.UserId;
+                await CardService.UpdateAsync(newCard);
             }
+            else
+            {
+                newCard.Id = Guid.Empty; // let service assign if needed
+                newCard.CreatedAt = DateTime.UtcNow;
+                // If no user is set, service will fallback to default admin
+                await CardService.AddAsync(newCard);
+            }
+            await LoadCardsAsync();
+            HideAddCard();
         }
-        else
+        catch (Exception ex)
         {
-            // Add new card
-            newCard.Id = Guid.NewGuid();
-            newCard.CreatedAt = DateTime.Now;
-            cards.Add(newCard);
+            errorMessage = $"Error saving card: {ex.Message}";
         }
-
-        HideAddCard();
-    }
-
-    private void DeleteCard(Card card)
-    {
-        cards.Remove(card);
-        if (selectedCard?.Id == card.Id)
-        {
-            selectedCard = null;
-        }
-    }
-
-    private void DuplicateCard(Card card)
-    {
-        var duplicatedCard = new Card
-        {
-            Id = Guid.NewGuid(),
-            Title = $"{card.Title} (Copy)",
-            Content = card.Content,
-            CreatedAt = DateTime.Now
-        };
-        cards.Add(duplicatedCard);
     }
 
     private void SelectCard(Card card)
@@ -417,8 +440,11 @@
                 (c.Content?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false));
         }
 
-        // Apply tag filter - simplified for now
-        // Tag filtering will be implemented with proper CardTag relationships
+        // Apply tag filter
+        if (!string.IsNullOrWhiteSpace(filterTag))
+        {
+            filtered = filtered.Where(c => c.CardTags != null && c.CardTags.Any(ct => ct.Tag != null && string.Equals(ct.Tag.Name, filterTag, StringComparison.OrdinalIgnoreCase)));
+        }
 
         // Apply sorting
         filtered = sortBy switch
@@ -432,19 +458,65 @@
         return filtered;
     }
 
-    private IEnumerable<string> GetUniqueTags()
-    {
-        // Simplified for now - will be implemented with proper CardTag relationships
-        return new List<string> { "work", "personal", "ideas" };
-    }
-
     private IEnumerable<Card> GetRecentCards()
     {
-        return cards.Where(c => c.CreatedAt >= DateTime.Now.AddDays(-7));
+        return cards.Where(c => c.CreatedAt >= DateTime.UtcNow.AddDays(-7));
     }
 
     private IEnumerable<Card> GetRecentlyUpdated()
     {
-        return cards.Where(c => c.UpdatedAt.HasValue && c.UpdatedAt >= DateTime.Now.AddDays(-7));
+        return cards.Where(c => c.UpdatedAt.HasValue && c.UpdatedAt >= DateTime.UtcNow.AddDays(-7));
     }
-}
+
+    private void ConfirmDelete(Card card)
+    {
+        cardToDelete = card;
+        confirmDeleteHidden = false;
+    }
+
+    private async Task DeleteCardConfirmedAsync()
+    {
+        if (cardToDelete == null)
+        {
+            confirmDeleteHidden = true;
+            return;
+        }
+        try
+        {
+            await CardService.DeleteAsync(cardToDelete.Id);
+            confirmDeleteHidden = true;
+            cardToDelete = null;
+            await LoadCardsAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error deleting card: {ex.Message}";
+        }
+    }
+    private async Task DuplicateCardAsync(Card card)
+    {
+        try
+        {
+            var duplicate = new Card
+            {
+                Id = Guid.NewGuid(),
+                Title = $"{card.Title} (Copy)",
+                Content = card.Content,
+                CreatedAt = DateTime.UtcNow,
+                // Ensure FK validity by copying the owner
+                UserId = card.UserId,
+                CardTags = (card.CardTags ?? new List<CardTag>())
+                    .Where(ct => ct.Tag != null)
+                    .Select(ct => new CardTag { Tag = new Tag { Name = ct.Tag!.Name } })
+                    .ToList()
+            };
+
+            await CardService.AddAsync(duplicate);
+            await LoadCardsAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error duplicating card: {ex.Message}";
+        }
+    }
+ }
