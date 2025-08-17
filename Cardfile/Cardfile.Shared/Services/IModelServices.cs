@@ -52,4 +52,28 @@ namespace Cardfile.Shared.Services
         /// </summary>
         Task<bool> IsConfiguredAsync();
     }
+
+    // Interfaz específica para CardAttachment
+    public interface ICardAttachmentService : IRepository<CardAttachment>
+    {
+        /// <summary>
+        /// Obtiene todos los archivos adjuntos de una tarjeta específica
+        /// </summary>
+        Task<IEnumerable<CardAttachment>> GetByCardIdAsync(Guid cardId);
+
+        /// <summary>
+        /// Obtiene el contenido de un archivo adjunto específico
+        /// </summary>
+        Task<byte[]?> GetFileDataAsync(Guid attachmentId);
+
+        /// <summary>
+        /// Verifica si el tipo MIME es válido para subir
+        /// </summary>
+        bool IsValidFileType(string contentType);
+
+        /// <summary>
+        /// Verifica si el tamaño del archivo es válido
+        /// </summary>
+        bool IsValidFileSize(long fileSize);
+    }
 }

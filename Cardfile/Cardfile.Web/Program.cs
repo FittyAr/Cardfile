@@ -36,6 +36,7 @@ builder.Services.AddScoped<ICardService, CardService>();
 builder.Services.AddScoped<ITagService, TagService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAppConfigService, AppConfigService>();
+builder.Services.AddScoped<ICardAttachmentService, CardAttachmentService>();
 
 // Settings service based on appsettings.json persistence
 builder.Services.AddSingleton<IAppSettingsService, AppSettingsService>();

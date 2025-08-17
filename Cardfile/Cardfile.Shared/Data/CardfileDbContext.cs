@@ -18,6 +18,7 @@ namespace Cardfile.Shared.Data
         public DbSet<CardTag> CardTags { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<AppConfig> AppConfigs { get; set; }
+        public DbSet<CardAttachment> CardAttachments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -42,6 +43,12 @@ namespace Cardfile.Shared.Data
                 entity.HasIndex(c => c.CreatedAt);
                 entity.HasIndex(c => c.UpdatedAt);
                 entity.HasIndex(c => c.UserId);
+
+                // Relación con CardAttachment
+                entity.HasMany(c => c.Attachments)
+                      .WithOne(a => a.Card)
+                      .HasForeignKey(a => a.CardId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
 
             // Configuración de la entidad Tag
@@ -70,6 +77,19 @@ namespace Cardfile.Shared.Data
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
+            // Configuración de la entidad CardAttachment
+            modelBuilder.Entity<CardAttachment>(entity =>
+            {
+                entity.HasKey(a => a.Id);
+                entity.Property(a => a.FileName).IsRequired().HasMaxLength(255);
+                entity.Property(a => a.ContentType).IsRequired().HasMaxLength(200);
+                entity.Property(a => a.FileSize).IsRequired();
+                entity.Property(a => a.FileData).IsRequired();
+                entity.Property(a => a.UploadedAt).IsRequired();
+
+                entity.HasIndex(a => a.CardId);
+            });
+
             // Configuración de la entidad User
             modelBuilder.Entity<User>(entity =>
             {
@@ -82,7 +102,7 @@ namespace Cardfile.Shared.Data
 
                 // Índice único para el nombre de usuario
                 entity.HasIndex(u => u.Username).IsUnique();
-                
+
                 // Índice para email si existe
                 entity.HasIndex(u => u.Email).IsUnique();
             });

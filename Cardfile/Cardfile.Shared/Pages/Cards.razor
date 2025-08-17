@@ -1,8 +1,10 @@
 @page "/cards"
 @using Cardfile.Shared.Models
 @using Microsoft.FluentUI.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Forms
 @inject Cardfile.Shared.Services.ICardService CardService
 @inject Cardfile.Shared.Services.ITagService TagService
+@inject Cardfile.Shared.Services.ICardAttachmentService AttachmentService
 
 <PageTitle>My Cards</PageTitle>
 
@@ -112,7 +114,7 @@
             @foreach (var card in GetFilteredCards())
             {
                 <FluentGridItem xs="12" sm="6" md="4" lg="3">
-                    <FluentCard Style="height: 100%; min-height: 280px; transition: all 0.3s ease; cursor: pointer; position: relative;"
+                    <FluentCard Style="height: 100%; min-height: 320px; transition: all 0.3s ease; cursor: pointer; position: relative;"
                               @onclick="() => SelectCard(card)"
                               Class="card-hover">
                         
@@ -147,6 +149,24 @@
                             <FluentLabel Typo="Typography.Body" Style="line-height: 1.6; color: #666; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;">
                                 @card.Content
                             </FluentLabel>
+
+                            @if (card.Attachments?.Any() == true)
+                            {
+                                <div style="margin-top: 10px;">
+                                    <FluentStack Orientation="Orientation.Horizontal" Wrap="true" VerticalGap="6" HorizontalGap="6">
+                                        @foreach (var a in card.Attachments.Take(3))
+                                        {
+                                            <FluentBadge Appearance="Appearance.Neutral" Icon="@(new Icons.Regular.Size16.Attach())" Style="font-size: 11px; cursor: default;">
+                                                @a.FileName (@(FormatSize(a.FileSize)))
+                                            </FluentBadge>
+                                        }
+                                        @if (card.Attachments.Count() > 3)
+                                        {
+                                            <FluentBadge Appearance="Appearance.Neutral" Style="font-size: 11px;">+@(card.Attachments.Count() - 3) more</FluentBadge>
+                                        }
+                                    </FluentStack>
+                                </div>
+                            }
                         </div>
                         
                         <!-- Card Footer -->
@@ -186,13 +206,26 @@
             }
         </FluentGrid>
     }
+    <!-- Error Message Display -->
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <FluentCard Style="padding: 20px; background: var(--error-background, #ffebee); border-left: 4px solid var(--error-foreground, #f44336);">
+            <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="10">
+                <FluentIcon Value="@(new Icons.Regular.Size20.Warning())" />
+                <FluentLabel>@errorMessage</FluentLabel>
+                <FluentButton Appearance="Appearance.Stealth" @onclick="() => errorMessage = null" Title="Dismiss">
+                    <FluentIcon Value="@(new Icons.Regular.Size16.Dismiss())" />
+                </FluentButton>
+            </FluentStack>
+        </FluentCard>
+    }
 </FluentStack>
 
 <!-- Add/Edit Card Modal -->
 <FluentDialog @bind-Hidden="@hideAddCard" 
              Modal="true" 
              TrapFocus="true"
-             Style="--dialog-width: 600px; --dialog-height: auto;">
+             Style="--dialog-width: 700px; --dialog-height: auto;">
     <FluentDialogHeader>
         <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
             <div style="font-size: 20px; color: var(--accent-foreground-rest);">📝</div>
@@ -229,6 +262,42 @@
                     @foreach (var tag in ParseTags(newTagInput))
                     {
                         <FluentBadge Appearance="Appearance.Accent" Style="font-size: 11px;">@tag</FluentBadge>
+                    }
+                </FluentStack>
+            }
+
+            <!-- Attachments uploader/list -->
+            <FluentDivider />
+            <FluentLabel Typo="Typography.H6">Attachments</FluentLabel>
+            <InputFile OnChange="OnAttachmentSelectedAsync" multiple />
+            
+            @if (tempAttachments.Any())
+            {
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="8">
+                    @foreach (var a in tempAttachments)
+                    {
+                        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="8">
+                            <FluentIcon Value="@(new Icons.Regular.Size16.Attach())" />
+                            <FluentLabel Style="flex-grow: 1;">@a.FileName (@(FormatSize(a.FileSize)))</FluentLabel>
+                            
+                            @if (a.Id != Guid.Empty)
+                            {
+                                <!-- Botones para adjuntos existentes -->
+                                <FluentButton Appearance="Appearance.Stealth" Title="Download" @onclick="() => DownloadAttachmentAsync(a)">
+                                    <FluentIcon Value="@(new Icons.Regular.Size16.ArrowDownload())" />
+                                </FluentButton>
+                                <FluentButton Appearance="Appearance.Stealth" Title="Delete" @onclick="() => DeleteExistingAttachmentAsync(a)">
+                                    <FluentIcon Value="@(new Icons.Regular.Size16.Delete())" />
+                                </FluentButton>
+                            }
+                            else
+                            {
+                                <!-- Botón para remover adjuntos temporales (no guardados aún) -->
+                                <FluentButton Appearance="Appearance.Stealth" Title="Remove" @onclick="() => RemoveTempAttachment(a)">
+                                    <FluentIcon Value="@(new Icons.Regular.Size16.Dismiss())" />
+                                </FluentButton>
+                            }
+                        </FluentStack>
                     }
                 </FluentStack>
             }
@@ -284,6 +353,111 @@
     }
 </style>
 
+<FluentDialog @bind-Hidden="viewCardHidden"
+              Modal="true"
+              TrapFocus="true"
+              Style="--dialog-width: 700px; --dialog-height: auto;">
+    <FluentDialogHeader>
+        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+            <div style="font-size: 20px; color: var(--accent-foreground-rest);">📄</div>
+            <FluentLabel Typo="Typography.H4" Style="margin: 0;">View Card</FluentLabel>
+        </FluentStack>
+    </FluentDialogHeader>
+    <FluentDialogBody>
+        @if (viewingCard != null)
+        {
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="16">
+                <FluentLabel Typo="Typography.H5" Style="font-weight: 600;">@viewingCard.Title</FluentLabel>
+                <FluentLabel Typo="Typography.Body" Style="white-space: pre-wrap; line-height: 1.6; color: #666;">@viewingCard.Content</FluentLabel>
+
+                @if (viewingCard.CardTags?.Any() == true)
+                {
+                    <FluentStack Orientation="Orientation.Horizontal" VerticalGap="5" Wrap="true">
+                        @foreach (var ct in viewingCard.CardTags)
+                        {
+                            <FluentBadge Appearance="Appearance.Accent" Style="font-size: 11px;">@ct.Tag?.Name</FluentBadge>
+                        }
+                    </FluentStack>
+                }
+
+                @if (viewingCard.Attachments?.Any() == true)
+                {
+                    <FluentDivider />
+                    <FluentLabel Typo="Typography.H6">Attachments</FluentLabel>
+                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="8">
+                        @foreach (var a in viewingCard.Attachments)
+                        {
+                            <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="8">
+                                <FluentIcon Value="@(new Icons.Regular.Size16.Attach())" />
+                                <FluentLabel Style="flex-grow: 1;">@a.FileName (@(FormatSize(a.FileSize)))</FluentLabel>
+                                <FluentButton Appearance="Appearance.Stealth" Title="Download" @onclick="() => DownloadAttachmentAsync(a)">
+                                    <FluentIcon Value="@(new Icons.Regular.Size16.ArrowDownload())" />
+                                </FluentButton>
+                            </FluentStack>
+                        }
+                    </FluentStack>
+                }
+
+                <FluentDivider />
+                <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="8">
+                    <FluentIcon Value="@(new Icons.Regular.Size16.Calendar())" />
+                    <FluentLabel Color="Color.Neutral" Style="font-size: 12px;">
+                        Created: @viewingCard.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")
+                    </FluentLabel>
+                    @if (viewingCard.UpdatedAt.HasValue && viewingCard.UpdatedAt != viewingCard.CreatedAt)
+                    {
+                        <FluentIcon Value="@(new Icons.Regular.Size16.Edit())" />
+                        <FluentLabel Color="Color.Neutral" Style="font-size: 12px;">
+                            Updated: @viewingCard.UpdatedAt.Value.ToLocalTime().ToString("MMM dd, yyyy")
+                        </FluentLabel>
+                    }
+                </FluentStack>
+            </FluentStack>
+        }
+    </FluentDialogBody>
+    <FluentDialogFooter>
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10" HorizontalAlignment="HorizontalAlignment.Right">
+            <FluentButton Appearance="Appearance.Neutral" @onclick="HideViewCard">Close</FluentButton>
+            <FluentButton Appearance="Appearance.Accent" @onclick="() => { if (viewingCard != null) { EditCard(viewingCard); viewCardHidden = true; } }">Edit</FluentButton>
+        </FluentStack>
+    </FluentDialogFooter>
+</FluentDialog>
+
+<!-- Confirm Delete Dialog -->
+<FluentDialog @bind-Hidden="confirmDeleteHidden"
+              Modal="true"
+              TrapFocus="true"
+              Style="--dialog-width: 420px; --dialog-height: auto;">
+    <FluentDialogHeader>
+        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="8">
+            <FluentIcon Value="@(new Icons.Regular.Size20.Warning())" />
+            <FluentLabel Typo="Typography.H5">Delete Card</FluentLabel>
+        </FluentStack>
+    </FluentDialogHeader>
+    <FluentDialogBody>
+        <FluentLabel>Are you sure you want to delete "@cardToDelete?.Title"?</FluentLabel>
+    </FluentDialogBody>
+    <FluentDialogFooter>
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Right" HorizontalGap="8">
+            <FluentButton Appearance="Appearance.Neutral" @onclick="() => confirmDeleteHidden = true">Cancel</FluentButton>
+            <FluentButton Appearance="Appearance.Accent" @onclick="DeleteCardConfirmedAsync">Delete</FluentButton>
+        </FluentStack>
+    </FluentDialogFooter>
+</FluentDialog>
+
+<style>
+    .card-hover:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .selected-card {
+        border: 2px solid var(--accent-fill-rest);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+</style>
+
 @code {
     private List<Card> cards = new();
     private HashSet<string> uniqueTags = new();
@@ -298,6 +472,13 @@
     private bool confirmDeleteHidden = true;
     private Card? cardToDelete;
     private string? errorMessage;
+
+    // lista temporal de adjuntos en el modal (antes de guardar)
+    private List<CardAttachment> tempAttachments = new();
+
+    // Estado para modal de vista (solo lectura)
+    private bool viewCardHidden = true;
+    private Card? viewingCard = null;
 
     protected override async Task OnInitializedAsync()
     {
@@ -344,6 +525,7 @@
         editingCard = null;
         newCard = new Card();
         newTagInput = string.Empty;
+        tempAttachments.Clear();
         hideAddCard = false;
     }
 
@@ -353,6 +535,7 @@
         editingCard = null;
         newCard = new Card();
         newTagInput = string.Empty;
+        tempAttachments.Clear();
     }
 
     private void EditCard(Card card)
@@ -370,6 +553,17 @@
         // Preload tag names to input
         var tagNames = card.CardTags?.Select(ct => ct.Tag?.Name).Where(n => !string.IsNullOrWhiteSpace(n)) ?? Enumerable.Empty<string?>();
         newTagInput = string.Join(", ", tagNames!);
+        // Preload attachments metadata to temp list (do not copy data)
+        tempAttachments = (card.Attachments ?? new List<CardAttachment>())
+            .Select(a => new CardAttachment
+            {
+                Id = a.Id,
+                CardId = a.CardId,
+                FileName = a.FileName,
+                ContentType = a.ContentType,
+                FileSize = a.FileSize,
+                UploadedAt = a.UploadedAt
+            }).ToList();
         hideAddCard = false;
     }
 
@@ -394,6 +588,12 @@
                 // Preserve the UserId to satisfy FK (or fallback at service level)
                 newCard.UserId = editingCard.UserId;
                 await CardService.UpdateAsync(newCard);
+                // Guardar adjuntos añadidos (nuevos con FileData cargado)
+                foreach (var a in tempAttachments.Where(x => x.Id == Guid.Empty && x.FileData?.Length > 0))
+                {
+                    a.CardId = newCard.Id;
+                    await AttachmentService.AddAsync(a);
+                }
             }
             else
             {
@@ -401,6 +601,12 @@
                 newCard.CreatedAt = DateTime.UtcNow;
                 // If no user is set, service will fallback to default admin
                 await CardService.AddAsync(newCard);
+                // asociar adjuntos nuevos usando el Id asignado
+                foreach (var a in tempAttachments.Where(x => x.FileData?.Length > 0))
+                {
+                    a.CardId = newCard.Id;
+                    await AttachmentService.AddAsync(a);
+                }
             }
             await LoadCardsAsync();
             HideAddCard();
@@ -411,9 +617,59 @@
         }
     }
 
+    private async Task OnAttachmentSelectedAsync(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            foreach (var file in e.GetMultipleFiles())
+            {
+                var contentType = file.ContentType ?? "application/octet-stream";
+                if (!AttachmentService.IsValidFileType(contentType))
+                {
+                    errorMessage = $"El tipo de archivo '{contentType}' no está permitido para el archivo '{file.Name}'.";
+                    continue;
+                }
+                if (!AttachmentService.IsValidFileSize(file.Size))
+                {
+                    errorMessage = $"El archivo '{file.Name}' es demasiado grande. Tamaño máximo permitido: 10 MB.";
+                    continue;
+                }
+
+                using var ms = new MemoryStream();
+                await file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024).CopyToAsync(ms);
+                var data = ms.ToArray();
+                tempAttachments.Add(new CardAttachment
+                {
+                    Id = Guid.Empty,
+                    FileName = file.Name,
+                    ContentType = contentType,
+                    FileSize = file.Size,
+                    FileData = data,
+                    UploadedAt = DateTime.UtcNow
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error al procesar archivos: {ex.Message}";
+        }
+    }
+
+    private void RemoveTempAttachment(CardAttachment a)
+    {
+        tempAttachments.Remove(a);
+    }
+
     private void SelectCard(Card card)
     {
-        selectedCard = selectedCard?.Id == card.Id ? null : card;
+        viewingCard = card;
+        viewCardHidden = false;
+    }
+
+    private void HideViewCard()
+    {
+        viewCardHidden = true;
+        viewingCard = null;
     }
 
     private void OnSearchChanged(ChangeEventArgs e)
@@ -519,4 +775,69 @@
             errorMessage = $"Error duplicating card: {ex.Message}";
         }
     }
- }
+
+    private static string FormatSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        return $"{len:0.#} {sizes[order]}";
+    }
+
+    private async Task DownloadAttachmentAsync(CardAttachment attachment)
+    {
+        try
+        {
+            var data = await AttachmentService.GetFileDataAsync(attachment.Id);
+            if (data == null || data.Length == 0)
+            {
+                errorMessage = "El archivo no está disponible.";
+                return;
+            }
+
+            // Crear un data URL para descargar en el navegador
+            var base64 = Convert.ToBase64String(data);
+            var contentType = string.IsNullOrWhiteSpace(attachment.ContentType) ? "application/octet-stream" : attachment.ContentType;
+            var fileName = string.IsNullOrWhiteSpace(attachment.FileName) ? "download" : attachment.FileName;
+            await TriggerBrowserDownloadAsync($"data:{contentType};base64,{base64}", fileName);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error al descargar: {ex.Message}";
+        }
+    }
+
+    private async Task DeleteExistingAttachmentAsync(CardAttachment attachment)
+    {
+        try
+        {
+            await AttachmentService.DeleteAsync(attachment.Id);
+            // Quitar de la lista temporal también
+            tempAttachments.RemoveAll(a => a.Id == attachment.Id);
+            // Si estamos editando, reflejar en la tarjeta seleccionada
+            if (editingCard != null)
+            {
+                var card = cards.FirstOrDefault(c => c.Id == editingCard.Id);
+                card?.Attachments?.Remove(card.Attachments.FirstOrDefault(x => x.Id == attachment.Id)!);
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error al eliminar adjunto: {ex.Message}";
+        }
+    }
+
+    [Inject]
+    private Microsoft.JSInterop.IJSRuntime JS { get; set; } = default!;
+
+    private async Task TriggerBrowserDownloadAsync(string url, string fileName)
+    {
+        // Crea un enlace temporal y dispara click para descargar
+        await JS.InvokeVoidAsync("eval", $"(function() {{ var a=document.createElement('a'); a.href='{url}'; a.download='{fileName}'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }})()");
+    }
+}

@@ -23,6 +23,8 @@ namespace Cardfile.Shared.Services
             return await _db.Cards
                 .Include(c => c.CardTags)
                     .ThenInclude(ct => ct.Tag)
+                // incluir adjuntos (sin FileData para performance)
+                .Include(c => c.Attachments)
                 .AsNoTracking()
                 .OrderByDescending(c => c.CreatedAt)
                 .ToListAsync();
@@ -33,6 +35,7 @@ namespace Cardfile.Shared.Services
             return await _db.Cards
                 .Include(c => c.CardTags)
                     .ThenInclude(ct => ct.Tag)
+                .Include(c => c.Attachments)
                 .FirstOrDefaultAsync(c => c.Id == id);
         }
 
@@ -99,6 +102,7 @@ namespace Cardfile.Shared.Services
         {
             var existing = await _db.Cards
                 .Include(c => c.CardTags)
+                .ThenInclude(ct => ct.Tag)
                 .FirstOrDefaultAsync(c => c.Id == entity.Id);
 
             if (existing == null) return;
@@ -111,7 +115,7 @@ namespace Cardfile.Shared.Services
             if (entity.CardTags != null)
             {
                 // Eliminar relaciones que ya no están
-                var toRemove = existing.CardTags.Where(ct => !entity.CardTags.Any(nct => nct.TagId == ct.TagId || (nct.Tag != null && nct.Tag.Name == ct.Tag!.Name))).ToList();
+                var toRemove = existing.CardTags.Where(ct => !entity.CardTags.Any(nct => nct.TagId == ct.TagId || (nct.Tag != null && ct.Tag != null && nct.Tag.Name == ct.Tag.Name))).ToList();
                 _db.CardTags.RemoveRange(toRemove);
 
                 // Agregar nuevas relaciones
@@ -312,6 +316,83 @@ namespace Cardfile.Shared.Services
         public async Task<bool> IsConfiguredAsync()
         {
             return await _db.AppConfigs.AnyAsync();
+        }
+    }
+
+    // Servicio para operaciones con CardAttachment
+    public class CardAttachmentService : ICardAttachmentService
+    {
+        private readonly CardfileDbContext _db;
+        private static readonly HashSet<string> AllowedContentTypes = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "image/png", "image/jpeg", "image/gif",
+            "application/pdf",
+            "text/plain",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/msword"
+        };
+        private const long MaxFileSizeBytes = 10 * 1024 * 1024; // 10 MB
+
+        public CardAttachmentService(CardfileDbContext db)
+        {
+            _db = db;
+        }
+
+        public async Task<IEnumerable<CardAttachment>> GetAllAsync()
+        {
+            return await _db.CardAttachments.AsNoTracking().OrderByDescending(a => a.UploadedAt).ToListAsync();
+        }
+
+        public Task<CardAttachment?> GetByIdAsync(Guid id) => _db.CardAttachments.FirstOrDefaultAsync(a => a.Id == id);
+
+        public async Task AddAsync(CardAttachment entity)
+        {
+            if (entity.Id == Guid.Empty) entity.Id = Guid.NewGuid();
+            if (entity.UploadedAt == default) entity.UploadedAt = DateTime.UtcNow;
+            await _db.CardAttachments.AddAsync(entity);
+            await _db.SaveChangesAsync();
+        }
+
+        public async Task UpdateAsync(CardAttachment entity)
+        {
+            var existing = await _db.CardAttachments.FindAsync(entity.Id);
+            if (existing == null) return;
+            existing.FileName = entity.FileName;
+            existing.ContentType = entity.ContentType;
+            existing.FileSize = entity.FileSize;
+            existing.FileData = entity.FileData;
+            await _db.SaveChangesAsync();
+        }
+
+        public async Task DeleteAsync(Guid id)
+        {
+            var existing = await _db.CardAttachments.FindAsync(id);
+            if (existing != null)
+            {
+                _db.CardAttachments.Remove(existing);
+                await _db.SaveChangesAsync();
+            }
+        }
+
+        public async Task<IEnumerable<CardAttachment>> GetByCardIdAsync(Guid cardId)
+        {
+            return await _db.CardAttachments.Where(a => a.CardId == cardId).AsNoTracking().OrderByDescending(a => a.UploadedAt).ToListAsync();
+        }
+
+        public async Task<byte[]?> GetFileDataAsync(Guid attachmentId)
+        {
+            var att = await _db.CardAttachments.AsNoTracking().FirstOrDefaultAsync(a => a.Id == attachmentId);
+            return att?.FileData;
+        }
+
+        public bool IsValidFileType(string contentType)
+        {
+            return AllowedContentTypes.Contains(contentType);
+        }
+
+        public bool IsValidFileSize(long fileSize)
+        {
+            return fileSize > 0 && fileSize <= MaxFileSizeBytes;
         }
     }
 }
