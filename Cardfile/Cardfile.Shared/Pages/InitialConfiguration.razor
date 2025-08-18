@@ -368,7 +368,7 @@
     /// Verifica si la aplicación ya fue configurada; permitir permanecer en la página incluso si ya está configurada.
     /// Esta página debe ser accesible desde el botón "Configurar" en Home para ajustar la configuración.
     /// </summary>
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync()
     {
         try
         {
@@ -383,6 +383,7 @@
 
         // Establecer puerto por defecto según el tipo de base de datos seleccionado
         connectionConfig.Port = GetDefaultPortInt();
+        return Task.CompletedTask;
     }
 
     /// <summary>
