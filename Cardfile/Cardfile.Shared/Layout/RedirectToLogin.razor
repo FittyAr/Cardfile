@@ -1,0 +1,53 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@inject NavigationManager NavigationManager
+@inject IAppSettingsService AppSettingsService
+@inject IAuthService AuthService
+
+@code {
+    /// <summary>
+    /// Componente que redirige a la página apropiada cuando el usuario no está autorizado
+    /// Redirige a /initial-config si la app no está configurada, o a /login si no está autenticado
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Console.WriteLine("DEBUG RedirectToLogin: Iniciando verificación de redirección");
+            
+            // Primero verificar si el usuario está autenticado
+            var isAuthenticated = await AuthService.IsAuthenticatedAsync();
+            Console.WriteLine($"DEBUG RedirectToLogin: Usuario autenticado: {isAuthenticated}");
+            
+            if (isAuthenticated)
+            {
+                Console.WriteLine("DEBUG RedirectToLogin: Usuario autenticado, redirigiendo a /cards");
+                // Si está autenticado, redirigir a la página principal
+                NavigationManager.NavigateTo("/cards", true);
+                return;
+            }
+            
+            // Verificar si la aplicación está configurada
+            var isConfigured = await AppSettingsService.IsConfiguredAsync();
+            Console.WriteLine($"DEBUG RedirectToLogin: Aplicación configurada: {isConfigured}");
+            
+            if (!isConfigured)
+            {
+                Console.WriteLine("DEBUG RedirectToLogin: App no configurada, redirigiendo a /initial-config");
+                // Si no está configurada, redirigir a configuración inicial
+                NavigationManager.NavigateTo("/initial-config", true);
+            }
+            else
+            {
+                Console.WriteLine("DEBUG RedirectToLogin: App configurada pero usuario no autenticado, redirigiendo a /login");
+                // Si está configurada pero no autenticado, redirigir a login
+                NavigationManager.NavigateTo("/login", true);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"DEBUG RedirectToLogin: Error en redirección: {ex.Message}");
+            // En caso de error, redirigir a login por seguridad
+            NavigationManager.NavigateTo("/login", true);
+        }
+    }
+}

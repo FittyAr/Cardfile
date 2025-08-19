@@ -4,6 +4,7 @@ using Cardfile.Web.Services;
 using Microsoft.FluentUI.AspNetCore.Components;
 using Cardfile.Shared.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Components.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,24 +32,41 @@ builder.Services.AddDbContext<CardfileDbContext>(options =>
 // Add device-specific services used by the Cardfile.Shared project
 builder.Services.AddSingleton<IFormFactor, FormFactor>();
 
+// Add HttpContextAccessor for authentication services
+builder.Services.AddHttpContextAccessor();
+
 // Add application services
 builder.Services.AddScoped<ICardService, CardService>();
 builder.Services.AddScoped<ITagService, TagService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAppConfigService, AppConfigService>();
 builder.Services.AddScoped<ICardAttachmentService, CardAttachmentService>();
+// Register authentication services
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
+
+// Add ASP.NET Core Authentication services
+builder.Services.AddAuthentication()
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/login";
+        options.LogoutPath = "/logout";
+        options.AccessDeniedPath = "/login";
+    });
+
+// Authorization services for Blazor components
+builder.Services.AddAuthorizationCore();
 
 // Settings service based on appsettings.json persistence
 builder.Services.AddSingleton<IAppSettingsService, AppSettingsService>();
 
 var app = builder.Build();
 
-// Ensure database is created and seeded
+// Ensure database is created
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<CardfileDbContext>();
     await db.EnsureDatabaseCreatedAsync();
-    await db.SeedDataAsync();
 }
 
 // Configure the HTTP request pipeline.
@@ -61,6 +79,9 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// Add authentication and authorization middleware
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.UseAntiforgery();
 

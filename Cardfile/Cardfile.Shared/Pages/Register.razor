@@ -2,99 +2,168 @@
 @using Cardfile.Shared.Models
 @using Microsoft.FluentUI.AspNetCore.Components
 @inject NavigationManager Navigation
+@inject IAuthService AuthService
+@inject AuthenticationStateProvider AuthStateProvider
 
-<FluentStack Orientation="Orientation.Vertical" VerticalGap="30" Style="max-width: 450px; margin: 0 auto; padding: 40px 20px;">
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="30" Style="max-width: 520px; margin: 0 auto; padding: 40px 20px;">
     <FluentStack Orientation="Orientation.Vertical" VerticalGap="10" Style="text-align: center;">
         <FluentIcon Value="@(new Icons.Regular.Size48.PersonAdd())" Color="Color.Accent" />
         <FluentLabel Typo="Typography.H3" Color="Color.Accent">Create Account</FluentLabel>
-        <FluentLabel Typo="Typography.Body" Color="Color.Neutral">Join us and start organizing your cards</FluentLabel>
+        <FluentLabel Typo="Typography.Body" Color="Color.Neutral">Fill in the information to register</FluentLabel>
     </FluentStack>
-    
+
     <FluentCard Style="padding: 30px;">
-        <EditForm Model="registerModel" OnValidSubmit="HandleRegister">
+        <EditForm Model="registerModel" OnValidSubmit="HandleRegisterAsync">
             <DataAnnotationsValidator />
             <FluentValidationSummary />
-            
+
             <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
-                <FluentTextField @bind-Value="registerModel.Username" 
-                               Label="Username" 
-                               Placeholder="Choose a username"
-                               Required="true"
-                               Style="width: 100%;"
-                               IconStart="@(new Icons.Regular.Size20.Person())" />
-                
-                <FluentTextField @bind-Value="registerModel.Email" 
-                               Label="Email Address" 
-                               Placeholder="Enter your email"
-                               TextFieldType="TextFieldType.Email"
-                               Style="width: 100%;"
-                               IconStart="@(new Icons.Regular.Size20.Mail())" />
-                
-                <FluentTextField @bind-Value="registerModel.Password" 
-                               Label="Password" 
-                               Placeholder="Create a password"
-                               TextFieldType="TextFieldType.Password"
-                               Required="true"
-                               Style="width: 100%;"
-                               IconStart="@(new Icons.Regular.Size20.Key())" />
-                
-                <FluentTextField @bind-Value="registerModel.ConfirmPassword" 
-                               Label="Confirm Password" 
-                               Placeholder="Confirm your password"
-                               TextFieldType="TextFieldType.Password"
-                               Style="width: 100%;"
-                               IconStart="@(new Icons.Regular.Size20.Key())" />
-                
-                <FluentButton Type="ButtonType.Submit" 
-                            Appearance="Appearance.Accent" 
-                            Style="width: 100%; margin-top: 10px;"
-                            IconStart="@(new Icons.Regular.Size20.PersonAdd())">
-                    Create Account
+                <FluentTextField @bind-Value="registerModel.Username"
+                                   Label="Username"
+                                   Placeholder="Enter a username"
+                                   Required="true"
+                                   Style="width: 100%;"
+                                   IconStart="@(new Icons.Regular.Size20.Person())" />
+
+                <FluentTextField @bind-Value="registerModel.Email"
+                                   Label="Email"
+                                   Placeholder="Enter your email"
+                                   Required="true"
+                                   Style="width: 100%;"
+                                   IconStart="@(new Icons.Regular.Size20.Mail())" />
+
+                <FluentTextField @bind-Value="registerModel.Password"
+                                   Label="Password"
+                                   Placeholder="Create a password"
+                                   TextFieldType="TextFieldType.Password"
+                                   Required="true"
+                                   Style="width: 100%;"
+                                   IconStart="@(new Icons.Regular.Size20.Key())" />
+
+                <FluentTextField @bind-Value="registerModel.ConfirmPassword"
+                                   Label="Confirm Password"
+                                   Placeholder="Re-enter your password"
+                                   TextFieldType="TextFieldType.Password"
+                                   Required="true"
+                                   Style="width: 100%;"
+                                   IconStart="@(new Icons.Regular.Size20.Key())" />
+
+                <FluentButton Type="ButtonType.Submit"
+                              Appearance="Appearance.Accent"
+                              Style="width: 100%; margin-top: 10px;"
+                              Disabled="@isLoading"
+                              IconStart="@(new Icons.Regular.Size20.PersonAdd())">
+                    @(isLoading ? "Creating Account..." : "Create Account")
                 </FluentButton>
             </FluentStack>
         </EditForm>
     </FluentCard>
-    
+
     @if (!string.IsNullOrEmpty(message))
     {
-        <FluentMessageBar Intent="MessageIntent.Success" Style="margin-top: 20px;">
-            <FluentIcon Value="@(new Icons.Regular.Size20.CheckmarkCircle())" Slot="icon" />
+        <FluentMessageBar Intent="@messageIntent" Style="margin-top: 20px;">
+            <FluentIcon Value="@((Icon)(messageIntent == MessageIntent.Error ? new Icons.Regular.Size20.ErrorCircle() : new Icons.Regular.Size20.CheckmarkCircle()))" Slot="icon" />
             @message
         </FluentMessageBar>
     }
-    
+
     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="5" Style="justify-content: center; margin-top: 20px;">
         <FluentLabel Typo="Typography.Body" Color="Color.Neutral">Already have an account?</FluentLabel>
-        <FluentAnchor Href="/login" Appearance="Appearance.Hypertext">Sign in here</FluentAnchor>
+        <FluentAnchor Href="/login" Appearance="Appearance.Hypertext">Sign in</FluentAnchor>
     </FluentStack>
 </FluentStack>
 
 @code {
+    /// <summary>
+    /// View model del formulario de registro
+    /// </summary>
     private RegisterModel registerModel = new();
+
+    /// <summary>
+    /// Mensaje de estado o error a mostrar al usuario
+    /// </summary>
     private string? message;
 
-    // Maneja el registro del usuario
-    private async Task HandleRegister()
+    /// <summary>
+    /// Indica si se está procesando la solicitud
+    /// </summary>
+    private bool isLoading = false;
+
+    private MessageIntent messageIntent = MessageIntent.Info;
+
+    /// <summary>
+    /// Maneja el registro de usuario usando IAuthService y notifica cambios de AuthenticationState si fuese necesario
+    /// </summary>
+    private async Task HandleRegisterAsync()
     {
-        // Aqu� se debe agregar la l�gica real de registro
-        // Por ahora solo simula �xito
-        message = "Registration successful!";
-        await Task.Delay(1000);
-        Navigation.NavigateTo("/login");
+        message = null;
+        messageIntent = MessageIntent.Info;
+
+        try
+        {
+            isLoading = true;
+
+            // Validaciones básicas
+            if (string.IsNullOrWhiteSpace(registerModel.Username) ||
+                string.IsNullOrWhiteSpace(registerModel.Email) ||
+                string.IsNullOrWhiteSpace(registerModel.Password) ||
+                string.IsNullOrWhiteSpace(registerModel.ConfirmPassword))
+            {
+                message = "All fields are required.";
+                messageIntent = MessageIntent.Error;
+                return;
+            }
+
+            if (!string.Equals(registerModel.Password, registerModel.ConfirmPassword, StringComparison.Ordinal))
+            {
+                message = "Passwords do not match.";
+                messageIntent = MessageIntent.Error;
+                return;
+            }
+
+            var success = await AuthService.RegisterAsync(registerModel.Username, registerModel.Email, registerModel.Password);
+            if (!success)
+            {
+                message = "Registration failed. Please try a different username or email.";
+                messageIntent = MessageIntent.Error;
+                return;
+            }
+
+            message = "Registration successful. Please sign in.";
+            messageIntent = MessageIntent.Success;
+
+            // Redirigir al login tras un breve retraso para mostrar el mensaje
+            await Task.Delay(600);
+            Navigation.NavigateTo("/login", true);
+        }
+        catch (Exception ex)
+        {
+            message = $"An unexpected error occurred: {ex.Message}";
+            messageIntent = MessageIntent.Error;
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
-    // Modelo de registro para la vista
+    /// <summary>
+    /// Modelo de registro para la vista
+    /// </summary>
     public class RegisterModel
     {
         [Required]
-        [MaxLength(100)]
         public string Username { get; set; } = string.Empty;
-        [EmailAddress]
-        public string? Email { get; set; }
+
         [Required]
-        [MinLength(6)]
+        [EmailAddress]
+        public string Email { get; set; } = string.Empty;
+
+        [Required]
         public string Password { get; set; } = string.Empty;
-        [Compare("Password", ErrorMessage = "Passwords do not match.")]
-        public string? ConfirmPassword { get; set; }
+
+        [Required]
+        [Compare(nameof(Password), ErrorMessage = "Passwords do not match.")]
+        public string ConfirmPassword { get; set; } = string.Empty;
     }
 }

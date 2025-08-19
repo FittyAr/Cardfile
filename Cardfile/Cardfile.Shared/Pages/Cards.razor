@@ -1,7 +1,9 @@
 @page "/cards"
+@attribute [Authorize]
 @using Cardfile.Shared.Models
 @using Microsoft.FluentUI.AspNetCore.Components
 @using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Authorization
 @inject Cardfile.Shared.Services.ICardService CardService
 @inject Cardfile.Shared.Services.ITagService TagService
 @inject Cardfile.Shared.Services.ICardAttachmentService AttachmentService
@@ -206,6 +208,7 @@
             }
         </FluentGrid>
     }
+
     <!-- Error Message Display -->
     @if (!string.IsNullOrEmpty(errorMessage))
     {
@@ -318,41 +321,7 @@
     </FluentDialogFooter>
 </FluentDialog>
 
-<!-- Confirm Delete Dialog -->
-<FluentDialog @bind-Hidden="confirmDeleteHidden"
-              Modal="true"
-              TrapFocus="true"
-              Style="--dialog-width: 420px; --dialog-height: auto;">
-    <FluentDialogHeader>
-        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="8">
-            <FluentIcon Value="@(new Icons.Regular.Size20.Warning())" />
-            <FluentLabel Typo="Typography.H5">Delete Card</FluentLabel>
-        </FluentStack>
-    </FluentDialogHeader>
-    <FluentDialogBody>
-        <FluentLabel>Are you sure you want to delete "@cardToDelete?.Title"?</FluentLabel>
-    </FluentDialogBody>
-    <FluentDialogFooter>
-        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Right" HorizontalGap="8">
-            <FluentButton Appearance="Appearance.Neutral" @onclick="() => confirmDeleteHidden = true">Cancel</FluentButton>
-            <FluentButton Appearance="Appearance.Accent" @onclick="DeleteCardConfirmedAsync">Delete</FluentButton>
-        </FluentStack>
-    </FluentDialogFooter>
-</FluentDialog>
-
-<style>
-    .card-hover:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    }
-    
-    .selected-card {
-        border: 2px solid var(--accent-fill-rest);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    }
-</style>
-
+<!-- View Card Modal -->
 <FluentDialog @bind-Hidden="viewCardHidden"
               Modal="true"
               TrapFocus="true"
@@ -418,7 +387,7 @@
     <FluentDialogFooter>
         <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10" HorizontalAlignment="HorizontalAlignment.Right">
             <FluentButton Appearance="Appearance.Neutral" @onclick="HideViewCard">Close</FluentButton>
-            <FluentButton Appearance="Appearance.Accent" @onclick="() => { if (viewingCard != null) { EditCard(viewingCard); viewCardHidden = true; } }">Edit</FluentButton>
+            <FluentButton Appearance="Appearance.Accent" @onclick="HandleEditFromView">Edit</FluentButton>
         </FluentStack>
     </FluentDialogFooter>
 </FluentDialog>
@@ -479,6 +448,9 @@
     // Estado para modal de vista (solo lectura)
     private bool viewCardHidden = true;
     private Card? viewingCard = null;
+
+    [Inject]
+    private Microsoft.AspNetCore.Components.NavigationManager Navigation { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -550,9 +522,11 @@
             UpdatedAt = card.UpdatedAt,
             UserId = card.UserId
         };
+        
         // Preload tag names to input
         var tagNames = card.CardTags?.Select(ct => ct.Tag?.Name).Where(n => !string.IsNullOrWhiteSpace(n)) ?? Enumerable.Empty<string?>();
         newTagInput = string.Join(", ", tagNames!);
+        
         // Preload attachments metadata to temp list (do not copy data)
         tempAttachments = (card.Attachments ?? new List<CardAttachment>())
             .Select(a => new CardAttachment
@@ -564,6 +538,7 @@
                 FileSize = a.FileSize,
                 UploadedAt = a.UploadedAt
             }).ToList();
+        
         hideAddCard = false;
     }
 
@@ -588,6 +563,7 @@
                 // Preserve the UserId to satisfy FK (or fallback at service level)
                 newCard.UserId = editingCard.UserId;
                 await CardService.UpdateAsync(newCard);
+                
                 // Guardar adjuntos añadidos (nuevos con FileData cargado)
                 foreach (var a in tempAttachments.Where(x => x.Id == Guid.Empty && x.FileData?.Length > 0))
                 {
@@ -601,6 +577,7 @@
                 newCard.CreatedAt = DateTime.UtcNow;
                 // If no user is set, service will fallback to default admin
                 await CardService.AddAsync(newCard);
+                
                 // asociar adjuntos nuevos usando el Id asignado
                 foreach (var a in tempAttachments.Where(x => x.FileData?.Length > 0))
                 {
@@ -608,6 +585,7 @@
                     await AttachmentService.AddAsync(a);
                 }
             }
+            
             await LoadCardsAsync();
             HideAddCard();
         }
@@ -670,6 +648,15 @@
     {
         viewCardHidden = true;
         viewingCard = null;
+    }
+
+    private void HandleEditFromView()
+    {
+        if (viewingCard != null)
+        {
+            EditCard(viewingCard);
+            viewCardHidden = true;
+        }
     }
 
     private void OnSearchChanged(ChangeEventArgs e)
@@ -737,6 +724,7 @@
             confirmDeleteHidden = true;
             return;
         }
+        
         try
         {
             await CardService.DeleteAsync(cardToDelete.Id);
@@ -749,6 +737,7 @@
             errorMessage = $"Error deleting card: {ex.Message}";
         }
     }
+
     private async Task DuplicateCardAsync(Card card)
     {
         try
@@ -832,12 +821,10 @@
         }
     }
 
-    [Inject]
-    private Microsoft.JSInterop.IJSRuntime JS { get; set; } = default!;
-
-    private async Task TriggerBrowserDownloadAsync(string url, string fileName)
+    private async Task TriggerBrowserDownloadAsync(string dataUrl, string fileName)
     {
-        // Crea un enlace temporal y dispara click para descargar
-        await JS.InvokeVoidAsync("eval", $"(function() {{ var a=document.createElement('a'); a.href='{url}'; a.download='{fileName}'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }})()");
+        // Usar NavigationManager para navegar al data URL, lo que iniciará la descarga
+        Navigation.NavigateTo(dataUrl, forceLoad: true);
+        await Task.CompletedTask;
     }
 }

@@ -49,23 +49,11 @@ namespace Cardfile.Shared.Services
             // Ensure the Card is linked to a valid User to satisfy FK constraint
             if (entity.UserId == Guid.Empty)
             {
-                // Try to use the first available user (seeded admin) as a sensible default
+                // Try to use the first available user as default
                 var defaultUser = await _db.Users.OrderBy(u => u.CreatedAt).FirstOrDefaultAsync();
                 if (defaultUser == null)
                 {
-                    // As a safety net, create a default admin user if database is empty
-                    var adminUser = new User
-                    {
-                        Id = Guid.NewGuid(),
-                        Username = "admin",
-                        Email = "admin@cardfile.com",
-                        PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
-                        IsActive = true,
-                        CreatedAt = DateTime.UtcNow
-                    };
-                    await _db.Users.AddAsync(adminUser);
-                    await _db.SaveChangesAsync();
-                    defaultUser = adminUser;
+                    throw new InvalidOperationException("No users found in database. Please create a user first before adding cards.");
                 }
                 entity.UserId = defaultUser.Id;
             }
@@ -247,8 +235,11 @@ namespace Cardfile.Shared.Services
         public Task<User?> GetByUsernameAsync(string username) => _db.Users.FirstOrDefaultAsync(u => u.Username == username);
         public async Task<bool> ValidatePasswordAsync(string username, string password)
         {
-            var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == username);
-            if (user == null) return false;
+            var user = await GetByUsernameAsync(username);
+
+            if (user == null)
+                return false;
+
             return BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
         }
     }

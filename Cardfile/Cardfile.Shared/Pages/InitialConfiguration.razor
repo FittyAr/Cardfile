@@ -349,12 +349,7 @@
     }
 
     private DatabaseConnectionConfig connectionConfig = new();
-    private InitialUserConfig initialUser = new()
-    {
-        Username = "admin",
-        Email = "admin@cardfile.com",
-        Password = "admin123"
-    };
+    private InitialUserConfig initialUser = new();
 
     private readonly List<LanguageOption> languageOptions = new()
     {
@@ -481,7 +476,7 @@
                 {
                     Username = initialUser.Username,
                     Email = initialUser.Email,
-                    RememberCredentials = true,
+                    RememberCredentials = false,
                     LastLogin = DateTime.UtcNow
                 }
             };

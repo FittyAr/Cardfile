@@ -1,7 +1,9 @@
 @page "/"
+@attribute [Authorize]
 @using Cardfile.Shared.Services
 @using Cardfile.Shared.Models
 @using Microsoft.FluentUI.AspNetCore.Components
+@using Microsoft.AspNetCore.Authorization
 @inject IFormFactor FormFactor
 @inject IAppConfigService AppConfigService
 @inject NavigationManager Navigation

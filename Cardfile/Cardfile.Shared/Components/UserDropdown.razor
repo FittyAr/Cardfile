@@ -1,0 +1,176 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+@implements IDisposable
+
+<FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="10">
+    @if (isAuthenticated && currentUser != null)
+    {
+        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="8">
+            <!-- User Avatar -->
+            <FluentIcon Value="@(new Icons.Regular.Size24.PersonCircle())" Color="Color.Accent" />
+            
+            <!-- Username and Menu -->
+            <FluentMenuButton Text="@currentUser.Username" 
+                             Appearance="Appearance.Stealth"
+                             IconEnd="@(new Icons.Regular.Size16.ChevronDown())">
+                
+                <!-- Profile / Account Settings Option -->
+                <FluentMenuItem @onclick="NavigateToProfile">
+                    <FluentIcon Value="@(new Icons.Regular.Size16.Person())" Slot="start" />
+                    Profile
+                </FluentMenuItem>
+                
+                <!-- Change Password Option -->
+                <FluentMenuItem @onclick="NavigateToChangePassword">
+                    <FluentIcon Value="@(new Icons.Regular.Size16.Key())" Slot="start" />
+                    Change Password
+                </FluentMenuItem>
+                
+                <FluentDivider />
+                
+                <!-- Logout Option -->
+                <FluentMenuItem @onclick="HandleLogoutAsync">
+                    <FluentIcon Value="@(new Icons.Regular.Size16.ArrowExit())" Slot="start" />
+                     Logout
+                </FluentMenuItem>
+            </FluentMenuButton>
+        </FluentStack>
+    }
+    else
+    {
+        <!-- Show login/register buttons when not authenticated -->
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10">
+            <FluentButton Appearance="Appearance.Neutral" @onclick="NavigateToLogin">
+                <FluentIcon Value="@(new Icons.Regular.Size20.ArrowEnter())" Slot="start" />
+                Login
+            </FluentButton>
+            <FluentButton Appearance="Appearance.Accent" @onclick="NavigateToRegister">
+                <FluentIcon Value="@(new Icons.Regular.Size20.PersonAdd())" Slot="start" />
+                Register
+            </FluentButton>
+        </FluentStack>
+    }
+</FluentStack>
+
+@code {
+    /// <summary>
+    /// Usuario autenticado actual
+    /// </summary>
+    private User? currentUser;
+    
+    /// <summary>
+    /// Indica si el usuario está autenticado
+    /// </summary>
+    private bool isAuthenticated = false;
+
+    /// <summary>
+    /// Inicializa el componente y carga el estado de autenticación
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAuthenticationStateAsync();
+        
+        // Suscribirse a cambios en el estado de autenticación
+        AuthService.AuthenticationStateChanged += OnAuthenticationStateChanged;
+    }
+
+    /// <summary>
+    /// Carga el estado de autenticación actual
+    /// </summary>
+    private async Task LoadAuthenticationStateAsync()
+    {
+        try
+        {
+            isAuthenticated = await AuthService.IsAuthenticatedAsync();
+            if (isAuthenticated)
+            {
+                currentUser = await AuthService.GetCurrentUserAsync();
+            }
+            else
+            {
+                currentUser = null;
+            }
+            
+            StateHasChanged();
+        }
+        catch (Exception)
+        {
+            // En caso de error, considerar no autenticado
+            isAuthenticated = false;
+            currentUser = null;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Maneja cambios en el estado de autenticación
+    /// </summary>
+    /// <param name="sender">Origen del evento</param>
+    /// <param name="e">Argumentos del evento</param>
+    private async void OnAuthenticationStateChanged(object? sender, AuthenticationStateChangedEventArgs e)
+    {
+        isAuthenticated = e.IsAuthenticated;
+        currentUser = e.User;
+        
+        await InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>
+    /// Navega a la página de perfil del usuario
+    /// </summary>
+    private void NavigateToProfile()
+    {
+        Navigation.NavigateTo("/profile");
+    }
+
+    /// <summary>
+    /// Navega a la página de cambio de contraseña
+    /// </summary>
+    private void NavigateToChangePassword()
+    {
+        Navigation.NavigateTo("/change-password");
+    }
+
+    /// <summary>
+    /// Navega a la página de login
+    /// </summary>
+    private void NavigateToLogin()
+    {
+        Navigation.NavigateTo("/login");
+    }
+
+    /// <summary>
+    /// Navega a la página de registro
+    /// </summary>
+    private void NavigateToRegister()
+    {
+        Navigation.NavigateTo("/register");
+    }
+
+    /// <summary>
+    /// Maneja el logout del usuario
+    /// </summary>
+    private async Task HandleLogoutAsync()
+    {
+        try
+        {
+            await AuthService.LogoutAsync();
+            // La navegación se maneja automáticamente en AuthService.LogoutAsync
+        }
+        catch (Exception)
+        {
+            // Si hay error en logout, forzar redirección
+            Navigation.NavigateTo("/login", true);
+        }
+    }
+
+    /// <summary>
+    /// Libera recursos del componente
+    /// </summary>
+    public void Dispose()
+    {
+        AuthService.AuthenticationStateChanged -= OnAuthenticationStateChanged;
+    }
+}

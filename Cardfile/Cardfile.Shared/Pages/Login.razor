@@ -2,6 +2,9 @@
 @using Cardfile.Shared.Models
 @using Microsoft.FluentUI.AspNetCore.Components
 @inject NavigationManager Navigation
+@inject IAuthService AuthService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IAppSettingsService AppSettingsService
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="30" Style="max-width: 400px; margin: 0 auto; padding: 40px 20px;">
     <FluentStack Orientation="Orientation.Vertical" VerticalGap="10" Style="text-align: center;">
@@ -11,7 +14,7 @@
     </FluentStack>
     
     <FluentCard Style="padding: 30px;">
-        <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+        <EditForm Model="loginModel" OnValidSubmit="HandleLoginAsync">
             <DataAnnotationsValidator />
             <FluentValidationSummary />
             
@@ -34,8 +37,9 @@
                 <FluentButton Type="ButtonType.Submit" 
                             Appearance="Appearance.Accent" 
                             Style="width: 100%; margin-top: 10px;"
+                            Disabled="@isLoading"
                             IconStart="@(new Icons.Regular.Size20.ArrowEnter())">
-                    Sign In
+                    @(isLoading ? "Signing In..." : "Sign In")
                 </FluentButton>
             </FluentStack>
         </EditForm>
@@ -43,8 +47,8 @@
     
     @if (!string.IsNullOrEmpty(message))
     {
-        <FluentMessageBar Intent="MessageIntent.Error" Style="margin-top: 20px;">
-            <FluentIcon Value="@(new Icons.Regular.Size20.ErrorCircle())" Slot="icon" />
+        <FluentMessageBar Intent="@messageIntent" Style="margin-top: 20px;">
+            <FluentIcon Value="@((Icon)(messageIntent == MessageIntent.Error ? new Icons.Regular.Size20.ErrorCircle() : new Icons.Regular.Size20.CheckmarkCircle()))" Slot="icon" />
             @message
         </FluentMessageBar>
     }
@@ -56,26 +60,80 @@
 </FluentStack>
 
 @code {
+    /// <summary>
+    /// View model del formulario de autenticación
+    /// </summary>
     private LoginModel loginModel = new();
+
+    /// <summary>
+    /// Mensaje de estado o error a mostrar al usuario
+    /// </summary>
     private string? message;
 
-    // Maneja el login del usuario
-    private async Task HandleLogin()
+    /// <summary>
+    /// Indica si se está procesando la solicitud de login
+    /// </summary>
+    private bool isLoading = false;
+
+    /// <summary>
+    /// Maneja el login del usuario usando IAuthService y notifica el cambio de AuthenticationState
+    /// </summary>
+    private async Task HandleLoginAsync()
     {
-        // Aqu� se debe agregar la l�gica real de login
-        // Por ahora solo simula �xito si username y password no est�n vac�os
-        if (!string.IsNullOrWhiteSpace(loginModel.Username) && !string.IsNullOrWhiteSpace(loginModel.Password))
+        message = null;
+        messageIntent = MessageIntent.Info;
+
+        try
         {
-            Navigation.NavigateTo("/cards");
+            isLoading = true;
+
+            // Validación adicional por seguridad
+            if (string.IsNullOrWhiteSpace(loginModel.Username) || string.IsNullOrWhiteSpace(loginModel.Password))
+            {
+                message = "Username and password are required.";
+                messageIntent = MessageIntent.Error;
+                return;
+            }
+
+            // Intentar autenticar
+             Console.WriteLine($"DEBUG Login.razor: Llamando AuthService.LoginAsync para {loginModel.Username}");
+             var user = await AuthService.LoginAsync(loginModel.Username, loginModel.Password);
+             Console.WriteLine($"DEBUG Login.razor: AuthService.LoginAsync retornó: {user?.Username ?? "null"}");
+             
+             if (user == null)
+             {
+                 Console.WriteLine($"DEBUG Login.razor: Login falló, mostrando mensaje de error");
+                 message = "Invalid username or password.";
+                 messageIntent = MessageIntent.Error;
+                 return;
+             }
+
+             Console.WriteLine($"DEBUG Login.razor: Login exitoso, esperando propagación del estado");
+             // AuthService.LoginAsync ya notifica el cambio de estado automáticamente
+             // Agregar un pequeño delay para permitir que el estado se propague
+             await Task.Delay(100);
+             
+             Console.WriteLine($"DEBUG Login.razor: Navegando a /cards");
+             // Navegar a Cards por defecto
+             Navigation.NavigateTo("/cards");
+             Console.WriteLine($"DEBUG Login.razor: Navegación completada");
         }
-        else
+        catch (Exception ex)
         {
-            message = "Invalid username or password.";
+            message = $"An unexpected error occurred: {ex.Message}";
+            messageIntent = MessageIntent.Error;
         }
-        await Task.CompletedTask;
+        finally
+        {
+            isLoading = false;
+        }
     }
 
-    // Modelo de login para la vista
+    private MessageIntent messageIntent = MessageIntent.Info;
+
+    /// <summary>
+    /// Modelo de login para la vista
+    /// </summary>
     public class LoginModel
     {
         [Required]

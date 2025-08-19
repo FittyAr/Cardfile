@@ -1,6 +1,74 @@
-﻿<Router AppAssembly="typeof(Layout.MainLayout).Assembly">
-    <Found Context="routeData">
-        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
-        <FocusOnNavigate RouteData="routeData" Selector="h1" />
-    </Found>
-</Router>
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IAppSettingsService AppSettingsService
+@inject IAuthService AuthService
+
+<CascadingAuthenticationState>
+    <Router AppAssembly="typeof(Layout.MainLayout).Assembly" OnNavigateAsync="OnNavigateAsync">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
+                <NotAuthorized>
+                    <RedirectToLogin />
+                </NotAuthorized>
+                <Authorizing>
+                    <p>Authorizing...</p>
+                </Authorizing>
+            </AuthorizeRouteView>
+            <FocusOnNavigate RouteData="routeData" Selector="h1" />
+        </Found>
+        <NotFound>
+            <LayoutView Layout="typeof(Layout.MainLayout)">
+                <p>Sorry, there's nothing at this address.</p>
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>
+
+@code {
+    /// <summary>
+    /// Maneja la navegación controlando redirecciones según el estado de autenticación y configuración
+    /// Procesa la navegación sin redirecciones, ya que estas se manejan automáticamente mediante AuthorizeRouteView
+    /// </summary>
+    /// <param name="context">Contexto de navegación</param>
+    private async Task OnNavigateAsync(NavigationContext context)
+    {
+        var targetPath = context.Path.ToLowerInvariant();
+        
+        // Permitir acceso a rutas específicas sin autenticación
+        var allowedPaths = new[] { "/initial-config", "/login", "/register" };
+        if (allowedPaths.Any(path => targetPath.StartsWith(path)))
+        {
+            return;
+        }
+
+        try
+        {
+            // Verificar si la aplicación está configurada
+            var isConfigured = await AppSettingsService.IsConfiguredAsync();
+            if (!isConfigured)
+            {
+                // Cancelar si no hay token de cancelación activo
+                context.CancellationToken.ThrowIfCancellationRequested();
+                return;
+            }
+
+            // Verificar autenticación para rutas protegidas
+            var isAuthenticated = await AuthService.IsAuthenticatedAsync();
+            if (!isAuthenticated)
+            {
+                // Cancelar si no hay token de cancelación activo
+                context.CancellationToken.ThrowIfCancellationRequested();
+                return;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // La navegación fue cancelada
+            return;
+        }
+        catch (Exception)
+        {
+            // En caso de error, permitir que AuthorizeRouteView maneje la redirección
+            return;
+        }
+    }
+}

@@ -2,12 +2,18 @@
 @inject IAppSettingsService AppSettingsService
 <FluentLayout>
     <FluentHeader>
-        Cardfile
+        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="12" Style="width: 100%;">
+            <FluentLabel Typo="Typography.H5" Color="Color.Accent" Style="font-weight: 700;">Cardfile</FluentLabel>
+            <div style="flex:1"></div>
+            <UserDropdown />
+        </FluentStack>
     </FluentHeader>
     <FluentStack Class="main" Orientation="Orientation.Horizontal" Width="100%">
         @if (isConfigured)
         {
-            <NavMenu />
+            <div style="display: none;">
+                <NavMenu />
+            </div>
         }
         <FluentBodyContent Class="body-content">
             <div class="content">
