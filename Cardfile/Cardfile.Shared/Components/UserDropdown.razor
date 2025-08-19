@@ -12,14 +12,14 @@
             <FluentIcon Value="@(new Icons.Regular.Size24.PersonCircle())" Color="Color.Accent" />
             
             <!-- Username and Menu -->
-            <FluentMenuButton Text="@currentUser.Username" 
+            <FluentMenuButton Text="@GetCapitalizedUsername()" 
                              Appearance="Appearance.Stealth"
                              IconEnd="@(new Icons.Regular.Size16.ChevronDown())">
                 
-                <!-- Profile / Account Settings Option -->
-                <FluentMenuItem @onclick="NavigateToProfile">
-                    <FluentIcon Value="@(new Icons.Regular.Size16.Person())" Slot="start" />
-                    Profile
+                <!-- System Configuration Option -->
+                <FluentMenuItem @onclick="NavigateToSystemConfiguration">
+                    <FluentIcon Value="@(new Icons.Regular.Size16.Settings())" Slot="start" />
+                    System Configuration
                 </FluentMenuItem>
                 
                 <!-- Change Password Option -->
@@ -118,11 +118,23 @@
     }
 
     /// <summary>
-    /// Navega a la página de perfil del usuario
+    /// Obtiene el nombre de usuario con la primera letra en mayúscula
     /// </summary>
-    private void NavigateToProfile()
+    /// <returns>Nombre de usuario capitalizado</returns>
+    private string GetCapitalizedUsername()
     {
-        Navigation.NavigateTo("/profile");
+        if (currentUser?.Username == null || currentUser.Username.Length == 0)
+            return string.Empty;
+            
+        return char.ToUpper(currentUser.Username[0]) + currentUser.Username.Substring(1);
+    }
+
+    /// <summary>
+    /// Navega a la página de configuración del sistema
+    /// </summary>
+    private void NavigateToSystemConfiguration()
+    {
+        Navigation.NavigateTo("/initial-config");
     }
 
     /// <summary>

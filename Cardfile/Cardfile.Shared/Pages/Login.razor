@@ -96,27 +96,24 @@
             }
 
             // Intentar autenticar
-             Console.WriteLine($"DEBUG Login.razor: Llamando AuthService.LoginAsync para {loginModel.Username}");
+ 
              var user = await AuthService.LoginAsync(loginModel.Username, loginModel.Password);
-             Console.WriteLine($"DEBUG Login.razor: AuthService.LoginAsync retornó: {user?.Username ?? "null"}");
+ 
              
              if (user == null)
              {
-                 Console.WriteLine($"DEBUG Login.razor: Login falló, mostrando mensaje de error");
+ 
                  message = "Invalid username or password.";
                  messageIntent = MessageIntent.Error;
                  return;
              }
 
-             Console.WriteLine($"DEBUG Login.razor: Login exitoso, esperando propagación del estado");
              // AuthService.LoginAsync ya notifica el cambio de estado automáticamente
              // Agregar un pequeño delay para permitir que el estado se propague
              await Task.Delay(100);
-             
-             Console.WriteLine($"DEBUG Login.razor: Navegando a /cards");
+
              // Navegar a Cards por defecto
              Navigation.NavigateTo("/cards");
-             Console.WriteLine($"DEBUG Login.razor: Navegación completada");
         }
         catch (Exception ex)
         {

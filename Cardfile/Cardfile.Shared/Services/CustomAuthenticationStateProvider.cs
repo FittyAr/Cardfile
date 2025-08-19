@@ -16,7 +16,7 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
     public CustomAuthenticationStateProvider(IAuthService authService)
     {
         _authService = authService;
-        
+
         // Suscribirse a cambios en el estado de autenticación
         _authService.AuthenticationStateChanged += OnAuthenticationStateChanged;
     }
@@ -32,7 +32,7 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
 
         // Intentar obtener el usuario actual
         var user = await _authService.GetCurrentUserAsync();
-        
+
         if (user != null)
         {
             var claims = CreateClaimsFromUser(user);
@@ -72,27 +72,22 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
     /// <param name="e">Argumentos del evento</param>
     private void OnAuthenticationStateChanged(object? sender, AuthenticationStateChangedEventArgs e)
     {
-        Console.WriteLine($"DEBUG CustomAuthenticationStateProvider: Recibido cambio de estado - IsAuthenticated: {e.IsAuthenticated}, User: {e.User?.Username ?? "null"}");
         AuthenticationState newState;
 
         if (e.IsAuthenticated && e.User != null)
         {
-            Console.WriteLine($"DEBUG CustomAuthenticationStateProvider: Creando estado autenticado para {e.User.Username}");
             var claims = CreateClaimsFromUser(e.User);
             var identity = new ClaimsIdentity(claims, "custom");
             newState = new AuthenticationState(new ClaimsPrincipal(identity));
         }
         else
         {
-            Console.WriteLine($"DEBUG CustomAuthenticationStateProvider: Creando estado no autenticado");
             var identity = new ClaimsIdentity();
             newState = new AuthenticationState(new ClaimsPrincipal(identity));
         }
 
         _currentAuthenticationState = newState;
-        Console.WriteLine($"DEBUG CustomAuthenticationStateProvider: Notificando cambio de estado");
         NotifyAuthenticationStateChanged(Task.FromResult(newState));
-        Console.WriteLine($"DEBUG CustomAuthenticationStateProvider: Notificación completada");
     }
 
     /// <summary>

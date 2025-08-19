@@ -12,9 +12,9 @@
 <div class="initial-config-container">
     <FluentCard class="config-card">
         <div class="config-header">
-            <FluentIcon Value="@(new Icons.Regular.Size48.FolderPerson())" Color="Color.Neutral" />
+            <img src="/Image 19 ago 2025, 18_15_46.png" alt="Logo" class="header-logo" />
             <h1>Configuración Inicial</h1>
-            <p>Bienvenido a Cardfile. Configura dónde deseas almacenar tus datos.</p>
+            <p>Bienvenido al Sistema de Gestión. Configura dónde deseas almacenar tus datos.</p>
         </div>
 
         <FluentStack Orientation="Orientation.Vertical" class="config-form">
@@ -240,6 +240,13 @@
         padding: 40px 30px 20px;
         background: linear-gradient(135deg, var(--accent-fill-rest) 0%, var(--neutral-fill-strong-rest) 100%);
         color: var(--neutral-foreground-on-accent);
+    }
+
+    .header-logo {
+        width: 48px;
+        height: 48px;
+        margin-bottom: 16px;
+        object-fit: contain;
     }
 
     /* Grid en 2 columnas para los radio buttons */
@@ -476,7 +483,7 @@
                 {
                     Username = initialUser.Username,
                     Email = initialUser.Email,
-                    RememberCredentials = false,
+                    RememberCredentials = true,
                     LastLogin = DateTime.UtcNow
                 }
             };

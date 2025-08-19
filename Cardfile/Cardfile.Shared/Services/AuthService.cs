@@ -40,34 +40,28 @@ public class AuthService : IAuthService
     /// <returns>Usuario autenticado o null si falla la autenticación</returns>
     public async Task<User?> LoginAsync(string username, string password)
     {
-        Console.WriteLine($"DEBUG LoginAsync: Iniciando login para usuario: {username}");
 
         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
         {
-            Console.WriteLine($"DEBUG LoginAsync: Credenciales vacías");
             return null;
         }
 
         var user = await _userService.GetByUsernameAsync(username);
         if (user == null || !user.IsActive)
         {
-            Console.WriteLine($"DEBUG LoginAsync: Usuario no encontrado o inactivo");
             return null;
         }
 
         // Verificar la contraseña usando BCrypt
         if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
         {
-            Console.WriteLine($"DEBUG LoginAsync: Contraseña incorrecta");
             return null;
         }
 
-        Console.WriteLine($"DEBUG LoginAsync: Contraseña válida, estableciendo _currentUser");
         // Actualizar el estado del usuario actual
         _currentUser = user;
 
         // Guardar información de login
-        Console.WriteLine($"DEBUG LoginAsync: Guardando LastUserInfo");
         await _appSettingsService.UpdateLastUserAsync(new LastUserInfo
         {
             Username = user.Username,
@@ -77,14 +71,12 @@ public class AuthService : IAuthService
         });
 
         // Notificar cambio de estado de autenticación inmediatamente después del login
-        Console.WriteLine($"DEBUG LoginAsync: Notificando cambio de estado de autenticación");
         AuthenticationStateChanged?.Invoke(this, new AuthenticationStateChangedEventArgs
         {
             User = user,
             IsAuthenticated = true
         });
 
-        Console.WriteLine($"DEBUG LoginAsync: Login completado exitosamente para: {user.Username}");
         return user;
     }
 
@@ -131,14 +123,10 @@ public class AuthService : IAuthService
     /// </summary>
     public async Task LogoutAsync()
     {
-        Console.WriteLine($"DEBUG LogoutAsync: Iniciando logout");
-        Console.WriteLine($"DEBUG LogoutAsync: _currentUser antes del logout: {_currentUser?.Username ?? "null"}");
 
         _currentUser = null;
-        Console.WriteLine($"DEBUG LogoutAsync: _currentUser establecido a null");
 
         // Limpiar información guardada del usuario creando un LastUserInfo vacío
-        Console.WriteLine($"DEBUG LogoutAsync: Limpiando LastUserInfo");
         await _appSettingsService.UpdateLastUserAsync(new LastUserInfo
         {
             Username = string.Empty,
@@ -151,7 +139,6 @@ public class AuthService : IAuthService
         // El CustomAuthenticationStateProvider manejará el estado de autenticación
 
         // Notificar cambio de estado
-        Console.WriteLine($"DEBUG LogoutAsync: Notificando cambio de estado de autenticación");
         AuthenticationStateChanged?.Invoke(this, new AuthenticationStateChangedEventArgs
         {
             User = null,
@@ -159,7 +146,6 @@ public class AuthService : IAuthService
         });
 
         // Redirigir a login
-        Console.WriteLine($"DEBUG LogoutAsync: Logout completado, redirigiendo a login");
         _navigationManager.NavigateTo("/login", true);
     }
 
@@ -169,12 +155,17 @@ public class AuthService : IAuthService
     /// <returns>Usuario actual o null si no está autenticado</returns>
     public async Task<User?> GetCurrentUserAsync()
     {
-        // Siempre consultar la configuración persistente en lugar de confiar en _currentUser
-        // debido al ciclo de vida Scoped del servicio en Blazor Server
+        // Optimización: Si ya tenemos un usuario en memoria y es válido, devolverlo directamente
+        if (_currentUser != null && _currentUser.IsActive)
+        {
+
+            return _currentUser;
+        }
+
+        // Si no hay usuario en memoria, consultar la configuración persistente
         var lastUser = await _appSettingsService.GetLastUserAsync();
         if (lastUser != null)
         {
-            Console.WriteLine($"DEBUG GetCurrentUserAsync: LastUser => Username='{lastUser.Username}', RememberCredentials={lastUser.RememberCredentials}, LastLogin={lastUser.LastLogin:O}");
         }
 
         if (lastUser != null && lastUser.RememberCredentials && !string.IsNullOrEmpty(lastUser.Username))
@@ -186,13 +177,12 @@ public class AuthService : IAuthService
                 // Verificar que el login no sea muy antiguo (24 horas)
                 if (lastUser.LastLogin > DateTime.UtcNow.AddHours(-24))
                 {
-                    // Actualizar _currentUser para optimización en la misma instancia
+                    // Actualizar _currentUser para optimización en futuras llamadas
                     _currentUser = user;
                     return user;
                 }
             }
         }
-
         return null;
     }
 
@@ -202,19 +192,16 @@ public class AuthService : IAuthService
     /// <returns>True si hay un usuario autenticado</returns>
     public async Task<bool> IsAuthenticatedAsync()
     {
-        Console.WriteLine($"DEBUG IsAuthenticatedAsync: _currentUser = {_currentUser?.Username ?? "null"}");
 
         // Si hay un usuario en memoria, está autenticado
         if (_currentUser != null)
         {
-            Console.WriteLine($"DEBUG IsAuthenticatedAsync: Usuario en memoria encontrado: {_currentUser.Username}");
             return true;
         }
 
         // Si no hay usuario en memoria, verificar persistencia
         var user = await GetCurrentUserAsync();
         var isAuthenticated = user != null;
-        Console.WriteLine($"DEBUG IsAuthenticatedAsync: Resultado de verificación persistente: {isAuthenticated}");
         return isAuthenticated;
     }
 
