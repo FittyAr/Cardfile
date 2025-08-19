@@ -5,16 +5,18 @@
 @inject IAppConfigService AppConfigService
 @inject IAppSettingsService AppSettingsService
 @inject NavigationManager Navigation
-@inject IJSRuntime JSRuntime
 
 <PageTitle>Configuración Inicial - Cardfile</PageTitle>
 
 <div class="initial-config-container">
     <FluentCard class="config-card">
         <div class="config-header">
-            <img src="/Image 19 ago 2025, 18_15_46.png" alt="Logo" class="header-logo" />
-            <h1>Configuración Inicial</h1>
-            <p>Bienvenido al Sistema de Gestión. Configura dónde deseas almacenar tus datos.</p>
+            <FluentIcon Value="@(Icon.FromImageUrl("/_content/Cardfile.Shared/logo.png"))" 
+                        Class="config-logo" 
+                        Width="48px" 
+                        Height="48px" />
+            <FluentLabel Typography="Typography.H1" Color="Color.Fill">Configuración Inicial</FluentLabel>
+            <FluentLabel Typography="Typography.Body" Color="Color.Fill">Bienvenido al Sistema de Gestión. Configura dónde deseas almacenar tus datos.</FluentLabel>
         </div>
 
         <FluentStack Orientation="Orientation.Vertical" class="config-form">
@@ -22,62 +24,72 @@
             <FluentStack Orientation="Orientation.Vertical" class="form-section">
                 <FluentLabel Typography="Typography.PaneHeader">Tipo de Base de Datos</FluentLabel>
                 <!-- Layout en 2 columnas para mejor aprovechamiento del espacio -->
-                <div class="radio-grid">
-                    <FluentCard class='@GetRadioCardClass("SQLite")' 
-                              @onclick='() => SelectDatabaseType("SQLite")'>
-                        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
-                            <FluentIcon Value="@(new Icons.Regular.Size20.DatabaseSearch())" Color="Color.Accent" />
-                            <FluentStack Orientation="Orientation.Vertical">
-                                <FluentLabel Weight="FontWeight.Bold">SQLite</FluentLabel>
-                                <FluentLabel Typography="Typography.Caption" Color="Color.Neutral">Recomendado para uso local</FluentLabel>
+                <FluentGrid Spacing="3" Justify="JustifyContent.FlexStart">
+                    <FluentGridItem xs="12" sm="6">
+                        <FluentCard class='@GetRadioCardClass("SQLite")' 
+                                  @onclick='() => SelectDatabaseType("SQLite")'>
+                            <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+                                <FluentIcon Value="@(new Icons.Regular.Size20.DatabaseSearch())" Color="Color.Accent" />
+                                <FluentStack Orientation="Orientation.Vertical">
+                                    <FluentLabel Weight="FontWeight.Bold">SQLite</FluentLabel>
+                                    <FluentLabel Typography="Typography.Caption" Color="Color.Neutral">Recomendado para uso local</FluentLabel>
+                                </FluentStack>
                             </FluentStack>
-                        </FluentStack>
-                    </FluentCard>
+                        </FluentCard>
+                    </FluentGridItem>
 
-                    <FluentCard class='@GetRadioCardClass("MySQL")' 
-                              @onclick='() => SelectDatabaseType("MySQL")'>
-                        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
-                            <FluentIcon Value="@(new Icons.Regular.Size20.Database())" Color="Color.Info" />
-                            <FluentStack Orientation="Orientation.Vertical">
-                                <FluentLabel Weight="FontWeight.Bold">MySQL</FluentLabel>
-                                <FluentLabel Typography="Typography.Caption" Color="Color.Neutral">Base de datos MySQL</FluentLabel>
+                    <FluentGridItem xs="12" sm="6">
+                        <FluentCard class='@GetRadioCardClass("MySQL")' 
+                                  @onclick='() => SelectDatabaseType("MySQL")'>
+                            <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+                                <FluentIcon Value="@(new Icons.Regular.Size20.Database())" Color="Color.Info" />
+                                <FluentStack Orientation="Orientation.Vertical">
+                                    <FluentLabel Weight="FontWeight.Bold">MySQL</FluentLabel>
+                                    <FluentLabel Typography="Typography.Caption" Color="Color.Neutral">Base de datos MySQL</FluentLabel>
+                                </FluentStack>
                             </FluentStack>
-                        </FluentStack>
-                    </FluentCard>
+                        </FluentCard>
+                    </FluentGridItem>
 
-                    <FluentCard class='@GetRadioCardClass("MariaDB")' 
-                              @onclick='() => SelectDatabaseType("MariaDB")'>
-                        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
-                            <FluentIcon Value="@(new Icons.Regular.Size20.DatabaseLightning())" Color="Color.Success" />
-                            <FluentStack Orientation="Orientation.Vertical">
-                                <FluentLabel Weight="FontWeight.Bold">MariaDB</FluentLabel>
-                                <FluentLabel Typography="Typography.Caption" Color="Color.Neutral">Base de datos MariaDB</FluentLabel>
+                    <FluentGridItem xs="12" sm="6">
+                        <FluentCard class='@GetRadioCardClass("MariaDB")' 
+                                  @onclick='() => SelectDatabaseType("MariaDB")'>
+                            <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+                                <FluentIcon Value="@(new Icons.Regular.Size20.DatabaseLightning())" Color="Color.Success" />
+                                <FluentStack Orientation="Orientation.Vertical">
+                                    <FluentLabel Weight="FontWeight.Bold">MariaDB</FluentLabel>
+                                    <FluentLabel Typography="Typography.Caption" Color="Color.Neutral">Base de datos MariaDB</FluentLabel>
+                                </FluentStack>
                             </FluentStack>
-                        </FluentStack>
-                    </FluentCard>
+                        </FluentCard>
+                    </FluentGridItem>
 
-                    <FluentCard class='@GetRadioCardClass("PostgreSQL")' 
-                              @onclick='() => SelectDatabaseType("PostgreSQL")'>
-                        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
-                            <FluentIcon Value="@(new Icons.Regular.Size20.Database())" Color="Color.Warning" />
-                            <FluentStack Orientation="Orientation.Vertical">
-                                <FluentLabel Weight="FontWeight.Bold">PostgreSQL</FluentLabel>
-                                <FluentLabel Typography="Typography.Caption" Color="Color.Neutral">Base de datos PostgreSQL</FluentLabel>
+                    <FluentGridItem xs="12" sm="6">
+                        <FluentCard class='@GetRadioCardClass("PostgreSQL")' 
+                                  @onclick='() => SelectDatabaseType("PostgreSQL")'>
+                            <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+                                <FluentIcon Value="@(new Icons.Regular.Size20.Database())" Color="Color.Warning" />
+                                <FluentStack Orientation="Orientation.Vertical">
+                                    <FluentLabel Weight="FontWeight.Bold">PostgreSQL</FluentLabel>
+                                    <FluentLabel Typography="Typography.Caption" Color="Color.Neutral">Base de datos PostgreSQL</FluentLabel>
+                                </FluentStack>
                             </FluentStack>
-                        </FluentStack>
-                    </FluentCard>
+                        </FluentCard>
+                    </FluentGridItem>
 
-                    <FluentCard class='@GetRadioCardClass("MsSQL")' 
-                              @onclick='() => SelectDatabaseType("MsSQL")'>
-                        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
-                            <FluentIcon Value="@(new Icons.Regular.Size20.DatabaseWindow())" Color="Color.Error" />
-                            <FluentStack Orientation="Orientation.Vertical">
-                                <FluentLabel Weight="FontWeight.Bold">Microsoft SQL Server</FluentLabel>
-                                <FluentLabel Typography="Typography.Caption" Color="Color.Neutral">Base de datos SQL Server</FluentLabel>
+                    <FluentGridItem xs="12" sm="6">
+                        <FluentCard class='@GetRadioCardClass("MsSQL")' 
+                                  @onclick='() => SelectDatabaseType("MsSQL")'>
+                            <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+                                <FluentIcon Value="@(new Icons.Regular.Size20.DatabaseWindow())" Color="Color.Error" />
+                                <FluentStack Orientation="Orientation.Vertical">
+                                    <FluentLabel Weight="FontWeight.Bold">Microsoft SQL Server</FluentLabel>
+                                    <FluentLabel Typography="Typography.Caption" Color="Color.Neutral">Base de datos SQL Server</FluentLabel>
+                                </FluentStack>
                             </FluentStack>
-                        </FluentStack>
-                    </FluentCard>
-                </div>
+                        </FluentCard>
+                    </FluentGridItem>
+                </FluentGrid>
             </FluentStack>
 
             <!-- Configuración de Conexión -->
@@ -242,31 +254,7 @@
         color: var(--neutral-foreground-on-accent);
     }
 
-    .header-logo {
-        width: 48px;
-        height: 48px;
-        margin-bottom: 16px;
-        object-fit: contain;
-    }
-
-    /* Grid en 2 columnas para los radio buttons */
-    .radio-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-        width: 100%;
-    }
-
-    /* Responsive: en pantallas pequeñas volver a 1 columna */
-    @@media (max-width: 768px) {
-        .radio-grid {
-            grid-template-columns: 1fr;
-        }
-        
-        .config-card {
-            max-width: 650px;
-        }
-    }
+    /* Estilos para FluentUI Grid ya no necesarios - manejados por FluentGrid */
 
     .radio-card {
         padding: 12px;

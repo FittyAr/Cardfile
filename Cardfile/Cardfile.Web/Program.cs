@@ -85,6 +85,8 @@ app.UseAuthorization();
 
 app.UseAntiforgery();
 
+// Configure static files from Cardfile.Shared wwwroot
+app.UseStaticFiles();
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
