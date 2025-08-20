@@ -1,12 +1,16 @@
 using Cardfile.Shared.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Security.Claims;
 
 namespace Cardfile.Shared.Services;
 
 /// <summary>
 /// Implementación del servicio de autenticación
-/// Maneja el login, logout, registro y gestión del estado de autenticación usando LocalStorage
+/// Maneja el login, logout, registro y gestión del estado de autenticación usando persistencia en appsettings
+/// y emite una cookie de autenticación para preservar la sesión entre recargas completas.
 /// </summary>
 public class AuthService : IAuthService
 {
@@ -40,7 +44,6 @@ public class AuthService : IAuthService
     /// <returns>Usuario autenticado o null si falla la autenticación</returns>
     public async Task<User?> LoginAsync(string username, string password)
     {
-
         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
         {
             return null;
@@ -58,17 +61,43 @@ public class AuthService : IAuthService
             return null;
         }
 
-        // Actualizar el estado del usuario actual
+        // Actualizar el estado del usuario actual en memoria
         _currentUser = user;
 
-        // Guardar información de login
+        // Guardar información de login preservando la preferencia RememberCredentials del usuario
+        var existingLastUser = await _appSettingsService.GetLastUserAsync();
+        var rememberPreference = existingLastUser?.RememberCredentials ?? false;
+
         await _appSettingsService.UpdateLastUserAsync(new LastUserInfo
         {
             Username = user.Username,
             Email = user.Email ?? string.Empty,
-            RememberCredentials = false, // No persistir sesión por defecto
+            RememberCredentials = rememberPreference, // Preservar preferencia del usuario
             LastLogin = DateTime.UtcNow
         });
+
+        // Emitir cookie de autenticación (si hay contexto HTTP disponible)
+        var httpContext = _httpContextAccessor.HttpContext;
+        if (httpContext != null && httpContext.Response != null && !httpContext.Response.HasStarted)
+        {
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Email, user.Email ?? string.Empty)
+            };
+
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var principal = new ClaimsPrincipal(identity);
+
+            var authProperties = new AuthenticationProperties
+            {
+                IsPersistent = rememberPreference,
+                ExpiresUtc = rememberPreference ? DateTimeOffset.UtcNow.AddDays(7) : DateTimeOffset.UtcNow.AddHours(8)
+            };
+
+            await httpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProperties);
+        }
 
         // Notificar cambio de estado de autenticación inmediatamente después del login
         AuthenticationStateChanged?.Invoke(this, new AuthenticationStateChangedEventArgs
@@ -123,20 +152,26 @@ public class AuthService : IAuthService
     /// </summary>
     public async Task LogoutAsync()
     {
-
         _currentUser = null;
 
-        // Limpiar información guardada del usuario creando un LastUserInfo vacío
+        // Limpiar información guardada del usuario preservando la preferencia RememberCredentials
+        var existingLastUser = await _appSettingsService.GetLastUserAsync();
+        var rememberPreference = existingLastUser?.RememberCredentials ?? false;
+
         await _appSettingsService.UpdateLastUserAsync(new LastUserInfo
         {
             Username = string.Empty,
             Email = string.Empty,
-            RememberCredentials = false,
+            RememberCredentials = rememberPreference,
             LastLogin = DateTime.UtcNow // Mantener la fecha actual para evitar problemas de validación
         });
 
-        // En Blazor Server, no manejamos cookies aquí
-        // El CustomAuthenticationStateProvider manejará el estado de autenticación
+        // Cerrar sesión de la cookie si existe contexto HTTP
+        var httpCtx = _httpContextAccessor.HttpContext;
+        if (httpCtx != null && httpCtx.Response != null && !httpCtx.Response.HasStarted)
+        {
+            await httpCtx.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        }
 
         // Notificar cambio de estado
         AuthenticationStateChanged?.Invoke(this, new AuthenticationStateChangedEventArgs
@@ -158,7 +193,6 @@ public class AuthService : IAuthService
         // Optimización: Si ya tenemos un usuario en memoria y es válido, devolverlo directamente
         if (_currentUser != null && _currentUser.IsActive)
         {
-
             return _currentUser;
         }
 
@@ -192,7 +226,6 @@ public class AuthService : IAuthService
     /// <returns>True si hay un usuario autenticado</returns>
     public async Task<bool> IsAuthenticatedAsync()
     {
-
         // Si hay un usuario en memoria, está autenticado
         if (_currentUser != null)
         {

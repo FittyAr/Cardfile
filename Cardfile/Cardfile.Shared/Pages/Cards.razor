@@ -112,10 +112,11 @@
     }
     else
     {
-        <FluentGrid Spacing="3">
+        @* Grid de tarjetas: 3 columnas desde md en adelante (12/4). En pantallas pequeñas ocupa todo el ancho *@
+        <FluentGrid Spacing="3" Style="width: 100%;">
             @foreach (var card in GetFilteredCards())
             {
-                <FluentGridItem xs="12" sm="6" md="4" lg="3">
+                <FluentGridItem xs="12" sm="12" md="4" lg="4" xl="4" xxl="4">
                     <FluentCard Style="height: 100%; min-height: 320px; transition: all 0.3s ease; cursor: pointer; position: relative;"
                               @onclick="() => SelectCard(card)"
                               Class="card-hover">
@@ -128,21 +129,21 @@
                                 </FluentLabel>
                                 
                                 <FluentMenuButton Icon="@(new Icons.Regular.Size16.MoreVertical())" 
-                                                 Appearance="Appearance.Stealth">
+                                                  Appearance="Appearance.Stealth">
                                     <FluentMenuItem @onclick="() => EditCard(card)">
                                         <FluentIcon Value="@(new Icons.Regular.Size16.Edit())" Slot="start" />
                                         Edit
                                     </FluentMenuItem>
-                                    <FluentMenuItem @onclick="async () => await DuplicateCardAsync(card)">
-                                        <FluentIcon Value="@(new Icons.Regular.Size16.DocumentCopy())" Slot="start" />
-                                        Duplicate
-                                    </FluentMenuItem>
-                                    <FluentDivider />
-                                    <FluentMenuItem @onclick="() => ConfirmDelete(card)">
-                                        <FluentIcon Value="@(new Icons.Regular.Size16.Delete())" Slot="start" />
-                                        Delete
-                                    </FluentMenuItem>
-                                </FluentMenuButton>
+                                     <FluentMenuItem @onclick="async () => await DuplicateCardAsync(card)">
+                                         <FluentIcon Value="@(new Icons.Regular.Size16.DocumentCopy())" Slot="start" />
+                                         Duplicate
+                                     </FluentMenuItem>
+                                     <FluentDivider />
+                                     <FluentMenuItem @onclick="() => ConfirmDelete(card)">
+                                         <FluentIcon Value="@(new Icons.Regular.Size16.Delete())" Slot="start" />
+                                         Delete
+                                     </FluentMenuItem>
+                                 </FluentMenuButton>
                             </FluentStack>
                         </div>
                         
@@ -173,7 +174,6 @@
                         
                         <!-- Card Footer -->
                         <div style="padding: 15px 20px 20px 20px; border-top: 1px solid #f0f0f0;">
-                            <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
                                  @if (card.CardTags?.Any() == true)
                                  {
                                      <FluentStack Orientation="Orientation.Horizontal" VerticalGap="5" Wrap="true">
@@ -201,8 +201,7 @@
                                         </FluentLabel>
                                     }
                                 </FluentStack>
-                            </FluentStack>
-                        </div>
+                            </div>
                     </FluentCard>
                 </FluentGridItem>
             }

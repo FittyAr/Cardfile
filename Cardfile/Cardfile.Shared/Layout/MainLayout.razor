@@ -2,10 +2,11 @@
 @inject IAppSettingsService AppSettingsService
 <FluentLayout>
     <FluentHeader>
-        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="12" Style="width: 100%;">
-            <FluentIcon Value="@(Icon.FromImageUrl("/_content/Cardfile.Shared/logo.png"))" 
-                       Class="header-logo" />
-            <UserDropdown />
+        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="12" Width="100%" Style="justify-content: space-between;">
+            <FluentIcon Value="@(Icon.FromImageUrl("/_content/Cardfile.Shared/logo.png"))" Width="64px" Height="64px" />
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Right">
+                <UserDropdown />
+            </FluentStack>
         </FluentStack>
     </FluentHeader>
     <FluentStack Class="main" Orientation="Orientation.Horizontal" Width="100%">

@@ -168,12 +168,12 @@
     {
         try
         {
-            await AuthService.LogoutAsync();
-            // La navegación se maneja automáticamente en AuthService.LogoutAsync
+            // Redirigir al endpoint /logout que elimina la cookie y preserva la preferencia RememberCredentials
+            Navigation.NavigateTo("/logout", true);
         }
         catch (Exception)
         {
-            // Si hay error en logout, forzar redirección
+            // Si hay error en logout, forzar redirección a login
             Navigation.NavigateTo("/login", true);
         }
     }

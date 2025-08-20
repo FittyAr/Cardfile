@@ -1,38 +1,55 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using System.Security.Claims;
 using Cardfile.Shared.Models;
+using Microsoft.AspNetCore.Http;
 
 namespace Cardfile.Shared.Services;
 
 /// <summary>
-/// Proveedor personalizado de estado de autenticación
-/// Integra con AuthService para gestionar el estado de autenticación a nivel de la aplicación
+/// Custom authentication state provider for Blazor Server.
+/// It integrates with IAuthService and also checks the ASP.NET Core authentication cookie
+/// to preserve the session across full page reloads or new circuits.
 /// </summary>
 public class CustomAuthenticationStateProvider : AuthenticationStateProvider
 {
     private readonly IAuthService _authService;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private AuthenticationState? _currentAuthenticationState;
 
-    public CustomAuthenticationStateProvider(IAuthService authService)
+    /// <summary>
+    /// Initializes a new instance of the CustomAuthenticationStateProvider.
+    /// </summary>
+    /// <param name="authService">Authentication service that provides current user information.</param>
+    /// <param name="httpContextAccessor">Accessor for the current HTTP context to read auth cookies.</param>
+    public CustomAuthenticationStateProvider(IAuthService authService, IHttpContextAccessor httpContextAccessor)
     {
         _authService = authService;
+        _httpContextAccessor = httpContextAccessor;
 
-        // Suscribirse a cambios en el estado de autenticación
+        // Subscribe to authentication state changes
         _authService.AuthenticationStateChanged += OnAuthenticationStateChanged;
     }
 
     /// <summary>
-    /// Obtiene el estado de autenticación actual
+    /// Gets the current authentication state.
+    /// Priority: ASP.NET Core auth cookie -> IAuthService persisted user -> anonymous.
     /// </summary>
-    /// <returns>Estado de autenticación actual</returns>
+    /// <returns>The current authentication state.</returns>
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
         if (_currentAuthenticationState != null)
             return _currentAuthenticationState;
 
-        // Intentar obtener el usuario actual
-        var user = await _authService.GetCurrentUserAsync();
+        // 1) Try to use the ASP.NET Core authentication cookie (persists across full reloads)
+        var httpUser = _httpContextAccessor.HttpContext?.User;
+        if (httpUser?.Identity?.IsAuthenticated == true)
+        {
+            _currentAuthenticationState = new AuthenticationState(httpUser);
+            return _currentAuthenticationState;
+        }
 
+        // 2) Fallback to the IAuthService (persisted app settings logic)
+        var user = await _authService.GetCurrentUserAsync();
         if (user != null)
         {
             var claims = CreateClaimsFromUser(user);
@@ -49,10 +66,10 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
     }
 
     /// <summary>
-    /// Crea los claims de seguridad a partir de un usuario
+    /// Creates a set of claims from a User instance.
     /// </summary>
-    /// <param name="user">Usuario del que crear los claims</param>
-    /// <returns>Lista de claims</returns>
+    /// <param name="user">Domain user.</param>
+    /// <returns>List of claims.</returns>
     private static List<Claim> CreateClaimsFromUser(User user)
     {
         return new List<Claim>
@@ -66,10 +83,8 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
     }
 
     /// <summary>
-    /// Maneja los cambios en el estado de autenticación del AuthService
+    /// Handles auth state changes raised by IAuthService.
     /// </summary>
-    /// <param name="sender">Origen del evento</param>
-    /// <param name="e">Argumentos del evento</param>
     private void OnAuthenticationStateChanged(object? sender, AuthenticationStateChangedEventArgs e)
     {
         AuthenticationState newState;
@@ -91,7 +106,7 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
     }
 
     /// <summary>
-    /// Fuerza la actualización del estado de autenticación
+    /// Forces a refresh of the authentication state.
     /// </summary>
     public async Task RefreshAuthenticationStateAsync()
     {

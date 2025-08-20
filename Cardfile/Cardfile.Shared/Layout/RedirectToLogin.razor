@@ -4,36 +4,48 @@
 @inject IAuthService AuthService
 
 @code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
+
     /// <summary>
-    /// Componente que redirige a la página apropiada cuando el usuario no está autorizado
-    /// Redirige a /initial-config si la app no está configurada, o a /login si no está autenticado
+    /// Componente que redirige a la página apropiada cuando el usuario no está autorizado.
+    /// Prioriza el estado de autenticación del circuito (AuthenticationState) y luego recurre a IAuthService.
+    /// - Si está autenticado: redirige a /cards
+    /// - Si la app no está configurada: redirige a /initial-config
+    /// - En cualquier otro caso: redirige a /login
     /// </summary>
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            // Primero verificar si el usuario está autenticado
+            // 1) Priorizar el estado de autenticación actual del circuito
+            if (AuthenticationStateTask != null)
+            {
+                var authState = await AuthenticationStateTask;
+                var principal = authState?.User;
+                if (principal?.Identity?.IsAuthenticated == true)
+                {
+                    NavigationManager.NavigateTo("/cards", true);
+                    return;
+                }
+            }
+
+            // 2) Fallback: verificar autenticación vía IAuthService (persistencia propia)
             var isAuthenticated = await AuthService.IsAuthenticatedAsync();
-            
             if (isAuthenticated)
             {
-                // Si está autenticado, redirigir a la página principal
                 NavigationManager.NavigateTo("/cards", true);
                 return;
             }
 
-            // Verificar si la aplicación está configurada
+            // 3) Verificar si la aplicación está configurada
             var isConfigured = await AppSettingsService.IsConfiguredAsync();
-    
-            
             if (!isConfigured)
             {
-                // Si no está configurada, redirigir a configuración inicial
                 NavigationManager.NavigateTo("/initial-config", true);
             }
             else
             {
-                // Si está configurada pero no autenticado, redirigir a login
                 NavigationManager.NavigateTo("/login", true);
             }
         }

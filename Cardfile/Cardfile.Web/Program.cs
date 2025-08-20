@@ -5,6 +5,9 @@ using Microsoft.FluentUI.AspNetCore.Components;
 using Cardfile.Shared.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,8 +48,8 @@ builder.Services.AddScoped<ICardAttachmentService, CardAttachmentService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
 
-// Add ASP.NET Core Authentication services
-builder.Services.AddAuthentication()
+// Add ASP.NET Core Authentication services with Cookies as default scheme
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
         options.LoginPath = "/login";
@@ -84,6 +87,82 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.UseAntiforgery();
+
+// Minimal API endpoints to issue/clear auth cookies safely via HTTP
+
+// Handle login and issue authentication cookie
+app.MapPost("/auth/login", async (HttpContext httpContext, IUserService userService, IAppSettingsService appSettingsService) =>
+{
+    // Read form values (from standard HTML form post)
+    var form = await httpContext.Request.ReadFormAsync();
+    var username = form["username"].ToString();
+    var password = form["password"].ToString();
+
+    if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+    {
+        return Results.Redirect("/login?error=missing");
+    }
+
+    var user = await userService.GetByUsernameAsync(username);
+    if (user is null || !user.IsActive || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
+    {
+        return Results.Redirect("/login?error=invalid");
+    }
+
+    // Preserve RememberCredentials preference from stored settings
+    var existingLastUser = await appSettingsService.GetLastUserAsync();
+    var rememberPreference = existingLastUser?.RememberCredentials ?? false;
+
+    await appSettingsService.UpdateLastUserAsync(new LastUserInfo
+    {
+        Username = user.Username,
+        Email = user.Email ?? string.Empty,
+        RememberCredentials = rememberPreference,
+        LastLogin = DateTime.UtcNow
+    });
+
+    // Build claims and sign-in with cookie
+    var claims = new List<Claim>
+    {
+        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+        new Claim(ClaimTypes.Name, user.Username),
+        new Claim(ClaimTypes.Email, user.Email ?? string.Empty)
+    };
+
+    var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+    var principal = new ClaimsPrincipal(identity);
+
+    var authProperties = new AuthenticationProperties
+    {
+        IsPersistent = rememberPreference,
+        ExpiresUtc = rememberPreference ? DateTimeOffset.UtcNow.AddDays(7) : DateTimeOffset.UtcNow.AddHours(8)
+    };
+
+    await httpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProperties);
+
+    // Redirect to main page after successful login
+    return Results.Redirect("/cards");
+}).DisableAntiforgery();
+
+// Handle logout and clear authentication cookie
+app.MapGet("/logout", async (HttpContext httpContext, IAppSettingsService appSettingsService) =>
+{
+    // Optionally preserve RememberCredentials and clear last user fields
+    var existingLastUser = await appSettingsService.GetLastUserAsync();
+    var rememberPreference = existingLastUser?.RememberCredentials ?? false;
+
+    await appSettingsService.UpdateLastUserAsync(new LastUserInfo
+    {
+        Username = string.Empty,
+        Email = string.Empty,
+        RememberCredentials = rememberPreference,
+        LastLogin = DateTime.UtcNow
+    });
+
+    await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+    return Results.Redirect("/login");
+});
 
 // Configure static files from Cardfile.Shared wwwroot
 app.UseStaticFiles();

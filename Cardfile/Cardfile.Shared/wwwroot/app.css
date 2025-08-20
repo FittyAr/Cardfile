@@ -189,24 +189,3 @@ code {
         right: unset;
     }
 }
-
-/* Responsive images for logos loaded via FluentIcon */
-.header-logo,
-.config-logo {
-    display: inline-block;
-    max-width: 100%;
-    height: auto;
-}
-
-/* Ensure header logo adapts to container height gracefully */
-.header-logo {
-    width: auto;
-    height: 26px;
-}
-
-/* Initial configuration hero logo with responsive cap */
-.config-logo {
-    width: auto;
-    height: min(12vw, 64px);
-    margin-bottom: 16px;
-}

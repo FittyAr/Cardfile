@@ -1,9 +1,8 @@
 @page "/login"
 @using Cardfile.Shared.Models
 @using Microsoft.FluentUI.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Forms
 @inject NavigationManager Navigation
-@inject IAuthService AuthService
-@inject AuthenticationStateProvider AuthStateProvider
 @inject IAppSettingsService AppSettingsService
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="30" Style="max-width: 400px; margin: 0 auto; padding: 40px 20px;">
@@ -14,10 +13,8 @@
     </FluentStack>
     
     <FluentCard Style="padding: 30px;">
-        <EditForm Model="loginModel" OnValidSubmit="HandleLoginAsync">
-            <DataAnnotationsValidator />
-            <FluentValidationSummary />
-            
+        <!-- Formulario HTML nativo para realizar POST a /auth/login y emitir cookie de autenticación -->
+        <form method="post" action="/auth/login">
             <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
                 <FluentTextField @bind-Value="loginModel.Username" 
                                Label="Username" 
@@ -33,16 +30,19 @@
                                Required="true"
                                Style="width: 100%;"
                                IconStart="@(new Icons.Regular.Size20.Key())" />
+
+                <!-- Inputs nativos ocultos con los nombres esperados por el endpoint -->
+                <input type="hidden" name="username" value="@loginModel.Username" />
+                <input type="hidden" name="password" value="@loginModel.Password" />
                 
                 <FluentButton Type="ButtonType.Submit" 
                             Appearance="Appearance.Accent" 
                             Style="width: 100%; margin-top: 10px;"
-                            Disabled="@isLoading"
                             IconStart="@(new Icons.Regular.Size20.ArrowEnter())">
-                    @(isLoading ? "Signing In..." : "Sign In")
+                    Sign In
                 </FluentButton>
             </FluentStack>
-        </EditForm>
+        </form>
     </FluentCard>
     
     @if (!string.IsNullOrEmpty(message))
@@ -70,63 +70,25 @@
     /// </summary>
     private string? message;
 
-    /// <summary>
-    /// Indica si se está procesando la solicitud de login
-    /// </summary>
-    private bool isLoading = false;
+    private MessageIntent messageIntent = MessageIntent.Info;
 
-    /// <summary>
-    /// Maneja el login del usuario usando IAuthService y notifica el cambio de AuthenticationState
-    /// </summary>
-    private async Task HandleLoginAsync()
+    protected override void OnParametersSet()
     {
-        message = null;
-        messageIntent = MessageIntent.Info;
-
-        try
+        // Leer errores de querystring ?error=...
+        var uri = new Uri(Navigation.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        var error = query["error"];
+        if (!string.IsNullOrEmpty(error))
         {
-            isLoading = true;
-
-            // Validación adicional por seguridad
-            if (string.IsNullOrWhiteSpace(loginModel.Username) || string.IsNullOrWhiteSpace(loginModel.Password))
-            {
-                message = "Username and password are required.";
-                messageIntent = MessageIntent.Error;
-                return;
-            }
-
-            // Intentar autenticar
- 
-             var user = await AuthService.LoginAsync(loginModel.Username, loginModel.Password);
- 
-             
-             if (user == null)
-             {
- 
-                 message = "Invalid username or password.";
-                 messageIntent = MessageIntent.Error;
-                 return;
-             }
-
-             // AuthService.LoginAsync ya notifica el cambio de estado automáticamente
-             // Agregar un pequeño delay para permitir que el estado se propague
-             await Task.Delay(100);
-
-             // Navegar a Cards por defecto
-             Navigation.NavigateTo("/cards");
-        }
-        catch (Exception ex)
-        {
-            message = $"An unexpected error occurred: {ex.Message}";
             messageIntent = MessageIntent.Error;
-        }
-        finally
-        {
-            isLoading = false;
+            message = error switch
+            {
+                "missing" => "Username and password are required.",
+                "invalid" => "Invalid username or password.",
+                _ => "An unexpected error occurred. Please try again."
+            };
         }
     }
-
-    private MessageIntent messageIntent = MessageIntent.Info;
 
     /// <summary>
     /// Modelo de login para la vista
