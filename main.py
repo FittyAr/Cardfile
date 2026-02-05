@@ -84,14 +84,14 @@ async def main(page: Page):
     async def view_pop(e: ft.ViewPopEvent) -> None:
         page.views.pop()
         top_view: ft.View = page.views[-1]
-        page.go(top_view.route)
+        await page.push_route(top_view.route)
 
     page.on_route_change = route_change
     page.on_view_pop = view_pop
     
     # Decidir la ruta inicial basada en si es primera ejecución
     initial_route = '/newUser' if check_first_run() else '/Login'
-    page.go(initial_route)
+    await page.push_route(initial_route)
 
     page.theme_mode = ft.ThemeMode.SYSTEM
 

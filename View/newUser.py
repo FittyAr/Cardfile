@@ -126,7 +126,7 @@ async def newUser_view(page: ft.Page):
             page.update()
             
             # Opcional: redirigir al login
-            page.go("/Login")
+            await page.push_route("/Login")
             
         except Exception as e:
             session.rollback()
@@ -137,7 +137,7 @@ async def newUser_view(page: ft.Page):
             session.close()
 
     async def cancel_clicked(e):
-        page.go("/Login")
+        await page.push_route("/Login")
 
     # Botones
     btn_save = ft.ElevatedButton(
@@ -197,7 +197,7 @@ async def newUser_view(page: ft.Page):
                 
                 ft.TextButton(
                     content=ft.Text(t['login_link']),
-                    on_click=lambda _: page.go("/Login")
+                    on_click=lambda _: asyncio.create_task(page.push_route("/Login"))
                 ),
             ],
         ),

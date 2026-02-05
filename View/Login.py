@@ -63,7 +63,7 @@ async def login_view(page: ft.Page):
                 # Convertir a string para evitar errores de tipo en shared_preferences
                 await page.shared_preferences.set("user_id", str(usuario.id))
                 await page.shared_preferences.set("user_name", usuario.nombre)
-                page.go("/Card")
+                await page.push_route("/Card")
             else:
                 page.show_dialog(ft.SnackBar(
                     content=ft.Text(config.get_text("login.errors.invalid_credentials")),
@@ -141,9 +141,12 @@ async def login_view(page: ft.Page):
         on_click=exit_clicked
     )
  
+    async def go_to_register(e):
+        await page.push_route("/newUser")
+
     register_link = ft.TextButton(
         content=ft.Text(config.get_text("login.register_link")),
-        on_click=lambda _: page.go("/newUser")
+        on_click=go_to_register
     )
 
     # Modificar el return para incluir el selector de idioma

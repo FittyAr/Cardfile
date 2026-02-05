@@ -81,7 +81,7 @@ async def recycle_view(page: ft.Page):
                 # Si no quedan fichas inactivas, volver a /Card
                 if remaining_inactive == 0:
                     await asyncio.sleep(0.5)  # Pequeña pausa para que se vea el mensaje
-                    page.go("/Card")
+                    await page.push_route("/Card")
         except Exception as e:
             session.rollback()
             print(f"Error restaurando ficha: {str(e)}")
@@ -131,7 +131,7 @@ async def recycle_view(page: ft.Page):
                         # Si no quedan fichas inactivas, volver a /Card
                         if remaining_inactive == 0:
                             await asyncio.sleep(0.5)
-                            page.go("/Card")
+                            await page.push_route("/Card")
                 except Exception as e:
                     session.rollback()
                     print(f"Error eliminando ficha: {str(e)}")
@@ -192,7 +192,7 @@ async def recycle_view(page: ft.Page):
                     
                     # Volver a /Card después de vaciar la papelera
                     await asyncio.sleep(0.5)
-                    page.go("/Card")
+                    await page.push_route("/Card")
                 except Exception as e:
                     session.rollback()
                     print(f"Error vaciando papelera: {str(e)}")
@@ -226,7 +226,7 @@ async def recycle_view(page: ft.Page):
         page.update()
 
     async def cancel_clicked(e):
-        page.go("/Card")
+        await page.push_route("/Card")
 
     # Lista de fichas
     fichas_list = ft.ListView(
@@ -242,7 +242,7 @@ async def recycle_view(page: ft.Page):
         width=120,
         color=ft.Colors.WHITE,
         bgcolor=ft.Colors.BLUE,
-        on_click=lambda e: page.go("/Card")
+        on_click=lambda e: asyncio.create_task(page.push_route("/Card"))
     )
 
     btn_restore = ft.ElevatedButton(

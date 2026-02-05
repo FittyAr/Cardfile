@@ -7,6 +7,8 @@ services:
     ports:
       - "8550:8550"
     volumes:
+      # Montar el código fuente para desarrollo en vivo
+      - ..:/app
       # Persistir la base de datos
       - ../database.db:/app/database.db
       # Persistir preferencias de idioma

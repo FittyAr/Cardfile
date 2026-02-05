@@ -5,136 +5,63 @@ from datetime import datetime
 from config.config import Config
 import asyncio
 
+# Importar componentes modularizados
+from View.components.markdown_editor import (
+    create_markdown_editor,
+    create_markdown_toolbar,
+    create_markdown_preview
+)
+from View.components.card_ui import (
+    create_sidebar,
+    create_card_header,
+    create_custom_tabs,
+    create_save_indicator,
+    create_card_counter,
+    create_cards_listview,
+    create_search_field
+)
+from View.components.card_state import CardState
+
 async def card_view(page: ft.Page):
     """Vista moderna de tarjetas con diseño profesional tipo dashboard"""
     config = Config()
     t = config.translations['card']
     
-    # Variables de estado
-    selected_ficha = None
-    fichas_list = []
+    # Estado centralizado
+    state = CardState()
     search_query = ""
-    debounce_task = None
-    autosave_task = None
-    last_saved_value = ""
-    has_unsaved_changes = False
     
     # ==================== COMPONENTES DE UI ====================
     
-    # Barra de búsqueda moderna
-    search_field = ft.TextField(
-        hint_text="🔍 " + t['search']['hint'],
-        border_radius=12,
-        filled=True,
-        bgcolor=ft.Colors.with_opacity(0.05, ft.Colors.ON_SURFACE),
-        border_color=ft.Colors.TRANSPARENT,
-        focused_border_color=ft.Colors.BLUE_400,
-        content_padding=ft.Padding.symmetric(horizontal=20, vertical=15),
-        text_size=14,
-        expand=True,
-    )
-    
-    # Contador de tarjetas
-    card_counter = ft.Text(
-        "0 tarjetas",
-        size=13,
-        color=ft.Colors.with_opacity(0.6, ft.Colors.ON_SURFACE),
-        weight=ft.FontWeight.W_500,
-    )
-    
-    # Lista de tarjetas (sidebar izquierdo)
-    cards_listview = ft.ListView(
-        spacing=8,
-        padding=ft.Padding.all(12),
-        expand=True,
-    )
-    
-    # Editor de markdown
-    markdown_editor = ft.TextField(
-        multiline=True,
-        min_lines=20,
-        max_lines=None,
-        border_radius=12,
-        filled=True,
-        bgcolor=ft.Colors.with_opacity(0.03, ft.Colors.ON_SURFACE),
-        border_color=ft.Colors.TRANSPARENT,
-        focused_border_color=ft.Colors.BLUE_400,
-        content_padding=ft.Padding.all(20),
-        text_size=14,
-        hint_text="Escribe aquí tu contenido en Markdown...",
-        expand=True,
-    )
-    
-    # Preview de markdown
-    markdown_preview = ft.Markdown(
-        "",
-        selectable=True,
-        extension_set=ft.MarkdownExtensionSet.GITHUB_WEB,
-        on_tap_link=lambda e: page.launch_url(e.data),
-        expand=True,
-    )
-    
-    # Indicador de guardado
-    save_indicator = ft.Row(
-        [
-            ft.Icon(ft.Icons.CHECK_CIRCLE, color=ft.Colors.GREEN_400, size=16),
-            ft.Text("Guardado", size=12, color=ft.Colors.GREEN_400),
-        ],
-        spacing=6,
-        visible=False,
-    )
-    
-    # Título de la tarjeta seleccionada
-    selected_card_title = ft.Text(
-        "Selecciona una tarjeta",
-        size=24,
-        weight=ft.FontWeight.BOLD,
-        color=ft.Colors.ON_SURFACE,
-    )
-    
-    # Tabs para Editor/Preview
-    # Contenedores de contenido para los tabs
-    editor_container = ft.Container(
-        content=markdown_editor,
-        padding=ft.Padding.all(0),
-        expand=True,
-        visible=True,
-    )
+    # --- Handlers ---
+    async def on_editor_change(e):
+        """Maneja cambios en el editor"""
+        state.mark_as_modified()
+        markdown_preview.value = markdown_editor.value
+        if state.debounce_task: state.debounce_task.cancel()
+        state.debounce_task = asyncio.create_task(debounced_save())
 
-    preview_container = ft.Container(
-        content=ft.Column(
-            [markdown_preview],
-            scroll=ft.ScrollMode.AUTO,
-            expand=True,
-        ),
-        padding=ft.Padding.all(20),
-        expand=True,
-        visible=False,
-    )
+    async def debounced_save():
+        await asyncio.sleep(2)
+        await save_current_ficha()
 
-    # Variable para rastrear el tab activo
-    active_tab_index = 0
-    
+    async def on_search_change(e):
+        await load_fichas(search_field.value)
+
     def on_editor_tab_click(e):
-        """Muestra el editor"""
-        nonlocal active_tab_index
-        active_tab_index = 0
         editor_container.visible = True
         preview_container.visible = False
-        markdown_toolbar.visible = True  # ✅ Mostrar toolbar en editor
+        markdown_toolbar.visible = True
         editor_btn.bgcolor = ft.Colors.BLUE_400
         editor_btn.content.color = ft.Colors.WHITE
         preview_btn.bgcolor = ft.Colors.with_opacity(0.05, ft.Colors.ON_SURFACE)
         preview_btn.content.color = ft.Colors.ON_SURFACE
         page.update()
-    
+
     def on_preview_tab_click(e):
-        """Muestra la vista previa"""
-        nonlocal active_tab_index
-        active_tab_index = 1
         editor_container.visible = False
         preview_container.visible = True
-        markdown_toolbar.visible = False  # ✅ Ocultar toolbar en preview
+        markdown_toolbar.visible = False
         markdown_preview.value = markdown_editor.value
         preview_btn.bgcolor = ft.Colors.BLUE_400
         preview_btn.content.color = ft.Colors.WHITE
@@ -142,102 +69,84 @@ async def card_view(page: ft.Page):
         editor_btn.content.color = ft.Colors.ON_SURFACE
         page.update()
 
-    # Botones de tab personalizados
-    editor_btn = ft.Container(
-        content=ft.Text("✏️ Editor", size=14, weight=ft.FontWeight.W_600, color=ft.Colors.WHITE),
-        padding=ft.Padding.symmetric(horizontal=20, vertical=12),
-        border_radius=ft.border_radius.only(top_left=8, top_right=8),
-        bgcolor=ft.Colors.BLUE_400,
-        ink=True,
-        on_click=on_editor_tab_click,
+    async def edit_card_handler(e):
+        """Handler para el botón de editar título"""
+        if state.selected_ficha:
+            await page.push_route(f"/EditCard/{state.selected_ficha.id}")
+
+    async def new_card_handler(e):
+        """Handler para el botón de nueva tarjeta en el sidebar"""
+        await page.push_route("/NewCard")
+
+    async def delete_ficha_handler(e=None):
+        """Handler para el botón de eliminar del header"""
+        await delete_ficha_logic()
+
+    async def recycle_bin_handler(e):
+        await page.push_route("/Recycle")
+
+    # --- Componentes ---
+    search_field = create_search_field(on_search_change)
+    card_counter = create_card_counter()
+    cards_listview = create_cards_listview()
+    markdown_editor = create_markdown_editor(on_change=on_editor_change)
+    markdown_preview = create_markdown_preview()
+    markdown_toolbar = create_markdown_toolbar(markdown_editor, on_change=on_editor_change)
+    save_indicator = create_save_indicator()
+    
+    selected_card_title = ft.Text(
+        "Selecciona una tarjeta",
+        size=24, weight=ft.FontWeight.BOLD, color=ft.Colors.ON_SURFACE
     )
-    
-    preview_btn = ft.Container(
-        content=ft.Text("👁️ Vista Previa", size=14, weight=ft.FontWeight.W_600),
-        padding=ft.Padding.symmetric(horizontal=20, vertical=12),
-        border_radius=ft.border_radius.only(top_left=8, top_right=8),
-        bgcolor=ft.Colors.with_opacity(0.05, ft.Colors.ON_SURFACE),
-        ink=True,
-        on_click=on_preview_tab_click,
+
+    tabs_row, editor_btn, preview_btn = create_custom_tabs(
+        on_editor_tab_click, on_preview_tab_click
     )
-    
-    # Barra de pestañas personalizada
-    editor_tabs = ft.Row(
-        [
-            editor_btn,
-            preview_btn,
-        ],
-        spacing=4,
+
+    header_container, edit_header_btn, delete_header_btn = create_card_header(
+        selected_card_title, 
+        save_indicator,
+        edit_callback=edit_card_handler,
+        delete_callback=delete_ficha_handler
     )
-    
-    # ==================== MARKDOWN TOOLBAR ====================
-    # Funciones helper para edición Markdown
-    def _wrap_selection(prefix: str, suffix: str = None):
-        """Envuelve el texto seleccionado con prefix/suffix"""
-        if suffix is None:
-            suffix = prefix
-        value = markdown_editor.value or ""
-        if not value.strip():
-            new_value = f"{prefix}texto{suffix}"
-            markdown_editor.value = new_value
-        else:
-            markdown_editor.value = value + f"\n{prefix}texto{suffix}"
-        markdown_editor.update()
-        on_editor_change(None)
-    
-    def _block_format(prefix: str):
-        """Aplica formato de bloque"""
-        value = markdown_editor.value or ""
-        lines = value.split('\n') if value else ['']
-        lines.append(f"{prefix}texto")
-        markdown_editor.value = '\n'.join(lines)
-        markdown_editor.update()
-        on_editor_change(None)
-    
-    def _insert_text(text: str):
-        """Inserta texto"""
-        value = markdown_editor.value or ""
-        markdown_editor.value = value + ('\n' if value else '') + text
-        markdown_editor.update()
-        on_editor_change(None)
-    
-    # Barra de herramientas Markdown
-    markdown_toolbar = ft.Container(
-        content=ft.Row(
-            [
-                ft.IconButton(icon=ft.Icons.FORMAT_BOLD, tooltip="Negrita", icon_size=18, on_click=lambda e: _wrap_selection("**")),
-                ft.IconButton(icon=ft.Icons.FORMAT_ITALIC, tooltip="Cursiva", icon_size=18, on_click=lambda e: _wrap_selection("*")),
-                ft.IconButton(icon=ft.Icons.STRIKETHROUGH_S, tooltip="Tachado", icon_size=18, on_click=lambda e: _wrap_selection("~~")),
-                ft.IconButton(icon=ft.Icons.CODE, tooltip="Código", icon_size=18, on_click=lambda e: _wrap_selection("`")),
-                ft.Container(width=1, height=20, bgcolor=ft.Colors.BLUE_GREY_200),
-                ft.IconButton(icon=ft.Icons.TITLE, tooltip="H1",icon_size=18, on_click=lambda e: _block_format("# ")),
-                ft.IconButton(icon=ft.Icons.SUBTITLES, tooltip="H2", icon_size=18, on_click=lambda e: _block_format("## ")),
-                ft.IconButton(icon=ft.Icons.TEXT_FIELDS, tooltip="H3", icon_size=18, on_click=lambda e: _block_format("### ")),
-                ft.Container(width=1, height=20, bgcolor=ft.Colors.BLUE_GREY_200),
-                ft.IconButton(icon=ft.Icons.FORMAT_LIST_BULLETED, tooltip="Lista", icon_size=18, on_click=lambda e: _block_format("- ")),
-                ft.IconButton(icon=ft.Icons.FORMAT_LIST_NUMBERED, tooltip="Lista Nº", icon_size=18, on_click=lambda e: _block_format("1. ")),
-                ft.IconButton(icon=ft.Icons.FORMAT_QUOTE, tooltip="Cita", icon_size=18, on_click=lambda e: _block_format("> ")),
-                ft.Container(width=1, height=20, bgcolor=ft.Colors.BLUE_GREY_200),
-                ft.IconButton(icon=ft.Icons.LINK, tooltip="Enlace", icon_size=18, on_click=lambda e: _insert_text("[texto](https://)")),
-                ft.IconButton(icon=ft.Icons.IMAGE, tooltip="Imagen", icon_size=18, on_click=lambda e: _insert_text("![alt](https://)")),
-                ft.IconButton(icon=ft.Icons.TABLE_CHART, tooltip="Tabla", icon_size=18, on_click=lambda e: _insert_text("\n| Col 1 | Col 2 |\n|-------|-------|\n|       |       |\n")),
-                ft.IconButton(icon=ft.Icons.CHECK_BOX, tooltip="Checklist", icon_size=18, on_click=lambda e: _insert_text("- [ ] tarea")),
-            ],
-            wrap=True,
-            alignment=ft.MainAxisAlignment.START,
-            spacing=4,
-        ),
-        padding=ft.Padding.symmetric(horizontal=12, vertical=8),
-        bgcolor=ft.Colors.with_opacity(0.05, ft.Colors.ON_SURFACE),
-        border_radius=8,
-        visible=True,
+
+    editor_container = ft.Container(content=markdown_editor, expand=True, visible=True)
+    preview_container = ft.Container(
+        content=ft.Column([markdown_preview], scroll=ft.ScrollMode.AUTO, expand=True),
+        padding=ft.Padding.all(20), expand=True, visible=False
     )
     
     # ==================== FUNCIONES ====================
     
+    def update_editor_state():
+        """Actualiza el estado de habilitación del editor basado en la selección"""
+        # Usar el objeto state en lugar de variables separadas
+        editor_enabled = state.editor_should_be_enabled()
+        
+        # Actualizar estado de componentes
+        if markdown_editor:
+            markdown_editor.disabled = not editor_enabled
+        if markdown_toolbar:
+            markdown_toolbar.visible = editor_enabled and editor_container.visible
+        
+        # Actualizar mensaje del título
+        if not state.has_fichas():
+            selected_card_title.value = "📝 No hay tarjetas"
+        elif not state.is_ficha_selected():
+            selected_card_title.value = "👉 Selecciona una tarjeta"
+        else:
+            selected_card_title.value = state.selected_ficha.title
+        
+        # Deshabilitar tabs y botones de acción si no hay selección
+        editor_btn.disabled = not editor_enabled
+        preview_btn.disabled = not editor_enabled
+        edit_header_btn.disabled = not editor_enabled
+        delete_header_btn.disabled = not editor_enabled
+        
+        page.update()
+    
     async def load_fichas(search_text=""):
         """Carga las fichas del usuario"""
-        nonlocal fichas_list
         session = get_session()
         try:
             user_id = await page.shared_preferences.get("user_id")
@@ -246,11 +155,27 @@ async def card_view(page: ft.Page):
             if search_text:
                 q = q.filter(Ficha.title.ilike(f"%{search_text}%"))
             fichas = q.all()
-            fichas_list = fichas
+            state.fichas_list = fichas  # Usar state object
             render_fichas_list(fichas)
             
             # Actualizar contador
             card_counter.value = f"{len(fichas)} tarjeta{'s' if len(fichas) != 1 else ''}"
+            
+            # Intentar restaurar selección previa
+            selected_ficha_data = await page.shared_preferences.get("selected_ficha")
+            if selected_ficha_data:
+                import json
+                try:
+                    data = json.loads(selected_ficha_data)
+                    for ficha in fichas:
+                        if ficha.id == data.get("id"):
+                            await select_ficha(ficha)
+                            break
+                except:
+                    pass
+            
+            # Actualizar estado del editor
+            update_editor_state()
             page.update()
         except Exception as e:
             print(f"Error cargando fichas: {str(e)}")
@@ -294,13 +219,11 @@ async def card_view(page: ft.Page):
     
     async def select_ficha(ficha):
         """Selecciona una tarjeta"""
-        nonlocal selected_ficha, last_saved_value, has_unsaved_changes
-        
         # Guardar cambios pendientes de la tarjeta anterior
-        if selected_ficha and has_unsaved_changes:
+        if state.selected_ficha and state.has_unsaved_changes:
             await save_current_ficha()
         
-        selected_ficha = ficha
+        state.select_ficha(ficha)  # Usar método del state
         
         # Guardar en shared_preferences
         import json
@@ -315,12 +238,10 @@ async def card_view(page: ft.Page):
         selected_card_title.value = ficha.title
         markdown_editor.value = ficha.descripcion or ""
         markdown_preview.value = ficha.descripcion or ""
-        last_saved_value = ficha.descripcion or ""
-        has_unsaved_changes = False
         
         # Resaltar tarjeta seleccionada
         for i, control in enumerate(cards_listview.controls):
-            if i < len(fichas_list) and fichas_list[i].id == ficha.id:
+            if i < len(state.fichas_list) and state.fichas_list[i].id == ficha.id:
                 control.bgcolor = ft.Colors.BLUE_400
                 control.content.controls[0].color = ft.Colors.WHITE
                 control.content.controls[1].color = ft.Colors.with_opacity(0.8, ft.Colors.WHITE)
@@ -329,23 +250,22 @@ async def card_view(page: ft.Page):
                 control.content.controls[0].color = ft.Colors.ON_SURFACE
                 control.content.controls[1].color = ft.Colors.with_opacity(0.5, ft.Colors.ON_SURFACE)
         
+        # Actualizar estado del editor
+        update_editor_state()
         page.update()
     
     async def save_current_ficha():
         """Guarda la tarjeta actual"""
-        nonlocal has_unsaved_changes, last_saved_value
-        
-        if not selected_ficha:
+        if not state.selected_ficha:
             return
         
         session = get_session()
         try:
-            ficha = session.query(Ficha).filter(Ficha.id == selected_ficha.id).first()
+            ficha = session.query(Ficha).filter(Ficha.id == state.selected_ficha.id).first()
             if ficha:
                 ficha.descripcion = markdown_editor.value
                 session.commit()
-                last_saved_value = markdown_editor.value
-                has_unsaved_changes = False
+                state.mark_as_saved(markdown_editor.value)  # Usar método del state
                 
                 # Mostrar indicador de guardado
                 save_indicator.visible = True
@@ -359,33 +279,11 @@ async def card_view(page: ft.Page):
         finally:
             session.close()
     
-    async def on_editor_change(e):
-        """Maneja cambios en el editor"""
-        nonlocal has_unsaved_changes, debounce_task
-        
-        has_unsaved_changes = True
-        markdown_preview.value = markdown_editor.value
-        
-        # Debounce para autosave
-        if debounce_task:
-            debounce_task.cancel()
-        
-        debounce_task = asyncio.create_task(debounced_save())
+
     
-    async def debounced_save():
-        """Guarda después de 2 segundos de inactividad"""
-        await asyncio.sleep(2)
-        await save_current_ficha()
-    
-    async def on_search_change(e):
-        """Maneja cambios en la búsqueda"""
-        await load_fichas(search_field.value)
-    
-    async def delete_ficha_handler(e=None):
-        """Elimina la tarjeta seleccionada"""
-        nonlocal selected_ficha
-        
-        if not selected_ficha:
+    async def delete_ficha_logic(e=None):
+        """Lógica para eliminar la tarjeta seleccionada"""
+        if not state.selected_ficha:
             page.show_dialog(ft.SnackBar(
                 content=ft.Text(t['delete']['no_selection']),
                 bgcolor=ft.Colors.RED_400,
@@ -395,17 +293,16 @@ async def card_view(page: ft.Page):
             return
         
         async def confirm_delete(e):
-            nonlocal selected_ficha
             button_text = e.control.content.value if hasattr(e.control.content, 'value') else str(e.control.content)
             if button_text == t['buttons']['yes']:
                 session = get_session()
                 try:
-                    ficha = session.query(Ficha).filter(Ficha.id == selected_ficha.id).first()
+                    ficha = session.query(Ficha).filter(Ficha.id == state.selected_ficha.id).first()
                     if ficha:
                         ficha.is_active = False
                         session.commit()
                         
-                        selected_ficha = None
+                        state.deselect()
                         await page.shared_preferences.remove("selected_ficha")
                         await load_fichas()
                         
@@ -417,9 +314,8 @@ async def card_view(page: ft.Page):
                         page.show_dialog(ft.SnackBar(
                             content=ft.Text(t['delete']['success']),
                             bgcolor=ft.Colors.GREEN_400,
-                            action="Ok"
+                            duration=2000
                         ))
-                        page.update()
                 except Exception as e:
                     session.rollback()
                     print(f"Error eliminando ficha: {str(e)}")
@@ -428,7 +324,6 @@ async def card_view(page: ft.Page):
                         bgcolor=ft.Colors.RED_400,
                         action="Ok"
                     ))
-                    page.update()
                 finally:
                     session.close()
             
@@ -456,75 +351,30 @@ async def card_view(page: ft.Page):
     
     # ==================== LAYOUT ====================
     
-    # Sidebar izquierdo (lista de tarjetas)
-    sidebar = ft.Container(
-        content=ft.Column(
-            [
-                # Header del sidebar
-                ft.Container(
-                    content=ft.Column(
-                        [
-                            ft.Text(
-                                "📚 Mis Tarjetas",
-                                size=18,
-                                weight=ft.FontWeight.BOLD,
-                                color=ft.Colors.ON_SURFACE,
-                            ),
-                            card_counter,
-                        ],
-                        spacing=4,
-                    ),
-                    padding=ft.Padding.all(16),
-                ),
-                # Búsqueda
-                ft.Container(
-                    content=search_field,
-                    padding=ft.Padding.symmetric(horizontal=12),
-                ),
-                ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE)),
-                # Lista de tarjetas
-                ft.Container(
-                    content=cards_listview,
-                    expand=True,
-                ),
-            ],
-            spacing=12,
-        ),
-        width=320,
-        bgcolor=ft.Colors.with_opacity(0.02, ft.Colors.ON_SURFACE),
-        border=ft.Border.only(right=ft.BorderSide(1, ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE))),
-        expand=True,
+    sidebar = create_sidebar(
+        search_field=search_field,
+        cards_listview=cards_listview,
+        card_counter=card_counter,
+        new_card_callback=new_card_handler,
+        recycle_bin_callback=recycle_bin_handler
     )
     
-    # Panel principal (editor)
     main_panel = ft.Container(
         content=ft.Column(
             [
-                # Header del panel principal
-                ft.Container(
-                    content=ft.Row(
-                        [
-                            selected_card_title,
-                            save_indicator,
-                        ],
-                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                    ),
-                    padding=ft.Padding.all(20),
-                ),
+                header_container,
                 ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE)),
-                # Editor con tabs y contenido
                 ft.Container(
                     content=ft.Column(
                         [
-                            editor_tabs,
+                            tabs_row, # De create_custom_tabs
                             ft.Divider(height=1, color=ft.Colors.TRANSPARENT),
                             markdown_toolbar,
                             ft.Divider(height=1, color=ft.Colors.TRANSPARENT),
                             editor_container,
                             preview_container,
                         ],
-                        spacing=0,
-                        expand=True,
+                        spacing=0, expand=True,
                     ),
                     expand=True,
                 ),
@@ -535,14 +385,7 @@ async def card_view(page: ft.Page):
     )
     
     # Layout principal
-    main_view = ft.Row(
-        [
-            sidebar,
-            main_panel,
-        ],
-        spacing=0,
-        expand=True,
-    )
+    main_view = ft.Row([sidebar, main_panel], spacing=0, expand=True)
     
     # ==================== LIFECYCLE ====================
     
@@ -550,15 +393,9 @@ async def card_view(page: ft.Page):
         asyncio.create_task(load_fichas())
     
     async def on_view_unmount():
-        nonlocal debounce_task, autosave_task
-        try:
-            if debounce_task:
-                debounce_task.cancel()
-            if has_unsaved_changes:
-                await save_current_ficha()
-        finally:
-            if autosave_task:
-                autosave_task.cancel()
+        if state.has_unsaved_changes:
+            await save_current_ficha()
+        state.cleanup()
     
     main_view.did_mount = on_view_mount
     main_view.will_unmount = on_view_unmount

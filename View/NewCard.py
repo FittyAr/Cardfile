@@ -34,7 +34,7 @@ async def new_card_view(page: ft.Page):
             session.add(nueva_ficha)
             session.commit()
             
-            page.go("/Card")
+            await page.push_route("/Card")
             
         except Exception as e:
             session.rollback()
@@ -49,7 +49,7 @@ async def new_card_view(page: ft.Page):
             session.close()
 
     async def cancel_clicked(e):
-        page.go("/Card")
+        await page.push_route("/Card")
 
     # Campo para el nombre de la tarjeta
     card_name = ft.TextField(

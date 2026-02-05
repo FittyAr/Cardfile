@@ -22,11 +22,11 @@ async def views_handler(page: Page):
         index = e.control.selected_index
         
         if index == 0:  # Nueva tarjeta
-            page.go("/newCard")
+            await page.push_route("/newCard")
         elif index == 1:  # Editar
             selected_ficha = await page.shared_preferences.get("selected_ficha")
             if selected_ficha:
-                page.go("/editCard")
+                await page.push_route("/editCard")
             else:
                 page.show_dialog(ft.SnackBar(
                     content=ft.Text(t['errors']['select_card_edit']),
@@ -38,9 +38,9 @@ async def views_handler(page: Page):
             if hasattr(page, 'delete_ficha'):
                 await page.delete_ficha()
         elif index == 3:  # Papelera
-            page.go("/recycle")
+            await page.push_route("/recycle")
         elif index == 4:  # Salir
-            page.go("/Login")
+            await page.push_route("/Login")
 
     # Crear diccionario de vistas
     return {
