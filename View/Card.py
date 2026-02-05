@@ -22,6 +22,11 @@ from View.components.card_ui import (
 )
 from View.components.card_state import CardState
 
+# Importar componentes de modales
+from View.NewCard import new_card_modal
+from View.EditCard import edit_card_modal
+from View.Recycle import recycle_modal
+
 async def card_view(page: ft.Page):
     """Vista moderna de tarjetas con diseño profesional tipo dashboard"""
     config = Config()
@@ -32,6 +37,16 @@ async def card_view(page: ft.Page):
     search_query = ""
     
     # ==================== COMPONENTES DE UI ====================
+    
+    # --- Modales ---
+    async def hide_modal():
+        modal_overlay.visible = False
+        modal_overlay.content = None
+        page.update()
+
+    async def on_modal_success():
+        await hide_modal()
+        await load_fichas(search_field.value)
     
     # --- Handlers ---
     async def on_editor_change(e):
@@ -72,18 +87,27 @@ async def card_view(page: ft.Page):
     async def edit_card_handler(e):
         """Handler para el botón de editar título"""
         if state.selected_ficha:
-            await page.push_route(f"/EditCard/{state.selected_ficha.id}")
+            modal_content = await edit_card_modal(page, on_close=hide_modal, on_success=on_modal_success)
+            modal_overlay.content = modal_content
+            modal_overlay.visible = True
+            page.update()
 
     async def new_card_handler(e):
         """Handler para el botón de nueva tarjeta en el sidebar"""
-        await page.push_route("/NewCard")
+        modal_content = await new_card_modal(page, on_close=hide_modal, on_success=on_modal_success)
+        modal_overlay.content = modal_content
+        modal_overlay.visible = True
+        page.update()
 
     async def delete_ficha_handler(e=None):
         """Handler para el botón de eliminar del header"""
         await delete_ficha_logic()
 
     async def recycle_bin_handler(e):
-        await page.push_route("/Recycle")
+        modal_content = await recycle_modal(page, on_close=hide_modal, on_success=on_modal_success)
+        modal_overlay.content = modal_content
+        modal_overlay.visible = True
+        page.update()
 
     async def logout_handler(e):
         """Handler para el botón de cerrar sesión"""
@@ -119,6 +143,18 @@ async def card_view(page: ft.Page):
     preview_container = ft.Container(
         content=ft.Column([markdown_preview], scroll=ft.ScrollMode.AUTO, expand=True),
         padding=ft.Padding.all(20), expand=True, visible=False
+    )
+    
+    # --- Overlay Modal con Blur ---
+    modal_overlay = ft.Container(
+        content=None,
+        bgcolor=ft.Colors.with_opacity(0.2, ft.Colors.BLACK),
+        blur=ft.Blur(10, 10),
+        visible=False,
+        expand=True,
+        alignment=ft.Alignment.CENTER,
+        # La propiedad on_click aquí cerraría el modal al tocar fuera si el contenido no ocupa todo
+        on_click=lambda _: asyncio.create_task(hide_modal())
     )
     
     # ==================== FUNCIONES ====================
@@ -391,7 +427,16 @@ async def card_view(page: ft.Page):
     )
     
     # Layout principal
-    main_view = ft.Row([sidebar, main_panel], spacing=0, expand=True)
+    main_layout = ft.Row([sidebar, main_panel], spacing=0, expand=True)
+    
+    # Vista final con Stack para modales
+    main_view = ft.Stack(
+        [
+            main_layout,
+            modal_overlay,
+        ],
+        expand=True,
+    )
     
     # ==================== LIFECYCLE ====================
     

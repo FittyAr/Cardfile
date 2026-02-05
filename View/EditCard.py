@@ -3,8 +3,9 @@ from data.database.connection import get_session
 from data.models.ficha import Ficha
 from datetime import datetime
 from config.config import Config
+from typing import Callable
 
-async def edit_card_view(page: ft.Page):
+async def edit_card_modal(page: ft.Page, on_close: Callable, on_success: Callable):
     # Inicializar Config
     config = Config()
     
@@ -49,7 +50,7 @@ async def edit_card_view(page: ft.Page):
                     action="Ok"
                 ))
                 page.update()
-                await page.push_route("/Card")
+                await on_success()
             
         except Exception as e:
             session.rollback()
@@ -64,7 +65,7 @@ async def edit_card_view(page: ft.Page):
             session.close()
 
     async def cancel_clicked(e):
-        await page.push_route("/Card")
+        await on_close()
 
     # Campo para el nombre de la tarjeta
     card_name = ft.TextField(
@@ -145,6 +146,8 @@ async def edit_card_view(page: ft.Page):
             offset=ft.Offset(0, 10),
         ),
         alignment=ft.Alignment.CENTER,
+        on_click=lambda _: None,
     )
 
-__all__ = ['edit_card_view'] 
+# Exportamos la función
+__all__ = ['edit_card_modal']

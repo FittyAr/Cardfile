@@ -9,9 +9,6 @@ async def views_handler(page: Page):
     from View.Card import card_view
     from View.Login import login_view
     from View.newUser import newUser_view
-    from View.NewCard import new_card_view
-    from View.EditCard import edit_card_view
-    from View.Recycle import recycle_view
     
     # Obtener configuración y traducciones
     config = Config()
@@ -62,30 +59,6 @@ async def views_handler(page: Page):
         '/newUser': ft.View(
             route='/newUser',
             controls=[await newUser_view(page)],
-            vertical_alignment=ft.MainAxisAlignment.CENTER,
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            spacing=26,
-            padding=ft.Padding.all(20),
-        ),
-        '/newCard': ft.View(
-            route='/newCard',
-            controls=[await new_card_view(page)],
-            vertical_alignment=ft.MainAxisAlignment.CENTER,
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            spacing=26,
-            padding=ft.Padding.all(20),
-        ),
-        '/editCard': ft.View(
-            route='/editCard',
-            controls=[await edit_card_view(page)],
-            vertical_alignment=ft.MainAxisAlignment.CENTER,
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            spacing=26,
-            padding=ft.Padding.all(20),
-        ),
-        '/recycle': ft.View(
-            route='/recycle',
-            controls=[await recycle_view(page)],
             vertical_alignment=ft.MainAxisAlignment.CENTER,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             spacing=26,

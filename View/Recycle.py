@@ -3,8 +3,9 @@ from data.database.connection import get_session
 from data.models.ficha import Ficha
 from config.config import Config
 import asyncio
+from typing import Callable
 
-async def recycle_view(page: ft.Page):
+async def recycle_modal(page: ft.Page, on_close: Callable, on_success: Callable = None):
     # Inicializar Config
     config = Config()
     selected_ficha = None
@@ -56,7 +57,7 @@ async def recycle_view(page: ft.Page):
                     ft.Container(
                         content=ft.Text("La papelera está vacía", size=14, color=ft.Colors.with_opacity(0.5, ft.Colors.ON_SURFACE)),
                         padding=20,
-                        alignment=ft.alignment.center
+                        alignment=ft.Alignment.CENTER
                     )
                 ]
             
@@ -108,10 +109,11 @@ async def recycle_view(page: ft.Page):
                 ))
                 page.update()
                 
-                # Si no quedan fichas inactivas, volver a /Card
+                # Si no quedan fichas inactivas, volver (vía on_close/success)
                 if remaining_inactive == 0:
-                    await asyncio.sleep(0.5)  # Pequeña pausa para que se vea el mensaje
-                    await page.push_route("/Card")
+                    await asyncio.sleep(0.5)
+                    if on_success: await on_success()
+                    else: await on_close()
         except Exception as e:
             session.rollback()
             print(f"Error restaurando ficha: {str(e)}")
@@ -131,7 +133,6 @@ async def recycle_view(page: ft.Page):
 
         async def confirm_delete(e):
             nonlocal selected_ficha
-            # En Flet 1.0, los botones usan content en lugar de text
             button_text = e.control.content.value if hasattr(e.control.content, 'value') else str(e.control.content)
             if button_text == config.get_text("card.buttons.yes"):
                 session = get_session()
@@ -158,10 +159,11 @@ async def recycle_view(page: ft.Page):
                         ))
                         page.update()
                         
-                        # Si no quedan fichas inactivas, volver a /Card
+                        # Si no quedan fichas inactivas, volver
                         if remaining_inactive == 0:
                             await asyncio.sleep(0.5)
-                            await page.push_route("/Card")
+                            if on_success: await on_success()
+                            else: await on_close()
                 except Exception as e:
                     session.rollback()
                     print(f"Error eliminando ficha: {str(e)}")
@@ -174,7 +176,6 @@ async def recycle_view(page: ft.Page):
                 finally:
                     session.close()
             
-            # Cerrar diálogo
             dlg_modal.open = False
             page.update()
 
@@ -189,13 +190,12 @@ async def recycle_view(page: ft.Page):
             actions_alignment=ft.MainAxisAlignment.END,
         )
 
-        # Abrir diálogo con API de Flet 0.80.0
         page.overlay.append(dlg_modal)
         dlg_modal.open = True
         page.update()
 
     async def empty_trash_clicked(e):
-        """Vacía toda la papelera (elimina todas las fichas inactivas)"""
+        """Vacía toda la papelera"""
         async def confirm_empty_trash(e):
             button_text = e.control.content.value if hasattr(e.control.content, 'value') else str(e.control.content)
             if button_text == config.get_text("card.buttons.yes"):
@@ -203,100 +203,65 @@ async def recycle_view(page: ft.Page):
                 try:
                     user_id = await page.shared_preferences.get("user_id")
                     user_id = int(user_id) if user_id else None
-                    
-                    # Eliminar todas las fichas inactivas del usuario
-                    deleted_count = session.query(Ficha).filter(
+                    session.query(Ficha).filter(
                         Ficha.usuario_id == user_id,
                         Ficha.is_active == False
                     ).delete()
-                    
                     session.commit()
                     await load_inactive_fichas()
-                    
-                    page.show_dialog(ft.SnackBar(
-                        content=ft.Text(f"Se eliminaron {deleted_count} ficha(s) permanentemente"),
-                        bgcolor=ft.Colors.GREEN_400,
-                        action="Ok"
-                    ))
+                    page.show_dialog(ft.SnackBar(content=ft.Text("Papelera vaciada"), bgcolor=ft.Colors.GREEN_400))
                     page.update()
-                    
-                    # Volver a /Card después de vaciar la papelera
                     await asyncio.sleep(0.5)
-                    await page.push_route("/Card")
+                    if on_success: await on_success()
+                    else: await on_close()
                 except Exception as e:
                     session.rollback()
-                    print(f"Error vaciando papelera: {str(e)}")
-                    page.show_dialog(ft.SnackBar(
-                        content=ft.Text("Error al vaciar la papelera"),
-                        bgcolor=ft.Colors.RED_400,
-                        action="Ok"
-                    ))
-                    page.update()
+                    page.show_dialog(ft.SnackBar(content=ft.Text("Error al vaciar la papelera"), bgcolor=ft.Colors.RED_400))
                 finally:
                     session.close()
-            
-            # Cerrar diálogo
             empty_dialog.open = False
             page.update()
         
         empty_dialog = ft.AlertDialog(
             modal=True,
             title=ft.Text("Vaciar papelera"),
-            content=ft.Text("¿Estás seguro de que deseas eliminar TODAS las fichas de la papelera permanentemente? Esta acción no se puede deshacer."),
+            content=ft.Text("¿Borrar todo permanentemente?"),
             actions=[
                 ft.TextButton(content=ft.Text(config.get_text("card.buttons.no")), on_click=confirm_empty_trash),
                 ft.TextButton(content=ft.Text(config.get_text("card.buttons.yes")), on_click=confirm_empty_trash),
             ],
-            actions_alignment=ft.MainAxisAlignment.END,
         )
-        
-        # Abrir diálogo
         page.overlay.append(empty_dialog)
         empty_dialog.open = True
         page.update()
 
-    async def cancel_clicked(e):
-        await page.push_route("/Card")
+    async def cancel_clicked_modal(e):
+        await on_close()
 
-    # Lista de fichas
-    fichas_list = ft.ListView(
-        expand=True,
-        spacing=10,
-        padding=0,
-    )
+    fichas_list = ft.ListView(expand=True, spacing=10, padding=0)
 
-    # Botones modernos
     btn_cancel = ft.TextButton(
         content=ft.Text(config.get_text("recycle.buttons.cancel"), color=ft.Colors.ON_SURFACE),
-        on_click=lambda e: asyncio.create_task(page.push_route("/Card"))
+        on_click=cancel_clicked_modal
     )
 
     btn_restore = ft.ElevatedButton(
         content=ft.Text(config.get_text("recycle.buttons.restore"), weight=ft.FontWeight.BOLD),
-        width=130,
-        height=40,
-        color=ft.Colors.WHITE,
-        bgcolor=ft.Colors.GREEN_400,
+        width=130, height=40, color=ft.Colors.WHITE, bgcolor=ft.Colors.GREEN_400,
         style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=8)),
-        on_click=restore_clicked,
-        disabled=True
+        on_click=restore_clicked, disabled=True
     )
 
     btn_delete = ft.IconButton(
-        icon=ft.Icons.DELETE_FOREVER_OUTLINED,
-        icon_color=ft.Colors.RED_400,
-        tooltip=config.get_text("recycle.buttons.delete"),
-        on_click=delete_clicked,
-        disabled=True
+        icon=ft.Icons.DELETE_FOREVER_OUTLINED, icon_color=ft.Colors.RED_400,
+        tooltip=config.get_text("recycle.buttons.delete"), on_click=delete_clicked, disabled=True
     )
 
     btn_empty_trash = ft.TextButton(
         content=ft.Row([ft.Icon(ft.Icons.DELETE_SWEEP_OUTLINED, size=18), ft.Text("Vaciar papelera")]),
-        style=ft.ButtonStyle(color=ft.Colors.RED_400),
-        on_click=empty_trash_clicked,
+        style=ft.ButtonStyle(color=ft.Colors.RED_400), on_click=empty_trash_clicked,
     )
 
-    # Contenedor principal
     main_view = ft.Container(
         content=ft.Column(
             [
@@ -311,43 +276,22 @@ async def recycle_view(page: ft.Page):
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                 ),
                 ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE)),
-                
-                # Lista de fichas inactivas que expande
-                ft.Container(
-                    content=fichas_list,
-                    expand=True,
-                    padding=ft.Padding.symmetric(vertical=10),
-                ),
-                
+                ft.Container(content=fichas_list, expand=True, padding=ft.Padding.symmetric(vertical=10)),
                 ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE)),
-                
-                # Footer con acciones
                 ft.Container(
-                    content=ft.Row(
-                        [
-                            btn_cancel,
-                            ft.Row([btn_delete, btn_restore], spacing=10),
-                        ],
-                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                    ),
+                    content=ft.Row([btn_cancel, ft.Row([btn_delete, btn_restore], spacing=10)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                     padding=ft.Padding.only(top=10),
                 ),
             ],
             spacing=10,
         ),
-        width=600, # Más ancho para mejor visualización
-        height=500,
-        bgcolor=ft.Colors.SURFACE,
-        border_radius=20,
-        border=ft.border.all(1, ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE)),
-        padding=30,
-        alignment=ft.Alignment.CENTER,
+        width=600, height=500, bgcolor=ft.Colors.SURFACE, border_radius=20,
+        border=ft.border.all(1, ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE)), padding=30, alignment=ft.Alignment.CENTER,
+        on_click=lambda _: None,
     )
 
-    # Carga inicial
     await load_inactive_fichas()
-    
     return main_view
 
 # Exportamos la función
-__all__ = ['recycle_view']
+__all__ = ['recycle_modal']
