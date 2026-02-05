@@ -43,7 +43,8 @@ def create_sidebar(
     cards_listview: ft.ListView,
     card_counter: ft.Text,
     new_card_callback: Callable,
-    recycle_bin_callback: Callable
+    recycle_bin_callback: Callable,
+    logout_callback: Callable
 ) -> ft.Container:
     """
     Crea el sidebar con búsqueda, lista de tarjetas y botones de acción.
@@ -109,11 +110,20 @@ def create_sidebar(
                                             icon=ft.Icons.ADD,
                                             on_click=new_card_callback,
                                             expand=True,
+                                            style=ft.ButtonStyle(
+                                                shape=ft.RoundedRectangleBorder(radius=10),
+                                            )
                                         ),
                                         ft.IconButton(
                                             icon=ft.Icons.DELETE_OUTLINE,
                                             tooltip="Papelera",
                                             on_click=recycle_bin_callback,
+                                        ),
+                                        ft.IconButton(
+                                            icon=ft.Icons.LOGOUT_ROUNDED,
+                                            tooltip="Cerrar Sesión",
+                                            icon_color=ft.Colors.RED_400,
+                                            on_click=logout_callback,
                                         ),
                                     ],
                                     spacing=8,

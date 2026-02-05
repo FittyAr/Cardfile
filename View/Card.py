@@ -85,6 +85,11 @@ async def card_view(page: ft.Page):
     async def recycle_bin_handler(e):
         await page.push_route("/Recycle")
 
+    async def logout_handler(e):
+        """Handler para el botón de cerrar sesión"""
+        await page.shared_preferences.remove("selected_ficha")
+        await page.push_route("/Login")
+
     # --- Componentes ---
     search_field = create_search_field(on_search_change)
     card_counter = create_card_counter()
@@ -356,7 +361,8 @@ async def card_view(page: ft.Page):
         cards_listview=cards_listview,
         card_counter=card_counter,
         new_card_callback=new_card_handler,
-        recycle_bin_callback=recycle_bin_handler
+        recycle_bin_callback=recycle_bin_handler,
+        logout_callback=logout_handler
     )
     
     main_panel = ft.Container(

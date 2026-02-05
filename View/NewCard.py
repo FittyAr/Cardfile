@@ -34,6 +34,15 @@ async def new_card_view(page: ft.Page):
             session.add(nueva_ficha)
             session.commit()
             
+            # Guardar en shared_preferences para que quede seleccionada al volver
+            import json
+            ficha_data = json.dumps({
+                "id": nueva_ficha.id,
+                "title": nueva_ficha.title,
+                "descripcion": nueva_ficha.descripcion
+            })
+            await page.shared_preferences.set("selected_ficha", ficha_data)
+            
             await page.push_route("/Card")
             
         except Exception as e:

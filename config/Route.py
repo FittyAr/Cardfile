@@ -50,7 +50,6 @@ async def views_handler(page: Page):
             vertical_alignment=ft.MainAxisAlignment.START,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             padding=ft.Padding.all(20),
-            navigation_bar=create_navigation_bar(page, handle_navigation_change)
         ),
         '/Login': ft.View(
             route='/Login',

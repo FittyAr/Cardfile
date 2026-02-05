@@ -34,6 +34,15 @@ async def edit_card_view(page: ft.Page):
                 ficha.updated_at = datetime.now()
                 session.commit()
                 
+                # Actualizar shared_preferences
+                import json
+                ficha_data = json.dumps({
+                    "id": ficha.id,
+                    "title": ficha.title,
+                    "descripcion": ficha.descripcion
+                })
+                await page.shared_preferences.set("selected_ficha", ficha_data)
+                
                 page.show_dialog(ft.SnackBar(
                     content=ft.Text(config.get_text("edit_card.messages.success")),
                     bgcolor=ft.Colors.GREEN_400,
