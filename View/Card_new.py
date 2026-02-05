@@ -29,7 +29,7 @@ async def card_view(page: ft.Page):
         bgcolor=ft.Colors.with_opacity(0.05, ft.Colors.ON_SURFACE),
         border_color=ft.Colors.TRANSPARENT,
         focused_border_color=ft.Colors.BLUE_400,
-        content_padding=ft.Padding.symmetric(horizontal=20, vertical=15),
+        content_padding=ft.padding.symmetric(horizontal=20, vertical=15),
         text_size=14,
         expand=True,
     )
@@ -45,7 +45,7 @@ async def card_view(page: ft.Page):
     # Lista de tarjetas (sidebar izquierdo)
     cards_listview = ft.ListView(
         spacing=8,
-        padding=ft.Padding.all(12),
+        padding=ft.padding.all(12),
         expand=True,
     )
     
@@ -59,7 +59,7 @@ async def card_view(page: ft.Page):
         bgcolor=ft.Colors.with_opacity(0.03, ft.Colors.ON_SURFACE),
         border_color=ft.Colors.TRANSPARENT,
         focused_border_color=ft.Colors.BLUE_400,
-        content_padding=ft.Padding.all(20),
+        content_padding=ft.padding.all(20),
         text_size=14,
         hint_text="Escribe aquí tu contenido en Markdown...",
         expand=True,
@@ -93,79 +93,34 @@ async def card_view(page: ft.Page):
     )
     
     # Tabs para Editor/Preview
-    # Contenedores de contenido para los tabs
-    editor_container = ft.Container(
-        content=markdown_editor,
-        padding=ft.Padding.all(0),
-        expand=True,
-        visible=True,
-    )
-
-    preview_container = ft.Container(
-        content=ft.Column(
-            [markdown_preview],
-            scroll=ft.ScrollMode.AUTO,
-            expand=True,
-        ),
-        padding=ft.Padding.all(20),
-        expand=True,
-        visible=False,
-    )
-
-    # Variable para rastrear el tab activo
-    active_tab_index = 0
-    
-    def on_editor_tab_click(e):
-        """Muestra el editor"""
-        nonlocal active_tab_index
-        active_tab_index = 0
-        editor_container.visible = True
-        preview_container.visible = False
-        editor_btn.bgcolor = ft.Colors.BLUE_400
-        editor_btn.content.color = ft.Colors.WHITE
-        preview_btn.bgcolor = ft.Colors.with_opacity(0.05, ft.Colors.ON_SURFACE)
-        preview_btn.content.color = ft.Colors.ON_SURFACE
-        page.update()
-    
-    def on_preview_tab_click(e):
-        """Muestra la vista previa"""
-        nonlocal active_tab_index
-        active_tab_index = 1
-        editor_container.visible = False
-        preview_container.visible = True
-        markdown_preview.value = markdown_editor.value
-        preview_btn.bgcolor = ft.Colors.BLUE_400
-        preview_btn.content.color = ft.Colors.WHITE
-        editor_btn.bgcolor = ft.Colors.with_opacity(0.05, ft.Colors.ON_SURFACE)
-        editor_btn.content.color = ft.Colors.ON_SURFACE
-        page.update()
-
-    # Botones de tab personalizados
-    editor_btn = ft.Container(
-        content=ft.Text("✏️ Editor", size=14, weight=ft.FontWeight.W_600, color=ft.Colors.WHITE),
-        padding=ft.Padding.symmetric(horizontal=20, vertical=12),
-        border_radius=ft.border_radius.only(top_left=8, top_right=8),
-        bgcolor=ft.Colors.BLUE_400,
-        ink=True,
-        on_click=on_editor_tab_click,
-    )
-    
-    preview_btn = ft.Container(
-        content=ft.Text("👁️ Vista Previa", size=14, weight=ft.FontWeight.W_600),
-        padding=ft.Padding.symmetric(horizontal=20, vertical=12),
-        border_radius=ft.border_radius.only(top_left=8, top_right=8),
-        bgcolor=ft.Colors.with_opacity(0.05, ft.Colors.ON_SURFACE),
-        ink=True,
-        on_click=on_preview_tab_click,
-    )
-    
-    # Barra de pestañas personalizada
-    editor_tabs = ft.Row(
-        [
-            editor_btn,
-            preview_btn,
+    editor_tabs = ft.Tabs(
+        selected_index=0,
+        animation_duration=300,
+        tabs=[
+            ft.Tab(
+                text="✏️ Editor",
+                content=ft.Container(
+                    content=markdown_editor,
+                    padding=ft.padding.all(0),
+                    expand=True,
+                ),
+            ),
+            ft.Tab(
+                text="👁️ Vista Previa",
+                content=ft.Container(
+                    content=ft.Column(
+                        [
+                            markdown_preview,
+                        ],
+                        scroll=ft.ScrollMode.AUTO,
+                        expand=True,
+                    ),
+                    padding=ft.padding.all(20),
+                    expand=True,
+                ),
+            ),
         ],
-        spacing=4,
+        expand=True,
     )
     
     # ==================== FUNCIONES ====================
@@ -217,11 +172,12 @@ async def card_view(page: ft.Page):
                     ],
                     spacing=4,
                 ),
-                padding=ft.Padding.all(16),
+                padding=ft.padding.all(16),
                 border_radius=10,
                 bgcolor=ft.Colors.with_opacity(0.05, ft.Colors.ON_SURFACE),
                 ink=True,
                 on_click=lambda e, f=ficha: asyncio.create_task(select_ficha(f)),
+                animate=ft.animation.Animation(200, ft.AnimationCurve.EASE_OUT),
             )
             cards_listview.controls.append(card_item)
         
@@ -330,7 +286,6 @@ async def card_view(page: ft.Page):
             return
         
         async def confirm_delete(e):
-            nonlocal selected_ficha
             button_text = e.control.content.value if hasattr(e.control.content, 'value') else str(e.control.content)
             if button_text == t['buttons']['yes']:
                 session = get_session()
@@ -367,8 +322,7 @@ async def card_view(page: ft.Page):
                 finally:
                     session.close()
             
-            dialog.open = False
-            page.update()
+            page.close(dialog)
         
         dialog = ft.AlertDialog(
             modal=True,
@@ -376,14 +330,12 @@ async def card_view(page: ft.Page):
             content=ft.Text(t['delete']['confirm_message']),
             actions=[
                 ft.TextButton(t['buttons']['yes'], on_click=confirm_delete),
-                ft.TextButton(t['buttons']['no'], on_click=lambda e: (setattr(dialog, 'open', False), page.update())),
+                ft.TextButton(t['buttons']['no'], on_click=lambda e: page.close(dialog)),
             ],
             actions_alignment=ft.MainAxisAlignment.END,
         )
         
-        page.overlay.append(dialog)
-        dialog.open = True
-        page.update()
+        page.open(dialog)
     
     # Asignar eventos
     markdown_editor.on_change = on_editor_change
@@ -409,12 +361,12 @@ async def card_view(page: ft.Page):
                         ],
                         spacing=4,
                     ),
-                    padding=ft.Padding.all(16),
+                    padding=ft.padding.all(16),
                 ),
                 # Búsqueda
                 ft.Container(
                     content=search_field,
-                    padding=ft.Padding.symmetric(horizontal=12),
+                    padding=ft.padding.symmetric(horizontal=12),
                 ),
                 ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE)),
                 # Lista de tarjetas
@@ -427,7 +379,7 @@ async def card_view(page: ft.Page):
         ),
         width=320,
         bgcolor=ft.Colors.with_opacity(0.02, ft.Colors.ON_SURFACE),
-        border=ft.Border.only(right=ft.BorderSide(1, ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE))),
+        border=ft.border.only(right=ft.BorderSide(1, ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE))),
         expand=True,
     )
     
@@ -444,21 +396,12 @@ async def card_view(page: ft.Page):
                         ],
                         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                     ),
-                    padding=ft.Padding.all(20),
+                    padding=ft.padding.all(20),
                 ),
                 ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE)),
-                # Editor con tabs y contenido
+                # Editor con tabs
                 ft.Container(
-                    content=ft.Column(
-                        [
-                            editor_tabs,
-                            ft.Divider(height=1, color=ft.Colors.TRANSPARENT),
-                            editor_container,
-                            preview_container,
-                        ],
-                        spacing=0,
-                        expand=True,
-                    ),
+                    content=editor_tabs,
                     expand=True,
                 ),
             ],

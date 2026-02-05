@@ -4,22 +4,25 @@ from data.models.ficha import Ficha
 from datetime import datetime
 from config.config import Config
 
-def edit_card_view(page: ft.Page):
+async def edit_card_view(page: ft.Page):
     # Inicializar Config
     config = Config()
     
-    selected_ficha = page.client_storage.get("selected_ficha")
-    if not selected_ficha:
+    selected_ficha_json = await page.shared_preferences.get("selected_ficha")
+    if not selected_ficha_json:
         return ft.Text("Error: No hay ficha seleccionada")
+    
+    # Parsear el JSON
+    import json
+    selected_ficha = json.loads(selected_ficha_json)
 
-    def save_clicked(e):
+    async def save_clicked(e):
         if not card_name.value:
-            page.snack_bar = ft.SnackBar(
+            page.show_dialog(ft.SnackBar(
                 content=ft.Text(config.get_text("edit_card.name.empty_error")),
                 bgcolor=ft.Colors.RED_400,
                 action="Ok"
-            )
-            page.snack_bar.open = True
+            ))
             page.update()
             return
         
@@ -31,29 +34,27 @@ def edit_card_view(page: ft.Page):
                 ficha.updated_at = datetime.now()
                 session.commit()
                 
-                page.snack_bar = ft.SnackBar(
+                page.show_dialog(ft.SnackBar(
                     content=ft.Text(config.get_text("edit_card.messages.success")),
                     bgcolor=ft.Colors.GREEN_400,
                     action="Ok"
-                )
-                page.snack_bar.open = True
+                ))
                 page.update()
                 page.go("/Card")
             
         except Exception as e:
             session.rollback()
             print(f"Error al actualizar ficha: {str(e)}")
-            page.snack_bar = ft.SnackBar(
+            page.show_dialog(ft.SnackBar(
                 content=ft.Text(config.get_text("edit_card.messages.error")),
                 bgcolor=ft.Colors.RED_400,
                 action="Ok"
-            )
-            page.snack_bar.open = True
+            ))
             page.update()
         finally:
             session.close()
 
-    def cancel_clicked(e):
+    async def cancel_clicked(e):
         page.go("/Card")
 
     # Campo para el nombre de la tarjeta
@@ -69,7 +70,7 @@ def edit_card_view(page: ft.Page):
 
     # Botones
     btn_save = ft.ElevatedButton(
-        text=config.get_text("edit_card.buttons.update"),
+        content=ft.Text(config.get_text("edit_card.buttons.update")),
         width=140,
         color=ft.Colors.WHITE,
         bgcolor=ft.Colors.BLUE,
@@ -77,7 +78,7 @@ def edit_card_view(page: ft.Page):
     )
 
     btn_cancel = ft.ElevatedButton(
-        text=config.get_text("edit_card.buttons.cancel"),
+        content=ft.Text(config.get_text("edit_card.buttons.cancel")),
         width=140,
         color=ft.Colors.WHITE,
         bgcolor=ft.Colors.RED,
@@ -90,7 +91,7 @@ def edit_card_view(page: ft.Page):
         height=300,
         border=ft.border.all(2, ft.Colors.BLUE_200),
         border_radius=15,
-        padding=30,
+        padding=ft.Padding.all(30),
         content=ft.Column(
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             spacing=20,
@@ -109,7 +110,7 @@ def edit_card_view(page: ft.Page):
                 ),
             ],
         ),
-        alignment=ft.alignment.center,
+        alignment=ft.Alignment.CENTER,
     )
 
 __all__ = ['edit_card_view'] 

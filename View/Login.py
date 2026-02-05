@@ -5,10 +5,10 @@ from datetime import datetime
 import bcrypt
 from config.config import Config
 
-def login_view(page: ft.Page):
+async def login_view(page: ft.Page):
     config = Config()
     
-    def change_language(e):
+    async def change_language(e):
         selected_lang = language_dd.value
         if config.set_language(selected_lang):
             # Actualizar todos los textos en la vista
@@ -23,7 +23,7 @@ def login_view(page: ft.Page):
 
     # Dropdown para selección de idioma
     language_options = [
-        ft.dropdown.Option(opt["value"], opt["text"])
+        ft.DropdownOption(opt["value"], opt["text"])
         for opt in config.get_language_options()
     ]
     
@@ -31,7 +31,7 @@ def login_view(page: ft.Page):
         width=120,
         options=language_options,
         value=config.current_language,
-        on_change=change_language,
+        on_select=change_language,
     )
 
     title_text = ft.Text(
@@ -40,15 +40,13 @@ def login_view(page: ft.Page):
         weight=ft.FontWeight.BOLD
     )
 
-    def login_clicked(e):
+    async def login_clicked(e):
         if not username.value or not password.value:
-            page.snack_bar = ft.SnackBar(
+            page.show_dialog(ft.SnackBar(
                 content=ft.Text(config.get_text("login.errors.empty_fields")),
                 bgcolor=ft.Colors.RED_400,
                 action="Ok"
-            )
-            page.snack_bar.open = True
-            page.update()
+            ))
             page.update()
             return
         
@@ -62,28 +60,27 @@ def login_view(page: ft.Page):
             if usuario and verify_password(usuario.contraseña, password.value):
                 usuario.last_login = datetime.now()
                 session.commit()
-                page.client_storage.set("user_id", usuario.id)
-                page.client_storage.set("user_name", usuario.nombre)
+                # Convertir a string para evitar errores de tipo en shared_preferences
+                await page.shared_preferences.set("user_id", str(usuario.id))
+                await page.shared_preferences.set("user_name", usuario.nombre)
                 page.go("/Card")
             else:
-                page.snack_bar = ft.SnackBar(
+                page.show_dialog(ft.SnackBar(
                     content=ft.Text(config.get_text("login.errors.invalid_credentials")),
                     bgcolor=ft.Colors.RED_400,
                     action="Ok"
-                )
-                page.snack_bar.open = True
+                ))
                 password.value = ""
                 page.update()
 
         except Exception as e:
             session.rollback()
             print(f"Error de login: {str(e)}")
-            page.snack_bar = ft.SnackBar(
+            page.show_dialog(ft.SnackBar(
                 content=ft.Text(config.get_text("login.errors.login_error")),
                 bgcolor=ft.Colors.RED_400,
                 action="Ok"
-            )
-            page.snack_bar.open = True
+            ))
             page.update()
         finally:
             session.close()
@@ -98,8 +95,15 @@ def login_view(page: ft.Page):
         except Exception:
             return False
 
-    def exit_clicked(e=None):
-        page.window.destroy()
+    async def exit_clicked(e=None):
+        # En modo web con Browser, no hay window.destroy()
+        # En su lugar, podemos cerrar la página o redirigir
+        try:
+            if hasattr(page, 'window') and page.window:
+                page.window.destroy()
+        except Exception:
+            # En modo web, simplemente salir de la aplicación
+            pass
 
     username = ft.TextField(
         label=config.get_text("login.username.label"),
@@ -120,25 +124,25 @@ def login_view(page: ft.Page):
         on_submit=login_clicked,
         #value="abc123*-"
     )
-
+ 
     btn_login = ft.ElevatedButton(
-        text=config.get_text("login.buttons.login"),
+        content=ft.Text(config.get_text("login.buttons.login")),
         width=140,
         color=ft.Colors.WHITE,
         bgcolor=ft.Colors.BLUE,
         on_click=login_clicked
     )
-
+ 
     btn_exit = ft.ElevatedButton(
-        text=config.get_text("login.buttons.exit"),
+        content=ft.Text(config.get_text("login.buttons.exit")),
         width=140,
         color=ft.Colors.WHITE,
         bgcolor=ft.Colors.RED,
         on_click=exit_clicked
     )
-
+ 
     register_link = ft.TextButton(
-        text=config.get_text("login.register_link"),
+        content=ft.Text(config.get_text("login.register_link")),
         on_click=lambda _: page.go("/newUser")
     )
 
@@ -160,7 +164,7 @@ def login_view(page: ft.Page):
                         alignment=ft.MainAxisAlignment.END,
                         controls=[language_dd],
                     ),
-                    padding=ft.padding.only(bottom=10),
+                    padding=ft.Padding.only(bottom=10),
                 ),
                 ft.Icon(ft.Icons.PERSON_OUTLINE, size=50, color=ft.Colors.BLUE),
                 title_text,
@@ -184,7 +188,7 @@ def login_view(page: ft.Page):
                 register_link,
             ],
         ),
-        alignment=ft.alignment.center,
+        alignment=ft.Alignment.CENTER,
     )
 
 __all__ = ['login_view']

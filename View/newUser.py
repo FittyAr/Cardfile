@@ -15,7 +15,7 @@ def load_translations(lang='es'):
     with open(file_path, 'r', encoding='utf-8') as file:
         return json.load(file)
 
-def newUser_view(page: ft.Page):
+async def newUser_view(page: ft.Page):
     # Obtener la configuración global
     config = Config()
     # Cargar traducciones usando el idioma configurado
@@ -64,30 +64,26 @@ def newUser_view(page: ft.Page):
         pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         return re.match(pattern, email) is not None
 
-    def save_clicked(e):
+    async def save_clicked(e):
         # Validaciones
         if not all([nombre.value, email.value, password.value, confirm_password.value]):
-            page.snack_bar = ft.SnackBar(content=ft.Text(t['errors']['empty_fields']))
-            page.snack_bar.open = True
+            page.show_dialog(ft.SnackBar(content=ft.Text(t['errors']['empty_fields'])))
             page.update()
             return
             
         if password.value != confirm_password.value:
-            page.snack_bar = ft.SnackBar(content=ft.Text(t['errors']['passwords_dont_match']))
-            page.snack_bar.open = True
+            page.show_dialog(ft.SnackBar(content=ft.Text(t['errors']['passwords_dont_match'])))
             page.update()
             return
         
         # Validar longitud mínima de contraseña
         if len(password.value) < 8:
-            page.snack_bar = ft.SnackBar(content=ft.Text(t['errors']['password_length']))
-            page.snack_bar.open = True
+            page.show_dialog(ft.SnackBar(content=ft.Text(t['errors']['password_length'])))
             page.update()
             return
         
         if not is_valid_email(email.value):
-            page.snack_bar = ft.SnackBar(content=ft.Text(t['errors']['invalid_email']))
-            page.snack_bar.open = True
+            page.show_dialog(ft.SnackBar(content=ft.Text(t['errors']['invalid_email'])))
             page.update()
             return
         
@@ -99,8 +95,7 @@ def newUser_view(page: ft.Page):
             ).first()
             
             if existing_user:
-                page.snack_bar = ft.SnackBar(content=ft.Text(t['errors']['email_exists']))
-                page.snack_bar.open = True
+                page.show_dialog(ft.SnackBar(content=ft.Text(t['errors']['email_exists'])))
                 page.update()
                 return
             
@@ -120,8 +115,7 @@ def newUser_view(page: ft.Page):
             session.commit()
             
             # Mostrar mensaje de éxito
-            page.snack_bar = ft.SnackBar(content=ft.Text(t['success']['user_created']))
-            page.snack_bar.open = True
+            page.show_dialog(ft.SnackBar(content=ft.Text(t['success']['user_created'])))
             page.update()
             
             # Limpiar campos
@@ -137,18 +131,17 @@ def newUser_view(page: ft.Page):
         except Exception as e:
             session.rollback()
             print(f"Error al crear usuario: {str(e)}")
-            page.snack_bar = ft.SnackBar(content=ft.Text(t['errors']['create_error']))
-            page.snack_bar.open = True
+            page.show_dialog(ft.SnackBar(content=ft.Text(t['errors']['create_error'])))
             page.update()
         finally:
             session.close()
 
-    def cancel_clicked(e):
+    async def cancel_clicked(e):
         page.go("/Login")
 
     # Botones
     btn_save = ft.ElevatedButton(
-        text=t['buttons']['save'],
+        content=ft.Text(t['buttons']['save']),
         width=140,
         color=ft.Colors.WHITE,
         bgcolor=ft.Colors.BLUE,
@@ -156,7 +149,7 @@ def newUser_view(page: ft.Page):
     )
 
     btn_cancel = ft.ElevatedButton(
-        text=t['buttons']['cancel'],
+        content=ft.Text(t['buttons']['cancel']),
         width=140,
         color=ft.Colors.WHITE,
         bgcolor=ft.Colors.RED,
@@ -170,7 +163,7 @@ def newUser_view(page: ft.Page):
         bgcolor=ft.Colors.WHITE10,
         border=ft.border.all(2, ft.Colors.BLUE_200),
         border_radius=15,
-        padding=30,
+        padding=ft.Padding.all(30),
         content=ft.Column(
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             spacing=20,
@@ -203,10 +196,10 @@ def newUser_view(page: ft.Page):
                 ),
                 
                 ft.TextButton(
-                    text=t['login_link'],
+                    content=ft.Text(t['login_link']),
                     on_click=lambda _: page.go("/Login")
                 ),
             ],
         ),
-        alignment=ft.alignment.center,
+        alignment=ft.Alignment.CENTER,
     ) 

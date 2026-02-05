@@ -4,24 +4,24 @@ from data.models.ficha import Ficha
 from datetime import datetime
 from config.config import Config
 
-def new_card_view(page: ft.Page):
+async def new_card_view(page: ft.Page):
     # Siempre crear una nueva instancia de Config
     config = Config()
 
-    def save_clicked(e):
+    async def save_clicked(e):
         if not card_name.value:
-            page.snack_bar = ft.SnackBar(
+            page.show_dialog(ft.SnackBar(
                 content=ft.Text(config.get_text("new_card.name.empty_error")),
                 bgcolor=ft.Colors.RED_400,
                 action="Ok"
-            )
-            page.snack_bar.open = True
+            ))
             page.update()
             return
         
         session = get_session()
         try:
-            user_id = page.client_storage.get("user_id")
+            user_id = await page.shared_preferences.get("user_id")
+            user_id = int(user_id) if user_id else None
             
             nueva_ficha = Ficha(
                 title=card_name.value.strip(),
@@ -39,17 +39,16 @@ def new_card_view(page: ft.Page):
         except Exception as e:
             session.rollback()
             print(f"Error al guardar ficha: {str(e)}")
-            page.snack_bar = ft.SnackBar(
+            page.show_dialog(ft.SnackBar(
                 content=ft.Text(config.get_text("new_card.errors.save_error")),
                 bgcolor=ft.Colors.RED_400,
                 action="Ok"
-            )
-            page.snack_bar.open = True
+            ))
             page.update()
         finally:
             session.close()
 
-    def cancel_clicked(e):
+    async def cancel_clicked(e):
         page.go("/Card")
 
     # Campo para el nombre de la tarjeta
@@ -64,7 +63,7 @@ def new_card_view(page: ft.Page):
 
     # Botones
     btn_save = ft.ElevatedButton(
-        text=config.get_text("new_card.buttons.save"),
+        content=ft.Text(config.get_text("new_card.buttons.save")),
         width=140,
         color=ft.Colors.WHITE,
         bgcolor=ft.Colors.BLUE,
@@ -72,7 +71,7 @@ def new_card_view(page: ft.Page):
     )
 
     btn_cancel = ft.ElevatedButton(
-        text=config.get_text("new_card.buttons.cancel"),
+        content=ft.Text(config.get_text("new_card.buttons.cancel")),
         width=140,
         color=ft.Colors.WHITE,
         bgcolor=ft.Colors.RED,
@@ -85,7 +84,7 @@ def new_card_view(page: ft.Page):
         height=300,
         border=ft.border.all(2, ft.Colors.BLUE_200),
         border_radius=15,
-        padding=30,
+        padding=ft.Padding.all(30),
         content=ft.Column(
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             spacing=20,
@@ -104,7 +103,7 @@ def new_card_view(page: ft.Page):
                 ),
             ],
         ),
-        alignment=ft.alignment.center,
+        alignment=ft.Alignment.CENTER,
     )
 
 # Exportamos la función

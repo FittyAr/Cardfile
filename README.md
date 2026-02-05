@@ -1,105 +1,125 @@
-# Cardfile
-A new tab file in the style of the extinct Windows 3.1
+# Cardfile-py
 
-## Configuración del Ambiente Virtual
+Aplicación de gestión de fichas/tarjetas inspirada en el estilo de Windows 3.1, construida con Flet 1.0 Beta.
 
-### Creación del Ambiente Virtual
+## Características
 
-Ejecuta uno de los siguientes comandos:
+- Sistema de autenticación con encriptación de contraseñas
+- Gestión completa de fichas (CRUD)
+- Editor Markdown con preview en tiempo real
+- Papelera de reciclaje para recuperar elementos eliminados
+- Soporte multiidioma (Español, Inglés, Portugués BR, Francés, Alemán, Ruso, Chino)
+- Interfaz moderna construida con Flet 1.0 Beta
 
+## Requisitos
+
+- Python 3.10 o superior
+- Docker (opcional, para ejecución en contenedor)
+
+## Instalación y Ejecución
+
+### Opción 1: Ejecución Local
+
+1. **Crear entorno virtual**:
 ```bash
 python -m venv venv
 ```
 
-o
+2. **Activar entorno virtual**:
+   - Windows (CMD): `.\venv\Scripts\Activate.bat`
+   - Windows (PowerShell): `.\venv\Scripts\Activate.ps1`
+   - Linux/Mac: `source venv/bin/activate`
 
+3. **Instalar dependencias**:
 ```bash
-python -m venv c:\miproyecto\venv
-```
-
-> **Nota**: Un ambiente virtual en Python es un proyecto aislado con su propio conjunto de librerías y versión de Python.
-
-### Activación del Ambiente Virtual
-
-**Nota**: Es el concepto en Python para referirse a un proyecto aislado. Cada proyecto tiene un conjunto de librerías y versiones de Python asociadas.
-
-# Luego activar el ambiente virtual
-- Para CMD
-
-```bash
-.\venv\Scripts\Activate.bat
-```
-
-- Para PowerShell
-
-```powershell
-.\venv\Scripts\Activate.ps1
-```
-
-## Gestión de Dependencias
-
-### Instalación de Dependencias
-
-```bash
-python.exe -m pip install --upgrade pip
-pip install flet peewee SQLAlchemy
-```
-
-### Actualización de Dependencias (si es necesario)
-
-```bash
-python.exe -m pip install --upgrade pip
-pip install --upgrade flet peewee SQLAlchemy
-```
-
-### Uso de `requirements.txt`
-
-**Nota**: Este archivo contiene las dependencias de un proyecto o ambiente virtual. Por convención, se llama requirements.txt.
-
-- Para instalar dependencias desde `requirements.txt`:
-
-```bash
+pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-- Para generar un nuevo `requirements.txt`:
+4. **Ejecutar aplicación**:
+```bash
+python main.py
+```
+
+La aplicación se abrirá automáticamente en tu navegador en `http://localhost:8550`
+
+### Opción 2: Ejecución con Docker (Recomendado)
+
+1. **Construir y ejecutar con Docker Compose**:
+```bash
+cd docker
+docker-compose up --build
+```
+
+2. **Acceder a la aplicación**:
+Abre tu navegador en `http://localhost:8550`
+
+Para detener el contenedor:
+```bash
+docker-compose down
+```
+
+## Configuración
+
+La configuración se encuentra en `config.json`. Puedes modificar:
+
+- Tipo de base de datos (SQLite por defecto)
+- Credenciales de base de datos remota (si aplica)
+- Idioma por defecto
+- Modo de inicio (Web, Desktop, Mobile)
+
+## Estructura del Proyecto
+
+```
+Cardfile-py/
+├── config/          # Configuración y rutas
+├── data/            # Modelos y repositorios de datos
+├── View/            # Componentes de interfaz de usuario
+├── lang/            # Archivos de traducción
+├── docker/          # Configuración Docker
+├── main.py          # Punto de entrada
+└── requirements.txt # Dependencias Python
+```
+
+## Documentación
+
+- **ANALISIS.md**: Análisis técnico completo del proyecto
+- **MIGRACION.md**: Guía de migración a Flet 1.0 Beta
+
+## Tecnologías Utilizadas
+
+- **Flet 0.80.0** (1.0 Beta): Framework para aplicaciones multiplataforma
+- **SQLAlchemy 2.0+**: ORM para Python
+- **bcrypt**: Encriptación de contraseñas
+- **Markdown-it-py**: Renderizado de Markdown
+
+## Desarrollo
+
+### Actualización de Dependencias
+
+```bash
+pip install --upgrade -r requirements.txt
+```
+
+### Generar nuevo requirements.txt
 
 ```bash
 pip freeze > requirements.txt
 ```
 
-## Librerías de Interés
+## Notas Importantes
 
-
-## Estudiar
-
-- Duck Typing
-- Enlaces Dinámicos y Estáticos
-- Tipo Real y Dedicado
-
-
-## Atajos de Teclado Útiles en VS Code
-
-- `Ctrl + J`: Mostrar/ocultar terminal
-- `Ctrl + K, Ctrl + C`: Comentar código línea por línea
-- `Ctrl + K, Ctrl + U`: Descomentar código línea por línea
-
-## Ejecución del Proyecto
-
-Para ejecutar el proyecto con Flet:
-
-```bash
-flet -r <nombre_del_archivo>.py
-```
-
-o simplemente:
-
-```bash
-flet run
-```
+- La aplicación ahora usa **Flet 1.0 Beta (0.80.0)** con modo web mediante `Browser()`
+- La base de datos SQLite se crea automáticamente en la primera ejecución
+- El puerto por defecto es **8550** (configurable en `config.json`)
 
 ## Enlaces Útiles
 
-- [Flet](https://flet.dev/)
-- [Peewee ORM](http://peewee-orm.com/)
+- [Flet Documentation](https://docs.flet.dev/)
+- [Flet 1.0 Beta Blog](https://flet.dev/blog/flet-1-0-beta)
 - [SQLAlchemy](https://www.sqlalchemy.org/)
+- [Flet GitHub](https://github.com/flet-dev/flet)
+
+## Licencia
+
+Ver archivo LICENSE para más detalles.

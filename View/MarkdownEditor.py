@@ -2,10 +2,15 @@ import flet as ft
 from typing import Callable, Optional, Tuple
 
 
+import asyncio
+
 def _notify_modified(on_modified: Optional[Callable[[], None]]) -> None:
     if on_modified is not None:
         try:
-            on_modified()
+            if asyncio.iscoroutinefunction(on_modified):
+                asyncio.create_task(on_modified())
+            else:
+                on_modified()
         except Exception:
             pass
 
@@ -185,7 +190,7 @@ def create_markdown_toolbar(
 
     bar = ft.Container(
         content=ft.Row(controls=buttons, wrap=True, alignment=ft.MainAxisAlignment.START, spacing=6),
-        padding=ft.padding.symmetric(8, 8),
+        padding=ft.Padding.symmetric(vertical=8, horizontal=8),
         bgcolor=ft.Colors.SURFACE,
         border=ft.border.all(1, ft.Colors.BLUE_200),
         border_radius=6,
