@@ -4,6 +4,9 @@ from data.models.ficha import Ficha
 from config.config import Config
 import asyncio
 from typing import Callable
+from theme.manager import ThemeManager
+
+theme_manager = ThemeManager()
 
 async def recycle_modal(page: ft.Page, on_close: Callable, on_success: Callable = None):
     # Inicializar Config
@@ -45,7 +48,7 @@ async def recycle_modal(page: ft.Page, on_close: Callable, on_success: Callable 
                     ),
                     padding=ft.Padding.all(16),
                     border_radius=10,
-                    bgcolor=ft.Colors.BLUE_400 if is_selected else ft.Colors.with_opacity(0.05, ft.Colors.ON_SURFACE),
+                    bgcolor=theme_manager.primary if is_selected else ft.Colors.with_opacity(0.05, ft.Colors.ON_SURFACE),
                     ink=True,
                     on_click=lambda e, f=ficha: asyncio.create_task(select_and_reload(f)),
                 )
@@ -268,7 +271,7 @@ async def recycle_modal(page: ft.Page, on_close: Callable, on_success: Callable 
                 ft.Row(
                     [
                         ft.Row([
-                            ft.Icon(ft.Icons.RECYCLING_ROUNDED, color=ft.Colors.BLUE_400, size=28),
+                            ft.Icon(ft.Icons.RECYCLING_ROUNDED, color=theme_manager.primary, size=28),
                             ft.Text(config.get_text("recycle.title"), size=24, weight=ft.FontWeight.BOLD),
                         ], spacing=10),
                         btn_empty_trash,

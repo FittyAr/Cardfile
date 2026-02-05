@@ -4,6 +4,9 @@ from data.models.ficha import Ficha
 from datetime import datetime
 from config.config import Config
 import asyncio
+from theme.manager import ThemeManager
+
+theme_manager = ThemeManager()
 
 # Importar componentes modularizados
 from View.components.markdown_editor import (
@@ -26,6 +29,7 @@ from View.components.card_state import CardState
 from View.NewCard import new_card_modal
 from View.EditCard import edit_card_modal
 from View.Recycle import recycle_modal
+from theme.colors import ThemeColors
 
 async def card_view(page: ft.Page):
     """Vista moderna de tarjetas con diseño profesional tipo dashboard"""
@@ -65,9 +69,9 @@ async def card_view(page: ft.Page):
 
     def on_editor_tab_click(e):
         editor_container.visible = True
-        preview_container.visible = False
-        markdown_toolbar.visible = True
-        editor_btn.bgcolor = ft.Colors.BLUE_400
+        markdown_preview.visible = False
+        editor_container.visible = True
+        editor_btn.bgcolor = theme_manager.primary
         editor_btn.content.color = ft.Colors.WHITE
         preview_btn.bgcolor = ft.Colors.with_opacity(0.05, ft.Colors.ON_SURFACE)
         preview_btn.content.color = ft.Colors.ON_SURFACE
@@ -78,7 +82,7 @@ async def card_view(page: ft.Page):
         preview_container.visible = True
         markdown_toolbar.visible = False
         markdown_preview.value = markdown_editor.value
-        preview_btn.bgcolor = ft.Colors.BLUE_400
+        preview_btn.bgcolor = theme_manager.primary
         preview_btn.content.color = ft.Colors.WHITE
         editor_btn.bgcolor = ft.Colors.with_opacity(0.05, ft.Colors.ON_SURFACE)
         editor_btn.content.color = ft.Colors.ON_SURFACE
@@ -102,6 +106,15 @@ async def card_view(page: ft.Page):
     async def delete_ficha_handler(e=None):
         """Handler para el botón de eliminar del header"""
         await delete_ficha_logic()
+
+    async def change_theme_handler(theme_name):
+        """Handler para cambiar el tema de la aplicación"""
+        theme_manager.set_theme(theme_name)
+        # Recargar los controles de la vista actual
+        new_content = await card_view(page)
+        if page.views:
+            page.views[-1].controls = [new_content]
+        page.update()
 
     async def recycle_bin_handler(e):
         modal_content = await recycle_modal(page, on_close=hide_modal, on_success=on_modal_success)
@@ -283,7 +296,7 @@ async def card_view(page: ft.Page):
         # Resaltar tarjeta seleccionada
         for i, control in enumerate(cards_listview.controls):
             if i < len(state.fichas_list) and state.fichas_list[i].id == ficha.id:
-                control.bgcolor = ft.Colors.BLUE_400
+                control.bgcolor = theme_manager.primary
                 control.content.controls[0].color = ft.Colors.WHITE
                 control.content.controls[1].color = ft.Colors.with_opacity(0.8, ft.Colors.WHITE)
             else:
@@ -392,6 +405,22 @@ async def card_view(page: ft.Page):
     
     # ==================== LAYOUT ====================
     
+    # --- Theme Switcher ---
+    theme_selector = ft.Row(
+        [
+            ft.IconButton(
+                icon=ft.Icons.CIRCLE,
+                icon_color=color_palette["primary"],
+                tooltip=name.capitalize(),
+                on_click=lambda _, n=name: asyncio.create_task(change_theme_handler(n)),
+                icon_size=20,
+            )
+            for name, color_palette in ThemeColors.THEMES.items()
+        ],
+        spacing=0,
+        alignment=ft.MainAxisAlignment.CENTER,
+    )
+
     sidebar = create_sidebar(
         search_field=search_field,
         cards_listview=cards_listview,
@@ -400,6 +429,16 @@ async def card_view(page: ft.Page):
         recycle_bin_callback=recycle_bin_handler,
         logout_callback=logout_handler
     )
+    
+    # Inyectar el selector de temas en el sidebar (esto requiere modificar create_sidebar o hacerlo aquí)
+    # Por simplicidad y minimalismo, lo añadiremos al final del sidebar_content
+    sidebar.content.controls.insert(-1, ft.Container(
+        content=ft.Column([
+            ft.Text("Tema", size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.with_opacity(0.5, ft.Colors.ON_SURFACE)),
+            theme_selector,
+        ], spacing=5),
+        padding=ft.Padding.symmetric(horizontal=20, vertical=10)
+    ))
     
     main_panel = ft.Container(
         content=ft.Column(

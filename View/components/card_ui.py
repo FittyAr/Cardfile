@@ -17,6 +17,9 @@ Uso:
 """
 import flet as ft
 from typing import Callable, Tuple
+from theme.manager import ThemeManager
+
+theme_manager = ThemeManager()
 
 
 def create_search_field(on_change: Callable) -> ft.TextField:
@@ -32,7 +35,7 @@ def create_search_field(on_change: Callable) -> ft.TextField:
     return ft.TextField(
         hint_text="Buscar tarjetas...",
         prefix_icon=ft.Icons.SEARCH,
-        border_color=ft.Colors.OUTLINE,
+        focused_border_color=theme_manager.primary,
         on_change=on_change,
         text_size=14,
     )
@@ -66,7 +69,7 @@ def create_sidebar(
                 ft.Container(
                     content=ft.Row(
                         [
-                            ft.Icon(ft.Icons.FOLDER, size=24, color=ft.Colors.BLUE_400),
+                            ft.Icon(ft.Icons.FOLDER, size=24, color=theme_manager.primary),
                             ft.Text(
                                 "Mis Tarjetas",
                                 size=18,
@@ -159,7 +162,7 @@ def create_card_header(
         icon=ft.Icons.EDIT_OUTLINED,
         tooltip="Editar título",
         on_click=edit_callback,
-        icon_color=ft.Colors.BLUE_400,
+        icon_color=theme_manager.primary,
         disabled=True, # Iniciamos deshabilitado
     )
     
@@ -203,7 +206,7 @@ def create_custom_tabs(
         content=ft.Text("✏️ Editor", size=14, weight=ft.FontWeight.W_600, color=ft.Colors.WHITE),
         padding=ft.Padding.symmetric(horizontal=20, vertical=12),
         border_radius=ft.border_radius.only(top_left=8, top_right=8),
-        bgcolor=ft.Colors.BLUE_400,
+        bgcolor=theme_manager.primary,
         ink=True,
         on_click=on_editor_click,
     )

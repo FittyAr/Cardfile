@@ -4,6 +4,9 @@ from data.models.usuario import Usuario
 from datetime import datetime
 import bcrypt
 from config.config import Config
+from theme.manager import ThemeManager
+
+theme_manager = ThemeManager()
 
 async def login_view(page: ft.Page):
     config = Config()
@@ -133,7 +136,7 @@ async def login_view(page: ft.Page):
         width=150,
         height=45,
         color=ft.Colors.WHITE,
-        bgcolor=ft.Colors.BLUE_400,
+        bgcolor=theme_manager.primary,
         style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
         on_click=login_clicked
     )

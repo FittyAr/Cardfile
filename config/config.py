@@ -12,7 +12,8 @@ class Config:
         self.config_data = self.load_config()
         self.available_languages = self._discover_languages()
         self.language_names = self._get_language_names()
-        self.current_language = self.get_stored_language() or self.get("app.language.default", "es")
+        self.current_language = self.get("app.language.default", "es")
+        self.current_theme = self.get("app.theme", "blue")
         self.translations: Dict[str, Any] = {}
         self._load_translations()
 
@@ -87,7 +88,7 @@ class Config:
         if language in self.available_languages:
             self.current_language = language
             self._load_translations()
-            self.save_language_preference(language)
+            self.set("app.language.default", language)
             return True
         return False
 
@@ -120,24 +121,32 @@ class Config:
         keys = key.split(".")
         data = self.config_data
         for k in keys:
-            if k in data:
+            if isinstance(data, dict) and k in data:
                 data = data[k]
             else:
                 return default
         return data
 
-    def get_stored_language(self) -> Optional[str]:
-        """Obtiene el idioma guardado en la configuración"""
-        try:
-            with open('stored_language.txt', 'r') as f:
-                return f.read().strip()
-        except FileNotFoundError:
-            return None
+    def set(self, key, value):
+        """Establece un valor en el JSON dado su clave y lo guarda"""
+        keys = key.split(".")
+        data = self.config_data
+        for k in keys[:-1]:
+            if k not in data or not isinstance(data[k], dict):
+                data[k] = {}
+            data = data[k]
+        data[keys[-1]] = value
+        self.save_config()
 
-    def save_language_preference(self, language: str) -> None:
-        """Guarda el idioma seleccionado para futuras sesiones"""
+    def save_config(self):
+        """Guarda la configuración actual en el archivo JSON"""
         try:
-            with open('stored_language.txt', 'w') as f:
-                f.write(language)
+            with open(self.config_file, 'w', encoding='utf-8') as file:
+                json.dump(self.config_data, file, indent=4, ensure_ascii=False)
         except Exception as e:
-            print(f"Error saving language preference: {e}")
+            print(f"Error saving config file: {e}")
+
+    def set_theme(self, theme_name: str) -> None:
+        """Cambia el tema actual"""
+        self.current_theme = theme_name
+        self.set("app.theme", theme_name)

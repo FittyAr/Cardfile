@@ -4,6 +4,9 @@ from data.models.ficha import Ficha
 from datetime import datetime
 from config.config import Config
 from typing import Callable
+from theme.manager import ThemeManager
+
+theme_manager = ThemeManager()
 
 async def new_card_modal(page: ft.Page, on_close: Callable, on_success: Callable):
     # Siempre crear una nueva instancia de Config
@@ -66,7 +69,7 @@ async def new_card_modal(page: ft.Page, on_close: Callable, on_success: Callable
         label=config.get_text("new_card.name.label"),
         prefix_icon=ft.Icons.LABEL_OUTLINE,
         border_color=ft.Colors.OUTLINE,
-        focused_border_color=ft.Colors.BLUE_400,
+        focused_border_color=theme_manager.primary,
         width=320,
         on_submit=save_clicked,
         autofocus=True,
@@ -79,7 +82,7 @@ async def new_card_modal(page: ft.Page, on_close: Callable, on_success: Callable
         width=150,
         height=45,
         color=ft.Colors.WHITE,
-        bgcolor=ft.Colors.BLUE_400,
+        bgcolor=theme_manager.primary,
         style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
         on_click=save_clicked
     )
@@ -94,7 +97,7 @@ async def new_card_modal(page: ft.Page, on_close: Callable, on_success: Callable
             [
                 ft.Row(
                     [
-                        ft.Icon(ft.Icons.ADD_CIRCLE_OUTLINE, color=ft.Colors.BLUE_400),
+                        ft.Icon(ft.Icons.ADD_CIRCLE_OUTLINE, color=theme_manager.primary),
                         ft.Text(config.get_text("new_card.title"), size=20, weight=ft.FontWeight.BOLD),
                     ],
                     alignment=ft.MainAxisAlignment.CENTER,

@@ -8,6 +8,9 @@ import json
 import os
 import asyncio
 from config.config import Config
+from theme.manager import ThemeManager
+
+theme_manager = ThemeManager()
 
 def load_translations(lang='es'):
     """Carga las traducciones del idioma especificado"""
@@ -28,7 +31,7 @@ async def newUser_view(page: ft.Page):
         label=t['fields']['name']['label'],
         prefix_icon=ft.Icons.PERSON_OUTLINE,
         border_color=ft.Colors.OUTLINE,
-        focused_border_color=ft.Colors.BLUE_400,
+        focused_border_color=theme_manager.primary,
         width=320,
         text_size=14,
     )
@@ -37,7 +40,7 @@ async def newUser_view(page: ft.Page):
         label=t['fields']['email']['label'],
         prefix_icon=ft.Icons.EMAIL_OUTLINED,
         border_color=ft.Colors.OUTLINE,
-        focused_border_color=ft.Colors.BLUE_400,
+        focused_border_color=theme_manager.primary,
         width=320,
         text_size=14,
     )
@@ -48,7 +51,7 @@ async def newUser_view(page: ft.Page):
         can_reveal_password=True,
         prefix_icon=ft.Icons.LOCK_OUTLINE,
         border_color=ft.Colors.OUTLINE,
-        focused_border_color=ft.Colors.BLUE_400,
+        focused_border_color=theme_manager.primary,
         width=320,
         text_size=14,
     )
@@ -59,7 +62,7 @@ async def newUser_view(page: ft.Page):
         can_reveal_password=True,
         prefix_icon=ft.Icons.LOCK_RESET_ROUNDED,
         border_color=ft.Colors.OUTLINE,
-        focused_border_color=ft.Colors.BLUE_400,
+        focused_border_color=theme_manager.primary,
         width=320,
         text_size=14,
     )
@@ -156,7 +159,7 @@ async def newUser_view(page: ft.Page):
         width=150,
         height=45,
         color=ft.Colors.WHITE,
-        bgcolor=ft.Colors.BLUE_400,
+        bgcolor=theme_manager.primary,
         style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
         on_click=save_clicked
     )
