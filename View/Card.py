@@ -121,6 +121,7 @@ async def card_view(page: ft.Page):
         active_tab_index = 0
         editor_container.visible = True
         preview_container.visible = False
+        markdown_toolbar.visible = True  # ✅ Mostrar toolbar en editor
         editor_btn.bgcolor = ft.Colors.BLUE_400
         editor_btn.content.color = ft.Colors.WHITE
         preview_btn.bgcolor = ft.Colors.with_opacity(0.05, ft.Colors.ON_SURFACE)
@@ -133,6 +134,7 @@ async def card_view(page: ft.Page):
         active_tab_index = 1
         editor_container.visible = False
         preview_container.visible = True
+        markdown_toolbar.visible = False  # ✅ Ocultar toolbar en preview
         markdown_preview.value = markdown_editor.value
         preview_btn.bgcolor = ft.Colors.BLUE_400
         preview_btn.content.color = ft.Colors.WHITE
@@ -166,6 +168,69 @@ async def card_view(page: ft.Page):
             preview_btn,
         ],
         spacing=4,
+    )
+    
+    # ==================== MARKDOWN TOOLBAR ====================
+    # Funciones helper para edición Markdown
+    def _wrap_selection(prefix: str, suffix: str = None):
+        """Envuelve el texto seleccionado con prefix/suffix"""
+        if suffix is None:
+            suffix = prefix
+        value = markdown_editor.value or ""
+        if not value.strip():
+            new_value = f"{prefix}texto{suffix}"
+            markdown_editor.value = new_value
+        else:
+            markdown_editor.value = value + f"\n{prefix}texto{suffix}"
+        markdown_editor.update()
+        on_editor_change(None)
+    
+    def _block_format(prefix: str):
+        """Aplica formato de bloque"""
+        value = markdown_editor.value or ""
+        lines = value.split('\n') if value else ['']
+        lines.append(f"{prefix}texto")
+        markdown_editor.value = '\n'.join(lines)
+        markdown_editor.update()
+        on_editor_change(None)
+    
+    def _insert_text(text: str):
+        """Inserta texto"""
+        value = markdown_editor.value or ""
+        markdown_editor.value = value + ('\n' if value else '') + text
+        markdown_editor.update()
+        on_editor_change(None)
+    
+    # Barra de herramientas Markdown
+    markdown_toolbar = ft.Container(
+        content=ft.Row(
+            [
+                ft.IconButton(icon=ft.Icons.FORMAT_BOLD, tooltip="Negrita", icon_size=18, on_click=lambda e: _wrap_selection("**")),
+                ft.IconButton(icon=ft.Icons.FORMAT_ITALIC, tooltip="Cursiva", icon_size=18, on_click=lambda e: _wrap_selection("*")),
+                ft.IconButton(icon=ft.Icons.STRIKETHROUGH_S, tooltip="Tachado", icon_size=18, on_click=lambda e: _wrap_selection("~~")),
+                ft.IconButton(icon=ft.Icons.CODE, tooltip="Código", icon_size=18, on_click=lambda e: _wrap_selection("`")),
+                ft.Container(width=1, height=20, bgcolor=ft.Colors.BLUE_GREY_200),
+                ft.IconButton(icon=ft.Icons.TITLE, tooltip="H1",icon_size=18, on_click=lambda e: _block_format("# ")),
+                ft.IconButton(icon=ft.Icons.SUBTITLES, tooltip="H2", icon_size=18, on_click=lambda e: _block_format("## ")),
+                ft.IconButton(icon=ft.Icons.TEXT_FIELDS, tooltip="H3", icon_size=18, on_click=lambda e: _block_format("### ")),
+                ft.Container(width=1, height=20, bgcolor=ft.Colors.BLUE_GREY_200),
+                ft.IconButton(icon=ft.Icons.FORMAT_LIST_BULLETED, tooltip="Lista", icon_size=18, on_click=lambda e: _block_format("- ")),
+                ft.IconButton(icon=ft.Icons.FORMAT_LIST_NUMBERED, tooltip="Lista Nº", icon_size=18, on_click=lambda e: _block_format("1. ")),
+                ft.IconButton(icon=ft.Icons.FORMAT_QUOTE, tooltip="Cita", icon_size=18, on_click=lambda e: _block_format("> ")),
+                ft.Container(width=1, height=20, bgcolor=ft.Colors.BLUE_GREY_200),
+                ft.IconButton(icon=ft.Icons.LINK, tooltip="Enlace", icon_size=18, on_click=lambda e: _insert_text("[texto](https://)")),
+                ft.IconButton(icon=ft.Icons.IMAGE, tooltip="Imagen", icon_size=18, on_click=lambda e: _insert_text("![alt](https://)")),
+                ft.IconButton(icon=ft.Icons.TABLE_CHART, tooltip="Tabla", icon_size=18, on_click=lambda e: _insert_text("\n| Col 1 | Col 2 |\n|-------|-------|\n|       |       |\n")),
+                ft.IconButton(icon=ft.Icons.CHECK_BOX, tooltip="Checklist", icon_size=18, on_click=lambda e: _insert_text("- [ ] tarea")),
+            ],
+            wrap=True,
+            alignment=ft.MainAxisAlignment.START,
+            spacing=4,
+        ),
+        padding=ft.Padding.symmetric(horizontal=12, vertical=8),
+        bgcolor=ft.Colors.with_opacity(0.05, ft.Colors.ON_SURFACE),
+        border_radius=8,
+        visible=True,
     )
     
     # ==================== FUNCIONES ====================
@@ -452,6 +517,8 @@ async def card_view(page: ft.Page):
                     content=ft.Column(
                         [
                             editor_tabs,
+                            ft.Divider(height=1, color=ft.Colors.TRANSPARENT),
+                            markdown_toolbar,
                             ft.Divider(height=1, color=ft.Colors.TRANSPARENT),
                             editor_container,
                             preview_container,
