@@ -36,6 +36,9 @@ async def card_view(page: ft.Page):
     config = Config()
     t = config.translations['card']
     
+    # Aplicar modo oscuro/claro según el tema
+    page.theme_mode = ft.ThemeMode.DARK if theme_manager.is_dark else ft.ThemeMode.LIGHT
+    
     # Estado centralizado
     state = CardState()
     search_query = ""
@@ -138,7 +141,7 @@ async def card_view(page: ft.Page):
     
     selected_card_title = ft.Text(
         "Selecciona una tarjeta",
-        size=24, weight=ft.FontWeight.BOLD, color=ft.Colors.ON_SURFACE
+        size=24, weight=ft.FontWeight.BOLD, color=theme_manager.text
     )
 
     tabs_row, editor_btn, preview_btn = create_custom_tabs(
@@ -249,21 +252,21 @@ async def card_view(page: ft.Page):
                             ficha.title,
                             size=14,
                             weight=ft.FontWeight.W_600,
-                            color=ft.Colors.ON_SURFACE,
+                            color=theme_manager.text,
                             max_lines=1,
                             overflow=ft.TextOverflow.ELLIPSIS,
                         ),
                         ft.Text(
                             f"Actualizado: {ficha.updated_at.strftime('%d/%m/%Y')}" if ficha.updated_at else "Sin fecha",
                             size=11,
-                            color=ft.Colors.with_opacity(0.5, ft.Colors.ON_SURFACE),
+                            color=theme_manager.subtext,
                         ),
                     ],
                     spacing=4,
                 ),
                 padding=ft.Padding.all(16),
                 border_radius=10,
-                bgcolor=ft.Colors.with_opacity(0.05, ft.Colors.ON_SURFACE),
+                bgcolor=ft.Colors.with_opacity(0.1, theme_manager.text),
                 ink=True,
                 on_click=lambda e, f=ficha: asyncio.create_task(select_ficha(f)),
             )
@@ -300,9 +303,9 @@ async def card_view(page: ft.Page):
                 control.content.controls[0].color = ft.Colors.WHITE
                 control.content.controls[1].color = ft.Colors.with_opacity(0.8, ft.Colors.WHITE)
             else:
-                control.bgcolor = ft.Colors.with_opacity(0.05, ft.Colors.ON_SURFACE)
-                control.content.controls[0].color = ft.Colors.ON_SURFACE
-                control.content.controls[1].color = ft.Colors.with_opacity(0.5, ft.Colors.ON_SURFACE)
+                control.bgcolor = ft.Colors.with_opacity(0.1, theme_manager.text)
+                control.content.controls[0].color = theme_manager.text
+                control.content.controls[1].color = theme_manager.subtext
         
         # Actualizar estado del editor
         update_editor_state()
@@ -408,16 +411,24 @@ async def card_view(page: ft.Page):
     # --- Theme Switcher ---
     theme_selector = ft.Row(
         [
-            ft.IconButton(
-                icon=ft.Icons.CIRCLE,
-                icon_color=color_palette["primary"],
-                tooltip=name.capitalize(),
-                on_click=lambda _, n=name: asyncio.create_task(change_theme_handler(n)),
-                icon_size=20,
+            ft.Container(
+                content=ft.IconButton(
+                    icon=ft.Icons.CIRCLE,
+                    icon_color=color_palette["primary"],
+                    tooltip=color_palette["name"],
+                    on_click=lambda _, n=name: asyncio.create_task(change_theme_handler(n)),
+                    icon_size=20,
+                    style=ft.ButtonStyle(
+                        padding=0,
+                    )
+                ),
+                border=ft.border.all(2, theme_manager.primary) if theme_manager.current_theme_name == name else None,
+                border_radius=50,
+                padding=2,
             )
             for name, color_palette in ThemeColors.THEMES.items()
         ],
-        spacing=0,
+        spacing=5,
         alignment=ft.MainAxisAlignment.CENTER,
     )
 
@@ -434,9 +445,9 @@ async def card_view(page: ft.Page):
     # Por simplicidad y minimalismo, lo añadiremos al final del sidebar_content
     sidebar.content.controls.insert(-1, ft.Container(
         content=ft.Column([
-            ft.Text("Tema", size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.with_opacity(0.5, ft.Colors.ON_SURFACE)),
+            ft.Text("Tema", size=12, weight=ft.FontWeight.BOLD, color=theme_manager.subtext),
             theme_selector,
-        ], spacing=5),
+        ], spacing=5, horizontal_alignment=ft.CrossAxisAlignment.CENTER),
         padding=ft.Padding.symmetric(horizontal=20, vertical=10)
     ))
     
@@ -444,7 +455,7 @@ async def card_view(page: ft.Page):
         content=ft.Column(
             [
                 header_container,
-                ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE)),
+                ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, theme_manager.text)),
                 ft.Container(
                     content=ft.Column(
                         [
@@ -463,6 +474,7 @@ async def card_view(page: ft.Page):
             spacing=0,
         ),
         expand=True,
+        bgcolor=theme_manager.bg,
     )
     
     # Layout principal

@@ -20,8 +20,10 @@ def load_translations(lang='es'):
         return json.load(file)
 
 async def newUser_view(page: ft.Page):
-    # Obtener la configuración global
     config = Config()
+    # Aplicar modo oscuro/claro según el tema
+    page.theme_mode = ft.ThemeMode.DARK if theme_manager.is_dark else ft.ThemeMode.LIGHT
+    
     # Cargar traducciones usando el idioma configurado
     translations = load_translations(config.current_language)
     t = translations['new_user']
@@ -30,19 +32,23 @@ async def newUser_view(page: ft.Page):
     nombre = ft.TextField(
         label=t['fields']['name']['label'],
         prefix_icon=ft.Icons.PERSON_OUTLINE,
-        border_color=ft.Colors.OUTLINE,
+        border_color=ft.Colors.with_opacity(0.1, theme_manager.text),
         focused_border_color=theme_manager.primary,
         width=320,
         text_size=14,
+        color=theme_manager.text,
+        label_style=ft.TextStyle(color=theme_manager.subtext),
     )
     
     email = ft.TextField(
         label=t['fields']['email']['label'],
         prefix_icon=ft.Icons.EMAIL_OUTLINED,
-        border_color=ft.Colors.OUTLINE,
+        border_color=ft.Colors.with_opacity(0.1, theme_manager.text),
         focused_border_color=theme_manager.primary,
         width=320,
         text_size=14,
+        color=theme_manager.text,
+        label_style=ft.TextStyle(color=theme_manager.subtext),
     )
     
     password = ft.TextField(
@@ -50,10 +56,12 @@ async def newUser_view(page: ft.Page):
         password=True,
         can_reveal_password=True,
         prefix_icon=ft.Icons.LOCK_OUTLINE,
-        border_color=ft.Colors.OUTLINE,
+        border_color=ft.Colors.with_opacity(0.1, theme_manager.text),
         focused_border_color=theme_manager.primary,
         width=320,
         text_size=14,
+        color=theme_manager.text,
+        label_style=ft.TextStyle(color=theme_manager.subtext),
     )
     
     confirm_password = ft.TextField(
@@ -61,10 +69,12 @@ async def newUser_view(page: ft.Page):
         password=True,
         can_reveal_password=True,
         prefix_icon=ft.Icons.LOCK_RESET_ROUNDED,
-        border_color=ft.Colors.OUTLINE,
+        border_color=ft.Colors.with_opacity(0.1, theme_manager.text),
         focused_border_color=theme_manager.primary,
         width=320,
         text_size=14,
+        color=theme_manager.text,
+        label_style=ft.TextStyle(color=theme_manager.subtext),
     )
 
     def hash_password(password: str) -> str:
@@ -175,18 +185,18 @@ async def newUser_view(page: ft.Page):
             [
                 ft.Row(
                     [
-                        ft.Text("CardFile", size=20, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_400),
+                        ft.Text("CardFile", size=20, weight=ft.FontWeight.BOLD, color=theme_manager.primary),
                     ],
                     alignment=ft.MainAxisAlignment.CENTER,
                 ),
-                ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE)),
+                ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, theme_manager.text)),
                 
                 ft.Container(
                     content=ft.Column(
                         [
-                            ft.Icon(ft.Icons.PERSON_ADD_ROUNDED, size=64, color=ft.Colors.BLUE_400),
-                            ft.Text(t['title'], size=28, weight=ft.FontWeight.BOLD),
-                            ft.Text("Crea una cuenta para empezar", size=14, color=ft.Colors.with_opacity(0.6, ft.Colors.ON_SURFACE)),
+                            ft.Icon(ft.Icons.PERSON_ADD_ROUNDED, size=64, color=theme_manager.primary),
+                            ft.Text(t['title'], size=28, weight=ft.FontWeight.BOLD, color=theme_manager.text),
+                            ft.Text("Crea una cuenta para empezar", size=14, color=theme_manager.subtext),
                         ],
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                         spacing=10,
@@ -212,7 +222,7 @@ async def newUser_view(page: ft.Page):
                 ft.Row(
                     [
                         ft.TextButton(
-                            content=ft.Text(t['login_link'], color=ft.Colors.BLUE_400),
+                            content=ft.Text(t['login_link'], color=theme_manager.primary),
                             on_click=lambda _: asyncio.create_task(page.push_route("/Login"))
                         ),
                         btn_cancel,
@@ -225,9 +235,9 @@ async def newUser_view(page: ft.Page):
         ),
         width=400,
         padding=40,
-        bgcolor=ft.Colors.SURFACE,
+        bgcolor=theme_manager.card_bg,
         border_radius=20,
-        border=ft.border.all(1, ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE)),
+        border=ft.border.all(1, ft.Colors.with_opacity(0.1, theme_manager.text)),
         shadow=ft.BoxShadow(
             blur_radius=30,
             color=ft.Colors.with_opacity(0.1, ft.Colors.BLACK),

@@ -7,6 +7,9 @@ from data.database.setup import init_db
 from data.database.connection import get_session
 from data.repositories.usuario_repository import UsuarioRepository
 from data.models.usuario import Usuario
+from theme.manager import ThemeManager
+
+theme_manager = ThemeManager()
 
 # Inicializar la base de datos al importar el módulo
 init_db()
@@ -93,7 +96,7 @@ async def main(page: Page):
     initial_route = '/newUser' if check_first_run() else '/Login'
     await page.push_route(initial_route)
 
-    page.theme_mode = ft.ThemeMode.SYSTEM
+    page.theme_mode = ft.ThemeMode.DARK if theme_manager.is_dark else ft.ThemeMode.LIGHT
 
 if __name__ == "__main__":
     ft.app(target=main)

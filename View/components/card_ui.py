@@ -36,8 +36,11 @@ def create_search_field(on_change: Callable) -> ft.TextField:
         hint_text="Buscar tarjetas...",
         prefix_icon=ft.Icons.SEARCH,
         focused_border_color=theme_manager.primary,
+        border_color=ft.Colors.with_opacity(0.1, theme_manager.text),
         on_change=on_change,
         text_size=14,
+        color=theme_manager.text,
+        hint_style=ft.TextStyle(color=theme_manager.subtext),
     )
 
 
@@ -74,14 +77,14 @@ def create_sidebar(
                                 "Mis Tarjetas",
                                 size=18,
                                 weight=ft.FontWeight.BOLD,
-                                color=ft.Colors.ON_SURFACE,
+                                color=theme_manager.text,
                             ),
                         ],
                         spacing=12,
                     ),
                     padding=ft.Padding.all(20),
                 ),
-                ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE)),
+                ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, theme_manager.text)),
                 
                 # Búsqueda
                 ft.Container(
@@ -100,7 +103,7 @@ def create_sidebar(
                 ft.Container(
                     content=ft.Column(
                         [
-                            ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE)),
+                            ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, theme_manager.text)),
                             ft.Container(
                                 content=card_counter,
                                 padding=ft.Padding.symmetric(horizontal=20, vertical=10),
@@ -142,8 +145,8 @@ def create_sidebar(
             expand=True,
         ),
         width=320,
-        bgcolor=ft.Colors.SURFACE,
-        border=ft.border.only(right=ft.BorderSide(1, ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE))),
+        bgcolor=theme_manager.sidebar_bg,
+        border=ft.border.only(right=ft.BorderSide(1, ft.Colors.with_opacity(0.1, theme_manager.text))),
     )
 
 
@@ -212,10 +215,10 @@ def create_custom_tabs(
     )
     
     preview_btn = ft.Container(
-        content=ft.Text("👁️ Vista Previa", size=14, weight=ft.FontWeight.W_600),
+        content=ft.Text("👁️ Vista Previa", size=14, weight=ft.FontWeight.W_600, color=theme_manager.text),
         padding=ft.Padding.symmetric(horizontal=20, vertical=12),
         border_radius=ft.border_radius.only(top_left=8, top_right=8),
-        bgcolor=ft.Colors.with_opacity(0.05, ft.Colors.ON_SURFACE),
+        bgcolor=ft.Colors.with_opacity(0.05, theme_manager.text),
         ink=True,
         on_click=on_preview_click,
     )
@@ -255,7 +258,7 @@ def create_card_counter() -> ft.Text:
     return ft.Text(
         "0 tarjetas",
         size=12,
-        color=ft.Colors.with_opacity(0.6, ft.Colors.ON_SURFACE),
+        color=theme_manager.subtext,
     )
 
 

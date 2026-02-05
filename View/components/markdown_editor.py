@@ -20,6 +20,9 @@ Uso:
 """
 import flet as ft
 from typing import Callable, Optional
+from theme.manager import ThemeManager
+
+theme_manager = ThemeManager()
 
 
 def _find_word_boundaries(text: str, cursor: int) -> tuple:
@@ -71,9 +74,13 @@ def create_markdown_editor(
         min_lines=10,
         max_lines=None,
         expand=expand,
-        border_color=ft.Colors.OUTLINE,
+        border_color=ft.Colors.TRANSPARENT,
+        focused_border_color=ft.Colors.TRANSPARENT,
         on_change=on_change,
-        text_size=14,
+        text_size=15,
+        color=theme_manager.text,
+        cursor_color=theme_manager.primary,
+        selection_color=ft.Colors.with_opacity(0.3, theme_manager.primary),
     )
 
 
@@ -200,9 +207,10 @@ def create_markdown_toolbar(
             icon=ft.Icons.CODE,
             tooltip="Código",
             icon_size=18,
-            on_click=lambda e: _wrap_selection("`")
+            on_click=lambda e: _wrap_selection("`"),
+            icon_color=theme_manager.text,
         ),
-        ft.Container(width=1, height=20, bgcolor=ft.Colors.BLUE_GREY_200),
+        ft.Container(width=1, height=20, bgcolor=ft.Colors.with_opacity(0.2, theme_manager.text)),
         ft.IconButton(
             icon=ft.Icons.TITLE,
             tooltip="H1",
@@ -219,9 +227,10 @@ def create_markdown_toolbar(
             icon=ft.Icons.TEXT_FIELDS,
             tooltip="H3",
             icon_size=18,
-            on_click=lambda e: _block_format("### ")
+            on_click=lambda e: _block_format("### "),
+            icon_color=theme_manager.text,
         ),
-        ft.Container(width=1, height=20, bgcolor=ft.Colors.BLUE_GREY_200),
+        ft.Container(width=1, height=20, bgcolor=ft.Colors.with_opacity(0.2, theme_manager.text)),
         ft.IconButton(
             icon=ft.Icons.FORMAT_LIST_BULLETED,
             tooltip="Lista",
@@ -238,9 +247,10 @@ def create_markdown_toolbar(
             icon=ft.Icons.FORMAT_QUOTE,
             tooltip="Cita",
             icon_size=18,
-            on_click=lambda e: _block_format("> ")
+            on_click=lambda e: _block_format("> "),
+            icon_color=theme_manager.text,
         ),
-        ft.Container(width=1, height=20, bgcolor=ft.Colors.BLUE_GREY_200),
+        ft.Container(width=1, height=20, bgcolor=ft.Colors.with_opacity(0.2, theme_manager.text)),
         ft.IconButton(
             icon=ft.Icons.LINK,
             tooltip="Enlace",
@@ -275,7 +285,7 @@ def create_markdown_toolbar(
             spacing=4,
         ),
         padding=ft.Padding.symmetric(horizontal=12, vertical=8),
-        bgcolor=ft.Colors.with_opacity(0.05, ft.Colors.ON_SURFACE),
+        bgcolor=ft.Colors.with_opacity(0.05, theme_manager.text),
         border_radius=8,
         visible=True,
     )

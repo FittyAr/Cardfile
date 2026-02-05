@@ -19,6 +19,12 @@ class ThemeManager:
         self.primary_light = self.colors["primary_light"]
         self.primary_dark = self.colors["primary_dark"]
         self.accent = self.colors["accent"]
+        self.bg = self.colors["bg"]
+        self.sidebar_bg = self.colors["sidebar_bg"]
+        self.card_bg = self.colors["card_bg"]
+        self.text = self.colors["text"]
+        self.subtext = self.colors["subtext"]
+        self.is_dark = self.colors["is_dark"]
 
     def set_theme(self, theme_name):
         self.config.set_theme(theme_name)

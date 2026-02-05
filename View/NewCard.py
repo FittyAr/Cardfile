@@ -68,12 +68,14 @@ async def new_card_modal(page: ft.Page, on_close: Callable, on_success: Callable
     card_name = ft.TextField(
         label=config.get_text("new_card.name.label"),
         prefix_icon=ft.Icons.LABEL_OUTLINE,
-        border_color=ft.Colors.OUTLINE,
+        border_color=ft.Colors.with_opacity(0.1, theme_manager.text),
         focused_border_color=theme_manager.primary,
         width=320,
         on_submit=save_clicked,
         autofocus=True,
         text_size=14,
+        color=theme_manager.text,
+        label_style=ft.TextStyle(color=theme_manager.subtext),
     )
 
     # Botones
@@ -98,19 +100,19 @@ async def new_card_modal(page: ft.Page, on_close: Callable, on_success: Callable
                 ft.Row(
                     [
                         ft.Icon(ft.Icons.ADD_CIRCLE_OUTLINE, color=theme_manager.primary),
-                        ft.Text(config.get_text("new_card.title"), size=20, weight=ft.FontWeight.BOLD),
+                        ft.Text(config.get_text("new_card.title"), size=20, weight=ft.FontWeight.BOLD, color=theme_manager.text),
                     ],
                     alignment=ft.MainAxisAlignment.CENTER,
                     spacing=10,
                 ),
-                ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE)),
+                ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, theme_manager.text)),
                 
                 ft.Container(height=10),
                 
                 ft.Text(
                     "Ingresa el título para tu nueva tarjeta de notas.",
                     size=14,
-                    color=ft.Colors.with_opacity(0.6, ft.Colors.ON_SURFACE),
+                    color=theme_manager.subtext,
                     text_align=ft.TextAlign.CENTER,
                 ),
                 
@@ -133,9 +135,9 @@ async def new_card_modal(page: ft.Page, on_close: Callable, on_success: Callable
         ),
         width=400,
         padding=40,
-        bgcolor=ft.Colors.SURFACE,
+        bgcolor=theme_manager.card_bg,
         border_radius=20,
-        border=ft.border.all(1, ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE)),
+        border=ft.border.all(1, ft.Colors.with_opacity(0.1, theme_manager.text)),
         shadow=ft.BoxShadow(
             blur_radius=30,
             color=ft.Colors.with_opacity(0.1, ft.Colors.BLACK),

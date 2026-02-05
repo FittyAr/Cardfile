@@ -74,13 +74,15 @@ async def edit_card_modal(page: ft.Page, on_close: Callable, on_success: Callabl
     card_name = ft.TextField(
         label=config.get_text("edit_card.name.label"),
         prefix_icon=ft.Icons.EDIT_NOTE_ROUNDED,
-        border_color=ft.Colors.OUTLINE,
+        border_color=ft.Colors.with_opacity(0.1, theme_manager.text),
         focused_border_color=theme_manager.primary,
         width=320,
         on_submit=save_clicked,
         autofocus=True,
         text_size=14,
-        value=selected_ficha["title"] if selected_ficha else ""
+        value=selected_ficha["title"] if selected_ficha else "",
+        color=theme_manager.text,
+        label_style=ft.TextStyle(color=theme_manager.subtext),
     )
 
     # Botones
@@ -105,19 +107,19 @@ async def edit_card_modal(page: ft.Page, on_close: Callable, on_success: Callabl
                 ft.Row(
                     [
                         ft.Icon(ft.Icons.EDIT_ROUNDED, color=theme_manager.primary),
-                        ft.Text(config.get_text("edit_card.title"), size=20, weight=ft.FontWeight.BOLD),
+                        ft.Text(config.get_text("edit_card.title"), size=20, weight=ft.FontWeight.BOLD, color=theme_manager.text),
                     ],
                     alignment=ft.MainAxisAlignment.CENTER,
                     spacing=10,
                 ),
-                ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE)),
+                ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, theme_manager.text)),
                 
                 ft.Container(height=10),
                 
                 ft.Text(
                     "Actualiza el título de tu tarjeta.",
                     size=14,
-                    color=ft.Colors.with_opacity(0.6, ft.Colors.ON_SURFACE),
+                    color=theme_manager.subtext,
                     text_align=ft.TextAlign.CENTER,
                 ),
                 
@@ -140,9 +142,9 @@ async def edit_card_modal(page: ft.Page, on_close: Callable, on_success: Callabl
         ),
         width=400,
         padding=40,
-        bgcolor=ft.Colors.SURFACE,
+        bgcolor=theme_manager.card_bg,
         border_radius=20,
-        border=ft.border.all(1, ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE)),
+        border=ft.border.all(1, ft.Colors.with_opacity(0.1, theme_manager.text)),
         shadow=ft.BoxShadow(
             blur_radius=30,
             color=ft.Colors.with_opacity(0.1, ft.Colors.BLACK),

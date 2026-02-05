@@ -3,38 +3,73 @@ import flet as ft
 class ThemeColors:
     # Definición de temas
     THEMES = {
-        "blue": {
-            "primary": ft.Colors.BLUE_400,
-            "primary_light": ft.Colors.BLUE_50,
-            "primary_dark": ft.Colors.BLUE_700,
-            "accent": ft.Colors.BLUE_ACCENT_400,
-        },
-        "emerald": {
-            "primary": ft.Colors.GREEN_400,
-            "primary_light": ft.Colors.GREEN_50,
-            "primary_dark": ft.Colors.GREEN_700,
-            "accent": ft.Colors.GREEN_ACCENT_400,
-        },
-        "sunset": {
-            "primary": ft.Colors.ORANGE_400,
-            "primary_light": ft.Colors.ORANGE_50,
-            "primary_dark": ft.Colors.ORANGE_700,
-            "accent": ft.Colors.ORANGE_ACCENT_400,
+        "snow": {
+            "name": "Snow White",
+            "is_dark": False,
+            "primary": "#2D5AFE",
+            "primary_light": "#EBF0FF",
+            "primary_dark": "#1A3BB0",
+            "accent": "#00C2FF",
+            "bg": "#FFFFFF",
+            "sidebar_bg": "#F8F9FD",
+            "card_bg": "#FFFFFF",
+            "text": "#1A1C1E",
+            "subtext": "#6C757D"
         },
         "midnight": {
-            "primary": ft.Colors.INDIGO_400,
-            "primary_light": ft.Colors.INDIGO_50,
-            "primary_dark": ft.Colors.INDIGO_700,
-            "accent": ft.Colors.INDIGO_ACCENT_400,
+            "name": "Midnight Noir",
+            "is_dark": True,
+            "primary": "#3B82F6",
+            "primary_light": "#1E293B",
+            "primary_dark": "#1D4ED8",
+            "accent": "#60A5FA",
+            "bg": "#0F172A",
+            "sidebar_bg": "#020617",
+            "card_bg": "#1E293B",
+            "text": "#F8FAFC",
+            "subtext": "#94A3B8"
         },
-        "rose": {
-            "primary": ft.Colors.PINK_400,
-            "primary_light": ft.Colors.PINK_50,
-            "primary_dark": ft.Colors.PINK_700,
-            "accent": ft.Colors.PINK_ACCENT_400,
+        "cyber": {
+            "name": "Cyber Neon",
+            "is_dark": True,
+            "primary": "#FF007A",
+            "primary_light": "#2D001A",
+            "primary_dark": "#B30056",
+            "accent": "#00FFF0",
+            "bg": "#0D0221",
+            "sidebar_bg": "#05010D",
+            "card_bg": "#1A0B2E",
+            "text": "#FFFFFF",
+            "subtext": "#FF007A"
+        },
+        "forest": {
+            "name": "Eco Forest",
+            "is_dark": False,
+            "primary": "#059669",
+            "primary_light": "#ECFDF5",
+            "primary_dark": "#047857",
+            "accent": "#34D399",
+            "bg": "#F0FDF4",
+            "sidebar_bg": "#DCFCE7",
+            "card_bg": "#FFFFFF",
+            "text": "#064E3B",
+            "subtext": "#059669"
+        },
+        "nordic": {
+            "name": "Nordic Frost",
+            "is_dark": False,
+            "primary": "#4C566A",
+            "primary_light": "#ECEFF4",
+            "primary_dark": "#2E3440",
+            "accent": "#88C0D0",
+            "bg": "#E5E9F0",
+            "sidebar_bg": "#D8DEE9",
+            "card_bg": "#ECEFF4",
+            "text": "#2E3440",
+            "subtext": "#4C566A"
         }
     }
 
     @staticmethod
-    def get_colors(theme_name="blue"):
-        return ThemeColors.THEMES.get(theme_name, ThemeColors.THEMES["blue"])
+    def get_colors(theme_name="snow"):
+        return ThemeColors.THEMES.get(theme_name, ThemeColors.THEMES["snow"])

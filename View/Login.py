@@ -11,6 +11,9 @@ theme_manager = ThemeManager()
 async def login_view(page: ft.Page):
     config = Config()
     
+    # Aplicar modo oscuro/claro según el tema
+    page.theme_mode = ft.ThemeMode.DARK if theme_manager.is_dark else ft.ThemeMode.LIGHT
+    
     async def change_language(e):
         selected_lang = language_dd.value
         if config.set_language(selected_lang):
@@ -40,7 +43,8 @@ async def login_view(page: ft.Page):
     title_text = ft.Text(
         config.get_text("login.title"),
         size=28,
-        weight=ft.FontWeight.BOLD
+        weight=ft.FontWeight.BOLD,
+        color=theme_manager.text
     )
 
     async def login_clicked(e):
@@ -112,11 +116,13 @@ async def login_view(page: ft.Page):
         label=config.get_text("login.username.label"),
         hint_text=config.get_text("login.username.hint"),
         prefix_icon=ft.Icons.PERSON_OUTLINE,
-        border_color=ft.Colors.OUTLINE,
-        focused_border_color=ft.Colors.BLUE_400,
+        border_color=ft.Colors.with_opacity(0.1, theme_manager.text),
+        focused_border_color=theme_manager.primary,
         width=320,
         text_size=14,
         on_submit=login_clicked,
+        color=theme_manager.text,
+        label_style=ft.TextStyle(color=theme_manager.subtext),
     )
     
     password = ft.TextField(
@@ -124,11 +130,13 @@ async def login_view(page: ft.Page):
         password=True,
         can_reveal_password=True,
         prefix_icon=ft.Icons.LOCK_OUTLINE,
-        border_color=ft.Colors.OUTLINE,
-        focused_border_color=ft.Colors.BLUE_400,
+        border_color=ft.Colors.with_opacity(0.1, theme_manager.text),
+        focused_border_color=theme_manager.primary,
         width=320,
         text_size=14,
         on_submit=login_clicked,
+        color=theme_manager.text,
+        label_style=ft.TextStyle(color=theme_manager.subtext),
     )
  
     btn_login = ft.ElevatedButton(
@@ -150,7 +158,7 @@ async def login_view(page: ft.Page):
         await page.push_route("/newUser")
 
     register_link = ft.TextButton(
-        content=ft.Text(config.get_text("login.register_link"), color=ft.Colors.BLUE_400),
+        content=ft.Text(config.get_text("login.register_link"), color=theme_manager.primary),
         on_click=go_to_register
     )
 
@@ -160,19 +168,19 @@ async def login_view(page: ft.Page):
                 # Header con Selector de Idioma
                 ft.Row(
                     [
-                        ft.Text("CardFile", size=20, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_400),
+                        ft.Text("CardFile", size=20, weight=ft.FontWeight.BOLD, color=theme_manager.primary),
                         language_dd
                     ],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                 ),
-                ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE)),
+                ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, theme_manager.text)),
                 
                 ft.Container(
                     content=ft.Column(
                         [
-                            ft.Icon(ft.Icons.PERSON_PIN_ROUNDED, size=64, color=ft.Colors.BLUE_400),
-                            ft.Text(config.get_text("login.title"), size=28, weight=ft.FontWeight.BOLD),
-                            ft.Text("Ingresa tus credenciales para continuar", size=14, color=ft.Colors.with_opacity(0.6, ft.Colors.ON_SURFACE)),
+                            ft.Icon(ft.Icons.PERSON_PIN_ROUNDED, size=64, color=theme_manager.primary),
+                            ft.Text(config.get_text("login.title"), size=28, weight=ft.FontWeight.BOLD, color=theme_manager.text),
+                            ft.Text("Ingresa tus credenciales para continuar", size=14, color=theme_manager.subtext),
                         ],
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                         spacing=10,
@@ -206,9 +214,9 @@ async def login_view(page: ft.Page):
         ),
         width=400,
         padding=40,
-        bgcolor=ft.Colors.SURFACE,
+        bgcolor=theme_manager.card_bg,
         border_radius=20,
-        border=ft.border.all(1, ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE)),
+        border=ft.border.all(1, ft.Colors.with_opacity(0.1, theme_manager.text)),
         shadow=ft.BoxShadow(
             blur_radius=30,
             color=ft.Colors.with_opacity(0.1, ft.Colors.BLACK),

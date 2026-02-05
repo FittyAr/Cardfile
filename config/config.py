@@ -13,7 +13,7 @@ class Config:
         self.available_languages = self._discover_languages()
         self.language_names = self._get_language_names()
         self.current_language = self.get("app.language.default", "es")
-        self.current_theme = self.get("app.theme", "blue")
+        self.current_theme = self.get("app.theme", "snow")
         self.translations: Dict[str, Any] = {}
         self._load_translations()
 

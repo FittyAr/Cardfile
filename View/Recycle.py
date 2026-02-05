@@ -36,19 +36,19 @@ async def recycle_modal(page: ft.Page, on_close: Callable, on_success: Callable 
                                 ficha.title,
                                 size=14,
                                 weight=ft.FontWeight.W_600,
-                                color=ft.Colors.WHITE if is_selected else ft.Colors.ON_SURFACE,
+                                color=ft.Colors.WHITE if is_selected else theme_manager.text,
                             ),
                             ft.Text(
                                 f"Eliminado: {ficha.updated_at.strftime('%d/%m/%Y')}" if ficha.updated_at else "Sin fecha",
                                 size=11,
-                                color=ft.Colors.with_opacity(0.8, ft.Colors.WHITE) if is_selected else ft.Colors.with_opacity(0.5, ft.Colors.ON_SURFACE),
+                                color=ft.Colors.with_opacity(0.8, ft.Colors.WHITE) if is_selected else theme_manager.subtext,
                             ),
                         ],
                         spacing=4,
                     ),
                     padding=ft.Padding.all(16),
                     border_radius=10,
-                    bgcolor=theme_manager.primary if is_selected else ft.Colors.with_opacity(0.05, ft.Colors.ON_SURFACE),
+                    bgcolor=theme_manager.primary if is_selected else ft.Colors.with_opacity(0.1, theme_manager.text),
                     ink=True,
                     on_click=lambda e, f=ficha: asyncio.create_task(select_and_reload(f)),
                 )
@@ -58,7 +58,7 @@ async def recycle_modal(page: ft.Page, on_close: Callable, on_success: Callable 
             if not fichas:
                 fichas_list.controls = [
                     ft.Container(
-                        content=ft.Text("La papelera está vacía", size=14, color=ft.Colors.with_opacity(0.5, ft.Colors.ON_SURFACE)),
+                        content=ft.Text("La papelera está vacía", size=14, color=theme_manager.subtext),
                         padding=20,
                         alignment=ft.Alignment.CENTER
                     )
@@ -244,7 +244,7 @@ async def recycle_modal(page: ft.Page, on_close: Callable, on_success: Callable 
     fichas_list = ft.ListView(expand=True, spacing=10, padding=0)
 
     btn_cancel = ft.TextButton(
-        content=ft.Text(config.get_text("recycle.buttons.cancel"), color=ft.Colors.ON_SURFACE),
+        content=ft.Text(config.get_text("recycle.buttons.cancel"), color=theme_manager.text),
         on_click=cancel_clicked_modal
     )
 
@@ -272,7 +272,7 @@ async def recycle_modal(page: ft.Page, on_close: Callable, on_success: Callable 
                     [
                         ft.Row([
                             ft.Icon(ft.Icons.RECYCLING_ROUNDED, color=theme_manager.primary, size=28),
-                            ft.Text(config.get_text("recycle.title"), size=24, weight=ft.FontWeight.BOLD),
+                            ft.Text(config.get_text("recycle.title"), size=24, weight=ft.FontWeight.BOLD, color=theme_manager.text),
                         ], spacing=10),
                         btn_empty_trash,
                     ],
@@ -288,8 +288,8 @@ async def recycle_modal(page: ft.Page, on_close: Callable, on_success: Callable 
             ],
             spacing=10,
         ),
-        width=600, height=500, bgcolor=ft.Colors.SURFACE, border_radius=20,
-        border=ft.border.all(1, ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE)), padding=30, alignment=ft.Alignment.CENTER,
+        width=600, height=500, bgcolor=theme_manager.card_bg, border_radius=20,
+        border=ft.border.all(1, ft.Colors.with_opacity(0.1, theme_manager.text)), padding=30, alignment=ft.Alignment.CENTER,
         on_click=lambda _: None,
     )
 
