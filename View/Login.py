@@ -108,36 +108,38 @@ async def login_view(page: ft.Page):
     username = ft.TextField(
         label=config.get_text("login.username.label"),
         hint_text=config.get_text("login.username.hint"),
-        border_color=ft.Colors.BLUE,
-        width=300,
-        text_align=ft.TextAlign.LEFT,
+        prefix_icon=ft.Icons.PERSON_OUTLINE,
+        border_color=ft.Colors.OUTLINE,
+        focused_border_color=ft.Colors.BLUE_400,
+        width=320,
+        text_size=14,
         on_submit=login_clicked,
-        #value="test@test.test"
     )
     
     password = ft.TextField(
         label=config.get_text("login.password.label"),
         password=True,
         can_reveal_password=True,
-        border_color=ft.Colors.BLUE,
-        width=300,
+        prefix_icon=ft.Icons.LOCK_OUTLINE,
+        border_color=ft.Colors.OUTLINE,
+        focused_border_color=ft.Colors.BLUE_400,
+        width=320,
+        text_size=14,
         on_submit=login_clicked,
-        #value="abc123*-"
     )
  
     btn_login = ft.ElevatedButton(
-        content=ft.Text(config.get_text("login.buttons.login")),
-        width=140,
+        content=ft.Text(config.get_text("login.buttons.login"), weight=ft.FontWeight.BOLD),
+        width=150,
+        height=45,
         color=ft.Colors.WHITE,
-        bgcolor=ft.Colors.BLUE,
+        bgcolor=ft.Colors.BLUE_400,
+        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
         on_click=login_clicked
     )
  
-    btn_exit = ft.ElevatedButton(
-        content=ft.Text(config.get_text("login.buttons.exit")),
-        width=140,
-        color=ft.Colors.WHITE,
-        bgcolor=ft.Colors.RED,
+    btn_exit = ft.TextButton(
+        content=ft.Text(config.get_text("login.buttons.exit"), color=ft.Colors.RED_400),
         on_click=exit_clicked
     )
  
@@ -145,51 +147,69 @@ async def login_view(page: ft.Page):
         await page.push_route("/newUser")
 
     register_link = ft.TextButton(
-        content=ft.Text(config.get_text("login.register_link")),
+        content=ft.Text(config.get_text("login.register_link"), color=ft.Colors.BLUE_400),
         on_click=go_to_register
     )
 
-    # Modificar el return para incluir el selector de idioma
     return ft.Container(
-        width=400,
-        height=500,
-        bgcolor=ft.Colors.WHITE10,
-        border=ft.border.all(2, ft.Colors.BLUE_200),
-        border_radius=15,
-        padding=30,
         content=ft.Column(
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            spacing=20,
-            controls=[
-                # Agregar el selector de idioma en la parte superior
-                ft.Container(
-                    content=ft.Row(
-                        alignment=ft.MainAxisAlignment.END,
-                        controls=[language_dd],
-                    ),
-                    padding=ft.Padding.only(bottom=10),
+            [
+                # Header con Selector de Idioma
+                ft.Row(
+                    [
+                        ft.Text("CardFile", size=20, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_400),
+                        language_dd
+                    ],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                 ),
-                ft.Icon(ft.Icons.PERSON_OUTLINE, size=50, color=ft.Colors.BLUE),
-                title_text,
-                ft.Divider(height=20, color=ft.Colors.TRANSPARENT),
+                ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE)),
+                
                 ft.Container(
                     content=ft.Column(
-                        spacing=15,
-                        controls=[
-                            username,
-                            password,
+                        [
+                            ft.Icon(ft.Icons.PERSON_PIN_ROUNDED, size=64, color=ft.Colors.BLUE_400),
+                            ft.Text(config.get_text("login.title"), size=28, weight=ft.FontWeight.BOLD),
+                            ft.Text("Ingresa tus credenciales para continuar", size=14, color=ft.Colors.with_opacity(0.6, ft.Colors.ON_SURFACE)),
                         ],
+                        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                        spacing=10,
                     ),
+                    padding=ft.Padding.symmetric(vertical=20),
                 ),
-                ft.Divider(height=20, color=ft.Colors.TRANSPARENT),
-                ft.Container(
-                    content=ft.Row(
-                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                        controls=[btn_exit, btn_login],
-                    ),
+                
+                ft.Column(
+                    [
+                        username,
+                        password,
+                    ],
+                    spacing=15,
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 ),
-                register_link,
+                
+                ft.Container(height=10),
+                
+                btn_login,
+                
+                ft.Row(
+                    [
+                        register_link,
+                        btn_exit,
+                    ],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                ),
             ],
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=10,
+        ),
+        width=400,
+        padding=40,
+        bgcolor=ft.Colors.SURFACE,
+        border_radius=20,
+        border=ft.border.all(1, ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE)),
+        shadow=ft.BoxShadow(
+            blur_radius=30,
+            color=ft.Colors.with_opacity(0.1, ft.Colors.BLACK),
+            offset=ft.Offset(0, 10),
         ),
         alignment=ft.Alignment.CENTER,
     )

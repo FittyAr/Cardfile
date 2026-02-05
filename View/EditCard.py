@@ -69,55 +69,80 @@ async def edit_card_view(page: ft.Page):
     # Campo para el nombre de la tarjeta
     card_name = ft.TextField(
         label=config.get_text("edit_card.name.label"),
-        border_color=ft.Colors.BLUE,
-        width=300,
-        text_align=ft.TextAlign.LEFT,
+        prefix_icon=ft.Icons.EDIT_NOTE_ROUNDED,
+        border_color=ft.Colors.OUTLINE,
+        focused_border_color=ft.Colors.BLUE_400,
+        width=320,
         on_submit=save_clicked,
         autofocus=True,
+        text_size=14,
         value=selected_ficha["title"] if selected_ficha else ""
     )
 
     # Botones
     btn_save = ft.ElevatedButton(
-        content=ft.Text(config.get_text("edit_card.buttons.update")),
-        width=140,
+        content=ft.Text(config.get_text("edit_card.buttons.update"), weight=ft.FontWeight.BOLD),
+        width=150,
+        height=45,
         color=ft.Colors.WHITE,
-        bgcolor=ft.Colors.BLUE,
+        bgcolor=ft.Colors.BLUE_400,
+        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
         on_click=save_clicked
     )
 
-    btn_cancel = ft.ElevatedButton(
-        content=ft.Text(config.get_text("edit_card.buttons.cancel")),
-        width=140,
-        color=ft.Colors.WHITE,
-        bgcolor=ft.Colors.RED,
+    btn_cancel = ft.TextButton(
+        content=ft.Text(config.get_text("edit_card.buttons.cancel"), color=ft.Colors.RED_400),
         on_click=cancel_clicked
     )
 
-    # Contenedor principal
     return ft.Container(
-        width=400,
-        height=300,
-        border=ft.border.all(2, ft.Colors.BLUE_200),
-        border_radius=15,
-        padding=ft.Padding.all(30),
         content=ft.Column(
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            spacing=20,
-            controls=[
-                ft.Text(
-                    config.get_text("edit_card.title"),
-                    size=24,
-                    weight=ft.FontWeight.BOLD
-                ),
-                ft.Divider(height=20, color=ft.Colors.TRANSPARENT),
-                card_name,
-                ft.Divider(height=20, color=ft.Colors.TRANSPARENT),
+            [
                 ft.Row(
+                    [
+                        ft.Icon(ft.Icons.EDIT_ROUNDED, color=ft.Colors.BLUE_400),
+                        ft.Text(config.get_text("edit_card.title"), size=20, weight=ft.FontWeight.BOLD),
+                    ],
+                    alignment=ft.MainAxisAlignment.CENTER,
+                    spacing=10,
+                ),
+                ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE)),
+                
+                ft.Container(height=10),
+                
+                ft.Text(
+                    "Actualiza el título de tu tarjeta.",
+                    size=14,
+                    color=ft.Colors.with_opacity(0.6, ft.Colors.ON_SURFACE),
+                    text_align=ft.TextAlign.CENTER,
+                ),
+                
+                ft.Container(height=10),
+                
+                card_name,
+                
+                ft.Container(height=20),
+                
+                ft.Row(
+                    [
+                        btn_cancel,
+                        btn_save,
+                    ],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                    controls=[btn_cancel, btn_save],
                 ),
             ],
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=10,
+        ),
+        width=400,
+        padding=40,
+        bgcolor=ft.Colors.SURFACE,
+        border_radius=20,
+        border=ft.border.all(1, ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE)),
+        shadow=ft.BoxShadow(
+            blur_radius=30,
+            color=ft.Colors.with_opacity(0.1, ft.Colors.BLACK),
+            offset=ft.Offset(0, 10),
         ),
         alignment=ft.Alignment.CENTER,
     )

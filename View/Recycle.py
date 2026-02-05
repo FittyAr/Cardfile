@@ -20,26 +20,56 @@ async def recycle_view(page: ft.Page):
                 Ficha.is_active == False
             ).all()
             
-            # Crear los controles antes de asignarlos
-            controls = [
-                ft.ListTile(
-                    leading=ft.Icon(ft.Icons.DELETE_OUTLINE),
-                    title=ft.Text(ficha.title),
-                    on_click=lambda e, f=ficha: asyncio.create_task(select_ficha(f))
-                ) for ficha in fichas
-            ]
+            # Crear los controles con diseño moderno similar a Card.py
+            controls = []
+            for ficha in fichas:
+                is_selected = selected_ficha and selected_ficha.id == ficha.id
+                
+                card_item = ft.Container(
+                    content=ft.Column(
+                        [
+                            ft.Text(
+                                ficha.title,
+                                size=14,
+                                weight=ft.FontWeight.W_600,
+                                color=ft.Colors.WHITE if is_selected else ft.Colors.ON_SURFACE,
+                            ),
+                            ft.Text(
+                                f"Eliminado: {ficha.updated_at.strftime('%d/%m/%Y')}" if ficha.updated_at else "Sin fecha",
+                                size=11,
+                                color=ft.Colors.with_opacity(0.8, ft.Colors.WHITE) if is_selected else ft.Colors.with_opacity(0.5, ft.Colors.ON_SURFACE),
+                            ),
+                        ],
+                        spacing=4,
+                    ),
+                    padding=ft.Padding.all(16),
+                    border_radius=10,
+                    bgcolor=ft.Colors.BLUE_400 if is_selected else ft.Colors.with_opacity(0.05, ft.Colors.ON_SURFACE),
+                    ink=True,
+                    on_click=lambda e, f=ficha: asyncio.create_task(select_and_reload(f)),
+                )
+                controls.append(card_item)
             
-            # Asignar los controles al ListView
             fichas_list.controls = controls
-            # Solo actualizar la página si el control ya está montado
-            try:
-                page.update()
-            except Exception:
-                pass  # El control aún no está en la página
+            if not fichas:
+                fichas_list.controls = [
+                    ft.Container(
+                        content=ft.Text("La papelera está vacía", size=14, color=ft.Colors.with_opacity(0.5, ft.Colors.ON_SURFACE)),
+                        padding=20,
+                        alignment=ft.alignment.center
+                    )
+                ]
+            
+            page.update()
         except Exception as e:
             print(f"Error cargando fichas inactivas: {str(e)}")
         finally:
             session.close()
+
+    async def select_and_reload(ficha):
+        """Selecciona una ficha y recarga la lista para mostrar el resalte"""
+        await select_ficha(ficha)
+        await load_inactive_fichas()
 
     async def select_ficha(ficha):
         """Maneja la selección de una ficha"""
@@ -230,94 +260,87 @@ async def recycle_view(page: ft.Page):
 
     # Lista de fichas
     fichas_list = ft.ListView(
-        expand=1,
+        expand=True,
         spacing=10,
-        padding=20,
-        height=300
+        padding=0,
     )
 
-    # Botones
-    btn_cancel = ft.ElevatedButton(
-        content=ft.Text(config.get_text("recycle.buttons.cancel")),
-        width=120,
-        color=ft.Colors.WHITE,
-        bgcolor=ft.Colors.BLUE,
+    # Botones modernos
+    btn_cancel = ft.TextButton(
+        content=ft.Text(config.get_text("recycle.buttons.cancel"), color=ft.Colors.ON_SURFACE),
         on_click=lambda e: asyncio.create_task(page.push_route("/Card"))
     )
 
     btn_restore = ft.ElevatedButton(
-        content=ft.Text(config.get_text("recycle.buttons.restore")),
-        width=120,
+        content=ft.Text(config.get_text("recycle.buttons.restore"), weight=ft.FontWeight.BOLD),
+        width=130,
+        height=40,
         color=ft.Colors.WHITE,
-        bgcolor=ft.Colors.GREEN,
+        bgcolor=ft.Colors.GREEN_400,
+        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=8)),
         on_click=restore_clicked,
         disabled=True
     )
 
-    btn_delete = ft.ElevatedButton(
-        content=ft.Text(config.get_text("recycle.buttons.delete")),
-        width=100,
-        color=ft.Colors.WHITE,
-        bgcolor=ft.Colors.RED,
+    btn_delete = ft.IconButton(
+        icon=ft.Icons.DELETE_FOREVER_OUTLINED,
+        icon_color=ft.Colors.RED_400,
+        tooltip=config.get_text("recycle.buttons.delete"),
         on_click=delete_clicked,
         disabled=True
     )
 
-    btn_empty_trash = ft.ElevatedButton(
-        content=ft.Text("Vaciar papelera"),
-        width=140,
-        color=ft.Colors.WHITE,
-        bgcolor=ft.Colors.ORANGE_700,
+    btn_empty_trash = ft.TextButton(
+        content=ft.Row([ft.Icon(ft.Icons.DELETE_SWEEP_OUTLINED, size=18), ft.Text("Vaciar papelera")]),
+        style=ft.ButtonStyle(color=ft.Colors.RED_400),
         on_click=empty_trash_clicked,
     )
 
     # Contenedor principal
     main_view = ft.Container(
-        width=400,
-        height=500,
-        bgcolor=ft.Colors.WHITE10,
-        border=ft.border.all(2, ft.Colors.BLUE_200),
-        border_radius=15,
-        padding=ft.Padding.all(30),
         content=ft.Column(
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            spacing=20,
-            controls=[
-                ft.Icon(ft.Icons.RECYCLING, size=50, color=ft.Colors.BLUE),
-                ft.Text(
-                    config.get_text("recycle.title"),
-                    size=28,
-                    weight=ft.FontWeight.BOLD
+            [
+                ft.Row(
+                    [
+                        ft.Row([
+                            ft.Icon(ft.Icons.RECYCLING_ROUNDED, color=ft.Colors.BLUE_400, size=28),
+                            ft.Text(config.get_text("recycle.title"), size=24, weight=ft.FontWeight.BOLD),
+                        ], spacing=10),
+                        btn_empty_trash,
+                    ],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                 ),
-                ft.Divider(height=20, color=ft.Colors.TRANSPARENT),
+                ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE)),
                 
-                # Lista de fichas inactivas
+                # Lista de fichas inactivas que expande
                 ft.Container(
                     content=fichas_list,
-                    border=ft.border.all(2, ft.Colors.BLUE_200),
-                    border_radius=10,
-                    padding=10,
-                    expand=True
+                    expand=True,
+                    padding=ft.Padding.symmetric(vertical=10),
                 ),
                 
-                ft.Divider(height=20, color=ft.Colors.TRANSPARENT),
+                ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE)),
                 
-                # Botón vaciar papelera
-                ft.Container(
-                    content=btn_empty_trash,
-                ),
-                
-                ft.Divider(height=10, color=ft.Colors.TRANSPARENT),
-                
-                # Contenedor para los botones individuales
+                # Footer con acciones
                 ft.Container(
                     content=ft.Row(
+                        [
+                            btn_cancel,
+                            ft.Row([btn_delete, btn_restore], spacing=10),
+                        ],
                         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                        controls=[btn_cancel, btn_restore, btn_delete],
                     ),
+                    padding=ft.Padding.only(top=10),
                 ),
             ],
+            spacing=10,
         ),
+        width=600, # Más ancho para mejor visualización
+        height=500,
+        bgcolor=ft.Colors.SURFACE,
+        border_radius=20,
+        border=ft.border.all(1, ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE)),
+        padding=30,
         alignment=ft.Alignment.CENTER,
     )
 
