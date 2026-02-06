@@ -5,12 +5,12 @@ block_cipher = None
 
 a = Analysis(
     ['main.py'],
-    pathex=[],
+    pathex=['src'],
     binaries=[],
     datas=[
         ('config.json', '.'),
         ('lang/*.json', 'lang'),
-        ('View/*.py', 'View'),
+        ('src/cardfile/view/*.py', 'cardfile/view'),
         ('assets/*', 'assets'),
     ],
     hiddenimports=[
