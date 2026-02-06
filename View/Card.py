@@ -250,28 +250,30 @@ async def card_view(page: ft.Page):
         
         for ficha in fichas:
             # Tarjeta individual con diseño moderno
+            title_text = ft.Text(
+                ficha.title,
+                size=14,
+                weight=ft.FontWeight.W_600,
+                color=theme_manager.text,
+                max_lines=1,
+                no_wrap=True,
+                overflow=ft.TextOverflow.ELLIPSIS,
+            )
+            date_text = ft.Text(
+                f"Actualizado: {ficha.updated_at.strftime('%d/%m/%Y')}" if ficha.updated_at else "Sin fecha",
+                size=11,
+                color=theme_manager.subtext,
+                max_lines=1,
+                no_wrap=True,
+                overflow=ft.TextOverflow.ELLIPSIS,
+            )
             card_item = ft.Container(
                 content=ft.Row(
                     [
                         ft.Column(
                             [
-                                ft.Text(
-                                    ficha.title,
-                                    size=14,
-                                    weight=ft.FontWeight.W_600,
-                                    color=theme_manager.text,
-                                    max_lines=1,
-                                    no_wrap=True,
-                                    overflow=ft.TextOverflow.ELLIPSIS,
-                                ),
-                                ft.Text(
-                                    f"Actualizado: {ficha.updated_at.strftime('%d/%m/%Y')}" if ficha.updated_at else "Sin fecha",
-                                    size=11,
-                                    color=theme_manager.subtext,
-                                    max_lines=1,
-                                    no_wrap=True,
-                                    overflow=ft.TextOverflow.ELLIPSIS,
-                                ),
+                                title_text,
+                                date_text,
                             ],
                             spacing=4,
                             expand=True,
@@ -285,6 +287,7 @@ async def card_view(page: ft.Page):
                 ink=True,
                 on_click=lambda e, f=ficha: asyncio.create_task(select_ficha(f)),
                 expand=True,
+                data=ficha.id,
             )
             cards_listview.controls.append(card_item)
         
@@ -314,15 +317,12 @@ async def card_view(page: ft.Page):
         on_preview_tab_click(None)
         
         # Resaltar tarjeta seleccionada
-        for i, control in enumerate(cards_listview.controls):
-            if i < len(state.fichas_list) and state.fichas_list[i].id == ficha.id:
-                control.bgcolor = theme_manager.primary
-                control.content.controls[0].color = ft.Colors.WHITE
-                control.content.controls[1].color = ft.Colors.with_opacity(0.8, ft.Colors.WHITE)
-            else:
-                control.bgcolor = ft.Colors.with_opacity(0.1, theme_manager.text)
-                control.content.controls[0].color = theme_manager.text
-                control.content.controls[1].color = theme_manager.subtext
+        for control in cards_listview.controls:
+            is_selected = control.data == ficha.id
+            control.bgcolor = theme_manager.primary if is_selected else ft.Colors.with_opacity(0.1, theme_manager.text)
+            column = control.content.controls[0]
+            column.controls[0].color = ft.Colors.WHITE if is_selected else theme_manager.text
+            column.controls[1].color = ft.Colors.with_opacity(0.8, ft.Colors.WHITE) if is_selected else theme_manager.subtext
         
         # Actualizar estado del editor
         update_editor_state()

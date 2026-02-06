@@ -95,11 +95,11 @@ async def edit_card_modal(page: ft.Page, on_close: Callable, on_success: Callabl
     # Botones
     btn_save = ft.ElevatedButton(
         content=ft.Text(config.get_text("edit_card.buttons.update"), weight=ft.FontWeight.BOLD),
-        width=150,
-        height=45,
+        width=130,
+        height=40,
         color=ft.Colors.WHITE,
         bgcolor=theme_manager.primary,
-        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
+        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=8)),
         on_click=save_clicked
     )
 
@@ -113,13 +113,13 @@ async def edit_card_modal(page: ft.Page, on_close: Callable, on_success: Callabl
             [
                 ft.Row(
                     [
-                        ft.Icon(ft.Icons.EDIT_ROUNDED, color=theme_manager.primary),
-                        ft.Text(config.get_text("edit_card.title"), size=20, weight=ft.FontWeight.BOLD, color=theme_manager.text),
+                        ft.Icon(ft.Icons.EDIT_ROUNDED, color=theme_manager.primary, size=28),
+                        ft.Text(config.get_text("edit_card.title"), size=24, weight=ft.FontWeight.BOLD, color=theme_manager.text),
                     ],
                     alignment=ft.MainAxisAlignment.CENTER,
                     spacing=10,
                 ),
-                ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, theme_manager.text)),
+                ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE)),
                 
                 ft.Container(height=10),
                 
@@ -134,21 +134,26 @@ async def edit_card_modal(page: ft.Page, on_close: Callable, on_success: Callabl
                 
                 card_name,
                 
-                ft.Container(height=20),
+                ft.Container(height=10),
                 
-                ft.Row(
-                    [
-                        btn_cancel,
-                        btn_save,
-                    ],
-                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                ft.Container(
+                    content=ft.Row(
+                        [
+                            btn_cancel,
+                            btn_save,
+                        ],
+                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                    ),
+                    padding=ft.Padding.only(top=10),
                 ),
             ],
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            tight=True,
             spacing=10,
         ),
         width=400,
-        padding=40,
+        height=320,
+        padding=30,
         bgcolor=theme_manager.card_bg,
         border_radius=20,
         border=ft.border.all(1, ft.Colors.with_opacity(0.1, theme_manager.text)),
