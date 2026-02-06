@@ -12,6 +12,20 @@ pip install -r requirements.txt
 pip install pyinstaller
 ```
 
+### Mantenimiento de dependencias
+
+Actualizar dependencias:
+
+```bash
+pip install --upgrade -r requirements.txt
+```
+
+Regenerar requirements.txt:
+
+```bash
+pip freeze > requirements.txt
+```
+
 2. Compilar:
 
 ```bash
