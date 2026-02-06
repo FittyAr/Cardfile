@@ -34,21 +34,21 @@ async def recycle_modal(page: ft.Page, on_close: Callable, on_success: Callable)
                         [
                             ft.Text(
                                 ficha.title,
-                                size=14,
+                                size=theme_manager.text_size_md,
                                 weight=ft.FontWeight.W_600,
                                 color=ft.Colors.WHITE if is_selected else theme_manager.text,
                             ),
                             ft.Text(
                                 f"Eliminado: {ficha.updated_at.strftime('%d/%m/%Y')}" if ficha.updated_at else "Sin fecha",
-                                size=11,
+                                size=theme_manager.text_size_sm,
                                 color=ft.Colors.with_opacity(0.8, ft.Colors.WHITE) if is_selected else theme_manager.subtext,
                             ),
                         ],
-                        spacing=4,
+                        spacing=theme_manager.space_4,
                     ),
-                    padding=ft.Padding.all(16),
-                    border_radius=10,
-                    bgcolor=theme_manager.primary if is_selected else ft.Colors.with_opacity(0.1, theme_manager.text),
+                    padding=ft.Padding.all(theme_manager.space_16),
+                    border_radius=theme_manager.radius_md,
+                    bgcolor=theme_manager.primary if is_selected else theme_manager.selection_bg,
                     ink=True,
                     on_click=lambda e, f=ficha: asyncio.create_task(select_and_reload(f)),
                 )
@@ -58,8 +58,8 @@ async def recycle_modal(page: ft.Page, on_close: Callable, on_success: Callable)
             if not fichas:
                 fichas_list.controls = [
                     ft.Container(
-                        content=ft.Text("La papelera está vacía", size=14, color=theme_manager.subtext),
-                        padding=20,
+                        content=ft.Text("La papelera está vacía", size=theme_manager.text_size_md, color=theme_manager.subtext),
+                        padding=theme_manager.space_20,
                         alignment=ft.Alignment.CENTER
                     )
                 ]
@@ -238,7 +238,7 @@ async def recycle_modal(page: ft.Page, on_close: Callable, on_success: Callable)
     async def cancel_clicked_modal(e):
         await on_close()
 
-    fichas_list = ft.ListView(expand=True, spacing=10, padding=0)
+    fichas_list = ft.ListView(expand=True, spacing=theme_manager.space_12, padding=0)
 
     btn_cancel = ft.TextButton(
         content=ft.Text(config.get_text("recycle.buttons.cancel"), color=theme_manager.text),
@@ -247,8 +247,8 @@ async def recycle_modal(page: ft.Page, on_close: Callable, on_success: Callable)
 
     btn_restore = ft.ElevatedButton(
         content=ft.Text(config.get_text("recycle.buttons.restore"), weight=ft.FontWeight.BOLD),
-        width=130, height=40, color=ft.Colors.WHITE, bgcolor=ft.Colors.GREEN_400,
-        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=8)),
+        width=theme_manager.button_width, height=theme_manager.button_height, color=ft.Colors.WHITE, bgcolor=ft.Colors.GREEN_400,
+        style=theme_manager.primary_button_style,
         on_click=restore_clicked, disabled=True
     )
 
@@ -258,7 +258,7 @@ async def recycle_modal(page: ft.Page, on_close: Callable, on_success: Callable)
     )
 
     btn_empty_trash = ft.TextButton(
-        content=ft.Row([ft.Icon(ft.Icons.DELETE_SWEEP_OUTLINED, size=18), ft.Text("Vaciar papelera")]),
+        content=ft.Row([ft.Icon(ft.Icons.DELETE_SWEEP_OUTLINED, size=theme_manager.icon_size_md), ft.Text("Vaciar papelera")]),
         style=ft.ButtonStyle(color=ft.Colors.RED_400), on_click=empty_trash_clicked,
     )
 
@@ -268,25 +268,25 @@ async def recycle_modal(page: ft.Page, on_close: Callable, on_success: Callable)
                 ft.Row(
                     [
                         ft.Row([
-                            ft.Icon(ft.Icons.RECYCLING_ROUNDED, color=theme_manager.primary, size=28),
-                            ft.Text(config.get_text("recycle.title"), size=24, weight=ft.FontWeight.BOLD, color=theme_manager.text),
-                        ], spacing=10),
+                            ft.Icon(ft.Icons.RECYCLING_ROUNDED, color=theme_manager.primary, size=theme_manager.icon_size_lg),
+                            ft.Text(config.get_text("recycle.title"), size=theme_manager.text_size_xxl, weight=ft.FontWeight.BOLD, color=theme_manager.text),
+                        ], spacing=theme_manager.space_12),
                         btn_empty_trash,
                     ],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                 ),
-                ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE)),
-                ft.Container(content=fichas_list, expand=True, padding=ft.Padding.symmetric(vertical=10)),
-                ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE)),
+                ft.Divider(height=1, color=theme_manager.divider_color),
+                ft.Container(content=fichas_list, expand=True, padding=ft.Padding.symmetric(vertical=theme_manager.space_12)),
+                ft.Divider(height=1, color=theme_manager.divider_color),
                 ft.Container(
-                    content=ft.Row([btn_cancel, ft.Row([btn_delete, btn_restore], spacing=10)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-                    padding=ft.Padding.only(top=10),
+                    content=ft.Row([btn_cancel, ft.Row([btn_delete, btn_restore], spacing=theme_manager.space_12)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+                    padding=ft.Padding.only(top=theme_manager.space_12),
                 ),
             ],
-            spacing=10,
+            spacing=theme_manager.space_12,
         ),
-        width=600, height=500, bgcolor=theme_manager.card_bg, border_radius=20,
-        border=ft.border.all(1, ft.Colors.with_opacity(0.1, theme_manager.text)), padding=30, alignment=ft.Alignment.CENTER,
+        width=theme_manager.recycle_width, height=theme_manager.recycle_height, bgcolor=theme_manager.card_bg, border_radius=theme_manager.radius_lg,
+        border=theme_manager.card_border, padding=theme_manager.modal_padding, alignment=ft.Alignment.CENTER,
         on_click=lambda _: None,
     )
 

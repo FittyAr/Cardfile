@@ -81,25 +81,25 @@ async def edit_card_modal(page: ft.Page, on_close: Callable, on_success: Callabl
     card_name = ft.TextField(
         label=config.get_text("edit_card.name.label"),
         prefix_icon=ft.Icons.EDIT_NOTE_ROUNDED,
-        border_color=ft.Colors.with_opacity(0.1, theme_manager.text),
+        border_color=theme_manager.border_color,
         focused_border_color=theme_manager.primary,
-        width=320,
+        width=theme_manager.input_width,
         on_submit=save_clicked,
         autofocus=True,
-        text_size=14,
+        text_size=theme_manager.text_size_md,
         value=selected_ficha["title"] if selected_ficha else "",
         color=theme_manager.text,
-        label_style=ft.TextStyle(color=theme_manager.subtext),
+        label_style=theme_manager.text_style_label,
     )
 
     # Botones
     btn_save = ft.ElevatedButton(
         content=ft.Text(config.get_text("edit_card.buttons.update"), weight=ft.FontWeight.BOLD),
-        width=130,
-        height=40,
+        width=theme_manager.button_width,
+        height=theme_manager.button_height,
         color=ft.Colors.WHITE,
         bgcolor=theme_manager.primary,
-        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=8)),
+        style=theme_manager.primary_button_style,
         on_click=save_clicked
     )
 
@@ -113,28 +113,28 @@ async def edit_card_modal(page: ft.Page, on_close: Callable, on_success: Callabl
             [
                 ft.Row(
                     [
-                        ft.Icon(ft.Icons.EDIT_ROUNDED, color=theme_manager.primary, size=28),
-                        ft.Text(config.get_text("edit_card.title"), size=24, weight=ft.FontWeight.BOLD, color=theme_manager.text),
+                        ft.Icon(ft.Icons.EDIT_ROUNDED, color=theme_manager.primary, size=theme_manager.icon_size_lg),
+                        ft.Text(config.get_text("edit_card.title"), size=theme_manager.text_size_xxl, weight=ft.FontWeight.BOLD, color=theme_manager.text),
                     ],
                     alignment=ft.MainAxisAlignment.CENTER,
-                    spacing=10,
+                    spacing=theme_manager.space_12,
                 ),
-                ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, ft.Colors.ON_SURFACE)),
+                ft.Divider(height=1, color=theme_manager.divider_color),
                 
-                ft.Container(height=10),
+                ft.Container(height=theme_manager.space_12),
                 
                 ft.Text(
                     "Cambia el nombre de tu tarjeta.",
-                    size=14,
+                    size=theme_manager.text_size_md,
                     color=theme_manager.subtext,
                     text_align=ft.TextAlign.CENTER,
                 ),
                 
-                ft.Container(height=10),
+                ft.Container(height=theme_manager.space_12),
                 
                 card_name,
                 
-                ft.Container(height=10),
+                ft.Container(height=theme_manager.space_12),
                 
                 ft.Container(
                     content=ft.Row(
@@ -144,24 +144,20 @@ async def edit_card_modal(page: ft.Page, on_close: Callable, on_success: Callabl
                         ],
                         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                     ),
-                    padding=ft.Padding.only(top=10),
+                    padding=ft.Padding.only(top=theme_manager.space_12),
                 ),
             ],
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             tight=True,
-            spacing=10,
+            spacing=theme_manager.space_12,
         ),
-        width=400,
-        height=320,
-        padding=30,
+        width=theme_manager.modal_width,
+        height=theme_manager.modal_height,
+        padding=theme_manager.modal_padding,
         bgcolor=theme_manager.card_bg,
-        border_radius=20,
-        border=ft.border.all(1, ft.Colors.with_opacity(0.1, theme_manager.text)),
-        shadow=ft.BoxShadow(
-            blur_radius=30,
-            color=ft.Colors.with_opacity(0.1, ft.Colors.BLACK),
-            offset=ft.Offset(0, 10),
-        ),
+        border_radius=theme_manager.radius_lg,
+        border=theme_manager.card_border,
+        shadow=theme_manager.card_shadow,
         alignment=ft.Alignment.CENTER,
         on_click=lambda _: None,
     )

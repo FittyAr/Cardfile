@@ -76,8 +76,8 @@ async def card_view(page: ft.Page):
         update_editor_state()
         editor_btn.bgcolor = theme_manager.primary
         editor_btn.content.color = ft.Colors.WHITE
-        preview_btn.bgcolor = ft.Colors.with_opacity(0.05, ft.Colors.ON_SURFACE)
-        preview_btn.content.color = ft.Colors.ON_SURFACE
+        preview_btn.bgcolor = theme_manager.subtle_bg
+        preview_btn.content.color = theme_manager.text
         page.update()
 
     def on_preview_tab_click(e):
@@ -87,8 +87,8 @@ async def card_view(page: ft.Page):
         markdown_preview.value = markdown_editor.value
         preview_btn.bgcolor = theme_manager.primary
         preview_btn.content.color = ft.Colors.WHITE
-        editor_btn.bgcolor = ft.Colors.with_opacity(0.05, ft.Colors.ON_SURFACE)
-        editor_btn.content.color = ft.Colors.ON_SURFACE
+        editor_btn.bgcolor = theme_manager.subtle_bg
+        editor_btn.content.color = theme_manager.text
         page.update()
 
     async def edit_card_handler(e):
@@ -143,7 +143,7 @@ async def card_view(page: ft.Page):
     
     selected_card_title = ft.Text(
         "Selecciona una tarjeta",
-        size=24, weight=ft.FontWeight.BOLD, color=theme_manager.text
+        size=theme_manager.text_size_xxl, weight=ft.FontWeight.BOLD, color=theme_manager.text
     )
 
     tabs_row, editor_btn, preview_btn = create_custom_tabs(
@@ -160,15 +160,15 @@ async def card_view(page: ft.Page):
     editor_container = ft.Container(content=markdown_editor, expand=True, visible=False)
     preview_container = ft.Container(
         content=ft.Column([markdown_preview], scroll=ft.ScrollMode.AUTO, expand=True),
-        padding=ft.Padding.all(20), expand=True, visible=True
+        padding=ft.Padding.all(theme_manager.space_20), expand=True, visible=True
     )
     on_preview_tab_click(None)
     
     # --- Overlay Modal con Blur ---
     modal_overlay = ft.Container(
         content=None,
-        bgcolor=ft.Colors.with_opacity(0.2, ft.Colors.BLACK),
-        blur=ft.Blur(10, 10),
+        bgcolor=theme_manager.modal_overlay_bg,
+        blur=ft.Blur(theme_manager.modal_overlay_blur, theme_manager.modal_overlay_blur),
         visible=False,
         expand=True,
         alignment=ft.Alignment.CENTER,
@@ -252,7 +252,7 @@ async def card_view(page: ft.Page):
             # Tarjeta individual con diseño moderno
             title_text = ft.Text(
                 ficha.title,
-                size=14,
+                size=theme_manager.text_size_md,
                 weight=ft.FontWeight.W_600,
                 color=theme_manager.text,
                 max_lines=1,
@@ -261,7 +261,7 @@ async def card_view(page: ft.Page):
             )
             date_text = ft.Text(
                 f"Actualizado: {ficha.updated_at.strftime('%d/%m/%Y')}" if ficha.updated_at else "Sin fecha",
-                size=11,
+                size=theme_manager.text_size_sm,
                 color=theme_manager.subtext,
                 max_lines=1,
                 no_wrap=True,
@@ -275,15 +275,15 @@ async def card_view(page: ft.Page):
                                 title_text,
                                 date_text,
                             ],
-                            spacing=4,
+                            spacing=theme_manager.space_4,
                             expand=True,
                         )
                     ],
                     expand=True,
                 ),
-                padding=ft.Padding.all(16),
-                border_radius=10,
-                bgcolor=ft.Colors.with_opacity(0.1, theme_manager.text),
+                padding=ft.Padding.all(theme_manager.space_16),
+                border_radius=theme_manager.radius_md,
+                bgcolor=theme_manager.selection_bg,
                 ink=True,
                 on_click=lambda e, f=ficha: asyncio.create_task(select_ficha(f)),
                 expand=True,
@@ -319,10 +319,10 @@ async def card_view(page: ft.Page):
         # Resaltar tarjeta seleccionada
         for control in cards_listview.controls:
             is_selected = control.data == ficha.id
-            control.bgcolor = theme_manager.primary if is_selected else ft.Colors.with_opacity(0.1, theme_manager.text)
+            control.bgcolor = theme_manager.primary if is_selected else theme_manager.selection_bg
             column = control.content.controls[0]
-            column.controls[0].color = ft.Colors.WHITE if is_selected else theme_manager.text
-            column.controls[1].color = ft.Colors.with_opacity(0.8, ft.Colors.WHITE) if is_selected else theme_manager.subtext
+            column.controls[0].color = theme_manager.selected_text if is_selected else theme_manager.text
+            column.controls[1].color = theme_manager.selected_subtext if is_selected else theme_manager.subtext
         
         # Actualizar estado del editor
         update_editor_state()
@@ -434,18 +434,18 @@ async def card_view(page: ft.Page):
                     icon_color=color_palette["primary"],
                     tooltip=color_palette["name"],
                     on_click=lambda _, n=name: asyncio.create_task(change_theme_handler(n)),
-                    icon_size=20,
+                    icon_size=theme_manager.icon_size_md,
                     style=ft.ButtonStyle(
                         padding=0,
                     )
                 ),
                 border=ft.border.all(2, theme_manager.primary) if theme_manager.current_theme_name == name else None,
-                border_radius=50,
-                padding=2,
+                border_radius=theme_manager.radius_round,
+                padding=theme_manager.space_4,
             )
             for name, color_palette in ThemeColors.THEMES.items()
         ],
-        spacing=5,
+        spacing=theme_manager.space_8,
         alignment=ft.MainAxisAlignment.CENTER,
     )
 
@@ -462,17 +462,17 @@ async def card_view(page: ft.Page):
     # Por simplicidad y minimalismo, lo añadiremos al final del sidebar_content
     sidebar.content.controls.insert(-1, ft.Container(
         content=ft.Column([
-            ft.Text("Tema", size=12, weight=ft.FontWeight.BOLD, color=theme_manager.subtext),
+            ft.Text("Tema", size=theme_manager.text_size_sm, weight=ft.FontWeight.BOLD, color=theme_manager.subtext),
             theme_selector,
-        ], spacing=5, horizontal_alignment=ft.CrossAxisAlignment.CENTER),
-        padding=ft.Padding.symmetric(horizontal=20, vertical=10)
+        ], spacing=theme_manager.space_8, horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+        padding=ft.Padding.symmetric(horizontal=theme_manager.space_20, vertical=theme_manager.space_12)
     ))
     
     main_panel = ft.Container(
         content=ft.Column(
             [
                 header_container,
-                ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, theme_manager.text)),
+                ft.Divider(height=1, color=theme_manager.divider_color),
                 ft.Container(
                     content=ft.Column(
                         [

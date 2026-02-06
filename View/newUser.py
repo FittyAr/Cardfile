@@ -32,23 +32,23 @@ async def newUser_view(page: ft.Page):
     nombre = ft.TextField(
         label=t['fields']['name']['label'],
         prefix_icon=ft.Icons.PERSON_OUTLINE,
-        border_color=ft.Colors.with_opacity(0.1, theme_manager.text),
+        border_color=theme_manager.border_color,
         focused_border_color=theme_manager.primary,
-        width=320,
-        text_size=14,
+        width=theme_manager.input_width,
+        text_size=theme_manager.text_size_md,
         color=theme_manager.text,
-        label_style=ft.TextStyle(color=theme_manager.subtext),
+        label_style=theme_manager.text_style_label,
     )
     
     email = ft.TextField(
         label=t['fields']['email']['label'],
         prefix_icon=ft.Icons.EMAIL_OUTLINED,
-        border_color=ft.Colors.with_opacity(0.1, theme_manager.text),
+        border_color=theme_manager.border_color,
         focused_border_color=theme_manager.primary,
-        width=320,
-        text_size=14,
+        width=theme_manager.input_width,
+        text_size=theme_manager.text_size_md,
         color=theme_manager.text,
-        label_style=ft.TextStyle(color=theme_manager.subtext),
+        label_style=theme_manager.text_style_label,
     )
     
     password = ft.TextField(
@@ -56,12 +56,12 @@ async def newUser_view(page: ft.Page):
         password=True,
         can_reveal_password=True,
         prefix_icon=ft.Icons.LOCK_OUTLINE,
-        border_color=ft.Colors.with_opacity(0.1, theme_manager.text),
+        border_color=theme_manager.border_color,
         focused_border_color=theme_manager.primary,
-        width=320,
-        text_size=14,
+        width=theme_manager.input_width,
+        text_size=theme_manager.text_size_md,
         color=theme_manager.text,
-        label_style=ft.TextStyle(color=theme_manager.subtext),
+        label_style=theme_manager.text_style_label,
     )
     
     confirm_password = ft.TextField(
@@ -69,12 +69,12 @@ async def newUser_view(page: ft.Page):
         password=True,
         can_reveal_password=True,
         prefix_icon=ft.Icons.LOCK_RESET_ROUNDED,
-        border_color=ft.Colors.with_opacity(0.1, theme_manager.text),
+        border_color=theme_manager.border_color,
         focused_border_color=theme_manager.primary,
-        width=320,
-        text_size=14,
+        width=theme_manager.input_width,
+        text_size=theme_manager.text_size_md,
         color=theme_manager.text,
-        label_style=ft.TextStyle(color=theme_manager.subtext),
+        label_style=theme_manager.text_style_label,
     )
 
     def hash_password(password: str) -> str:
@@ -166,11 +166,11 @@ async def newUser_view(page: ft.Page):
     # Botones
     btn_save = ft.ElevatedButton(
         content=ft.Text(t['buttons']['save'], weight=ft.FontWeight.BOLD),
-        width=150,
-        height=45,
+        width=theme_manager.button_width_lg,
+        height=theme_manager.button_height_lg,
         color=ft.Colors.WHITE,
         bgcolor=theme_manager.primary,
-        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
+        style=theme_manager.primary_button_style,
         on_click=save_clicked
     )
 
@@ -185,23 +185,23 @@ async def newUser_view(page: ft.Page):
             [
                 ft.Row(
                     [
-                        ft.Text("CardFile", size=20, weight=ft.FontWeight.BOLD, color=theme_manager.primary),
+                        ft.Text("CardFile", size=theme_manager.text_size_xl, weight=ft.FontWeight.BOLD, color=theme_manager.primary),
                     ],
                     alignment=ft.MainAxisAlignment.CENTER,
                 ),
-                ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, theme_manager.text)),
+                ft.Divider(height=1, color=theme_manager.divider_color),
                 
                 ft.Container(
                     content=ft.Column(
                         [
-                            ft.Icon(ft.Icons.PERSON_ADD_ROUNDED, size=64, color=theme_manager.primary),
-                            ft.Text(t['title'], size=28, weight=ft.FontWeight.BOLD, color=theme_manager.text),
-                            ft.Text("Crea una cuenta para empezar", size=14, color=theme_manager.subtext),
+                            ft.Icon(ft.Icons.PERSON_ADD_ROUNDED, size=theme_manager.icon_size_xl, color=theme_manager.primary),
+                            ft.Text(t['title'], size=theme_manager.text_size_3xl, weight=ft.FontWeight.BOLD, color=theme_manager.text),
+                            ft.Text("Crea una cuenta para empezar", size=theme_manager.text_size_md, color=theme_manager.subtext),
                         ],
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                        spacing=10,
+                        spacing=theme_manager.space_12,
                     ),
-                    padding=ft.Padding.symmetric(vertical=10),
+                    padding=ft.Padding.symmetric(vertical=theme_manager.space_12),
                 ),
                 
                 ft.Column(
@@ -211,11 +211,11 @@ async def newUser_view(page: ft.Page):
                         password,
                         confirm_password,
                     ],
-                    spacing=15,
+                    spacing=theme_manager.space_16,
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 ),
                 
-                ft.Container(height=10),
+                ft.Container(height=theme_manager.space_12),
                 
                 btn_save,
                 
@@ -231,17 +231,13 @@ async def newUser_view(page: ft.Page):
                 ),
             ],
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            spacing=10,
+            spacing=theme_manager.space_12,
         ),
-        width=400,
-        padding=40,
+        width=theme_manager.auth_card_width,
+        padding=theme_manager.auth_card_padding,
         bgcolor=theme_manager.card_bg,
-        border_radius=20,
-        border=ft.border.all(1, ft.Colors.with_opacity(0.1, theme_manager.text)),
-        shadow=ft.BoxShadow(
-            blur_radius=30,
-            color=ft.Colors.with_opacity(0.1, ft.Colors.BLACK),
-            offset=ft.Offset(0, 10),
-        ),
+        border_radius=theme_manager.radius_lg,
+        border=theme_manager.card_border,
+        shadow=theme_manager.card_shadow,
         alignment=ft.Alignment.CENTER,
     ) 

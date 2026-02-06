@@ -77,10 +77,10 @@ def create_markdown_editor(
         border_color=ft.Colors.TRANSPARENT,
         focused_border_color=ft.Colors.TRANSPARENT,
         on_change=on_change,
-        text_size=15,
+        text_size=theme_manager.text_size_md,
         color=theme_manager.text,
         cursor_color=theme_manager.primary,
-        selection_color=ft.Colors.with_opacity(0.3, theme_manager.primary),
+        selection_color=ft.Colors.with_opacity(theme_manager.selection_opacity, theme_manager.primary),
     )
 
 
@@ -188,91 +188,91 @@ def create_markdown_toolbar(
         ft.IconButton(
             icon=ft.Icons.FORMAT_BOLD,
             tooltip="Negrita",
-            icon_size=18,
+            icon_size=theme_manager.icon_size_md,
             on_click=lambda e: _wrap_selection("**")
         ),
         ft.IconButton(
             icon=ft.Icons.FORMAT_ITALIC,
             tooltip="Cursiva",
-            icon_size=18,
+            icon_size=theme_manager.icon_size_md,
             on_click=lambda e: _wrap_selection("*")
         ),
         ft.IconButton(
             icon=ft.Icons.STRIKETHROUGH_S,
             tooltip="Tachado",
-            icon_size=18,
+            icon_size=theme_manager.icon_size_md,
             on_click=lambda e: _wrap_selection("~~")
         ),
         ft.IconButton(
             icon=ft.Icons.CODE,
             tooltip="Código",
-            icon_size=18,
+            icon_size=theme_manager.icon_size_md,
             on_click=lambda e: _wrap_selection("`"),
             icon_color=theme_manager.text,
         ),
-        ft.Container(width=1, height=20, bgcolor=ft.Colors.with_opacity(0.2, theme_manager.text)),
+        ft.Container(width=theme_manager.space_1, height=theme_manager.space_20, bgcolor=theme_manager.toolbar_divider_color),
         ft.IconButton(
             icon=ft.Icons.TITLE,
             tooltip="H1",
-            icon_size=18,
+            icon_size=theme_manager.icon_size_md,
             on_click=lambda e: _block_format("# ")
         ),
         ft.IconButton(
             icon=ft.Icons.SUBTITLES,
             tooltip="H2",
-            icon_size=18,
+            icon_size=theme_manager.icon_size_md,
             on_click=lambda e: _block_format("## ")
         ),
         ft.IconButton(
             icon=ft.Icons.TEXT_FIELDS,
             tooltip="H3",
-            icon_size=18,
+            icon_size=theme_manager.icon_size_md,
             on_click=lambda e: _block_format("### "),
             icon_color=theme_manager.text,
         ),
-        ft.Container(width=1, height=20, bgcolor=ft.Colors.with_opacity(0.2, theme_manager.text)),
+        ft.Container(width=theme_manager.space_1, height=theme_manager.space_20, bgcolor=theme_manager.toolbar_divider_color),
         ft.IconButton(
             icon=ft.Icons.FORMAT_LIST_BULLETED,
             tooltip="Lista",
-            icon_size=18,
+            icon_size=theme_manager.icon_size_md,
             on_click=lambda e: _block_format("- ")
         ),
         ft.IconButton(
             icon=ft.Icons.FORMAT_LIST_NUMBERED,
             tooltip="Lista Nº",
-            icon_size=18,
+            icon_size=theme_manager.icon_size_md,
             on_click=lambda e: _block_format("1. ")
         ),
         ft.IconButton(
             icon=ft.Icons.FORMAT_QUOTE,
             tooltip="Cita",
-            icon_size=18,
+            icon_size=theme_manager.icon_size_md,
             on_click=lambda e: _block_format("> "),
             icon_color=theme_manager.text,
         ),
-        ft.Container(width=1, height=20, bgcolor=ft.Colors.with_opacity(0.2, theme_manager.text)),
+        ft.Container(width=theme_manager.space_1, height=theme_manager.space_20, bgcolor=theme_manager.toolbar_divider_color),
         ft.IconButton(
             icon=ft.Icons.LINK,
             tooltip="Enlace",
-            icon_size=18,
+            icon_size=theme_manager.icon_size_md,
             on_click=lambda e: _insert_text("[texto](https://)")
         ),
         ft.IconButton(
             icon=ft.Icons.IMAGE,
             tooltip="Imagen",
-            icon_size=18,
+            icon_size=theme_manager.icon_size_md,
             on_click=lambda e: _insert_text("![alt](https://)")
         ),
         ft.IconButton(
             icon=ft.Icons.TABLE_CHART,
             tooltip="Tabla",
-            icon_size=18,
+            icon_size=theme_manager.icon_size_md,
             on_click=lambda e: _insert_text("\n| Col 1 | Col 2 |\n|-------|-------|\n|       |       |\n")
         ),
         ft.IconButton(
             icon=ft.Icons.CHECK_BOX,
             tooltip="Checklist",
-            icon_size=18,
+            icon_size=theme_manager.icon_size_md,
             on_click=lambda e: _insert_text("- [ ] tarea")
         ),
     ]
@@ -282,10 +282,10 @@ def create_markdown_toolbar(
             toolbar_buttons,
             wrap=True,
             alignment=ft.MainAxisAlignment.START,
-            spacing=4,
+            spacing=theme_manager.space_4,
         ),
-        padding=ft.Padding.symmetric(horizontal=12, vertical=8),
-        bgcolor=ft.Colors.with_opacity(0.05, theme_manager.text),
-        border_radius=8,
+        padding=ft.Padding.symmetric(horizontal=theme_manager.space_12, vertical=theme_manager.space_8),
+        bgcolor=theme_manager.subtle_bg,
+        border_radius=theme_manager.radius_sm,
         visible=True,
     )

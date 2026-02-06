@@ -36,11 +36,11 @@ def create_search_field(on_change: Callable) -> ft.TextField:
         hint_text="Buscar tarjetas...",
         prefix_icon=ft.Icons.SEARCH,
         focused_border_color=theme_manager.primary,
-        border_color=ft.Colors.with_opacity(0.1, theme_manager.text),
+        border_color=theme_manager.border_color,
         on_change=on_change,
-        text_size=14,
+        text_size=theme_manager.text_size_md,
         color=theme_manager.text,
-        hint_style=ft.TextStyle(color=theme_manager.subtext),
+        hint_style=theme_manager.text_style_label,
     )
 
 
@@ -72,30 +72,30 @@ def create_sidebar(
                 ft.Container(
                     content=ft.Row(
                         [
-                            ft.Icon(ft.Icons.FOLDER, size=24, color=theme_manager.primary),
+                            ft.Icon(ft.Icons.FOLDER, size=theme_manager.icon_size_md, color=theme_manager.primary),
                             ft.Text(
                                 "Mis Tarjetas",
-                                size=18,
+                                size=theme_manager.text_size_lg,
                                 weight=ft.FontWeight.BOLD,
                                 color=theme_manager.text,
                             ),
                         ],
-                        spacing=12,
+                        spacing=theme_manager.space_12,
                     ),
-                    padding=ft.Padding.all(20),
+                    padding=ft.Padding.all(theme_manager.space_20),
                 ),
-                ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, theme_manager.text)),
+                ft.Divider(height=1, color=theme_manager.divider_color),
                 
                 # Búsqueda
                 ft.Container(
                     content=search_field,
-                    padding=ft.Padding.symmetric(horizontal=20, vertical=10),
+                    padding=ft.Padding.symmetric(horizontal=theme_manager.space_20, vertical=theme_manager.space_12),
                 ),
                 
                 # Lista de tarjetas
                 ft.Container(
                     content=cards_listview,
-                    padding=ft.Padding.symmetric(horizontal=20),
+                    padding=ft.Padding.symmetric(horizontal=theme_manager.space_20),
                     expand=True,
                 ),
                 
@@ -103,10 +103,10 @@ def create_sidebar(
                 ft.Container(
                     content=ft.Column(
                         [
-                            ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, theme_manager.text)),
+                            ft.Divider(height=1, color=theme_manager.divider_color),
                             ft.Container(
                                 content=card_counter,
-                                padding=ft.Padding.symmetric(horizontal=20, vertical=10),
+                                padding=ft.Padding.symmetric(horizontal=theme_manager.space_20, vertical=theme_manager.space_12),
                             ),
                             ft.Container(
                                 content=ft.Row(
@@ -116,9 +116,7 @@ def create_sidebar(
                                             icon=ft.Icons.ADD,
                                             on_click=new_card_callback,
                                             expand=True,
-                                            style=ft.ButtonStyle(
-                                                shape=ft.RoundedRectangleBorder(radius=10),
-                                            )
+                                            style=theme_manager.primary_button_style
                                         ),
                                         ft.IconButton(
                                             icon=ft.Icons.DELETE_OUTLINE,
@@ -132,9 +130,9 @@ def create_sidebar(
                                             on_click=logout_callback,
                                         ),
                                     ],
-                                    spacing=8,
+                                    spacing=theme_manager.space_8,
                                 ),
-                                padding=ft.Padding.symmetric(horizontal=20, vertical=10),
+                                padding=ft.Padding.symmetric(horizontal=theme_manager.space_20, vertical=theme_manager.space_12),
                             ),
                         ],
                         spacing=0,
@@ -144,9 +142,9 @@ def create_sidebar(
             spacing=0,
             expand=True,
         ),
-        width=320,
+        width=theme_manager.sidebar_width,
         bgcolor=theme_manager.sidebar_bg,
-        border=ft.border.only(right=ft.BorderSide(1, ft.Colors.with_opacity(0.1, theme_manager.text))),
+        border=theme_manager.sidebar_border,
     )
 
 
@@ -180,12 +178,12 @@ def create_card_header(
     header_container = ft.Container(
         content=ft.Row(
             [
-                ft.Row([selected_card_title, save_indicator], spacing=10),
-                ft.Row([edit_button, delete_button], spacing=4),
+                ft.Row([selected_card_title, save_indicator], spacing=theme_manager.space_12),
+                ft.Row([edit_button, delete_button], spacing=theme_manager.space_4),
             ],
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
         ),
-        padding=ft.Padding.all(20),
+        padding=ft.Padding.all(theme_manager.space_20),
     )
     
     return header_container, edit_button, delete_button
@@ -206,26 +204,26 @@ def create_custom_tabs(
         Tupla con (tabs_row, editor_btn, preview_btn)
     """
     editor_btn = ft.Container(
-        content=ft.Text("✏️ Editor", size=14, weight=ft.FontWeight.W_600, color=ft.Colors.WHITE),
-        padding=ft.Padding.symmetric(horizontal=20, vertical=12),
-        border_radius=ft.border_radius.only(top_left=8, top_right=8),
+        content=ft.Text("✏️ Editor", size=theme_manager.text_size_md, weight=ft.FontWeight.W_600, color=ft.Colors.WHITE),
+        padding=ft.Padding.symmetric(horizontal=theme_manager.space_20, vertical=theme_manager.space_12),
+        border_radius=theme_manager.tab_radius,
         bgcolor=theme_manager.primary,
         ink=True,
         on_click=on_editor_click,
     )
     
     preview_btn = ft.Container(
-        content=ft.Text("👁️ Lector", size=14, weight=ft.FontWeight.W_600, color=theme_manager.text),
-        padding=ft.Padding.symmetric(horizontal=20, vertical=12),
-        border_radius=ft.border_radius.only(top_left=8, top_right=8),
-        bgcolor=ft.Colors.with_opacity(0.05, theme_manager.text),
+        content=ft.Text("👁️ Lector", size=theme_manager.text_size_md, weight=ft.FontWeight.W_600, color=theme_manager.text),
+        padding=ft.Padding.symmetric(horizontal=theme_manager.space_20, vertical=theme_manager.space_12),
+        border_radius=theme_manager.tab_radius,
+        bgcolor=theme_manager.subtle_bg,
         ink=True,
         on_click=on_preview_click,
     )
     
     tabs_row = ft.Row(
         [editor_btn, preview_btn],
-        spacing=4,
+        spacing=theme_manager.space_4,
     )
     
     return tabs_row, editor_btn, preview_btn
@@ -240,10 +238,10 @@ def create_save_indicator() -> ft.Row:
     """
     return ft.Row(
         [
-            ft.Icon(ft.Icons.CHECK_CIRCLE, color=ft.Colors.GREEN_400, size=16),
-            ft.Text("Guardado", size=12, color=ft.Colors.GREEN_400),
+            ft.Icon(ft.Icons.CHECK_CIRCLE, color=ft.Colors.GREEN_400, size=theme_manager.icon_size_sm),
+            ft.Text("Guardado", size=theme_manager.text_size_sm, color=ft.Colors.GREEN_400),
         ],
-        spacing=6,
+        spacing=theme_manager.space_8,
         visible=False,
     )
 
@@ -257,7 +255,7 @@ def create_card_counter() -> ft.Text:
     """
     return ft.Text(
         "0 tarjetas",
-        size=12,
+        size=theme_manager.text_size_sm,
         color=theme_manager.subtext,
     )
 
@@ -270,7 +268,7 @@ def create_cards_listview() -> ft.ListView:
         ft.ListView configurado
     """
     return ft.ListView(
-        spacing=12,
+        spacing=theme_manager.space_12,
         padding=ft.Padding.all(0),
         expand=True,
     )

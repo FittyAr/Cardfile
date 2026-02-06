@@ -34,7 +34,7 @@ async def login_view(page: ft.Page):
     ]
     
     language_dd = ft.Dropdown(
-        width=120,
+        width=theme_manager.language_dropdown_width,
         options=language_options,
         value=config.current_language,
         on_select=change_language,
@@ -42,7 +42,7 @@ async def login_view(page: ft.Page):
 
     title_text = ft.Text(
         config.get_text("login.title"),
-        size=28,
+        size=theme_manager.text_size_3xl,
         weight=ft.FontWeight.BOLD,
         color=theme_manager.text
     )
@@ -108,13 +108,13 @@ async def login_view(page: ft.Page):
         label=config.get_text("login.username.label"),
         hint_text=config.get_text("login.username.hint"),
         prefix_icon=ft.Icons.PERSON_OUTLINE,
-        border_color=ft.Colors.with_opacity(0.1, theme_manager.text),
+        border_color=theme_manager.border_color,
         focused_border_color=theme_manager.primary,
-        width=320,
-        text_size=14,
+        width=theme_manager.input_width,
+        text_size=theme_manager.text_size_md,
         on_submit=login_clicked,
         color=theme_manager.text,
-        label_style=ft.TextStyle(color=theme_manager.subtext),
+        label_style=theme_manager.text_style_label,
     )
     
     password = ft.TextField(
@@ -122,22 +122,22 @@ async def login_view(page: ft.Page):
         password=True,
         can_reveal_password=True,
         prefix_icon=ft.Icons.LOCK_OUTLINE,
-        border_color=ft.Colors.with_opacity(0.1, theme_manager.text),
+        border_color=theme_manager.border_color,
         focused_border_color=theme_manager.primary,
-        width=320,
-        text_size=14,
+        width=theme_manager.input_width,
+        text_size=theme_manager.text_size_md,
         on_submit=login_clicked,
         color=theme_manager.text,
-        label_style=ft.TextStyle(color=theme_manager.subtext),
+        label_style=theme_manager.text_style_label,
     )
  
     btn_login = ft.ElevatedButton(
         content=ft.Text(config.get_text("login.buttons.login"), weight=ft.FontWeight.BOLD),
-        width=150,
-        height=45,
+        width=theme_manager.button_width_lg,
+        height=theme_manager.button_height_lg,
         color=ft.Colors.WHITE,
         bgcolor=theme_manager.primary,
-        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
+        style=theme_manager.primary_button_style,
         on_click=login_clicked
     )
  
@@ -160,24 +160,24 @@ async def login_view(page: ft.Page):
                 # Header con Selector de Idioma
                 ft.Row(
                     [
-                        ft.Text("CardFile", size=20, weight=ft.FontWeight.BOLD, color=theme_manager.primary),
+                        ft.Text("CardFile", size=theme_manager.text_size_xl, weight=ft.FontWeight.BOLD, color=theme_manager.primary),
                         language_dd
                     ],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                 ),
-                ft.Divider(height=1, color=ft.Colors.with_opacity(0.1, theme_manager.text)),
+                ft.Divider(height=1, color=theme_manager.divider_color),
                 
                 ft.Container(
                     content=ft.Column(
                         [
-                            ft.Icon(ft.Icons.PERSON_PIN_ROUNDED, size=64, color=theme_manager.primary),
-                            ft.Text(config.get_text("login.title"), size=28, weight=ft.FontWeight.BOLD, color=theme_manager.text),
-                            ft.Text("Ingresa tus credenciales para continuar", size=14, color=theme_manager.subtext),
+                            ft.Icon(ft.Icons.PERSON_PIN_ROUNDED, size=theme_manager.icon_size_xl, color=theme_manager.primary),
+                            ft.Text(config.get_text("login.title"), size=theme_manager.text_size_3xl, weight=ft.FontWeight.BOLD, color=theme_manager.text),
+                            ft.Text("Ingresa tus credenciales para continuar", size=theme_manager.text_size_md, color=theme_manager.subtext),
                         ],
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                        spacing=10,
+                        spacing=theme_manager.space_12,
                     ),
-                    padding=ft.Padding.symmetric(vertical=20),
+                    padding=ft.Padding.symmetric(vertical=theme_manager.space_20),
                 ),
                 
                 ft.Column(
@@ -185,11 +185,11 @@ async def login_view(page: ft.Page):
                         username,
                         password,
                     ],
-                    spacing=15,
+                    spacing=theme_manager.space_16,
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 ),
                 
-                ft.Container(height=10),
+                ft.Container(height=theme_manager.space_12),
                 
                 btn_login,
                 
@@ -202,18 +202,14 @@ async def login_view(page: ft.Page):
                 ),
             ],
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            spacing=10,
+            spacing=theme_manager.space_12,
         ),
-        width=400,
-        padding=40,
+        width=theme_manager.auth_card_width,
+        padding=theme_manager.auth_card_padding,
         bgcolor=theme_manager.card_bg,
-        border_radius=20,
-        border=ft.border.all(1, ft.Colors.with_opacity(0.1, theme_manager.text)),
-        shadow=ft.BoxShadow(
-            blur_radius=30,
-            color=ft.Colors.with_opacity(0.1, ft.Colors.BLACK),
-            offset=ft.Offset(0, 10),
-        ),
+        border_radius=theme_manager.radius_lg,
+        border=theme_manager.card_border,
+        shadow=theme_manager.card_shadow,
         alignment=ft.Alignment.CENTER,
     )
 

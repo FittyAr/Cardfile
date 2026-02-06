@@ -1,5 +1,8 @@
 import flet as ft
 from config.config import Config
+from theme.manager import ThemeManager
+
+theme_manager = ThemeManager()
 
 def create_navigation_bar(page: ft.Page, on_change_handler):
     """Crea y retorna la barra de navegación"""
@@ -37,6 +40,6 @@ def create_navigation_bar(page: ft.Page, on_change_handler):
             ),
         ],
         on_change=on_change_handler,
-        bgcolor=ft.Colors.SURFACE,
-        height=65,
+        bgcolor=theme_manager.navbar_bg,
+        height=theme_manager.navbar_height,
     ) 

@@ -1,8 +1,9 @@
 import flet as ft
 from typing import Callable, Optional, Tuple
-
-
 import asyncio
+from theme.manager import ThemeManager
+
+theme_manager = ThemeManager()
 
 def _notify_modified(on_modified: Optional[Callable[[], None]]) -> None:
     if on_modified is not None:
@@ -136,66 +137,70 @@ def create_markdown_toolbar(
 
     # Botones de barra
     buttons = [
-        ft.IconButton(icon=ft.Icons.FORMAT_BOLD, tooltip="Negrita (Ctrl+B)", on_click=lambda e: _wrap("**")),
-        ft.IconButton(icon=ft.Icons.FORMAT_ITALIC, tooltip="Cursiva (Ctrl+I)", on_click=lambda e: _wrap("*")),
-        ft.IconButton(icon=ft.Icons.STRIKETHROUGH_S, tooltip="Tachado (Alt+Shift+S)", on_click=lambda e: _wrap("~~")),
-        ft.IconButton(icon=ft.Icons.CODE, tooltip="Código en línea (Ctrl+`)", on_click=lambda e: _wrap("`")),
+        ft.IconButton(icon=ft.Icons.FORMAT_BOLD, tooltip="Negrita (Ctrl+B)", on_click=lambda e: _wrap("**"), icon_size=theme_manager.icon_size_md),
+        ft.IconButton(icon=ft.Icons.FORMAT_ITALIC, tooltip="Cursiva (Ctrl+I)", on_click=lambda e: _wrap("*"), icon_size=theme_manager.icon_size_md),
+        ft.IconButton(icon=ft.Icons.STRIKETHROUGH_S, tooltip="Tachado (Alt+Shift+S)", on_click=lambda e: _wrap("~~"), icon_size=theme_manager.icon_size_md),
+        ft.IconButton(icon=ft.Icons.CODE, tooltip="Código en línea (Ctrl+`)", on_click=lambda e: _wrap("`"), icon_size=theme_manager.icon_size_md),
         ft.IconButton(
             icon=ft.Icons.CODE,
             tooltip="Bloque de código",
             on_click=lambda e: _wrap("```\n", "\n```"),
+            icon_size=theme_manager.icon_size_md,
         ),
-        ft.VerticalDivider(width=10, color=ft.Colors.TRANSPARENT),
-        ft.IconButton(icon=ft.Icons.TITLE, tooltip="Encabezado H1", on_click=lambda e: _block("# ")),
-        ft.IconButton(icon=ft.Icons.SUBTITLES, tooltip="Encabezado H2", on_click=lambda e: _block("## ")),
-        ft.IconButton(icon=ft.Icons.TEXT_FIELDS, tooltip="Encabezado H3", on_click=lambda e: _block("### ")),
-        ft.VerticalDivider(width=10, color=ft.Colors.TRANSPARENT),
-        ft.IconButton(icon=ft.Icons.FORMAT_LIST_BULLETED, tooltip="Lista", on_click=lambda e: _block("- ")),
-        ft.IconButton(icon=ft.Icons.FORMAT_LIST_NUMBERED, tooltip="Lista numerada", on_click=lambda e: _block("1. ")),
-        ft.IconButton(icon=ft.Icons.FORMAT_QUOTE, tooltip="Cita", on_click=lambda e: _block("> ")),
-        ft.VerticalDivider(width=10, color=ft.Colors.TRANSPARENT),
+        ft.VerticalDivider(width=theme_manager.space_12, color=ft.Colors.TRANSPARENT),
+        ft.IconButton(icon=ft.Icons.TITLE, tooltip="Encabezado H1", on_click=lambda e: _block("# "), icon_size=theme_manager.icon_size_md),
+        ft.IconButton(icon=ft.Icons.SUBTITLES, tooltip="Encabezado H2", on_click=lambda e: _block("## "), icon_size=theme_manager.icon_size_md),
+        ft.IconButton(icon=ft.Icons.TEXT_FIELDS, tooltip="Encabezado H3", on_click=lambda e: _block("### "), icon_size=theme_manager.icon_size_md),
+        ft.VerticalDivider(width=theme_manager.space_12, color=ft.Colors.TRANSPARENT),
+        ft.IconButton(icon=ft.Icons.FORMAT_LIST_BULLETED, tooltip="Lista", on_click=lambda e: _block("- "), icon_size=theme_manager.icon_size_md),
+        ft.IconButton(icon=ft.Icons.FORMAT_LIST_NUMBERED, tooltip="Lista numerada", on_click=lambda e: _block("1. "), icon_size=theme_manager.icon_size_md),
+        ft.IconButton(icon=ft.Icons.FORMAT_QUOTE, tooltip="Cita", on_click=lambda e: _block("> "), icon_size=theme_manager.icon_size_md),
+        ft.VerticalDivider(width=theme_manager.space_12, color=ft.Colors.TRANSPARENT),
         ft.IconButton(
             icon=ft.Icons.LINK,
             tooltip="Enlace",
-            on_click=lambda e: _append("[texto](https://)")
+            on_click=lambda e: _append("[texto](https://)"),
+            icon_size=theme_manager.icon_size_md,
         ),
         ft.IconButton(
             icon=ft.Icons.IMAGE,
             tooltip="Imagen",
-            on_click=lambda e: _append("![alt](https://)")
+            on_click=lambda e: _append("![alt](https://)"),
+            icon_size=theme_manager.icon_size_md,
         ),
         ft.IconButton(
             icon=ft.Icons.TABLE_CHART,
             tooltip="Tabla",
             on_click=lambda e: add_table(),
+            icon_size=theme_manager.icon_size_md,
         ),
         ft.IconButton(
             icon=ft.Icons.HORIZONTAL_RULE,
             tooltip="Regla horizontal",
             on_click=lambda e: _append("\n---\n"),
+            icon_size=theme_manager.icon_size_md,
         ),
         ft.IconButton(
             icon=ft.Icons.CHECK_BOX,
             tooltip="Checklist",
             on_click=lambda e: _append("\n- [ ] tarea\n"),
+            icon_size=theme_manager.icon_size_md,
         ),
     ]
 
     # Integrar el switch "Mostrar código" dentro de la barra si se proporciona
     if show_code_switch is not None:
-        label = ft.Text("Mostrar código")
-        buttons.append(ft.VerticalDivider(width=10, color=ft.Colors.TRANSPARENT))
+        label = ft.Text("Mostrar código", size=theme_manager.text_size_sm, color=theme_manager.subtext)
+        buttons.append(ft.VerticalDivider(width=theme_manager.space_12, color=ft.Colors.TRANSPARENT))
         buttons.append(label)
         buttons.append(show_code_switch)
 
     bar = ft.Container(
-        content=ft.Row(controls=buttons, wrap=True, alignment=ft.MainAxisAlignment.START, spacing=6),
-        padding=ft.Padding.symmetric(vertical=8, horizontal=8),
-        bgcolor=ft.Colors.SURFACE,
-        border=ft.border.all(1, ft.Colors.BLUE_200),
-        border_radius=6,
+        content=ft.Row(controls=buttons, wrap=True, alignment=ft.MainAxisAlignment.START, spacing=theme_manager.space_8),
+        padding=ft.Padding.symmetric(vertical=theme_manager.space_8, horizontal=theme_manager.space_8),
+        bgcolor=theme_manager.subtle_bg,
+        border=theme_manager.card_border,
+        border_radius=theme_manager.radius_sm,
         visible=True,
     )
     return bar
-
-
