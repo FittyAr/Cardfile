@@ -111,7 +111,7 @@ def create_sidebar(
                             ft.Container(
                                 content=ft.Row(
                                     [
-                                        ft.ElevatedButton(
+                                        ft.Button(
                                             "Nueva Tarjeta",
                                             icon=ft.Icons.ADD,
                                             on_click=new_card_callback,

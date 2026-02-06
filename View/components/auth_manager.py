@@ -27,8 +27,9 @@ class AuthManager:
             user = session.query(Usuario).filter(Usuario.email == email).first()
             if user and self.verify_password_hash(user.contraseña, password):
                 # Guardar sesión de forma persistente
-                await self.page.shared_preferences.set("user_id", str(user.id))
-                await self.page.shared_preferences.set("username", user.nombre)
+                prefs = ft.SharedPreferences()
+                await prefs.set("user_id", str(user.id))
+                await prefs.set("username", user.nombre)
                 
                 # Actualizar último login
                 user.last_login = datetime.now()
@@ -55,7 +56,8 @@ class AuthManager:
         """
         if self.require_login:
             # Si se requiere login, validar que quien intenta cambiarlo es un usuario válido
-            user_id = await self.page.shared_preferences.get("user_id")
+            prefs = ft.SharedPreferences()
+            user_id = await prefs.get("user_id")
             if not user_id:
                 return False
                 
@@ -73,8 +75,9 @@ class AuthManager:
 
     async def logout(self):
         """Cierra la sesión y limpia el storage."""
-        await self.page.shared_preferences.remove("user_id")
-        await self.page.shared_preferences.remove("username")
+        prefs = ft.SharedPreferences()
+        await prefs.remove("user_id")
+        await prefs.remove("username")
         await self.page.push_route("/Login")
 
     async def get_authenticated_user_id(self) -> int:
@@ -85,7 +88,8 @@ class AuthManager:
         if not self.require_login:
             return await self._get_or_create_guest_user()
             
-        user_id = await self.page.shared_preferences.get("user_id")
+        prefs = ft.SharedPreferences()
+        user_id = await prefs.get("user_id")
         return int(user_id) if user_id else None
 
     async def _get_or_create_guest_user(self) -> int:
@@ -113,11 +117,13 @@ class AuthManager:
         if not self.require_login:
             return True
             
-        user_id = await self.page.shared_preferences.get("user_id")
+        prefs = ft.SharedPreferences()
+        user_id = await prefs.get("user_id")
         return user_id is not None
 
     async def get_current_user(self):
         """Retorna el nombre del usuario actual."""
         if not self.require_login:
             return "Invitado"
-        return await self.page.shared_preferences.get("username") or "Anónimo"
+        prefs = ft.SharedPreferences()
+        return await prefs.get("username") or "Anónimo"

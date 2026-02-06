@@ -39,7 +39,8 @@ async def new_card_modal(page: ft.Page, on_close: Callable, on_success: Callable
                 "title": nueva_ficha.title,
                 "descripcion": nueva_ficha.descripcion
             })
-            await page.shared_preferences.set("selected_ficha", ficha_data)
+            prefs = ft.SharedPreferences()
+            await prefs.set("selected_ficha", ficha_data)
             
             await on_success()
             
@@ -49,7 +50,8 @@ async def new_card_modal(page: ft.Page, on_close: Callable, on_success: Callable
             page.show_dialog(ft.SnackBar(
                 content=ft.Text(config.get_text("new_card.errors.save_error")),
                 bgcolor=ft.Colors.RED_400,
-                action="Ok"
+                action="Ok",
+                duration=2000
             ))
             page.update()
         finally:
@@ -73,7 +75,7 @@ async def new_card_modal(page: ft.Page, on_close: Callable, on_success: Callable
     )
 
     # Botones
-    btn_save = ft.ElevatedButton(
+    btn_save = ft.Button(
         content=ft.Text(config.get_text("new_card.buttons.save"), weight=ft.FontWeight.BOLD),
         width=theme_manager.button_width,
         height=theme_manager.button_height,

@@ -224,7 +224,8 @@ async def card_view(page: ft.Page):
             card_counter.value = f"{len(fichas)} tarjeta{'s' if len(fichas) != 1 else ''}"
             
             # Intentar restaurar selección previa
-            selected_ficha_data = await page.shared_preferences.get("selected_ficha")
+            prefs = ft.SharedPreferences()
+            selected_ficha_data = await prefs.get("selected_ficha")
             if selected_ficha_data:
                 import json
                 try:
@@ -308,7 +309,8 @@ async def card_view(page: ft.Page):
             "title": ficha.title,
             "descripcion": ficha.descripcion
         })
-        await page.shared_preferences.set("selected_ficha", ficha_data)
+        prefs = ft.SharedPreferences()
+        await prefs.set("selected_ficha", ficha_data)
         
         # Actualizar UI
         selected_card_title.value = ficha.title
@@ -361,7 +363,8 @@ async def card_view(page: ft.Page):
             page.show_dialog(ft.SnackBar(
                 content=ft.Text(t['delete']['no_selection']),
                 bgcolor=ft.Colors.RED_400,
-                action="Ok"
+                action="Ok",
+                duration=2000
             ))
             page.update()
             return
@@ -377,7 +380,8 @@ async def card_view(page: ft.Page):
                         session.commit()
                         
                         state.deselect()
-                        await page.shared_preferences.remove("selected_ficha")
+                        prefs = ft.SharedPreferences()
+                        await prefs.remove("selected_ficha")
                         await load_fichas()
                         
                         # Limpiar editor
@@ -396,7 +400,8 @@ async def card_view(page: ft.Page):
                     page.show_dialog(ft.SnackBar(
                         content=ft.Text(t['delete']['error']),
                         bgcolor=ft.Colors.RED_400,
-                        action="Ok"
+                        action="Ok",
+                        duration=2000
                     ))
                 finally:
                     session.close()
@@ -439,7 +444,7 @@ async def card_view(page: ft.Page):
                         padding=0,
                     )
                 ),
-                border=ft.border.all(2, theme_manager.primary) if theme_manager.current_theme_name == name else None,
+                border=ft.Border.all(2, theme_manager.primary) if theme_manager.current_theme_name == name else None,
                 border_radius=theme_manager.radius_round,
                 padding=theme_manager.space_4,
             )

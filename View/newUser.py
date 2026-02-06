@@ -91,23 +91,23 @@ async def newUser_view(page: ft.Page):
     async def save_clicked(e):
         # Validaciones
         if not all([nombre.value, email.value, password.value, confirm_password.value]):
-            page.show_dialog(ft.SnackBar(content=ft.Text(t['errors']['empty_fields']), bgcolor=ft.Colors.RED_400))
+            page.show_dialog(ft.SnackBar(content=ft.Text(t['errors']['empty_fields']), bgcolor=ft.Colors.RED_400, duration=2000))
             page.update()
             return
             
         if password.value != confirm_password.value:
-            page.show_dialog(ft.SnackBar(content=ft.Text(t['errors']['passwords_dont_match']), bgcolor=ft.Colors.RED_400))
+            page.show_dialog(ft.SnackBar(content=ft.Text(t['errors']['passwords_dont_match']), bgcolor=ft.Colors.RED_400, duration=2000))
             page.update()
             return
         
         # Validar longitud mínima de contraseña
         if len(password.value) < 8:
-            page.show_dialog(ft.SnackBar(content=ft.Text(t['errors']['password_length']), bgcolor=ft.Colors.RED_400))
+            page.show_dialog(ft.SnackBar(content=ft.Text(t['errors']['password_length']), bgcolor=ft.Colors.RED_400, duration=2000))
             page.update()
             return
         
         if not is_valid_email(email.value):
-            page.show_dialog(ft.SnackBar(content=ft.Text(t['errors']['invalid_email']), bgcolor=ft.Colors.RED_400))
+            page.show_dialog(ft.SnackBar(content=ft.Text(t['errors']['invalid_email']), bgcolor=ft.Colors.RED_400, duration=2000))
             page.update()
             return
         
@@ -119,7 +119,7 @@ async def newUser_view(page: ft.Page):
             ).first()
             
             if existing_user:
-                page.show_dialog(ft.SnackBar(content=ft.Text(t['errors']['email_exists']), bgcolor=ft.Colors.RED_400))
+                page.show_dialog(ft.SnackBar(content=ft.Text(t['errors']['email_exists']), bgcolor=ft.Colors.RED_400, duration=2000))
                 page.update()
                 return
             
@@ -139,7 +139,7 @@ async def newUser_view(page: ft.Page):
             session.commit()
             
             # Mostrar mensaje de éxito
-            page.show_dialog(ft.SnackBar(content=ft.Text(t['success']['user_created']), bgcolor=ft.Colors.GREEN_400))
+            page.show_dialog(ft.SnackBar(content=ft.Text(t['success']['user_created']), bgcolor=ft.Colors.GREEN_400, duration=2000))
             page.update()
             
             # Limpiar campos
@@ -155,7 +155,7 @@ async def newUser_view(page: ft.Page):
         except Exception as e:
             session.rollback()
             print(f"Error al crear usuario: {str(e)}")
-            page.show_dialog(ft.SnackBar(content=ft.Text(t['errors']['create_error']), bgcolor=ft.Colors.RED_400))
+            page.show_dialog(ft.SnackBar(content=ft.Text(t['errors']['create_error']), bgcolor=ft.Colors.RED_400, duration=2000))
             page.update()
         finally:
             session.close()
@@ -164,7 +164,7 @@ async def newUser_view(page: ft.Page):
         await page.push_route("/Login")
 
     # Botones
-    btn_save = ft.ElevatedButton(
+    btn_save = ft.Button(
         content=ft.Text(t['buttons']['save'], weight=ft.FontWeight.BOLD),
         width=theme_manager.button_width_lg,
         height=theme_manager.button_height_lg,

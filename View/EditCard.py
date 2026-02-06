@@ -12,7 +12,8 @@ async def edit_card_modal(page: ft.Page, on_close: Callable, on_success: Callabl
     # Inicializar Config
     config = Config()
     
-    selected_ficha_json = await page.shared_preferences.get("selected_ficha")
+    prefs = ft.SharedPreferences()
+    selected_ficha_json = await prefs.get("selected_ficha")
     if not selected_ficha_json:
         return ft.Text("Error: No hay ficha seleccionada")
     
@@ -25,7 +26,8 @@ async def edit_card_modal(page: ft.Page, on_close: Callable, on_success: Callabl
             page.show_dialog(ft.SnackBar(
                 content=ft.Text(config.get_text("edit_card.name.empty_error")),
                 bgcolor=ft.Colors.RED_400,
-                action="Ok"
+                action="Ok",
+                duration=2000
             ))
             page.update()
             return
@@ -52,12 +54,13 @@ async def edit_card_modal(page: ft.Page, on_close: Callable, on_success: Callabl
                     "title": ficha.title,
                     "descripcion": ficha.descripcion
                 })
-                await page.shared_preferences.set("selected_ficha", ficha_data)
+                await prefs.set("selected_ficha", ficha_data)
                 
                 page.show_dialog(ft.SnackBar(
                     content=ft.Text(config.get_text("edit_card.messages.success")),
                     bgcolor=ft.Colors.GREEN_400,
-                    action="Ok"
+                    action="Ok",
+                    duration=2000
                 ))
                 page.update()
                 await on_success()
@@ -68,7 +71,8 @@ async def edit_card_modal(page: ft.Page, on_close: Callable, on_success: Callabl
             page.show_dialog(ft.SnackBar(
                 content=ft.Text(config.get_text("edit_card.messages.error")),
                 bgcolor=ft.Colors.RED_400,
-                action="Ok"
+                action="Ok",
+                duration=2000
             ))
             page.update()
         finally:
@@ -93,7 +97,7 @@ async def edit_card_modal(page: ft.Page, on_close: Callable, on_success: Callabl
     )
 
     # Botones
-    btn_save = ft.ElevatedButton(
+    btn_save = ft.Button(
         content=ft.Text(config.get_text("edit_card.buttons.update"), weight=ft.FontWeight.BOLD),
         width=theme_manager.button_width,
         height=theme_manager.button_height,

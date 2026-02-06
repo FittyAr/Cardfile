@@ -131,7 +131,7 @@ async def login_view(page: ft.Page):
         label_style=theme_manager.text_style_label,
     )
  
-    btn_login = ft.ElevatedButton(
+    btn_login = ft.Button(
         content=ft.Text(config.get_text("login.buttons.login"), weight=ft.FontWeight.BOLD),
         width=theme_manager.button_width_lg,
         height=theme_manager.button_height_lg,

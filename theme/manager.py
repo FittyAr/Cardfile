@@ -74,8 +74,8 @@ class ThemeManager:
         self.selected_text = ft.Colors.WHITE
         self.selected_subtext = ft.Colors.with_opacity(0.8, ft.Colors.WHITE)
         self.modal_overlay_blur = 10
-        self.card_border = ft.border.all(1, self.border_color)
-        self.sidebar_border = ft.border.only(right=ft.BorderSide(1, self.border_color))
+        self.card_border = ft.Border.all(1, self.border_color)
+        self.sidebar_border = ft.Border.only(right=ft.BorderSide(1, self.border_color))
         self.card_shadow = ft.BoxShadow(
             blur_radius=30,
             color=ft.Colors.with_opacity(0.1, ft.Colors.BLACK),
@@ -85,7 +85,7 @@ class ThemeManager:
             shape=ft.RoundedRectangleBorder(radius=self.button_radius)
         )
         self.text_style_label = ft.TextStyle(color=self.subtext)
-        self.tab_radius = ft.border_radius.only(top_left=self.radius_sm, top_right=self.radius_sm)
+        self.tab_radius = ft.BorderRadius.only(top_left=self.radius_sm, top_right=self.radius_sm)
 
     def set_theme(self, theme_name):
         self.config.set_theme(theme_name)
