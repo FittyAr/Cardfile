@@ -140,8 +140,54 @@ def create_markdown_toolbar(
     # Conectar el evento de selección
     editor.on_selection_change = _on_selection_change
     
+    def _is_cursor_inside_tags(value: str, cursor: int, prefix: str, suffix: str) -> tuple:
+        """
+        Detecta si el cursor está dentro de tags de formato.
+        
+        Args:
+            value: Texto completo del editor
+            cursor: Posición del cursor
+            prefix: Tag de apertura (ej: "**")
+            suffix: Tag de cierre (ej: "**")
+        
+        Returns:
+            Tupla (is_inside, start_pos, end_pos):
+            - is_inside: True si el cursor está dentro de tags
+            - start_pos: Posición del tag de apertura
+            - end_pos: Posición después del tag de cierre
+        """
+        if not value or cursor < len(prefix):
+            return (False, -1, -1)
+        
+        # Buscar hacia atrás el prefix
+        search_start = max(0, cursor - 200)
+        before_cursor = value[search_start:cursor]
+        
+        prefix_pos = before_cursor.rfind(prefix)
+        if prefix_pos == -1:
+            return (False, -1, -1)
+        
+        prefix_pos += search_start
+        
+        # Buscar hacia adelante el suffix
+        search_end = min(len(value), cursor + 200)
+        after_cursor = value[cursor:search_end]
+        
+        suffix_pos = after_cursor.find(suffix)
+        if suffix_pos == -1:
+            return (False, -1, -1)
+        
+        suffix_pos += cursor
+        
+        # Verificar que no hay tags anidados entre prefix y cursor
+        between = value[prefix_pos + len(prefix):cursor]
+        if prefix in between:
+            return (False, -1, -1)
+        
+        return (True, prefix_pos, suffix_pos + len(suffix))
+    
     def _wrap_selection(prefix: str, suffix: str = None):
-        """Envuelve el texto seleccionado o inserta en la posición del cursor con prefix/suffix"""
+        """Envuelve el texto seleccionado o inserta/remueve tags en la posición del cursor con smart toggle"""
         if suffix is None:
             suffix = prefix
         
@@ -164,20 +210,37 @@ def create_markdown_toolbar(
         
         # Si hay selección (start != end)
         if start != end:
-            # Envolver la selección
             selected = value[start:end]
-            new_value = value[:start] + f"{prefix}{selected}{suffix}" + value[end:]
+            
+            # Toggle: verificar si la selección ya tiene los tags
+            if selected.startswith(prefix) and selected.endswith(suffix):
+                # Remover tags
+                new_value = value[:start] + selected[len(prefix):-len(suffix)] + value[end:]
+            else:
+                # Agregar tags
+                new_value = value[:start] + f"{prefix}{selected}{suffix}" + value[end:]
+            
             editor.value = new_value
             editor.update()
             if on_change:
                 on_change(None)
         else:
-            # Sin selección: insertar placeholder en la posición del cursor
-            new_value = value[:start] + f"{prefix}texto{suffix}" + value[start:]
-            editor.value = new_value
+            # Sin selección: verificar si el cursor está dentro de tags (SMART TOGGLE)
+            is_inside, tag_start, tag_end = _is_cursor_inside_tags(value, start, prefix, suffix)
+            
+            if is_inside:
+                # Remover los tags
+                new_value = value[:tag_start] + value[tag_start + len(prefix):tag_end - len(suffix)] + value[tag_end:]
+                editor.value = new_value
+            else:
+                # Insertar placeholder con tags
+                new_value = value[:start] + f"{prefix}texto{suffix}" + value[start:]
+                editor.value = new_value
+            
             editor.update()
             if on_change:
                 on_change(None)
+    
     
     def _block_format(prefix: str):
         """Aplica formato de bloque (encabezados, listas, citas) a las líneas seleccionadas"""
