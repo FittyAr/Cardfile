@@ -8,7 +8,7 @@ Para ejecutar:
     python test_markdown_editor.py
 """
 import flet as ft
-from View.MarkdownEditor import create_markdown_toolbar
+from View.components.markdown_editor import create_markdown_toolbar
 
 
 def main(page: ft.Page):

@@ -68,34 +68,45 @@ def create_markdown_editor(
     Returns:
         ft.TextField configurado para edición Markdown
     """
-    return ft.TextField(
+    editor = ft.TextField(
         value="",
         multiline=multiline,
-        min_lines=10,
-        max_lines=None,
         expand=expand,
-        border_color=ft.Colors.TRANSPARENT,
-        focused_border_color=ft.Colors.TRANSPARENT,
-        on_change=on_change,
+        min_lines=10 if multiline else 1,
+        max_lines=None if multiline else 1,
+        border_color=theme_manager.border_color,
+        focused_border_color=theme_manager.primary,
         text_size=theme_manager.text_size_md,
-        color=theme_manager.text,
-        cursor_color=theme_manager.primary,
-        selection_color=ft.Colors.with_opacity(theme_manager.selection_opacity, theme_manager.primary),
+        on_change=on_change,
+        shift_enter=True,
+        # Keyboard shortcuts will be handled by the toolbar
     )
+    
+    return editor
 
 
 def create_markdown_preview() -> ft.Markdown:
     """
-    Crea un componente de vista previa de Markdown.
+    Crea un componente de vista previa de Markdown con configuración óptima.
     
     Returns:
-        ft.Markdown configurado para vista previa
+        ft.Markdown configurado para vista previa profesional
     """
+    # Detectar tema actual para code highlighting
+    code_theme = (
+        ft.MarkdownCodeTheme.ATOM_ONE_DARK 
+        if theme_manager.is_dark 
+        else ft.MarkdownCodeTheme.GITHUB
+    )
+    
     return ft.Markdown(
-        "",
+        value="",
         selectable=True,
         extension_set=ft.MarkdownExtensionSet.GITHUB_WEB,
-        expand=True,
+        code_theme=code_theme,
+        auto_follow_links=True,
+        shrink_wrap=False,
+        fit_content=False,
     )
 
 
@@ -169,18 +180,42 @@ def create_markdown_toolbar(
                 on_change(None)
     
     def _block_format(prefix: str):
-        """Aplica formato de bloque (encabezados, listas, citas)"""
+        """Aplica formato de bloque (encabezados, listas, citas) a las líneas seleccionadas"""
         value = editor.value or ""
         
         if not value.strip():
             # Si está vacío, crear nueva línea con formato
             editor.value = f"{prefix}texto"
-        else:
-            # Agregar nueva línea con formato al final
-            lines = value.split('\n')
-            lines.append(f"{prefix}texto")
-            editor.value = '\n'.join(lines)
+            editor.update()
+            if on_change:
+                on_change(None)
+            return
         
+        # Obtener la selección actual
+        start = max(0, min(current_selection_start, len(value)))
+        end = max(0, min(current_selection_end, len(value)))
+        
+        if start > end:
+            start, end = end, start
+        
+        # Expandir selección a límites de línea
+        line_start = value.rfind("\n", 0, start) + 1
+        line_end = value.find("\n", end)
+        if line_end == -1:
+            line_end = len(value)
+        
+        block = value[line_start:line_end]
+        lines = block.splitlines() if block else [""]
+        
+        # Toggle: si todas las líneas ya tienen el prefijo, quitarlo; si no, agregar
+        if all(l.startswith(prefix) or not l.strip() for l in lines):
+            new_lines = [l[len(prefix):] if l.startswith(prefix) else l for l in lines]
+        else:
+            new_lines = [f"{prefix}{l}" if l.strip() else l for l in lines]
+        
+        new_block = "\n".join(new_lines)
+        new_value = value[:line_start] + new_block + value[line_end:]
+        editor.value = new_value
         editor.update()
         if on_change:
             on_change(None)
