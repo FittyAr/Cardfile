@@ -124,7 +124,7 @@ async def edit_card_modal(page: ft.Page, on_close: Callable, on_success: Callabl
                 ft.Container(height=10),
                 
                 ft.Text(
-                    "Actualiza el título de tu tarjeta.",
+                    "Cambia el nombre de tu tarjeta.",
                     size=14,
                     color=theme_manager.subtext,
                     text_align=ft.TextAlign.CENTER,

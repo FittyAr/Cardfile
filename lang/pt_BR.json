@@ -75,12 +75,12 @@
     },
     "navigation": {
         "new": "Novo",
-        "edit": "Editar",
+        "edit": "Renomear",
         "delete": "Excluir",
         "recycle": "Lixeira",
         "exit": "Sair",
         "errors": {
-            "select_card_edit": "Por favor, selecione um cartão para editar"
+            "select_card_edit": "Por favor, selecione um cartão para renomear"
         }
     },
     "new_card": {
@@ -98,7 +98,7 @@
         }
     },
     "edit_card": {
-        "title": "Editar Cartão",
+        "title": "Renomear cartão",
         "name": {
             "label": "Nome do Cartão",
             "empty_error": "Por favor, insira um nome para o cartão"

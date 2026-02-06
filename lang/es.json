@@ -75,12 +75,12 @@
     },
     "navigation": {
         "new": "Nueva",
-        "edit": "Editar",
+        "edit": "Cambiar nombre",
         "delete": "Eliminar",
         "recycle": "Papelera",
         "exit": "Salir",
         "errors": {
-            "select_card_edit": "Por favor seleccione una ficha para editar"
+            "select_card_edit": "Por favor seleccione una ficha para cambiar el nombre"
         }
     },
     "new_card": {
@@ -98,7 +98,7 @@
         }
     },
     "edit_card": {
-        "title": "Editar Tarjeta",
+        "title": "Cambiar nombre de tarjeta",
         "name": {
             "label": "Nombre de la Tarjeta",
             "empty_error": "Por favor ingrese un nombre para la tarjeta"

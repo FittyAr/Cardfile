@@ -189,7 +189,7 @@ Card View → Eliminar Ficha → Soft Delete (is_active=False) → Papelera
 
 - **Crear**: Formulario simple con título
 - **Leer**: Lista de fichas con búsqueda en tiempo real
-- **Editar**: Modo lectura/edición con switch
+- **Cambiar nombre**: Modo lectura/edición con switch
 - **Eliminar**: Soft delete a papelera
 - **Autoguardado**: Debounce de 1 segundo + guardado periódico cada 15 segundos
 - **Preview Markdown**: Vista previa en tiempo real
@@ -401,7 +401,7 @@ Inicio
   │                           │
   │                           ├─→ Nueva Ficha → Vista NewCard
   │                           │
-  │                           ├─→ Editar Ficha → Vista EditCard
+  │                           ├─→ Cambiar nombre de ficha → Vista EditCard
   │                           │
   │                           ├─→ Eliminar → Soft Delete → Papelera
   │                           │

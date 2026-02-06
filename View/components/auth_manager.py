@@ -11,7 +11,7 @@ class AuthManager:
         self.page = page
         self.config = Config()
         self.repo = UsuarioRepository()
-        
+
     @property
     def require_login(self) -> bool:
         """Retorna True si la aplicación requiere login según la configuración."""

@@ -75,12 +75,12 @@
     },
     "navigation": {
         "new": "New",
-        "edit": "Edit",
+        "edit": "Rename",
         "delete": "Delete",
         "recycle": "Recycle Bin",
         "exit": "Exit",
         "errors": {
-            "select_card_edit": "Please select a card to edit"
+            "select_card_edit": "Please select a card to rename"
         }
     },
     "new_card": {
@@ -98,7 +98,7 @@
         }
     },
     "edit_card": {
-        "title": "Edit Card",
+        "title": "Rename Card",
         "name": {
             "label": "Card Name",
             "empty_error": "Please enter a name for the card"

@@ -72,8 +72,8 @@ async def card_view(page: ft.Page):
 
     def on_editor_tab_click(e):
         editor_container.visible = True
-        markdown_preview.visible = False
-        editor_container.visible = True
+        preview_container.visible = False
+        update_editor_state()
         editor_btn.bgcolor = theme_manager.primary
         editor_btn.content.color = ft.Colors.WHITE
         preview_btn.bgcolor = ft.Colors.with_opacity(0.05, ft.Colors.ON_SURFACE)
@@ -92,7 +92,7 @@ async def card_view(page: ft.Page):
         page.update()
 
     async def edit_card_handler(e):
-        """Handler para el botón de editar título"""
+        """Handler para el botón de cambiar nombre de tarjeta"""
         if state.selected_ficha:
             modal_content = await edit_card_modal(page, on_close=hide_modal, on_success=on_modal_success)
             modal_overlay.content = modal_content
@@ -157,11 +157,12 @@ async def card_view(page: ft.Page):
         delete_callback=delete_ficha_handler
     )
 
-    editor_container = ft.Container(content=markdown_editor, expand=True, visible=True)
+    editor_container = ft.Container(content=markdown_editor, expand=True, visible=False)
     preview_container = ft.Container(
         content=ft.Column([markdown_preview], scroll=ft.ScrollMode.AUTO, expand=True),
-        padding=ft.Padding.all(20), expand=True, visible=False
+        padding=ft.Padding.all(20), expand=True, visible=True
     )
+    on_preview_tab_click(None)
     
     # --- Overlay Modal con Blur ---
     modal_overlay = ft.Container(
@@ -250,29 +251,40 @@ async def card_view(page: ft.Page):
         for ficha in fichas:
             # Tarjeta individual con diseño moderno
             card_item = ft.Container(
-                content=ft.Column(
+                content=ft.Row(
                     [
-                        ft.Text(
-                            ficha.title,
-                            size=14,
-                            weight=ft.FontWeight.W_600,
-                            color=theme_manager.text,
-                            max_lines=1,
-                            overflow=ft.TextOverflow.ELLIPSIS,
-                        ),
-                        ft.Text(
-                            f"Actualizado: {ficha.updated_at.strftime('%d/%m/%Y')}" if ficha.updated_at else "Sin fecha",
-                            size=11,
-                            color=theme_manager.subtext,
-                        ),
+                        ft.Column(
+                            [
+                                ft.Text(
+                                    ficha.title,
+                                    size=14,
+                                    weight=ft.FontWeight.W_600,
+                                    color=theme_manager.text,
+                                    max_lines=1,
+                                    no_wrap=True,
+                                    overflow=ft.TextOverflow.ELLIPSIS,
+                                ),
+                                ft.Text(
+                                    f"Actualizado: {ficha.updated_at.strftime('%d/%m/%Y')}" if ficha.updated_at else "Sin fecha",
+                                    size=11,
+                                    color=theme_manager.subtext,
+                                    max_lines=1,
+                                    no_wrap=True,
+                                    overflow=ft.TextOverflow.ELLIPSIS,
+                                ),
+                            ],
+                            spacing=4,
+                            expand=True,
+                        )
                     ],
-                    spacing=4,
+                    expand=True,
                 ),
                 padding=ft.Padding.all(16),
                 border_radius=10,
                 bgcolor=ft.Colors.with_opacity(0.1, theme_manager.text),
                 ink=True,
                 on_click=lambda e, f=ficha: asyncio.create_task(select_ficha(f)),
+                expand=True,
             )
             cards_listview.controls.append(card_item)
         
@@ -299,6 +311,7 @@ async def card_view(page: ft.Page):
         selected_card_title.value = ficha.title
         markdown_editor.value = ficha.descripcion or ""
         markdown_preview.value = ficha.descripcion or ""
+        on_preview_tab_click(None)
         
         # Resaltar tarjeta seleccionada
         for i, control in enumerate(cards_listview.controls):

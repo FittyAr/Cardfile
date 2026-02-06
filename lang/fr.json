@@ -75,12 +75,12 @@
     },
     "navigation": {
         "new": "Nouveau",
-        "edit": "Modifier",
+        "edit": "Renommer",
         "delete": "Supprimer",
         "recycle": "Corbeille",
         "exit": "Quitter",
         "errors": {
-            "select_card_edit": "Veuillez sélectionner une carte à modifier"
+            "select_card_edit": "Veuillez sélectionner une carte à renommer"
         }
     },
     "new_card": {
@@ -98,7 +98,7 @@
         }
     },
     "edit_card": {
-        "title": "Modifier la Carte",
+        "title": "Renommer la carte",
         "name": {
             "label": "Nom de la Carte",
             "empty_error": "Veuillez entrer un nom pour la carte"

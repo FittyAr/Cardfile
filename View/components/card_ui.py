@@ -163,7 +163,7 @@ def create_card_header(
     # Botones de acción (Edit/Delete) que se habilitarán/deshabilitarán en Card.py
     edit_button = ft.IconButton(
         icon=ft.Icons.EDIT_OUTLINED,
-        tooltip="Editar título",
+        tooltip="Cambiar nombre de tarjeta",
         on_click=edit_callback,
         icon_color=theme_manager.primary,
         disabled=True, # Iniciamos deshabilitado
@@ -215,7 +215,7 @@ def create_custom_tabs(
     )
     
     preview_btn = ft.Container(
-        content=ft.Text("👁️ Vista Previa", size=14, weight=ft.FontWeight.W_600, color=theme_manager.text),
+        content=ft.Text("👁️ Lector", size=14, weight=ft.FontWeight.W_600, color=theme_manager.text),
         padding=ft.Padding.symmetric(horizontal=20, vertical=12),
         border_radius=ft.border_radius.only(top_left=8, top_right=8),
         bgcolor=ft.Colors.with_opacity(0.05, theme_manager.text),

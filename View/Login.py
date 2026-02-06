@@ -55,7 +55,8 @@ async def login_view(page: ft.Page):
             page.show_dialog(ft.SnackBar(
                 content=ft.Text(config.get_text("login.errors.empty_fields")),
                 bgcolor=ft.Colors.RED_400,
-                action="Ok"
+                action="Ok",
+                duration=2000
             ))
             page.update()
             return
@@ -68,7 +69,8 @@ async def login_view(page: ft.Page):
                 page.show_dialog(ft.SnackBar(
                     content=ft.Text(config.get_text("login.errors.invalid_credentials")),
                     bgcolor=ft.Colors.RED_400,
-                    action="Ok"
+                    action="Ok",
+                    duration=2000
                 ))
                 password.value = ""
                 page.update()
@@ -78,7 +80,8 @@ async def login_view(page: ft.Page):
             page.show_dialog(ft.SnackBar(
                 content=ft.Text(config.get_text("login.errors.login_error")),
                 bgcolor=ft.Colors.RED_400,
-                action="Ok"
+                action="Ok",
+                duration=2000
             ))
             page.update()
     def verify_password(stored_hash: str, provided_password: str) -> bool:

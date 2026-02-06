@@ -20,7 +20,7 @@ async def views_handler(page: Page):
         
         if index == 0:  # Nueva tarjeta
             await page.push_route("/newCard")
-        elif index == 1:  # Editar
+        elif index == 1:  # Cambiar nombre
             selected_ficha = await page.shared_preferences.get("selected_ficha")
             if selected_ficha:
                 await page.push_route("/editCard")
