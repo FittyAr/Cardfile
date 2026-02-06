@@ -12,6 +12,10 @@ class Usuario(Base):
     contraseña = Column(String(255), nullable=False)  # Almacenar hash de la contraseña
     is_active = Column(Boolean, default=True, nullable=False)
     last_login = Column(DateTime)
+    locking_enabled = Column(Boolean, nullable=True)
+    locking_auto_lock_seconds = Column(Integer, nullable=True)
+    locking_mask_visible_chars = Column(Integer, nullable=True)
+    locking_password_hash = Column(String(255), nullable=True)
     created_at = Column(DateTime, server_default=text('CURRENT_TIMESTAMP'), nullable=False)
     updated_at = Column(DateTime, server_default=text('CURRENT_TIMESTAMP'), onupdate=func.now(), nullable=False)
     

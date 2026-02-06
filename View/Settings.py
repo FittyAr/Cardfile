@@ -1,10 +1,14 @@
 import flet as ft
 from typing import Callable
 from config.config import Config
+from config.locking import get_user_locking_settings, hash_lock_password, verify_lock_password
 from config.runtime import is_web_runtime
 from config.security import normalize_allowed_ips
 from theme.manager import ThemeManager
 from theme.colors import ThemeColors
+from data.database.connection import get_session
+from data.models.usuario import Usuario
+from View.components.auth_manager import AuthManager
 
 theme_manager = ThemeManager()
 
@@ -14,6 +18,14 @@ async def settings_modal(page: ft.Page, on_close: Callable, on_success: Callable
     is_web = is_web_runtime(page)
     client_ip = getattr(page, "client_ip", None) if is_web else None
     run_mode = "Web" if is_web else "Escritorio"
+    auth_manager = AuthManager(page)
+    user_id = await auth_manager.get_authenticated_user_id()
+    session = get_session()
+    try:
+        current_user = session.query(Usuario).filter(Usuario.id == user_id).first()
+    finally:
+        session.close()
+    locking_settings = get_user_locking_settings(config, current_user)
 
     language_options = [
         ft.DropdownOption(opt["value"], opt["text"])
@@ -50,6 +62,33 @@ async def settings_modal(page: ft.Page, on_close: Callable, on_success: Callable
         value=config.get("app.debug", False)
     )
 
+    locking_enabled_switch = ft.Switch(
+        value=locking_settings["enabled"]
+    )
+    locking_password_field = ft.TextField(
+        label="Contraseña de tarjetas",
+        password=True,
+        can_reveal_password=True,
+        hint_text="Contraseña guardada" if locking_settings["password_hash"] else "",
+        width=theme_manager.input_width,
+    )
+    locking_password_hint = ft.Text(
+        "Ya existe una contraseña guardada",
+        color=theme_manager.subtext,
+        size=theme_manager.text_size_sm,
+        visible=bool(locking_settings["password_hash"]),
+    )
+    locking_timeout_field = ft.TextField(
+        value=str(locking_settings["auto_lock_seconds"]),
+        keyboard_type=ft.KeyboardType.NUMBER,
+        width=theme_manager.input_width,
+    )
+    locking_mask_field = ft.TextField(
+        value=str(locking_settings["mask_visible_chars"]),
+        keyboard_type=ft.KeyboardType.NUMBER,
+        width=theme_manager.input_width,
+    )
+
     allowed_ips_field = None
     if is_web:
         allowed_ips = config.get("app.web.allowed_ips", ["0.0.0.0"])
@@ -60,6 +99,11 @@ async def settings_modal(page: ft.Page, on_close: Callable, on_success: Callable
             max_lines=4,
             width=theme_manager.input_width,
         )
+
+    disable_password_dialog = ft.AlertDialog(
+        modal=True,
+        title=ft.Text("Confirmar deshabilitado", size=theme_manager.text_size_lg, weight=ft.FontWeight.W_600),
+    )
 
     async def save_clicked(e):
         selected_theme = theme_dd.value or theme_manager.current_theme_name
@@ -78,6 +122,105 @@ async def settings_modal(page: ft.Page, on_close: Callable, on_success: Callable
                 config.set("app.auth.session_expiry_days", session_days)
         except Exception:
             pass
+
+        password_value = (locking_password_field.value or "").strip()
+        has_password_hash = bool(locking_settings["password_hash"])
+
+        if not locking_enabled_switch.value and has_password_hash:
+            password_dialog_field = ft.TextField(
+                label="Contraseña de tarjetas",
+                password=True,
+                can_reveal_password=True,
+                width=theme_manager.input_width,
+            )
+
+            async def confirm_disable(e):
+                entered_password = (password_dialog_field.value or "").strip()
+                if not entered_password:
+                    page.show_dialog(ft.SnackBar(
+                        content=ft.Text("Debes ingresar la contraseña"),
+                        bgcolor=ft.Colors.RED_400,
+                        action="Ok",
+                        duration=2000
+                    ))
+                    page.update()
+                    return
+                if not verify_lock_password(entered_password, locking_settings["password_hash"]):
+                    page.show_dialog(ft.SnackBar(
+                        content=ft.Text("Contraseña incorrecta"),
+                        bgcolor=ft.Colors.RED_400,
+                        action="Ok",
+                        duration=2000
+                    ))
+                    page.update()
+                    return
+                disable_password_dialog.open = False
+                page.update()
+                await persist_lock_settings(password_value, has_password_hash)
+
+            def cancel_disable(e):
+                disable_password_dialog.open = False
+                page.update()
+
+            disable_password_dialog.content = ft.Column(
+                [
+                    ft.Text("Confirma la contraseña para deshabilitar el bloqueo", color=theme_manager.subtext),
+                    password_dialog_field,
+                ],
+                spacing=theme_manager.space_8,
+                tight=True,
+            )
+            disable_password_dialog.actions = [
+                ft.TextButton(content=ft.Text("Cancelar", color=ft.Colors.RED_400), on_click=cancel_disable),
+                ft.Button(
+                    content=ft.Text("Confirmar", weight=ft.FontWeight.BOLD),
+                    width=theme_manager.button_width,
+                    height=theme_manager.button_height,
+                    color=ft.Colors.WHITE,
+                    bgcolor=theme_manager.primary,
+                    style=theme_manager.primary_button_style,
+                    on_click=confirm_disable,
+                ),
+            ]
+            page.dialog = disable_password_dialog
+            disable_password_dialog.open = True
+            page.update()
+            return
+
+        await persist_lock_settings(password_value, has_password_hash)
+
+    async def persist_lock_settings(password_value, has_password_hash):
+
+        session = get_session()
+        try:
+            user = session.query(Usuario).filter(Usuario.id == user_id).first()
+            if user:
+                if locking_enabled_switch.value:
+                    if not password_value and not has_password_hash:
+                        page.show_dialog(ft.SnackBar(
+                            content=ft.Text("Debes definir una contraseña de tarjetas"),
+                            bgcolor=ft.Colors.RED_400,
+                            action="Ok",
+                            duration=2000
+                        ))
+                        page.update()
+                        return
+                user.locking_enabled = locking_enabled_switch.value
+                if password_value and locking_enabled_switch.value:
+                    user.locking_password_hash = hash_lock_password(password_value)
+                try:
+                    auto_lock_seconds = int(locking_timeout_field.value)
+                    user.locking_auto_lock_seconds = max(auto_lock_seconds, 0)
+                except Exception:
+                    pass
+                try:
+                    mask_chars = int(locking_mask_field.value)
+                    user.locking_mask_visible_chars = max(mask_chars, 0)
+                except Exception:
+                    pass
+                session.commit()
+        finally:
+            session.close()
 
         if is_web and allowed_ips_field:
             config.set("app.web.allowed_ips", normalize_allowed_ips(allowed_ips_field.value))
@@ -115,6 +258,31 @@ async def settings_modal(page: ft.Page, on_close: Callable, on_success: Callable
             [
                 ft.Text("Duración de sesión (días)", color=theme_manager.subtext),
                 session_days_field,
+            ],
+            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+        ),
+        ft.Container(height=theme_manager.space_8),
+        ft.Text("Bloqueo de tarjetas", size=theme_manager.text_size_md, weight=ft.FontWeight.W_600, color=theme_manager.text),
+        ft.Row(
+            [
+                ft.Text("Habilitar bloqueo", color=theme_manager.subtext),
+                locking_enabled_switch,
+            ],
+            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+        ),
+        locking_password_field,
+        locking_password_hint,
+        ft.Row(
+            [
+                ft.Text("Tiempo de bloqueo (seg)", color=theme_manager.subtext),
+                locking_timeout_field,
+            ],
+            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+        ),
+        ft.Row(
+            [
+                ft.Text("Caracteres visibles", color=theme_manager.subtext),
+                locking_mask_field,
             ],
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
         ),

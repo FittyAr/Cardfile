@@ -38,6 +38,8 @@ class CardState:
     debounce_task: Optional[asyncio.Task] = None
     autosave_task: Optional[asyncio.Task] = None
     fichas_list: list = field(default_factory=list)
+    unlocked_fichas: set = field(default_factory=set)
+    relock_tasks: dict = field(default_factory=dict)
     
     def select_ficha(self, ficha):
         """
@@ -112,3 +114,11 @@ class CardState:
                 await self.autosave_task
             except asyncio.CancelledError:
                 pass
+
+        for task in list(self.relock_tasks.values()):
+            if task and not task.done():
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass

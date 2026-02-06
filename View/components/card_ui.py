@@ -158,8 +158,9 @@ def create_card_header(
     selected_card_title: ft.Text, 
     save_indicator: ft.Row,
     edit_callback: Callable,
-    delete_callback: Callable
-) -> Tuple[ft.Container, ft.IconButton, ft.IconButton]:
+    delete_callback: Callable,
+    lock_callback: Callable
+) -> Tuple[ft.Container, ft.IconButton, ft.IconButton, ft.IconButton]:
     """
     Crea el header del panel principal con título, indicador de guardado y acciones.
     Retorna el contenedor y referencias a los botones para control de estado.
@@ -181,18 +182,26 @@ def create_card_header(
         disabled=True, # Iniciamos deshabilitado
     )
 
+    lock_button = ft.IconButton(
+        icon=ft.Icons.LOCK_OUTLINE,
+        tooltip="Bloquear tarjeta",
+        on_click=lock_callback,
+        icon_color=theme_manager.primary,
+        disabled=True,
+    )
+
     header_container = ft.Container(
         content=ft.Row(
             [
                 ft.Row([selected_card_title, save_indicator], spacing=theme_manager.space_12),
-                ft.Row([edit_button, delete_button], spacing=theme_manager.space_4),
+                ft.Row([lock_button, edit_button, delete_button], spacing=theme_manager.space_4),
             ],
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
         ),
         padding=ft.Padding.all(theme_manager.space_20),
     )
     
-    return header_container, edit_button, delete_button
+    return header_container, lock_button, edit_button, delete_button
 
 
 def create_custom_tabs(

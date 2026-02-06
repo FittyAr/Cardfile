@@ -11,6 +11,7 @@ class Ficha(Base):
     descripcion = Column(String, nullable=True)
     usuario_id = Column(Integer, ForeignKey('usuarios.id'), nullable=False)
     is_active = Column(Boolean, nullable=False, default=True)
+    is_locked = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime, server_default=text('CURRENT_TIMESTAMP'), nullable=False)
     updated_at = Column(DateTime, server_default=text('CURRENT_TIMESTAMP'), onupdate=func.now(), nullable=False)
 

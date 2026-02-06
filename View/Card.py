@@ -1,8 +1,10 @@
 import flet as ft
 from data.database.connection import get_session
 from data.models.ficha import Ficha
+from data.models.usuario import Usuario
 from datetime import datetime
 from config.config import Config
+from config.locking import get_user_locking_settings, mask_title
 import asyncio
 from theme.manager import ThemeManager
 
@@ -24,31 +26,52 @@ from View.components.card_ui import (
     create_search_field
 )
 from View.components.card_state import CardState
+from View.components.auth_manager import AuthManager
 
 # Importar componentes de modales
 from View.NewCard import new_card_modal
 from View.EditCard import edit_card_modal
 from View.Recycle import recycle_modal
 from View.Settings import settings_modal
+from View.UnlockCard import unlock_card_modal
 from theme.colors import ThemeColors
 
 async def card_view(page: ft.Page):
     """Vista moderna de tarjetas con diseño profesional tipo dashboard"""
     config = Config()
     t = config.translations['card']
-    
     # Aplicar modo oscuro/claro según el tema
     page.theme_mode = ft.ThemeMode.DARK if theme_manager.is_dark else ft.ThemeMode.LIGHT
     
     # Estado centralizado
     state = CardState()
     search_query = ""
+
+    auth_manager = AuthManager(page)
+    if auth_manager.require_login and not await auth_manager.is_authenticated():
+        await page.push_route("/Login")
+        return ft.Container()
+
+    user_id = await auth_manager.get_authenticated_user_id()
+    session = get_session()
+    try:
+        current_user = session.query(Usuario).filter(Usuario.id == user_id).first()
+    finally:
+        session.close()
+    locking_settings = get_user_locking_settings(config, current_user)
+    locking_enabled = locking_settings["enabled"]
+    auto_lock_seconds = locking_settings["auto_lock_seconds"]
+    mask_visible_chars = locking_settings["mask_visible_chars"]
+    lock_password_hash = locking_settings["password_hash"]
     
     # ==================== COMPONENTES DE UI ====================
     
     # --- Modales ---
     async def hide_modal():
         modal_overlay.visible = False
+        modal_overlay.content = ft.Container()
+        page.update()
+        await asyncio.sleep(0)
         modal_overlay.content = None
         page.update()
 
@@ -80,6 +103,18 @@ async def card_view(page: ft.Page):
         preview_btn.bgcolor = theme_manager.subtle_bg
         preview_btn.content.color = theme_manager.text
         page.update()
+
+    def ficha_is_locked(ficha):
+        if not locking_enabled or not ficha:
+            return False
+        return ficha.is_locked and ficha.id not in state.unlocked_fichas
+
+    def get_display_title(ficha):
+        if not ficha:
+            return ""
+        if locking_enabled and ficha.is_locked and ficha.id not in state.unlocked_fichas:
+            return mask_title(ficha.title, mask_visible_chars)
+        return ficha.title
 
     def on_preview_tab_click(e):
         editor_container.visible = False
@@ -124,6 +159,17 @@ async def card_view(page: ft.Page):
         """Handler para el botón de eliminar del header"""
         await delete_ficha_logic()
 
+    async def toggle_lock_handler(e=None):
+        if not locking_enabled or not state.selected_ficha:
+            return
+        ficha = state.selected_ficha
+        if ficha.is_locked:
+            async def unlock_persistent():
+                await set_ficha_lock_state(ficha.id, False)
+            await open_unlock_modal(ficha, unlock_persistent)
+        else:
+            await set_ficha_lock_state(ficha.id, True)
+
     async def change_theme_handler(theme_name):
         """Handler para cambiar el tema de la aplicación"""
         theme_manager.set_theme(theme_name)
@@ -139,12 +185,6 @@ async def card_view(page: ft.Page):
         modal_overlay.visible = True
         page.update()
 
-    from View.components.auth_manager import AuthManager
-    auth_manager = AuthManager(page)
-    if auth_manager.require_login and not await auth_manager.is_authenticated():
-        await page.push_route("/Login")
-        return ft.Container()
-    
     async def logout_handler(e):
         """Handler para el botón de cerrar sesión"""
         await auth_manager.logout()
@@ -167,11 +207,12 @@ async def card_view(page: ft.Page):
         on_editor_tab_click, on_preview_tab_click
     )
 
-    header_container, edit_header_btn, delete_header_btn = create_card_header(
+    header_container, lock_header_btn, edit_header_btn, delete_header_btn = create_card_header(
         selected_card_title, 
         save_indicator,
         edit_callback=edit_card_handler,
-        delete_callback=delete_ficha_handler
+        delete_callback=delete_ficha_handler,
+        lock_callback=toggle_lock_handler
     )
 
     editor_container = ft.Container(content=markdown_editor, expand=True, visible=False)
@@ -198,7 +239,7 @@ async def card_view(page: ft.Page):
     def update_editor_state():
         """Actualiza el estado de habilitación del editor basado en la selección"""
         # Usar el objeto state en lugar de variables separadas
-        editor_enabled = state.editor_should_be_enabled()
+        editor_enabled = state.editor_should_be_enabled() and not ficha_is_locked(state.selected_ficha)
         
         # Actualizar estado de componentes
         if markdown_editor:
@@ -212,13 +253,24 @@ async def card_view(page: ft.Page):
         elif not state.is_ficha_selected():
             selected_card_title.value = "👉 Selecciona una tarjeta"
         else:
-            selected_card_title.value = state.selected_ficha.title
+            selected_card_title.value = get_display_title(state.selected_ficha)
         
         # Deshabilitar tabs y botones de acción si no hay selección
         editor_btn.disabled = not editor_enabled
         preview_btn.disabled = not editor_enabled
         edit_header_btn.disabled = not editor_enabled
         delete_header_btn.disabled = not editor_enabled
+        if locking_enabled:
+            lock_header_btn.visible = True
+            lock_header_btn.disabled = not state.is_ficha_selected()
+            if state.selected_ficha and state.selected_ficha.is_locked:
+                lock_header_btn.icon = ft.Icons.LOCK
+                lock_header_btn.tooltip = "Desbloquear tarjeta"
+            else:
+                lock_header_btn.icon = ft.Icons.LOCK_OPEN
+                lock_header_btn.tooltip = "Bloquear tarjeta"
+        else:
+            lock_header_btn.visible = False
         
         page.update()
     
@@ -261,6 +313,58 @@ async def card_view(page: ft.Page):
             print(f"Error cargando fichas: {str(e)}")
         finally:
             session.close()
+
+    def cancel_relock_task(ficha_id):
+        task = state.relock_tasks.pop(ficha_id, None)
+        if task and not task.done():
+            task.cancel()
+
+    async def set_ficha_lock_state(ficha_id, locked):
+        session = get_session()
+        try:
+            ficha = session.query(Ficha).filter(Ficha.id == ficha_id).first()
+            if ficha:
+                ficha.is_locked = locked
+                session.commit()
+            for item in state.fichas_list:
+                if item.id == ficha_id:
+                    item.is_locked = locked
+                    break
+            if locked:
+                state.unlocked_fichas.discard(ficha_id)
+                cancel_relock_task(ficha_id)
+            else:
+                state.unlocked_fichas.discard(ficha_id)
+            render_fichas_list(state.fichas_list)
+            update_editor_state()
+            page.update()
+        except Exception as e:
+            session.rollback()
+            print(f"Error actualizando bloqueo: {str(e)}")
+        finally:
+            session.close()
+
+    async def schedule_relock(ficha_id):
+        if auto_lock_seconds <= 0:
+            await set_ficha_lock_state(ficha_id, True)
+            return
+        cancel_relock_task(ficha_id)
+        async def relock_task():
+            await asyncio.sleep(auto_lock_seconds)
+            await set_ficha_lock_state(ficha_id, True)
+        state.relock_tasks[ficha_id] = asyncio.create_task(relock_task())
+
+    async def open_unlock_modal(ficha, on_success):
+        async def unlock_success():
+            await hide_modal()
+            state.unlocked_fichas.add(ficha.id)
+            cancel_relock_task(ficha.id)
+            await on_success()
+
+        modal_content = await unlock_card_modal(page, lock_password_hash, on_close=hide_modal, on_success=unlock_success)
+        modal_overlay.content = modal_content
+        modal_overlay.visible = True
+        page.update()
     
     def render_fichas_list(fichas):
         """Renderiza la lista de tarjetas en el sidebar"""
@@ -269,7 +373,7 @@ async def card_view(page: ft.Page):
         for ficha in fichas:
             # Tarjeta individual con diseño moderno
             title_text = ft.Text(
-                ficha.title,
+                get_display_title(ficha),
                 size=theme_manager.text_size_md,
                 weight=ft.FontWeight.W_600,
                 color=theme_manager.text,
@@ -285,19 +389,33 @@ async def card_view(page: ft.Page):
                 no_wrap=True,
                 overflow=ft.TextOverflow.ELLIPSIS,
             )
+            lock_indicator = None
+            if locking_enabled and ficha.is_locked:
+                is_unlocked = ficha.id in state.unlocked_fichas
+                lock_indicator = ft.Icon(
+                    ft.Icons.LOCK_OPEN if is_unlocked else ft.Icons.LOCK,
+                    color=theme_manager.primary if is_unlocked else theme_manager.subtext,
+                    size=theme_manager.icon_size_md,
+                )
+
+            row_controls = [
+                ft.Column(
+                    [
+                        title_text,
+                        date_text,
+                    ],
+                    spacing=theme_manager.space_4,
+                    expand=True,
+                )
+            ]
+            if lock_indicator:
+                row_controls.append(lock_indicator)
+
             card_item = ft.Container(
                 content=ft.Row(
-                    [
-                        ft.Column(
-                            [
-                                title_text,
-                                date_text,
-                            ],
-                            spacing=theme_manager.space_4,
-                            expand=True,
-                        )
-                    ],
+                    row_controls,
                     expand=True,
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                 ),
                 padding=ft.Padding.all(theme_manager.space_16),
                 border_radius=theme_manager.radius_md,
@@ -311,13 +429,25 @@ async def card_view(page: ft.Page):
         
         page.update()
     
-    async def select_ficha(ficha):
+    async def select_ficha(ficha, force_unlock=False):
         """Selecciona una tarjeta"""
+        if locking_enabled and ficha.is_locked and ficha.id not in state.unlocked_fichas and not force_unlock:
+            async def unlock_then_select():
+                await select_ficha(ficha, True)
+            await open_unlock_modal(ficha, unlock_then_select)
+            return
+
         # Guardar cambios pendientes de la tarjeta anterior
         if state.selected_ficha and state.has_unsaved_changes:
             await save_current_ficha()
+
+        if locking_enabled and state.selected_ficha and state.selected_ficha.is_locked and state.selected_ficha.id in state.unlocked_fichas:
+            await schedule_relock(state.selected_ficha.id)
         
         state.select_ficha(ficha)  # Usar método del state
+        if locking_enabled and ficha.is_locked:
+            state.unlocked_fichas.add(ficha.id)
+            cancel_relock_task(ficha.id)
         
         # Guardar en shared_preferences
         import json
@@ -330,7 +460,7 @@ async def card_view(page: ft.Page):
         await prefs.set("selected_ficha", ficha_data)
         
         # Actualizar UI
-        selected_card_title.value = ficha.title
+        selected_card_title.value = get_display_title(ficha)
         markdown_editor.value = ficha.descripcion or ""
         markdown_preview.value = ficha.descripcion or ""
         on_preview_tab_click(None)
@@ -537,7 +667,7 @@ async def card_view(page: ft.Page):
     async def on_view_unmount():
         if state.has_unsaved_changes:
             await save_current_ficha()
-        state.cleanup()
+        await state.cleanup()
     
     main_view.did_mount = on_view_mount
     main_view.will_unmount = on_view_unmount
