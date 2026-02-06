@@ -3,6 +3,7 @@ from flet import Page
 
 from View.Navigation import create_navigation_bar
 from config.config import Config
+from config.runtime import is_web_runtime
 
 async def views_handler(page: Page, route: str = None):
     """
@@ -22,7 +23,9 @@ async def views_handler(page: Page, route: str = None):
     async def handle_navigation_change(e):
         """Maneja los cambios en la barra de navegación"""
         index = e.control.selected_index
-        
+        is_web = is_web_runtime(page)
+        exit_index = 5 if not is_web else None
+
         if index == 0:  # Nueva tarjeta
             await page.push_route("/newCard")
         elif index == 1:  # Cambiar nombre
@@ -42,7 +45,10 @@ async def views_handler(page: Page, route: str = None):
                 await page.delete_ficha()
         elif index == 3:  # Papelera
             await page.push_route("/recycle")
-        elif index == 4:  # Salir
+        elif index == 4:  # Configuración
+            if hasattr(page, "open_settings"):
+                await page.open_settings()
+        elif exit_index is not None and index == exit_index:  # Salir
             from View.components.auth_manager import AuthManager
             auth = AuthManager(page)
             await auth.logout()

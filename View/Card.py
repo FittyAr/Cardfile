@@ -29,6 +29,7 @@ from View.components.card_state import CardState
 from View.NewCard import new_card_modal
 from View.EditCard import edit_card_modal
 from View.Recycle import recycle_modal
+from View.Settings import settings_modal
 from theme.colors import ThemeColors
 
 async def card_view(page: ft.Page):
@@ -102,6 +103,19 @@ async def card_view(page: ft.Page):
     async def new_card_handler(e):
         """Handler para el botón de nueva tarjeta en el sidebar"""
         modal_content = await new_card_modal(page, on_close=hide_modal, on_success=on_modal_success)
+        modal_overlay.content = modal_content
+        modal_overlay.visible = True
+        page.update()
+
+    async def settings_handler(e):
+        async def settings_success():
+            await hide_modal()
+            new_content = await card_view(page)
+            if page.views:
+                page.views[-1].controls = [new_content]
+            page.update()
+
+        modal_content = await settings_modal(page, on_close=hide_modal, on_success=settings_success)
         modal_overlay.content = modal_content
         modal_overlay.visible = True
         page.update()
@@ -463,6 +477,7 @@ async def card_view(page: ft.Page):
         card_counter=card_counter,
         new_card_callback=new_card_handler,
         recycle_bin_callback=recycle_bin_handler,
+        settings_callback=settings_handler,
         logout_callback=logout_handler
     )
     
@@ -529,5 +544,6 @@ async def card_view(page: ft.Page):
     
     # Asignar handler de eliminación
     page.delete_ficha = delete_ficha_handler
+    page.open_settings = settings_handler
     
     return main_view

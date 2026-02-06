@@ -5,6 +5,8 @@ from flet import Page
 from config.Route import views_handler
 from config.auth_flow import resolve_route, normalize_route
 from config.config import Config
+from config.runtime import is_web_runtime
+from config.security import is_ip_allowed
 from data.database.setup import init_db
 from data.database.connection import get_session
 from data.repositories.usuario_repository import UsuarioRepository
@@ -15,22 +17,6 @@ theme_manager = ThemeManager()
 
 # Inicializar la base de datos al importar el módulo
 init_db()
-
-def normalize_allowed_ips(allowed_ips):
-    if isinstance(allowed_ips, str):
-        allowed_ips = [ip.strip() for ip in allowed_ips.split(",") if ip.strip()]
-    if not isinstance(allowed_ips, list):
-        return ["0.0.0.0"]
-    cleaned = [ip.strip() for ip in allowed_ips if isinstance(ip, str) and ip.strip()]
-    return cleaned or ["0.0.0.0"]
-
-def is_ip_allowed(allowed_ips, client_ip):
-    allowed_ips = normalize_allowed_ips(allowed_ips)
-    if "0.0.0.0" in allowed_ips:
-        return True
-    if client_ip is None:
-        return False
-    return client_ip in allowed_ips
 
 def check_first_run():
     """Verifica si es la primera ejecución comprobando si hay usuarios en la BD"""
@@ -51,8 +37,7 @@ async def main(page: Page):
     page.padding = 0
     page.spacing = 0
     config = Config()
-    start_method = config.get("app.StartMetod", "Web")
-    if start_method == "Web":
+    if is_web_runtime(page):
         client_ip = None
         try:
             client_ip = getattr(page, "client_ip", None)
@@ -63,7 +48,7 @@ async def main(page: Page):
             page.views.clear()
             page.views.append(
                 ft.View(
-                    "/",
+                    route="/",
                     controls=[
                         ft.Container(
                             content=ft.Text("Acceso restringido"),

@@ -78,6 +78,7 @@
         "edit": "Cambiar nombre",
         "delete": "Eliminar",
         "recycle": "Papelera",
+        "settings": "Configuración",
         "exit": "Salir",
         "errors": {
             "select_card_edit": "Por favor seleccione una ficha para cambiar el nombre"

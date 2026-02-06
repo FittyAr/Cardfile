@@ -78,6 +78,7 @@
         "edit": "Renomear",
         "delete": "Excluir",
         "recycle": "Lixeira",
+        "settings": "Configurações",
         "exit": "Sair",
         "errors": {
             "select_card_edit": "Por favor, selecione um cartão para renomear"

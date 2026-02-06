@@ -78,6 +78,7 @@
         "edit": "Rename",
         "delete": "Delete",
         "recycle": "Recycle Bin",
+        "settings": "Settings",
         "exit": "Exit",
         "errors": {
             "select_card_edit": "Please select a card to rename"

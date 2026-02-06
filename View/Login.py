@@ -4,12 +4,14 @@ from data.models.usuario import Usuario
 from datetime import datetime
 import bcrypt
 from config.config import Config
+from config.runtime import is_web_runtime
 from theme.manager import ThemeManager
 
 theme_manager = ThemeManager()
 
 async def login_view(page: ft.Page):
     config = Config()
+    is_web = is_web_runtime(page)
     
     # Aplicar modo oscuro/claro según el tema
     page.theme_mode = ft.ThemeMode.DARK if theme_manager.is_dark else ft.ThemeMode.LIGHT
@@ -22,7 +24,8 @@ async def login_view(page: ft.Page):
             username.hint_text = config.get_text("login.username.hint")
             password.label = config.get_text("login.password.label")
             btn_login.content.value = config.get_text("login.buttons.login")
-            btn_exit.content.value = config.get_text("login.buttons.exit")
+            if btn_exit:
+                btn_exit.content.value = config.get_text("login.buttons.exit")
             register_link.content.value = config.get_text("login.register_link")
             title_text.value = config.get_text("login.title")
             page.update()
@@ -144,10 +147,12 @@ async def login_view(page: ft.Page):
         on_click=login_clicked
     )
  
-    btn_exit = ft.TextButton(
-        content=ft.Text(config.get_text("login.buttons.exit"), color=ft.Colors.RED_400),
-        on_click=exit_clicked
-    )
+    btn_exit = None
+    if not is_web:
+        btn_exit = ft.TextButton(
+            content=ft.Text(config.get_text("login.buttons.exit"), color=ft.Colors.RED_400),
+            on_click=exit_clicked
+        )
  
     async def go_to_register(e):
         await page.push_route("/newUser")
@@ -197,10 +202,7 @@ async def login_view(page: ft.Page):
                 btn_login,
                 
                 ft.Row(
-                    [
-                        register_link,
-                        btn_exit,
-                    ],
+                    [register_link] + ([btn_exit] if btn_exit else []),
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                 ),
             ],

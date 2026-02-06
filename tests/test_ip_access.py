@@ -1,5 +1,5 @@
 import unittest
-from main import normalize_allowed_ips, is_ip_allowed
+from config.security import normalize_allowed_ips, is_ip_allowed
 
 
 class IpAccessTests(unittest.TestCase):

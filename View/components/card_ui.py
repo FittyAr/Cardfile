@@ -50,6 +50,7 @@ def create_sidebar(
     card_counter: ft.Text,
     new_card_callback: Callable,
     recycle_bin_callback: Callable,
+    settings_callback: Callable,
     logout_callback: Callable
 ) -> ft.Container:
     """
@@ -122,6 +123,11 @@ def create_sidebar(
                                             icon=ft.Icons.DELETE_OUTLINE,
                                             tooltip="Papelera",
                                             on_click=recycle_bin_callback,
+                                        ),
+                                        ft.IconButton(
+                                            icon=ft.Icons.SETTINGS_OUTLINED,
+                                            tooltip="Configuración",
+                                            on_click=settings_callback,
                                         ),
                                         ft.IconButton(
                                             icon=ft.Icons.LOGOUT_ROUNDED,

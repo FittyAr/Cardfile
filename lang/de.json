@@ -78,6 +78,7 @@
         "edit": "Umbenennen",
         "delete": "Löschen",
         "recycle": "Papierkorb",
+        "settings": "Einstellungen",
         "exit": "Beenden",
         "errors": {
             "select_card_edit": "Bitte wählen Sie eine Karte zum Umbenennen aus"

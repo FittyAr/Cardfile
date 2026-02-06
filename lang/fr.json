@@ -78,6 +78,7 @@
         "edit": "Renommer",
         "delete": "Supprimer",
         "recycle": "Corbeille",
+        "settings": "Paramètres",
         "exit": "Quitter",
         "errors": {
             "select_card_edit": "Veuillez sélectionner une carte à renommer"

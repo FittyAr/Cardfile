@@ -78,6 +78,7 @@
         "edit": "重命名",
         "delete": "删除",
         "recycle": "回收站",
+        "settings": "设置",
         "exit": "退出",
         "errors": {
             "select_card_edit": "请选择要重命名的卡片"
