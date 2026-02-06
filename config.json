@@ -35,6 +35,11 @@
             ]
         },
         "theme": "forest",
+        "web": {
+            "allowed_ips": [
+                "0.0.0.0"
+            ]
+        },
         "auth": {
             "require_login": true,
             "session_expiry_days": 7
