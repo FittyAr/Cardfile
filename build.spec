@@ -8,11 +8,10 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[
-        ('config/*.json', 'config'),
+        ('config.json', '.'),
+        ('lang/*.json', 'lang'),
         ('View/*.py', 'View'),
-        ('Model/*.py', 'Model'),
         ('assets/*', 'assets'),
-        ('database/*.db', 'database'),  # Agregado para la base de datos SQLite
     ],
     hiddenimports=[
         'flet',
@@ -66,7 +65,7 @@ exe = EXE(
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=True,  # Cambiado a True temporalmente para ver errores durante pruebas
+    console=False,
     disable_windowed_traceback=False,
     target_arch=None,
     codesign_identity=None,

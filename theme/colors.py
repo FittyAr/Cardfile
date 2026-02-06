@@ -67,6 +67,58 @@ class ThemeColors:
             "card_bg": "#ECEFF4",
             "text": "#2E3440",
             "subtext": "#4C566A"
+        },
+        "sunset": {
+            "name": "Sunset Glow",
+            "is_dark": False,
+            "primary": "#FF6B3D",
+            "primary_light": "#FFE3D8",
+            "primary_dark": "#E0552E",
+            "accent": "#FFB347",
+            "bg": "#FFF5EE",
+            "sidebar_bg": "#FFE4D6",
+            "card_bg": "#FFFFFF",
+            "text": "#4A2C2A",
+            "subtext": "#B55D4A"
+        },
+        "lavender": {
+            "name": "Lavender Mist",
+            "is_dark": False,
+            "primary": "#7C3AED",
+            "primary_light": "#F3E8FF",
+            "primary_dark": "#5B21B6",
+            "accent": "#A78BFA",
+            "bg": "#FAF5FF",
+            "sidebar_bg": "#F3E8FF",
+            "card_bg": "#FFFFFF",
+            "text": "#3B0764",
+            "subtext": "#7C3AED"
+        },
+        "ocean": {
+            "name": "Deep Ocean",
+            "is_dark": True,
+            "primary": "#2E8BC0",
+            "primary_light": "#0C2D48",
+            "primary_dark": "#145DA0",
+            "accent": "#B1D4E0",
+            "bg": "#001C2E",
+            "sidebar_bg": "#00111D",
+            "card_bg": "#0A2A43",
+            "text": "#E8F1F8",
+            "subtext": "#8FB5CC"
+        },
+        "graphite": {
+            "name": "Graphite Core",
+            "is_dark": True,
+            "primary": "#9CA3AF",
+            "primary_light": "#1F2937",
+            "primary_dark": "#6B7280",
+            "accent": "#FBBF24",
+            "bg": "#111827",
+            "sidebar_bg": "#0B1220",
+            "card_bg": "#1F2937",
+            "text": "#F9FAFB",
+            "subtext": "#9CA3AF"
         }
     }
 

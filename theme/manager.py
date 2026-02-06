@@ -14,6 +14,9 @@ class ThemeManager:
 
     def refresh_colors(self):
         theme_name = self.config.current_theme
+        self._apply_colors(theme_name)
+
+    def _apply_colors(self, theme_name):
         self.colors = ThemeColors.get_colors(theme_name)
         self.primary = self.colors["primary"]
         self.primary_light = self.colors["primary_light"]
@@ -86,6 +89,9 @@ class ThemeManager:
         )
         self.text_style_label = ft.TextStyle(color=self.subtext)
         self.tab_radius = ft.BorderRadius.only(top_left=self.radius_sm, top_right=self.radius_sm)
+
+    def preview_theme(self, theme_name):
+        self._apply_colors(theme_name)
 
     def set_theme(self, theme_name):
         self.config.set_theme(theme_name)

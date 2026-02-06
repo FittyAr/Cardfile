@@ -2,13 +2,19 @@ import os
 import shutil
 import subprocess
 
-# Limpiar carpetas anteriores
-if os.path.exists('build'):
-    shutil.rmtree('build')
-if os.path.exists('dist'):
-    shutil.rmtree('dist')
+def safe_rmtree(path: str) -> None:
+    if not os.path.exists(path):
+        return
+    try:
+        shutil.rmtree(path)
+    except PermissionError:
+        print(f"No se pudo eliminar '{path}'. Cierra la app y vuelve a intentar.")
+    except Exception as e:
+        print(f"No se pudo eliminar '{path}': {e}")
 
-# Compilar
-subprocess.run(['pyinstaller', 'build.spec', '--clean'])
+safe_rmtree("build")
+safe_rmtree("dist")
 
-print("Compilación completada. Revisa la carpeta 'dist'") 
+subprocess.run(["pyinstaller", "build.spec", "--clean"])
+
+print("Compilación completada. Revisa la carpeta 'dist'")

@@ -1,5 +1,7 @@
 import json
 import os
+import sys
+import shutil
 from typing import Optional, Dict, Any, List
 import glob
 
@@ -8,7 +10,7 @@ DATABASE_URI = 'sqlite:///database.db'
 
 class Config:
     def __init__(self, config_file="config.json"):
-        self.config_file = config_file
+        self.config_file = self._resolve_config_path(config_file)
         self.config_data = self.load_config()
         self.available_languages = self._discover_languages()
         self.language_names = self._get_language_names()
@@ -17,12 +19,59 @@ class Config:
         self.translations: Dict[str, Any] = {}
         self._load_translations()
 
+    def _base_dir(self) -> str:
+        if getattr(sys, "frozen", False):
+            return os.path.dirname(sys.executable)
+        return os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+    def _resolve_config_path(self, config_file: str) -> str:
+        if os.path.isabs(config_file):
+            return config_file
+        base_dir = self._base_dir()
+        candidate = os.path.join(base_dir, config_file)
+        if os.path.exists(candidate):
+            return candidate
+        bundle_dir = getattr(sys, "_MEIPASS", None)
+        if bundle_dir:
+            bundled = os.path.join(bundle_dir, config_file)
+            if os.path.exists(bundled):
+                os.makedirs(base_dir, exist_ok=True)
+                try:
+                    shutil.copyfile(bundled, candidate)
+                except Exception:
+                    return bundled
+                return candidate
+        return candidate
+
+    def _resolve_path(self, path: str) -> str:
+        if os.path.isabs(path):
+            return path
+        base_dir = os.path.dirname(self.config_file)
+        candidate = os.path.join(base_dir, path)
+        if os.path.exists(candidate):
+            return candidate
+        bundle_dir = getattr(sys, "_MEIPASS", None)
+        if bundle_dir:
+            bundled = os.path.join(bundle_dir, path)
+            if os.path.exists(bundled):
+                try:
+                    if os.path.isdir(bundled):
+                        os.makedirs(candidate, exist_ok=True)
+                        shutil.copytree(bundled, candidate, dirs_exist_ok=True)
+                    else:
+                        os.makedirs(os.path.dirname(candidate), exist_ok=True)
+                        shutil.copyfile(bundled, candidate)
+                except Exception:
+                    return bundled
+                return candidate
+        return candidate
+
     def _discover_languages(self) -> List[str]:
         """
         Descubre automáticamente los idiomas disponibles en la carpeta lang
         Retorna una lista de códigos de idioma (ej: ['es', 'en', 'pt_BR', 'fr'])
         """
-        lang_path = self.get("app.language.path", "./lang")
+        lang_path = self._resolve_path(self.get("app.language.path", "./lang"))
         if not os.path.exists(lang_path):
             os.makedirs(lang_path)
             
@@ -66,7 +115,7 @@ class Config:
 
     def _load_translations(self) -> None:
         """Carga el archivo de traducciones según el idioma configurado"""
-        lang_path = self.get("app.language.path", "./lang")
+        lang_path = self._resolve_path(self.get("app.language.path", "./lang"))
         lang_file = os.path.join(lang_path, f"{self.current_language}.json")
         
         if not os.path.exists(lang_file):

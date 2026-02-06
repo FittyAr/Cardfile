@@ -34,7 +34,6 @@ from View.EditCard import edit_card_modal
 from View.Recycle import recycle_modal
 from View.Settings import settings_modal
 from View.UnlockCard import unlock_card_modal
-from theme.colors import ThemeColors
 
 async def card_view(page: ft.Page):
     """Vista moderna de tarjetas con diseño profesional tipo dashboard"""
@@ -169,15 +168,6 @@ async def card_view(page: ft.Page):
             await open_unlock_modal(ficha, unlock_persistent)
         else:
             await set_ficha_lock_state(ficha.id, True)
-
-    async def change_theme_handler(theme_name):
-        """Handler para cambiar el tema de la aplicación"""
-        theme_manager.set_theme(theme_name)
-        # Recargar los controles de la vista actual
-        new_content = await card_view(page)
-        if page.views:
-            page.views[-1].controls = [new_content]
-        page.update()
 
     async def recycle_bin_handler(e):
         modal_content = await recycle_modal(page, on_close=hide_modal, on_success=on_modal_success)
@@ -577,30 +567,6 @@ async def card_view(page: ft.Page):
     
     # ==================== LAYOUT ====================
     
-    # --- Theme Switcher ---
-    theme_selector = ft.Row(
-        [
-            ft.Container(
-                content=ft.IconButton(
-                    icon=ft.Icons.CIRCLE,
-                    icon_color=color_palette["primary"],
-                    tooltip=color_palette["name"],
-                    on_click=lambda _, n=name: asyncio.create_task(change_theme_handler(n)),
-                    icon_size=theme_manager.icon_size_md,
-                    style=ft.ButtonStyle(
-                        padding=0,
-                    )
-                ),
-                border=ft.Border.all(2, theme_manager.primary) if theme_manager.current_theme_name == name else None,
-                border_radius=theme_manager.radius_round,
-                padding=theme_manager.space_4,
-            )
-            for name, color_palette in ThemeColors.THEMES.items()
-        ],
-        spacing=theme_manager.space_8,
-        alignment=ft.MainAxisAlignment.CENTER,
-    )
-
     sidebar = create_sidebar(
         search_field=search_field,
         cards_listview=cards_listview,
@@ -610,16 +576,6 @@ async def card_view(page: ft.Page):
         settings_callback=settings_handler,
         logout_callback=logout_handler
     )
-    
-    # Inyectar el selector de temas en el sidebar (esto requiere modificar create_sidebar o hacerlo aquí)
-    # Por simplicidad y minimalismo, lo añadiremos al final del sidebar_content
-    sidebar.content.controls.insert(-1, ft.Container(
-        content=ft.Column([
-            ft.Text("Tema", size=theme_manager.text_size_sm, weight=ft.FontWeight.BOLD, color=theme_manager.subtext),
-            theme_selector,
-        ], spacing=theme_manager.space_8, horizontal_alignment=ft.CrossAxisAlignment.CENTER),
-        padding=ft.Padding.symmetric(horizontal=theme_manager.space_20, vertical=theme_manager.space_12)
-    ))
     
     main_panel = ft.Container(
         content=ft.Column(
