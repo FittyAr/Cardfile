@@ -100,10 +100,46 @@ async def settings_modal(page: ft.Page, on_close: Callable, on_success: Callable
             width=theme_manager.input_width,
         )
 
-    disable_password_dialog = ft.AlertDialog(
-        modal=True,
-        title=ft.Text("Confirmar deshabilitado", size=theme_manager.text_size_lg, weight=ft.FontWeight.W_600),
+    pending_password_value = ""
+    pending_has_password_hash = False
+    disable_password_field = ft.TextField(
+        label="Contraseña de tarjetas",
+        password=True,
+        can_reveal_password=True,
+        width=theme_manager.input_width,
     )
+    disable_password_overlay = ft.Container(visible=False)
+
+    async def confirm_disable_clicked(e):
+        nonlocal pending_password_value, pending_has_password_hash
+        entered_password = (disable_password_field.value or "").strip()
+        if not entered_password:
+            page.show_dialog(ft.SnackBar(
+                content=ft.Text("Debes ingresar la contraseña"),
+                bgcolor=ft.Colors.RED_400,
+                action="Ok",
+                duration=2000
+            ))
+            page.update()
+            return
+        if not verify_lock_password(entered_password, locking_settings["password_hash"]):
+            page.show_dialog(ft.SnackBar(
+                content=ft.Text("Contraseña incorrecta"),
+                bgcolor=ft.Colors.RED_400,
+                action="Ok",
+                duration=2000
+            ))
+            page.update()
+            return
+        disable_password_field.value = ""
+        disable_password_overlay.visible = False
+        page.update()
+        await persist_lock_settings(pending_password_value, pending_has_password_hash)
+
+    def cancel_disable_clicked(e):
+        disable_password_field.value = ""
+        disable_password_overlay.visible = False
+        page.update()
 
     async def save_clicked(e):
         selected_theme = theme_dd.value or theme_manager.current_theme_name
@@ -127,63 +163,9 @@ async def settings_modal(page: ft.Page, on_close: Callable, on_success: Callable
         has_password_hash = bool(locking_settings["password_hash"])
 
         if not locking_enabled_switch.value and has_password_hash:
-            password_dialog_field = ft.TextField(
-                label="Contraseña de tarjetas",
-                password=True,
-                can_reveal_password=True,
-                width=theme_manager.input_width,
-            )
-
-            async def confirm_disable(e):
-                entered_password = (password_dialog_field.value or "").strip()
-                if not entered_password:
-                    page.show_dialog(ft.SnackBar(
-                        content=ft.Text("Debes ingresar la contraseña"),
-                        bgcolor=ft.Colors.RED_400,
-                        action="Ok",
-                        duration=2000
-                    ))
-                    page.update()
-                    return
-                if not verify_lock_password(entered_password, locking_settings["password_hash"]):
-                    page.show_dialog(ft.SnackBar(
-                        content=ft.Text("Contraseña incorrecta"),
-                        bgcolor=ft.Colors.RED_400,
-                        action="Ok",
-                        duration=2000
-                    ))
-                    page.update()
-                    return
-                disable_password_dialog.open = False
-                page.update()
-                await persist_lock_settings(password_value, has_password_hash)
-
-            def cancel_disable(e):
-                disable_password_dialog.open = False
-                page.update()
-
-            disable_password_dialog.content = ft.Column(
-                [
-                    ft.Text("Confirma la contraseña para deshabilitar el bloqueo", color=theme_manager.subtext),
-                    password_dialog_field,
-                ],
-                spacing=theme_manager.space_8,
-                tight=True,
-            )
-            disable_password_dialog.actions = [
-                ft.TextButton(content=ft.Text("Cancelar", color=ft.Colors.RED_400), on_click=cancel_disable),
-                ft.Button(
-                    content=ft.Text("Confirmar", weight=ft.FontWeight.BOLD),
-                    width=theme_manager.button_width,
-                    height=theme_manager.button_height,
-                    color=ft.Colors.WHITE,
-                    bgcolor=theme_manager.primary,
-                    style=theme_manager.primary_button_style,
-                    on_click=confirm_disable,
-                ),
-            ]
-            page.dialog = disable_password_dialog
-            disable_password_dialog.open = True
+            pending_password_value = password_value
+            pending_has_password_hash = has_password_hash
+            disable_password_overlay.visible = True
             page.update()
             return
 
@@ -430,23 +412,82 @@ async def settings_modal(page: ft.Page, on_close: Callable, on_success: Callable
         expand=True,
     )
 
-    return ft.Container(
-        content=ft.Row(
+    main_content = ft.Row(
+        [
+            ft.Container(
+                content=menu,
+                width=230,
+                bgcolor=theme_manager.subtle_bg,
+                border_radius=theme_manager.radius_md,
+                padding=ft.Padding.all(theme_manager.space_12),
+            ),
+            ft.Container(
+                content=right_panel,
+                expand=True,
+                padding=ft.Padding.all(theme_manager.space_12),
+            ),
+        ],
+        spacing=theme_manager.space_12,
+        expand=True,
+    )
+
+    disable_password_overlay.content = ft.Container(
+        content=ft.Column(
             [
-                ft.Container(
-                    content=menu,
-                    width=230,
-                    bgcolor=theme_manager.subtle_bg,
-                    border_radius=theme_manager.radius_md,
-                    padding=ft.Padding.all(theme_manager.space_12),
+                ft.Row(
+                    [
+                        ft.Icon(ft.Icons.LOCK_OUTLINED, color=theme_manager.primary, size=theme_manager.icon_size_lg),
+                        ft.Text("Confirmar deshabilitado", size=theme_manager.text_size_xl, weight=ft.FontWeight.BOLD, color=theme_manager.text),
+                    ],
+                    alignment=ft.MainAxisAlignment.CENTER,
+                    spacing=theme_manager.space_12,
                 ),
-                ft.Container(
-                    content=right_panel,
-                    expand=True,
-                    padding=ft.Padding.all(theme_manager.space_12),
+                ft.Divider(height=1, color=theme_manager.divider_color),
+                ft.Text("Confirma la contraseña para deshabilitar el bloqueo", color=theme_manager.subtext),
+                disable_password_field,
+                ft.Row(
+                    [
+                        ft.TextButton(
+                            content=ft.Text("Cancelar", color=ft.Colors.RED_400),
+                            on_click=cancel_disable_clicked,
+                        ),
+                        ft.Button(
+                            content=ft.Text("Confirmar", weight=ft.FontWeight.BOLD),
+                            width=theme_manager.button_width,
+                            height=theme_manager.button_height,
+                            color=ft.Colors.WHITE,
+                            bgcolor=theme_manager.primary,
+                            style=theme_manager.primary_button_style,
+                            on_click=confirm_disable_clicked,
+                        ),
+                    ],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                 ),
             ],
             spacing=theme_manager.space_12,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+        ),
+        width=theme_manager.modal_width,
+        height=theme_manager.modal_height,
+        padding=theme_manager.modal_padding,
+        bgcolor=theme_manager.card_bg,
+        border_radius=theme_manager.radius_lg,
+        border=theme_manager.card_border,
+        shadow=theme_manager.card_shadow,
+        alignment=ft.Alignment.CENTER,
+        on_click=lambda _: None,
+    )
+    disable_password_overlay.bgcolor = theme_manager.modal_overlay_bg
+    disable_password_overlay.blur = ft.Blur(theme_manager.modal_overlay_blur, theme_manager.modal_overlay_blur)
+    disable_password_overlay.expand = True
+    disable_password_overlay.alignment = ft.Alignment.CENTER
+
+    return ft.Container(
+        content=ft.Stack(
+            [
+                main_content,
+                disable_password_overlay,
+            ],
             expand=True,
         ),
         width=900,
