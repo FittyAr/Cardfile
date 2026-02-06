@@ -125,10 +125,12 @@ async def card_view(page: ft.Page):
         modal_overlay.visible = True
         page.update()
 
+    from View.components.auth_manager import AuthManager
+    auth_manager = AuthManager(page)
+    
     async def logout_handler(e):
         """Handler para el botón de cerrar sesión"""
-        await page.shared_preferences.remove("selected_ficha")
-        await page.push_route("/Login")
+        await auth_manager.logout()
 
     # --- Componentes ---
     search_field = create_search_field(on_search_change)
@@ -206,8 +208,10 @@ async def card_view(page: ft.Page):
         """Carga las fichas del usuario"""
         session = get_session()
         try:
-            user_id = await page.shared_preferences.get("user_id")
-            user_id = int(user_id) if user_id else None
+            # Obtener el ID del usuario actual (real o Guest)
+            user_id = await auth_manager.get_authenticated_user_id()
+            
+            # Filtro estricto por usuario para aislamiento de datos
             q = session.query(Ficha).filter(Ficha.usuario_id == user_id, Ficha.is_active == True)
             if search_text:
                 q = q.filter(Ficha.title.ilike(f"%{search_text}%"))

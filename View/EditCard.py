@@ -30,9 +30,16 @@ async def edit_card_modal(page: ft.Page, on_close: Callable, on_success: Callabl
             page.update()
             return
         
+        from View.components.auth_manager import AuthManager
+        auth_manager = AuthManager(page)
+        
         session = get_session()
         try:
-            ficha = session.query(Ficha).filter(Ficha.id == selected_ficha["id"]).first()
+            user_id = await auth_manager.get_authenticated_user_id()
+            ficha = session.query(Ficha).filter(
+                Ficha.id == selected_ficha["id"],
+                Ficha.usuario_id == user_id
+            ).first()
             if ficha:
                 ficha.title = card_name.value.strip()
                 ficha.updated_at = datetime.now()

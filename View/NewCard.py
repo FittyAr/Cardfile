@@ -11,21 +11,15 @@ theme_manager = ThemeManager()
 async def new_card_modal(page: ft.Page, on_close: Callable, on_success: Callable):
     # Siempre crear una nueva instancia de Config
     config = Config()
-
+    
     async def save_clicked(e):
-        if not card_name.value:
-            page.show_dialog(ft.SnackBar(
-                content=ft.Text(config.get_text("new_card.name.empty_error")),
-                bgcolor=ft.Colors.RED_400,
-                action="Ok"
-            ))
-            page.update()
-            return
+        from View.components.auth_manager import AuthManager
+        auth_manager = AuthManager(page)
         
         session = get_session()
         try:
-            user_id = await page.shared_preferences.get("user_id")
-            user_id = int(user_id) if user_id else None
+            # Obtener el ID del usuario actual (real o Guest)
+            user_id = await auth_manager.get_authenticated_user_id()
             
             nueva_ficha = Ficha(
                 title=card_name.value.strip(),

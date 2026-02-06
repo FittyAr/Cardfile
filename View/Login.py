@@ -47,6 +47,9 @@ async def login_view(page: ft.Page):
         color=theme_manager.text
     )
 
+    from View.components.auth_manager import AuthManager
+    auth_manager = AuthManager(page)
+    
     async def login_clicked(e):
         if not username.value or not password.value:
             page.show_dialog(ft.SnackBar(
@@ -56,20 +59,10 @@ async def login_view(page: ft.Page):
             ))
             page.update()
             return
-        
-        session = get_session()
+
         try:
-            usuario = session.query(Usuario).filter(
-                Usuario.email == username.value.strip(),
-                Usuario.is_active == True
-            ).first()
-            
-            if usuario and verify_password(usuario.contraseña, password.value):
-                usuario.last_login = datetime.now()
-                session.commit()
-                # Convertir a string para evitar errores de tipo en shared_preferences
-                await page.shared_preferences.set("user_id", str(usuario.id))
-                await page.shared_preferences.set("user_name", usuario.nombre)
+            # Usar AuthManager para el login y la persistencia
+            if await auth_manager.login(username.value.strip(), password.value):
                 await page.push_route("/Card")
             else:
                 page.show_dialog(ft.SnackBar(
@@ -81,7 +74,6 @@ async def login_view(page: ft.Page):
                 page.update()
 
         except Exception as e:
-            session.rollback()
             print(f"Error de login: {str(e)}")
             page.show_dialog(ft.SnackBar(
                 content=ft.Text(config.get_text("login.errors.login_error")),
@@ -89,9 +81,6 @@ async def login_view(page: ft.Page):
                 action="Ok"
             ))
             page.update()
-        finally:
-            session.close()
-
     def verify_password(stored_hash: str, provided_password: str) -> bool:
         """Verifica si la contraseña proporcionada coincide con el hash almacenado."""
         try:

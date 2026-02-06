@@ -8,17 +8,17 @@ from theme.manager import ThemeManager
 
 theme_manager = ThemeManager()
 
-async def recycle_modal(page: ft.Page, on_close: Callable, on_success: Callable = None):
-    # Inicializar Config
+async def recycle_modal(page: ft.Page, on_close: Callable, on_success: Callable):
     config = Config()
     selected_ficha = None
+    from View.components.auth_manager import AuthManager
+    auth_manager = AuthManager(page)
 
     async def load_inactive_fichas():
         """Carga las fichas inactivas del usuario"""
         session = get_session()
         try:
-            user_id = await page.shared_preferences.get("user_id")
-            user_id = int(user_id) if user_id else None
+            user_id = await auth_manager.get_authenticated_user_id()
             fichas = session.query(Ficha).filter(
                 Ficha.usuario_id == user_id,
                 Ficha.is_active == False
@@ -98,8 +98,7 @@ async def recycle_modal(page: ft.Page, on_close: Callable, on_success: Callable 
                 await load_inactive_fichas()
                 
                 # Verificar si quedan fichas inactivas
-                user_id = await page.shared_preferences.get("user_id")
-                user_id = int(user_id) if user_id else None
+                user_id = await auth_manager.get_authenticated_user_id()
                 remaining_inactive = session.query(Ficha).filter(
                     Ficha.usuario_id == user_id,
                     Ficha.is_active == False
@@ -148,8 +147,7 @@ async def recycle_modal(page: ft.Page, on_close: Callable, on_success: Callable 
                         await load_inactive_fichas()
                         
                         # Verificar si quedan fichas inactivas
-                        user_id = await page.shared_preferences.get("user_id")
-                        user_id = int(user_id) if user_id else None
+                        user_id = await auth_manager.get_authenticated_user_id()
                         remaining_inactive = session.query(Ficha).filter(
                             Ficha.usuario_id == user_id,
                             Ficha.is_active == False
@@ -204,8 +202,7 @@ async def recycle_modal(page: ft.Page, on_close: Callable, on_success: Callable 
             if button_text == config.get_text("card.buttons.yes"):
                 session = get_session()
                 try:
-                    user_id = await page.shared_preferences.get("user_id")
-                    user_id = int(user_id) if user_id else None
+                    user_id = await auth_manager.get_authenticated_user_id()
                     session.query(Ficha).filter(
                         Ficha.usuario_id == user_id,
                         Ficha.is_active == False

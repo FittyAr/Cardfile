@@ -37,7 +37,9 @@ async def views_handler(page: Page):
         elif index == 3:  # Papelera
             await page.push_route("/recycle")
         elif index == 4:  # Salir
-            await page.push_route("/Login")
+            from View.components.auth_manager import AuthManager
+            auth = AuthManager(page)
+            await auth.logout()
 
     # Crear diccionario de vistas
     return {
