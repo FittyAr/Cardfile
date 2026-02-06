@@ -105,6 +105,7 @@ def create_markdown_toolbar(
 ) -> ft.Container:
     """
     Crea una barra de herramientas con botones de formato Markdown.
+    Usa on_selection_change para rastrear la selección del usuario.
     
     Args:
         editor: El TextField donde se aplicarán los formatos
@@ -114,8 +115,22 @@ def create_markdown_toolbar(
         ft.Container con la barra de herramientas
     """
     
+    # Variables para rastrear la selección actual
+    current_selection_start: int = 0
+    current_selection_end: int = 0
+
+    def _on_selection_change(e: ft.TextSelectionChangeEvent):
+        """Callback que rastrea los cambios de selección"""
+        nonlocal current_selection_start, current_selection_end
+        if e.selection:
+            current_selection_start = e.selection.start if e.selection.start is not None else 0
+            current_selection_end = e.selection.end if e.selection.end is not None else 0
+
+    # Conectar el evento de selección
+    editor.on_selection_change = _on_selection_change
+    
     def _wrap_selection(prefix: str, suffix: str = None):
-        """Envuelve el texto seleccionado o palabra bajo cursor con prefix/suffix"""
+        """Envuelve el texto seleccionado o inserta en la posición del cursor con prefix/suffix"""
         if suffix is None:
             suffix = prefix
         
@@ -129,26 +144,29 @@ def create_markdown_toolbar(
                 on_change(None)
             return
         
-        # Intentar obtener posición del cursor (si está disponible)
-        cursor = len(value)  # Default: al final
-        if hasattr(editor, 'cursor_position') and editor.cursor_position is not None:
-            cursor = editor.cursor_position
+        # Obtener la selección actual
+        start = max(0, min(current_selection_start, len(value)))
+        end = max(0, min(current_selection_end, len(value)))
         
-        # Encontrar límites de palabra
-        start, end = _find_word_boundaries(value, cursor)
+        if start > end:
+            start, end = end, start
         
-        if start < end:
-            # Hay una palabra bajo el cursor
+        # Si hay selección (start != end)
+        if start != end:
+            # Envolver la selección
             selected = value[start:end]
             new_value = value[:start] + f"{prefix}{selected}{suffix}" + value[end:]
+            editor.value = new_value
+            editor.update()
+            if on_change:
+                on_change(None)
         else:
-            # No hay palabra, insertar en posición del cursor
-            new_value = value[:cursor] + f"{prefix}texto{suffix}" + value[cursor:]
-        
-        editor.value = new_value
-        editor.update()
-        if on_change:
-            on_change(None)
+            # Sin selección: insertar placeholder en la posición del cursor
+            new_value = value[:start] + f"{prefix}texto{suffix}" + value[start:]
+            editor.value = new_value
+            editor.update()
+            if on_change:
+                on_change(None)
     
     def _block_format(prefix: str):
         """Aplica formato de bloque (encabezados, listas, citas)"""
@@ -195,7 +213,7 @@ def create_markdown_toolbar(
             icon=ft.Icons.FORMAT_ITALIC,
             tooltip="Cursiva",
             icon_size=theme_manager.icon_size_md,
-            on_click=lambda e: _wrap_selection("*")
+            on_click=lambda e: _wrap_selection("_")
         ),
         ft.IconButton(
             icon=ft.Icons.STRIKETHROUGH_S,
@@ -255,13 +273,13 @@ def create_markdown_toolbar(
             icon=ft.Icons.LINK,
             tooltip="Enlace",
             icon_size=theme_manager.icon_size_md,
-            on_click=lambda e: _insert_text("[texto](https://)")
+            on_click=lambda e: _wrap_selection("[", "](https://)")
         ),
         ft.IconButton(
             icon=ft.Icons.IMAGE,
             tooltip="Imagen",
             icon_size=theme_manager.icon_size_md,
-            on_click=lambda e: _insert_text("![alt](https://)")
+            on_click=lambda e: _wrap_selection("![", "](https://)")
         ),
         ft.IconButton(
             icon=ft.Icons.TABLE_CHART,
@@ -273,7 +291,7 @@ def create_markdown_toolbar(
             icon=ft.Icons.CHECK_BOX,
             tooltip="Checklist",
             icon_size=theme_manager.icon_size_md,
-            on_click=lambda e: _insert_text("- [ ] tarea")
+            on_click=lambda e: _block_format("- [ ] ")
         ),
     ]
     
