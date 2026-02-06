@@ -127,6 +127,9 @@ async def card_view(page: ft.Page):
 
     from View.components.auth_manager import AuthManager
     auth_manager = AuthManager(page)
+    if auth_manager.require_login and not await auth_manager.is_authenticated():
+        await page.push_route("/Login")
+        return ft.Container()
     
     async def logout_handler(e):
         """Handler para el botón de cerrar sesión"""

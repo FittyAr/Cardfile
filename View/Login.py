@@ -21,9 +21,9 @@ async def login_view(page: ft.Page):
             username.label = config.get_text("login.username.label")
             username.hint_text = config.get_text("login.username.hint")
             password.label = config.get_text("login.password.label")
-            btn_login.text = config.get_text("login.buttons.login")
-            btn_exit.text = config.get_text("login.buttons.exit")
-            register_link.text = config.get_text("login.register_link")
+            btn_login.content.value = config.get_text("login.buttons.login")
+            btn_exit.content.value = config.get_text("login.buttons.exit")
+            register_link.content.value = config.get_text("login.register_link")
             title_text.value = config.get_text("login.title")
             page.update()
 
@@ -49,6 +49,9 @@ async def login_view(page: ft.Page):
 
     from View.components.auth_manager import AuthManager
     auth_manager = AuthManager(page)
+    if await auth_manager.is_authenticated():
+        await page.push_route("/Card")
+        return ft.Container()
     
     async def login_clicked(e):
         if not username.value or not password.value:

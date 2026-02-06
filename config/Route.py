@@ -4,7 +4,12 @@ from flet import Page
 from View.Navigation import create_navigation_bar
 from config.config import Config
 
-async def views_handler(page: Page):
+async def views_handler(page: Page, route: str = None):
+    """
+    Crea y retorna la vista solicitada de forma lazy.
+    Si route es None, retorna un diccionario con todas las vistas (para compatibilidad).
+    Si route es especificado, solo crea y retorna esa vista específica.
+    """
     # Importar las vistas aquí para evitar problemas de importación circular
     from View.Card import card_view
     from View.Login import login_view
@@ -42,29 +47,37 @@ async def views_handler(page: Page):
             auth = AuthManager(page)
             await auth.logout()
 
-    # Crear diccionario de vistas
-    return {
-        '/Card': ft.View(
-            route='/Card',
-            controls=[await card_view(page)],
-            vertical_alignment=ft.MainAxisAlignment.START,
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            padding=ft.Padding.all(20),
-        ),
-        '/Login': ft.View(
-            route='/Login',
-            controls=[await login_view(page)],
-            vertical_alignment=ft.MainAxisAlignment.CENTER,
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            spacing=26,
-            padding=ft.Padding.all(20),
-        ),
-        '/newUser': ft.View(
-            route='/newUser',
-            controls=[await newUser_view(page)],
-            vertical_alignment=ft.MainAxisAlignment.CENTER,
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            spacing=26,
-            padding=ft.Padding.all(20),
-        ),
-    }
+    # Si se especifica una ruta, crear solo esa vista
+    if route:
+        if route == '/Card':
+            return ft.View(
+                route='/Card',
+                controls=[await card_view(page)],
+                vertical_alignment=ft.MainAxisAlignment.START,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                padding=ft.Padding.all(20),
+            )
+        elif route == '/Login':
+            return ft.View(
+                route='/Login',
+                controls=[await login_view(page)],
+                vertical_alignment=ft.MainAxisAlignment.CENTER,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                spacing=26,
+                padding=ft.Padding.all(20),
+            )
+        elif route == '/newUser':
+            return ft.View(
+                route='/newUser',
+                controls=[await newUser_view(page)],
+                vertical_alignment=ft.MainAxisAlignment.CENTER,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                spacing=26,
+                padding=ft.Padding.all(20),
+            )
+        else:
+            return None
+    
+    # Para compatibilidad, si no se especifica ruta, retornar diccionario vacío
+    # (el código en main.py ahora usará el parámetro route)
+    return {}

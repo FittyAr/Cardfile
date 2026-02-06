@@ -24,6 +24,12 @@ async def newUser_view(page: ft.Page):
     # Aplicar modo oscuro/claro según el tema
     page.theme_mode = ft.ThemeMode.DARK if theme_manager.is_dark else ft.ThemeMode.LIGHT
     
+    from View.components.auth_manager import AuthManager
+    auth_manager = AuthManager(page)
+    if await auth_manager.is_authenticated():
+        await page.push_route("/Card")
+        return ft.Container()
+
     # Cargar traducciones usando el idioma configurado
     translations = load_translations(config.current_language)
     t = translations['new_user']
