@@ -1,6 +1,6 @@
 # Cardfile
 
-Cardfile es un gestor de fichas/tarjetas multiplataforma inspirado en el estilo clásico de Windows 3.1, construido con Flet 1.0 Beta. Combina flujo CRUD rápido, edición Markdown, autenticación y soporte multi‑idioma.
+Cardfile es mi gestor de fichas/tarjetas multiplataforma inspirado en el estilo clásico de Windows 3.1, construido con Flet 1.0 Beta. Combino un flujo CRUD rápido, edición Markdown, autenticación y soporte multi‑idioma.
 
 ## Destacados
 
@@ -52,16 +52,16 @@ docker-compose up --build
 
 ## Configuración
 
-Edita `config.json` para base de datos, idioma y modo de ejecución.
+Podés editar `config.json` para base de datos, idioma y modo de ejecución.
 
 ## Documentación
 
 - DeepWiki: https://deepwiki.com/FittyAr/Cardfile
-- Más documentación en `docs/`.
+- Mantengo más documentación en `docs/`.
 
 ## Colaborar
 
-¡Las contribuciones son bienvenidas! Puedes:
+¡Las contribuciones son bienvenidas! Podés:
 
 - Reportar issues con pasos claros
 - Enviar PRs con cambios acotados

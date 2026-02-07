@@ -2,15 +2,17 @@
 
 ## Resumen de Cambios Realizados
 
-Este documento detalla todos los cambios realizados para migrar Cardfile-py de Flet 0.28.3 a Flet 1.0 Beta (0.80.0).
+En este documento detallo todos los cambios que hice para migrar Cardfile-py de Flet 0.28.3 a Flet 1.0 Beta (0.80.0).
 
 ## Cambios Principales
+
+Estos son los cambios que implementé durante la migración:
 
 ### 1. Punto de Entrada (`main.py`)
 
 - **Antes**: `flet.app(target=main)`
 - **Después**: `ft.app(target=main, view=AppView.WEB_BROWSER)`
-- **Nota**: Se agregó el import de `AppView` y se cambió el método de ejecución para usar modo web con AppView.WEB_BROWSER
+- **Nota**: Agregué el import de `AppView` y cambié el método de ejecución para usar modo web con AppView.WEB_BROWSER
 
 ### 2. Almacenamiento de Cliente
 
@@ -93,6 +95,8 @@ Este documento detalla todos los cambios realizados para migrar Cardfile-py de F
 
 ## Archivos Modificados
 
+Modifiqué estos archivos:
+
 1. `main.py` - Migración principal
 2. `requirements.txt` - Actualización de dependencias
 3. `config/Route.py` - Actualización de rutas
@@ -107,6 +111,8 @@ Este documento detalla todos los cambios realizados para migrar Cardfile-py de F
 
 ## Archivos Nuevos
 
+Agregué estos archivos:
+
 1. `ANALISIS.md` - Documento de análisis técnico completo
 2. `MIGRACION.md` - Este documento
 3. `docker/Dockerfile` - Configuración Docker
@@ -115,10 +121,14 @@ Este documento detalla todos los cambios realizados para migrar Cardfile-py de F
 
 ## Dependencias Actualizadas
 
+Actualicé estas dependencias:
+
 - **Flet**: 0.28.3 → 0.80.0 (Flet 1.0 Beta)
 - Todas las demás dependencias actualizadas a sus últimas versiones compatibles
 
 ## Instrucciones para Probar
+
+Para probar la migración uso las opciones siguientes.
 
 ### Opción 1: Ejecución Local (requiere Python 3.10+)
 
@@ -154,12 +164,16 @@ docker-compose up
 
 ## Notas Importantes
 
+Estos son los puntos que tuve en cuenta:
+
 1. **Modo Web**: La aplicación ahora se ejecuta en modo web usando `AppView.WEB_BROWSER` target de Flet 1.0
 2. **Base de Datos**: La base de datos SQLite se creará automáticamente en la primera ejecución
 3. **Puerto**: Por defecto, la aplicación usa el puerto 8550 para modo web
 4. **Breaking Changes**: Esta migración incluye cambios incompatibles con Flet 0.28.3
 
 ## Problemas Conocidos y Soluciones
+
+Si encuentro estos problemas, los resuelvo así.
 
 ### Si la aplicación no inicia:
 
@@ -179,6 +193,7 @@ docker-compose up
 
 ## Próximos Pasos Recomendados
 
+Después de migrar, recomiendo lo siguiente:
 1. Probar todas las funcionalidades después de la migración
 2. Verificar que el autoguardado funciona correctamente
 3. Probar el sistema de traducciones

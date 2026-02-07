@@ -1,8 +1,10 @@
 # Compilación y releases
 
+En esta guía explico cómo compilo Cardfile-py y cómo publico releases.
+
 ## Compilación local (Windows)
 
-1. Crear entorno virtual e instalar dependencias:
+1. Creo el entorno virtual e instalo dependencias:
 
 ```bash
 python -m venv .venv
@@ -14,19 +16,19 @@ pip install pyinstaller
 
 ### Mantenimiento de dependencias
 
-Actualizar dependencias:
+Actualizo dependencias con:
 
 ```bash
 pip install --upgrade -r requirements.txt
 ```
 
-Regenerar requirements.txt:
+Regenero requirements.txt con:
 
 ```bash
 pip freeze > requirements.txt
 ```
 
-2. Compilar:
+2. Compilo:
 
 ```bash
 python build.py
@@ -39,7 +41,7 @@ python build.py
 
 ## GitHub Actions (build y release automático)
 
-Crear el workflow en .github/workflows/release.yml con este contenido:
+El workflow vive en .github/workflows/release.yml y uso este esquema base:
 
 ```yaml
 name: build-and-release
@@ -92,7 +94,7 @@ jobs:
 
 ## Publicar una versión
 
-1. Crear tag:
+1. Creo el tag:
 
 ```bash
 git tag v1.0.0

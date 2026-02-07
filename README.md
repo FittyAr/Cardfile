@@ -1,6 +1,6 @@
 # Cardfile
 
-Cardfile is a cross‑platform card/file manager inspired by the classic Windows 3.1 aesthetic, built with Flet 1.0 Beta. It combines a fast CRUD workflow with Markdown editing, authentication, and multi‑language support.
+Cardfile is my cross‑platform card/file manager inspired by the classic Windows 3.1 aesthetic, built with Flet 1.0 Beta. I combine a fast CRUD workflow with Markdown editing, authentication, and multi‑language support.
 
 ## Highlights
 
@@ -74,6 +74,10 @@ Cardfile-py/
 ├── main.py           # Entry point
 └── requirements.txt  # Python dependencies
 ```
+
+## Security Notice
+
+I do not sign the Windows executable yet, so Windows SmartScreen may warn or block it. If you do not trust the binary, please compile the project yourself using the build guide in docs/compilacion_y_release.md.
 
 ## Documentation
 

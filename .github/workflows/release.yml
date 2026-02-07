@@ -30,6 +30,14 @@ jobs:
         run: |
           python build.py
 
+      - name: Sign executable (optional)
+        if: ${{ secrets.CODESIGN_PFX_BASE64 != '' && secrets.CODESIGN_PFX_PASSWORD != '' }}
+        shell: powershell
+        run: |
+          $pfxPath = "$env:RUNNER_TEMP\codesign.pfx"
+          [IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String("${{ secrets.CODESIGN_PFX_BASE64 }}"))
+          signtool sign /f $pfxPath /p "${{ secrets.CODESIGN_PFX_PASSWORD }}" /tr http://timestamp.digicert.com /td sha256 /fd sha256 dist\Cardfile.exe
+
       - name: Package
         run: |
           mkdir release

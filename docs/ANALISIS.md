@@ -2,27 +2,27 @@
 
 ## 1. Descripción General
 
-**Cardfile-py** es una aplicación de gestión de fichas/tarjetas inspirada en el estilo de Windows 3.1. La aplicación permite a los usuarios crear, editar, eliminar y gestionar fichas de información con soporte para formato Markdown. Incluye un sistema de autenticación, gestión de usuarios, y una papelera de reciclaje para recuperar elementos eliminados.
+En este documento describo Cardfile-py, mi aplicación de gestión de fichas/tarjetas inspirada en el estilo de Windows 3.1. Permite crear, editar, eliminar y gestionar fichas de información con soporte para Markdown. También incluye autenticación, gestión de usuarios y una papelera de reciclaje para recuperar elementos eliminados.
 
 ### 1.1 Características Principales
 
-- **Sistema de Autenticación**: Login y registro de usuarios con encriptación de contraseñas usando bcrypt
-- **Gestión de Fichas**: CRUD completo de fichas con título y descripción en Markdown
-- **Editor Markdown**: Editor con preview en tiempo real y barra de herramientas
-- **Papelera de Reciclaje**: Sistema de eliminación suave con posibilidad de restaurar
-- **Multiidioma**: Soporte para 7 idiomas (Español, Inglés, Portugués BR, Francés, Alemán, Ruso, Chino)
-- **Interfaz Moderna**: UI construida con Flet framework
+- **Sistema de Autenticación**: Implemento login y registro con encriptación de contraseñas usando bcrypt
+- **Gestión de Fichas**: Ofrezco CRUD completo de fichas con título y descripción en Markdown
+- **Editor Markdown**: Incluyo editor con preview en tiempo real y barra de herramientas
+- **Papelera de Reciclaje**: Uso eliminación suave con opción de restaurar
+- **Multiidioma**: Soporto 7 idiomas (Español, Inglés, Portugués BR, Francés, Alemán, Ruso, Chino)
+- **Interfaz Moderna**: La UI está construida con Flet
 
 ## 2. Arquitectura del Sistema
 
 ### 2.1 Patrón Arquitectónico
 
-El proyecto sigue un patrón **MVC (Modelo-Vista-Controlador)** con algunas variaciones:
+Sigo un patrón **MVC (Modelo-Vista-Controlador)** con algunas variaciones:
 
-- **Modelos**: Definidos en `data/Models/` usando SQLAlchemy ORM
-- **Vistas**: Componentes de UI en `View/` usando Flet
-- **Controladores**: Lógica de negocio distribuida entre vistas y repositorios
-- **Repositorios**: Capa de acceso a datos en `data/repositories/`
+- **Modelos**: Los defino en `data/Models/` usando SQLAlchemy ORM
+- **Vistas**: Los componentes de UI viven en `View/` usando Flet
+- **Controladores**: La lógica de negocio está distribuida entre vistas y repositorios
+- **Repositorios**: La capa de acceso a datos está en `data/repositories/`
 
 ### 2.2 Estructura de Directorios
 
@@ -159,10 +159,10 @@ Card View → Eliminar Ficha → Soft Delete (is_active=False) → Papelera
 
 ### 6.1 Implementación
 
-- Archivos JSON por idioma en `lang/`
-- Clase `Config` gestiona carga y cambio de idioma
-- Preferencia guardada en `stored_language.txt`
-- Cambio dinámico sin reiniciar aplicación
+- Mantengo archivos JSON por idioma en `lang/`
+- La clase `Config` gestiona carga y cambio de idioma
+- Guardo la preferencia en `stored_language.txt`
+- Permito el cambio dinámico sin reiniciar la aplicación
 
 ### 6.2 Idiomas Soportados
 
@@ -178,12 +178,12 @@ Card View → Eliminar Ficha → Soft Delete (is_active=False) → Papelera
 
 ### 7.1 Sistema de Login
 
-- Validación de campos vacíos
-- Verificación de credenciales contra BD
-- Hash de contraseña con bcrypt
-- Actualización de `last_login`
-- Almacenamiento de sesión en `client_storage` (Flet 0.28)
-- Redirección automática según primera ejecución
+- Valido campos vacíos
+- Verifico credenciales contra BD
+- Hasheo contraseñas con bcrypt
+- Actualizo `last_login`
+- Almaceno sesión en `client_storage` (Flet 0.28)
+- Redirijo según primera ejecución
 
 ### 7.2 Gestión de Fichas
 
@@ -201,8 +201,8 @@ Card View → Eliminar Ficha → Soft Delete (is_active=False) → Papelera
   - Encabezados: H1, H2, H3
   - Listas: Bullets, Numeradas, Checklist
   - Otros: Enlaces, Imágenes, Tablas, Citas, Regla horizontal
-- Toggle para mostrar código fuente
-- Preview con sanitización automática
+- Incluyo toggle para mostrar código fuente
+- Renderizo preview con sanitización automática
 
 ### 7.4 Papelera de Reciclaje
 
@@ -222,12 +222,12 @@ Card View → Eliminar Ficha → Soft Delete (is_active=False) → Papelera
    - Botones: `text` → `content`
    - Uso de `AppView.WEB_BROWSER` para modo web
 
-2. **Dependencias desactualizadas**: Muchos paquetes tienen versiones más recientes
+2. **Dependencias desactualizadas**: Hay paquetes con versiones más recientes
 
 ### 8.2 Arquitectura
 
 1. **Mezcla de responsabilidades**: Las vistas contienen lógica de negocio
-2. **Manejo de sesiones**: No usa context managers para sesiones de BD
+2. **Manejo de sesiones**: No uso context managers para sesiones de BD
 3. **Repositorios incompletos**: Algunos métodos no están implementados correctamente
 4. **Sin logging estructurado**: Uso de `print()` en lugar de logging
 
@@ -422,19 +422,19 @@ Inicio
 
 ### 11.2 Estado de la Aplicación
 
-- **Sesión de usuario**: Almacenada en `client_storage` (Flet 0.28)
-- **Ficha seleccionada**: Almacenada temporalmente en `client_storage`
-- **Idioma**: Persistido en `stored_language.txt`
+- **Sesión de usuario**: La almaceno en `client_storage` (Flet 0.28)
+- **Ficha seleccionada**: La almaceno temporalmente en `client_storage`
+- **Idioma**: Lo persisto en `stored_language.txt`
 
 ### 11.3 Autoguardado
 
-- **Debounce**: 1 segundo después de última modificación
+- **Debounce**: 1 segundo después de la última modificación
 - **Guardado periódico**: Cada 15 segundos durante edición
 - **Indicador visual**: Estado de guardado (Guardado/Cambios sin guardar/Guardando/Error)
 
 ## 12. Conclusión
 
-Cardfile-py es una aplicación funcional con una arquitectura razonable pero que requiere actualización urgente a Flet 1.0 Beta y mejoras en infraestructura (Docker). El código base es mantenible pero se beneficiaría de refactorización para separar mejor las responsabilidades y mejorar la seguridad y performance.
+Cardfile-py es funcional con una arquitectura razonable, pero requiere actualización urgente a Flet 1.0 Beta y mejoras en infraestructura (Docker). El código base es mantenible y se beneficiaría de refactorización para separar mejor las responsabilidades y mejorar la seguridad y performance.
 
 ### Prioridades de Implementación
 

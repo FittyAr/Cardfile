@@ -1,7 +1,19 @@
 # -*- mode: python ; coding: utf-8 -*-
-from PyInstaller.utils.hooks import collect_data_files
+from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
 block_cipher = None
+
+flet_datas = collect_data_files("flet")
+flet_core_datas = collect_data_files("flet_core")
+flet_web_datas = collect_data_files("flet_web")
+flet_desktop_datas = collect_data_files("flet_desktop")
+
+flet_hiddenimports = (
+    collect_submodules("flet")
+    + collect_submodules("flet_core")
+    + collect_submodules("flet_web")
+    + collect_submodules("flet_desktop")
+)
 
 a = Analysis(
     ['main.py'],
@@ -12,10 +24,8 @@ a = Analysis(
         ('lang/*.json', 'lang'),
         ('src/cardfile/view/*.py', 'cardfile/view'),
         ('assets/*', 'assets'),
-    ],
-    hiddenimports=[
-        'flet',
-        'flet_core',
+    ] + flet_datas + flet_core_datas + flet_web_datas + flet_desktop_datas,
+    hiddenimports=flet_hiddenimports + [
         'sqlalchemy',
         'sqlalchemy.sql.default_comparator',
         'sqlalchemy.ext.declarative',
