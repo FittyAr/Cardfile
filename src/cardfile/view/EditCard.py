@@ -15,7 +15,7 @@ async def edit_card_modal(page: ft.Page, on_close: Callable, on_success: Callabl
     prefs = ft.SharedPreferences()
     selected_ficha_json = await prefs.get("selected_ficha")
     if not selected_ficha_json:
-        return ft.Text("Error: No hay ficha seleccionada")
+        return ft.Text(config.get_text("edit_card.errors.no_selection"))
     
     # Parsear el JSON
     import json
@@ -26,7 +26,7 @@ async def edit_card_modal(page: ft.Page, on_close: Callable, on_success: Callabl
             page.show_dialog(ft.SnackBar(
                 content=ft.Text(config.get_text("edit_card.name.empty_error")),
                 bgcolor=ft.Colors.RED_400,
-                action="Ok",
+                action=config.get_text("common.buttons.ok"),
                 duration=2000
             ))
             page.update()
@@ -59,7 +59,7 @@ async def edit_card_modal(page: ft.Page, on_close: Callable, on_success: Callabl
                 page.show_dialog(ft.SnackBar(
                     content=ft.Text(config.get_text("edit_card.messages.success")),
                     bgcolor=ft.Colors.GREEN_400,
-                    action="Ok",
+                    action=config.get_text("common.buttons.ok"),
                     duration=2000
                 ))
                 page.update()
@@ -71,7 +71,7 @@ async def edit_card_modal(page: ft.Page, on_close: Callable, on_success: Callabl
             page.show_dialog(ft.SnackBar(
                 content=ft.Text(config.get_text("edit_card.messages.error")),
                 bgcolor=ft.Colors.RED_400,
-                action="Ok",
+                action=config.get_text("common.buttons.ok"),
                 duration=2000
             ))
             page.update()
@@ -128,7 +128,7 @@ async def edit_card_modal(page: ft.Page, on_close: Callable, on_success: Callabl
                 ft.Container(height=theme_manager.space_12),
                 
                 ft.Text(
-                    "Cambia el nombre de tu tarjeta.",
+                    config.get_text("edit_card.subtitle"),
                     size=theme_manager.text_size_md,
                     color=theme_manager.subtext,
                     text_align=ft.TextAlign.CENTER,

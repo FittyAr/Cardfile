@@ -191,7 +191,7 @@ async def newUser_view(page: ft.Page):
             [
                 ft.Row(
                     [
-                        ft.Text("CardFile", size=theme_manager.text_size_xl, weight=ft.FontWeight.BOLD, color=theme_manager.primary),
+                        ft.Text(t["brand"], size=theme_manager.text_size_xl, weight=ft.FontWeight.BOLD, color=theme_manager.primary),
                     ],
                     alignment=ft.MainAxisAlignment.CENTER,
                 ),
@@ -202,7 +202,7 @@ async def newUser_view(page: ft.Page):
                         [
                             ft.Icon(ft.Icons.PERSON_ADD_ROUNDED, size=theme_manager.icon_size_xl, color=theme_manager.primary),
                             ft.Text(t['title'], size=theme_manager.text_size_3xl, weight=ft.FontWeight.BOLD, color=theme_manager.text),
-                            ft.Text("Crea una cuenta para empezar", size=theme_manager.text_size_md, color=theme_manager.subtext),
+                            ft.Text(t["subtitle"], size=theme_manager.text_size_md, color=theme_manager.subtext),
                         ],
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                         spacing=theme_manager.space_12,

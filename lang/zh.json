@@ -71,6 +71,24 @@
             "yes": "是",
             "no": "否",
             "ok": "确定"
+        },
+        "markdown_toolbar": {
+            "bold": "粗体",
+            "italic": "斜体",
+            "strike": "删除线",
+            "code": "代码",
+            "h1": "H1",
+            "h2": "H2",
+            "h3": "H3",
+            "list": "列表",
+            "list_numbered": "编号列表",
+            "quote": "引用",
+            "link": "链接",
+            "image": "图片",
+            "table": "表格",
+            "checklist": "清单",
+            "placeholder": "文本",
+            "table_template": "\n| 列 1 | 列 2 |\n|------|------|\n|      |      |\n"
         }
     },
     "navigation": {

@@ -98,9 +98,11 @@ async def card_view(page: ft.Page):
         preview_container.visible = False
         update_editor_state()
         editor_btn.bgcolor = theme_manager.primary
-        editor_btn.content.color = ft.Colors.WHITE
+        editor_btn.content.controls[0].color = ft.Colors.WHITE
+        editor_btn.content.controls[1].color = ft.Colors.WHITE
         preview_btn.bgcolor = theme_manager.subtle_bg
-        preview_btn.content.color = theme_manager.text
+        preview_btn.content.controls[0].color = theme_manager.text
+        preview_btn.content.controls[1].color = theme_manager.text
         page.update()
 
     def ficha_is_locked(ficha):
@@ -121,9 +123,11 @@ async def card_view(page: ft.Page):
         markdown_toolbar.visible = False
         markdown_preview.value = markdown_editor.value
         preview_btn.bgcolor = theme_manager.primary
-        preview_btn.content.color = ft.Colors.WHITE
+        preview_btn.content.controls[0].color = ft.Colors.WHITE
+        preview_btn.content.controls[1].color = ft.Colors.WHITE
         editor_btn.bgcolor = theme_manager.subtle_bg
-        editor_btn.content.color = theme_manager.text
+        editor_btn.content.controls[0].color = theme_manager.text
+        editor_btn.content.controls[1].color = theme_manager.text
         page.update()
 
     async def edit_card_handler(e):
@@ -180,21 +184,21 @@ async def card_view(page: ft.Page):
         await auth_manager.logout()
 
     # --- Componentes ---
-    search_field = create_search_field(on_search_change)
-    card_counter = create_card_counter()
+    search_field = create_search_field(on_search_change, t)
+    card_counter = create_card_counter(t)
     cards_listview = create_cards_listview()
     markdown_editor = create_markdown_editor(on_change=on_editor_change)
     markdown_preview = create_markdown_preview()
     markdown_toolbar = create_markdown_toolbar(markdown_editor, on_change=on_editor_change)
-    save_indicator = create_save_indicator()
+    save_indicator = create_save_indicator(t)
     
     selected_card_title = ft.Text(
-        "Selecciona una tarjeta",
+        t["empty_state"]["select_card"],
         size=theme_manager.text_size_xxl, weight=ft.FontWeight.BOLD, color=theme_manager.text
     )
 
     tabs_row, editor_btn, preview_btn = create_custom_tabs(
-        on_editor_tab_click, on_preview_tab_click
+        on_editor_tab_click, on_preview_tab_click, t
     )
 
     header_container, lock_header_btn, edit_header_btn, delete_header_btn = create_card_header(
@@ -202,7 +206,8 @@ async def card_view(page: ft.Page):
         save_indicator,
         edit_callback=edit_card_handler,
         delete_callback=delete_ficha_handler,
-        lock_callback=toggle_lock_handler
+        lock_callback=toggle_lock_handler,
+        t=t
     )
 
     editor_container = ft.Container(content=markdown_editor, expand=True, visible=False)
@@ -239,9 +244,9 @@ async def card_view(page: ft.Page):
         
         # Actualizar mensaje del título
         if not state.has_fichas():
-            selected_card_title.value = "📝 No hay tarjetas"
+            selected_card_title.value = t["empty_state"]["no_cards"]
         elif not state.is_ficha_selected():
-            selected_card_title.value = "👉 Selecciona una tarjeta"
+            selected_card_title.value = t["empty_state"]["select_card"]
         else:
             selected_card_title.value = get_display_title(state.selected_ficha)
         
@@ -255,10 +260,10 @@ async def card_view(page: ft.Page):
             lock_header_btn.disabled = not state.is_ficha_selected()
             if state.selected_ficha and state.selected_ficha.is_locked:
                 lock_header_btn.icon = ft.Icons.LOCK
-                lock_header_btn.tooltip = "Desbloquear tarjeta"
+                lock_header_btn.tooltip = t["header"]["unlock_tooltip"]
             else:
                 lock_header_btn.icon = ft.Icons.LOCK_OPEN
-                lock_header_btn.tooltip = "Bloquear tarjeta"
+                lock_header_btn.tooltip = t["header"]["lock_tooltip"]
         else:
             lock_header_btn.visible = False
         
@@ -280,7 +285,8 @@ async def card_view(page: ft.Page):
             render_fichas_list(fichas)
             
             # Actualizar contador
-            card_counter.value = f"{len(fichas)} tarjeta{'s' if len(fichas) != 1 else ''}"
+            counter_label = t["counter"]["singular"] if len(fichas) == 1 else t["counter"]["plural"]
+            card_counter.value = f"{len(fichas)} {counter_label}"
             
             # Intentar restaurar selección previa
             prefs = ft.SharedPreferences()
@@ -372,7 +378,7 @@ async def card_view(page: ft.Page):
                 overflow=ft.TextOverflow.ELLIPSIS,
             )
             date_text = ft.Text(
-                f"Actualizado: {ficha.updated_at.strftime('%d/%m/%Y')}" if ficha.updated_at else "Sin fecha",
+                t["list"]["updated"].format(date=ficha.updated_at.strftime("%d/%m/%Y")) if ficha.updated_at else t["list"]["no_date"],
                 size=theme_manager.text_size_sm,
                 color=theme_manager.subtext,
                 max_lines=1,
@@ -500,7 +506,7 @@ async def card_view(page: ft.Page):
             page.show_dialog(ft.SnackBar(
                 content=ft.Text(t['delete']['no_selection']),
                 bgcolor=ft.Colors.RED_400,
-                action="Ok",
+                action=config.get_text("common.buttons.ok"),
                 duration=2000
             ))
             page.update()
@@ -522,7 +528,7 @@ async def card_view(page: ft.Page):
                         await load_fichas()
                         
                         # Limpiar editor
-                        selected_card_title.value = "Selecciona una tarjeta"
+                        selected_card_title.value = t["empty_state"]["select_card"]
                         markdown_editor.value = ""
                         markdown_preview.value = ""
                         
@@ -537,7 +543,7 @@ async def card_view(page: ft.Page):
                     page.show_dialog(ft.SnackBar(
                         content=ft.Text(t['delete']['error']),
                         bgcolor=ft.Colors.RED_400,
-                        action="Ok",
+                        action=config.get_text("common.buttons.ok"),
                         duration=2000
                     ))
                 finally:
@@ -574,7 +580,8 @@ async def card_view(page: ft.Page):
         new_card_callback=new_card_handler,
         recycle_bin_callback=recycle_bin_handler,
         settings_callback=settings_handler,
-        logout_callback=logout_handler
+        logout_callback=logout_handler,
+        t=t
     )
     
     main_panel = ft.Container(

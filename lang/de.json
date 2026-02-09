@@ -71,6 +71,24 @@
             "yes": "Ja",
             "no": "Nein",
             "ok": "Ok"
+        },
+        "markdown_toolbar": {
+            "bold": "Fett",
+            "italic": "Kursiv",
+            "strike": "Durchgestrichen",
+            "code": "Code",
+            "h1": "H1",
+            "h2": "H2",
+            "h3": "H3",
+            "list": "Liste",
+            "list_numbered": "Nummerierte Liste",
+            "quote": "Zitat",
+            "link": "Link",
+            "image": "Bild",
+            "table": "Tabelle",
+            "checklist": "Checkliste",
+            "placeholder": "Text",
+            "table_template": "\n| Spalte 1 | Spalte 2 |\n|----------|----------|\n|          |          |\n"
         }
     },
     "navigation": {

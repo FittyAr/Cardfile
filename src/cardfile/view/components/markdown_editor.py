@@ -21,6 +21,7 @@ Uso:
 import flet as ft
 from typing import Callable, Optional
 from cardfile.theme.manager import ThemeManager
+from cardfile.config.config import Config
 
 theme_manager = ThemeManager()
 
@@ -126,6 +127,27 @@ def create_markdown_toolbar(
         ft.Container con la barra de herramientas
     """
     
+    config = Config()
+    placeholder_text = config.get_text("card.markdown_toolbar.placeholder", "texto")
+    tooltip_bold = config.get_text("card.markdown_toolbar.bold", "Negrita")
+    tooltip_italic = config.get_text("card.markdown_toolbar.italic", "Cursiva")
+    tooltip_strike = config.get_text("card.markdown_toolbar.strike", "Tachado")
+    tooltip_code = config.get_text("card.markdown_toolbar.code", "Código")
+    tooltip_h1 = config.get_text("card.markdown_toolbar.h1", "H1")
+    tooltip_h2 = config.get_text("card.markdown_toolbar.h2", "H2")
+    tooltip_h3 = config.get_text("card.markdown_toolbar.h3", "H3")
+    tooltip_list = config.get_text("card.markdown_toolbar.list", "Lista")
+    tooltip_list_numbered = config.get_text("card.markdown_toolbar.list_numbered", "Lista Nº")
+    tooltip_quote = config.get_text("card.markdown_toolbar.quote", "Cita")
+    tooltip_link = config.get_text("card.markdown_toolbar.link", "Enlace")
+    tooltip_image = config.get_text("card.markdown_toolbar.image", "Imagen")
+    tooltip_table = config.get_text("card.markdown_toolbar.table", "Tabla")
+    tooltip_checklist = config.get_text("card.markdown_toolbar.checklist", "Checklist")
+    table_template = config.get_text(
+        "card.markdown_toolbar.table_template",
+        "\n| Col 1 | Col 2 |\n|-------|-------|\n|       |       |\n"
+    )
+
     # Variables para rastrear la selección actual
     current_selection_start: int = 0
     current_selection_end: int = 0
@@ -195,7 +217,7 @@ def create_markdown_toolbar(
         
         # Si el editor está vacío, insertar placeholder
         if not value.strip():
-            editor.value = f"{prefix}texto{suffix}"
+            editor.value = f"{prefix}{placeholder_text}{suffix}"
             editor.update()
             if on_change:
                 on_change(None)
@@ -234,7 +256,7 @@ def create_markdown_toolbar(
                 editor.value = new_value
             else:
                 # Insertar placeholder con tags
-                new_value = value[:start] + f"{prefix}texto{suffix}" + value[start:]
+                new_value = value[:start] + f"{prefix}{placeholder_text}{suffix}" + value[start:]
                 editor.value = new_value
             
             editor.update()
@@ -247,8 +269,7 @@ def create_markdown_toolbar(
         value = editor.value or ""
         
         if not value.strip():
-            # Si está vacío, crear nueva línea con formato
-            editor.value = f"{prefix}texto"
+            editor.value = f"{prefix}{placeholder_text}"
             editor.update()
             if on_change:
                 on_change(None)
@@ -303,25 +324,25 @@ def create_markdown_toolbar(
     toolbar_buttons = [
         ft.IconButton(
             icon=ft.Icons.FORMAT_BOLD,
-            tooltip="Negrita",
+            tooltip=tooltip_bold,
             icon_size=theme_manager.icon_size_md,
             on_click=lambda e: _wrap_selection("**")
         ),
         ft.IconButton(
             icon=ft.Icons.FORMAT_ITALIC,
-            tooltip="Cursiva",
+            tooltip=tooltip_italic,
             icon_size=theme_manager.icon_size_md,
             on_click=lambda e: _wrap_selection("_")
         ),
         ft.IconButton(
             icon=ft.Icons.STRIKETHROUGH_S,
-            tooltip="Tachado",
+            tooltip=tooltip_strike,
             icon_size=theme_manager.icon_size_md,
             on_click=lambda e: _wrap_selection("~~")
         ),
         ft.IconButton(
             icon=ft.Icons.CODE,
-            tooltip="Código",
+            tooltip=tooltip_code,
             icon_size=theme_manager.icon_size_md,
             on_click=lambda e: _wrap_selection("`"),
             icon_color=theme_manager.text,
@@ -329,19 +350,19 @@ def create_markdown_toolbar(
         ft.Container(width=theme_manager.space_1, height=theme_manager.space_20, bgcolor=theme_manager.toolbar_divider_color),
         ft.IconButton(
             icon=ft.Icons.TITLE,
-            tooltip="H1",
+            tooltip=tooltip_h1,
             icon_size=theme_manager.icon_size_md,
             on_click=lambda e: _block_format("# ")
         ),
         ft.IconButton(
             icon=ft.Icons.SUBTITLES,
-            tooltip="H2",
+            tooltip=tooltip_h2,
             icon_size=theme_manager.icon_size_md,
             on_click=lambda e: _block_format("## ")
         ),
         ft.IconButton(
             icon=ft.Icons.TEXT_FIELDS,
-            tooltip="H3",
+            tooltip=tooltip_h3,
             icon_size=theme_manager.icon_size_md,
             on_click=lambda e: _block_format("### "),
             icon_color=theme_manager.text,
@@ -349,19 +370,19 @@ def create_markdown_toolbar(
         ft.Container(width=theme_manager.space_1, height=theme_manager.space_20, bgcolor=theme_manager.toolbar_divider_color),
         ft.IconButton(
             icon=ft.Icons.FORMAT_LIST_BULLETED,
-            tooltip="Lista",
+            tooltip=tooltip_list,
             icon_size=theme_manager.icon_size_md,
             on_click=lambda e: _block_format("- ")
         ),
         ft.IconButton(
             icon=ft.Icons.FORMAT_LIST_NUMBERED,
-            tooltip="Lista Nº",
+            tooltip=tooltip_list_numbered,
             icon_size=theme_manager.icon_size_md,
             on_click=lambda e: _block_format("1. ")
         ),
         ft.IconButton(
             icon=ft.Icons.FORMAT_QUOTE,
-            tooltip="Cita",
+            tooltip=tooltip_quote,
             icon_size=theme_manager.icon_size_md,
             on_click=lambda e: _block_format("> "),
             icon_color=theme_manager.text,
@@ -369,25 +390,25 @@ def create_markdown_toolbar(
         ft.Container(width=theme_manager.space_1, height=theme_manager.space_20, bgcolor=theme_manager.toolbar_divider_color),
         ft.IconButton(
             icon=ft.Icons.LINK,
-            tooltip="Enlace",
+            tooltip=tooltip_link,
             icon_size=theme_manager.icon_size_md,
             on_click=lambda e: _wrap_selection("[", "](https://)")
         ),
         ft.IconButton(
             icon=ft.Icons.IMAGE,
-            tooltip="Imagen",
+            tooltip=tooltip_image,
             icon_size=theme_manager.icon_size_md,
             on_click=lambda e: _wrap_selection("![", "](https://)")
         ),
         ft.IconButton(
             icon=ft.Icons.TABLE_CHART,
-            tooltip="Tabla",
+            tooltip=tooltip_table,
             icon_size=theme_manager.icon_size_md,
-            on_click=lambda e: _insert_text("\n| Col 1 | Col 2 |\n|-------|-------|\n|       |       |\n")
+            on_click=lambda e: _insert_text(table_template)
         ),
         ft.IconButton(
             icon=ft.Icons.CHECK_BOX,
-            tooltip="Checklist",
+            tooltip=tooltip_checklist,
             icon_size=theme_manager.icon_size_md,
             on_click=lambda e: _block_format("- [ ] ")
         ),

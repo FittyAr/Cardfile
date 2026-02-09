@@ -71,6 +71,24 @@
             "yes": "Да",
             "no": "Нет",
             "ok": "Ok"
+        },
+        "markdown_toolbar": {
+            "bold": "Жирный",
+            "italic": "Курсив",
+            "strike": "Зачёркнутый",
+            "code": "Код",
+            "h1": "H1",
+            "h2": "H2",
+            "h3": "H3",
+            "list": "Список",
+            "list_numbered": "Нумерованный список",
+            "quote": "Цитата",
+            "link": "Ссылка",
+            "image": "Изображение",
+            "table": "Таблица",
+            "checklist": "Чек-лист",
+            "placeholder": "текст",
+            "table_template": "\n| Кол 1 | Кол 2 |\n|-------|-------|\n|       |       |\n"
         }
     },
     "navigation": {

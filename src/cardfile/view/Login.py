@@ -28,6 +28,8 @@ async def login_view(page: ft.Page):
                 btn_exit.content.value = config.get_text("login.buttons.exit")
             register_link.content.value = config.get_text("login.register_link")
             title_text.value = config.get_text("login.title")
+            brand_text.value = config.get_text("login.brand")
+            subtitle_text.value = config.get_text("login.subtitle")
             page.update()
 
     # Dropdown para selección de idioma
@@ -49,6 +51,17 @@ async def login_view(page: ft.Page):
         weight=ft.FontWeight.BOLD,
         color=theme_manager.text
     )
+    brand_text = ft.Text(
+        config.get_text("login.brand"),
+        size=theme_manager.text_size_xl,
+        weight=ft.FontWeight.BOLD,
+        color=theme_manager.primary
+    )
+    subtitle_text = ft.Text(
+        config.get_text("login.subtitle"),
+        size=theme_manager.text_size_md,
+        color=theme_manager.subtext
+    )
 
     from cardfile.view.components.auth_manager import AuthManager
     auth_manager = AuthManager(page)
@@ -61,7 +74,7 @@ async def login_view(page: ft.Page):
             page.show_dialog(ft.SnackBar(
                 content=ft.Text(config.get_text("login.errors.empty_fields")),
                 bgcolor=ft.Colors.RED_400,
-                action="Ok",
+                action=config.get_text("common.buttons.ok"),
                 duration=2000
             ))
             page.update()
@@ -75,7 +88,7 @@ async def login_view(page: ft.Page):
                 page.show_dialog(ft.SnackBar(
                     content=ft.Text(config.get_text("login.errors.invalid_credentials")),
                     bgcolor=ft.Colors.RED_400,
-                    action="Ok",
+                    action=config.get_text("common.buttons.ok"),
                     duration=2000
                 ))
                 password.value = ""
@@ -86,7 +99,7 @@ async def login_view(page: ft.Page):
             page.show_dialog(ft.SnackBar(
                 content=ft.Text(config.get_text("login.errors.login_error")),
                 bgcolor=ft.Colors.RED_400,
-                action="Ok",
+                action=config.get_text("common.buttons.ok"),
                 duration=2000
             ))
             page.update()
@@ -168,7 +181,7 @@ async def login_view(page: ft.Page):
                 # Header con Selector de Idioma
                 ft.Row(
                     [
-                        ft.Text("CardFile", size=theme_manager.text_size_xl, weight=ft.FontWeight.BOLD, color=theme_manager.primary),
+                        brand_text,
                         language_dd
                     ],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -179,8 +192,8 @@ async def login_view(page: ft.Page):
                     content=ft.Column(
                         [
                             ft.Icon(ft.Icons.PERSON_PIN_ROUNDED, size=theme_manager.icon_size_xl, color=theme_manager.primary),
-                            ft.Text(config.get_text("login.title"), size=theme_manager.text_size_3xl, weight=ft.FontWeight.BOLD, color=theme_manager.text),
-                            ft.Text("Ingresa tus credenciales para continuar", size=theme_manager.text_size_md, color=theme_manager.subtext),
+                            title_text,
+                            subtitle_text,
                         ],
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                         spacing=theme_manager.space_12,

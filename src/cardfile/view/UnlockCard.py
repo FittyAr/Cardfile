@@ -1,5 +1,6 @@
 import flet as ft
 from typing import Callable
+from cardfile.config.config import Config
 from cardfile.config.locking import verify_lock_password
 from cardfile.theme.manager import ThemeManager
 
@@ -7,9 +8,11 @@ theme_manager = ThemeManager()
 
 
 async def unlock_card_modal(page: ft.Page, password_hash: str, on_close: Callable, on_success: Callable):
+    config = Config()
+    t = config.translations["unlock_card"]
 
     password_field = ft.TextField(
-        label="Contraseña de tarjetas",
+        label=t["password_label"],
         password=True,
         can_reveal_password=True,
         width=theme_manager.input_width,
@@ -18,18 +21,18 @@ async def unlock_card_modal(page: ft.Page, password_hash: str, on_close: Callabl
     async def unlock_clicked(e):
         if not password_hash:
             page.show_dialog(ft.SnackBar(
-                content=ft.Text("No hay contraseña configurada"),
+                content=ft.Text(t["errors"]["no_password"]),
                 bgcolor=ft.Colors.RED_400,
-                action="Ok",
+                action=config.get_text("common.buttons.ok"),
                 duration=2000
             ))
             page.update()
             return
         if not verify_lock_password(password_field.value or "", password_hash):
             page.show_dialog(ft.SnackBar(
-                content=ft.Text("Contraseña incorrecta"),
+                content=ft.Text(t["errors"]["invalid_password"]),
                 bgcolor=ft.Colors.RED_400,
-                action="Ok",
+                action=config.get_text("common.buttons.ok"),
                 duration=2000
             ))
             page.update()
@@ -47,7 +50,7 @@ async def unlock_card_modal(page: ft.Page, password_hash: str, on_close: Callabl
                 ft.Row(
                     [
                         ft.Icon(ft.Icons.LOCK_OUTLINED, color=theme_manager.primary, size=theme_manager.icon_size_lg),
-                        ft.Text("Desbloquear tarjeta", size=theme_manager.text_size_xxl, weight=ft.FontWeight.BOLD, color=theme_manager.text),
+                        ft.Text(t["title"], size=theme_manager.text_size_xxl, weight=ft.FontWeight.BOLD, color=theme_manager.text),
                     ],
                     alignment=ft.MainAxisAlignment.CENTER,
                     spacing=theme_manager.space_12,
@@ -60,11 +63,11 @@ async def unlock_card_modal(page: ft.Page, password_hash: str, on_close: Callabl
                     content=ft.Row(
                         [
                             ft.TextButton(
-                                content=ft.Text("Cancelar", color=ft.Colors.RED_400),
+                                content=ft.Text(t["buttons"]["cancel"], color=ft.Colors.RED_400),
                                 on_click=cancel_clicked,
                             ),
                             ft.Button(
-                                content=ft.Text("Desbloquear", weight=ft.FontWeight.BOLD),
+                                content=ft.Text(t["buttons"]["unlock"], weight=ft.FontWeight.BOLD),
                                 width=theme_manager.button_width,
                                 height=theme_manager.button_height,
                                 color=ft.Colors.WHITE,

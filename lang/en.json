@@ -1,6 +1,8 @@
 {
     "login": {
         "title": "Login",
+        "brand": "CardFile",
+        "subtitle": "Enter your credentials to continue",
         "username": {
             "label": "Username",
             "hint": "example@email.com"
@@ -22,6 +24,8 @@
     },
     "new_user": {
         "title": "New User",
+        "brand": "CardFile",
+        "subtitle": "Create an account to get started",
         "fields": {
             "name": {
                 "label": "Name"
@@ -60,6 +64,37 @@
             "hint": "Type to search..."
         },
         "read_mode": "Read mode",
+        "tabs": {
+            "editor": "Editor",
+            "reader": "Reader"
+        },
+        "sidebar": {
+            "title": "My Cards",
+            "new_card": "New Card",
+            "recycle": "Recycle Bin",
+            "settings": "Settings",
+            "logout": "Logout"
+        },
+        "header": {
+            "rename_tooltip": "Rename card",
+            "delete_tooltip": "Delete card",
+            "lock_tooltip": "Lock card",
+            "unlock_tooltip": "Unlock card"
+        },
+        "save_indicator": "Saved",
+        "counter": {
+            "empty": "0 cards",
+            "singular": "card",
+            "plural": "cards"
+        },
+        "empty_state": {
+            "no_cards": "No cards",
+            "select_card": "Select a card"
+        },
+        "list": {
+            "updated": "Updated: {date}",
+            "no_date": "No date"
+        },
         "delete": {
             "no_selection": "Please select a card to delete",
             "confirm_title": "Confirm deletion",
@@ -71,6 +106,24 @@
             "yes": "Yes",
             "no": "No",
             "ok": "Ok"
+        },
+        "markdown_toolbar": {
+            "bold": "Bold",
+            "italic": "Italic",
+            "strike": "Strikethrough",
+            "code": "Code",
+            "h1": "H1",
+            "h2": "H2",
+            "h3": "H3",
+            "list": "List",
+            "list_numbered": "Numbered list",
+            "quote": "Quote",
+            "link": "Link",
+            "image": "Image",
+            "table": "Table",
+            "checklist": "Checklist",
+            "placeholder": "text",
+            "table_template": "\n| Col 1 | Col 2 |\n|-------|-------|\n|       |       |\n"
         }
     },
     "navigation": {
@@ -86,6 +139,7 @@
     },
     "new_card": {
         "title": "New Card",
+        "subtitle": "Enter the title for your new note card.",
         "name": {
             "label": "Card Name",
             "empty_error": "Please enter a name for the card"
@@ -100,6 +154,7 @@
     },
     "edit_card": {
         "title": "Rename Card",
+        "subtitle": "Change the name of your card.",
         "name": {
             "label": "Card Name",
             "empty_error": "Please enter a name for the card"
@@ -108,6 +163,9 @@
             "update": "Update",
             "cancel": "Cancel"
         },
+        "errors": {
+            "no_selection": "Error: No card selected"
+        },
         "messages": {
             "success": "Card updated successfully",
             "error": "Error updating card"
@@ -115,6 +173,11 @@
     },
     "recycle": {
         "title": "Recycle Bin",
+        "empty_state": "The recycle bin is empty",
+        "list": {
+            "deleted": "Deleted: {date}",
+            "no_date": "No date"
+        },
         "buttons": {
             "restore": "Restore",
             "delete": "Delete",
@@ -126,9 +189,88 @@
             "delete_success": "Card permanently deleted",
             "delete_error": "Error deleting card"
         },
+        "empty_trash": {
+            "button": "Empty recycle bin",
+            "title": "Empty recycle bin",
+            "message": "Delete everything permanently?",
+            "success": "Recycle bin emptied",
+            "error": "Error emptying recycle bin"
+        },
         "delete_confirmation": {
             "title": "Confirm permanent deletion",
             "message": "Are you sure you want to permanently delete this card? This action cannot be undone."
+        }
+    },
+    "unlock_card": {
+        "title": "Unlock card",
+        "password_label": "Card password",
+        "buttons": {
+            "cancel": "Cancel",
+            "unlock": "Unlock"
+        },
+        "errors": {
+            "no_password": "No password configured",
+            "invalid_password": "Incorrect password"
+        }
+    },
+    "settings": {
+        "title": "Settings",
+        "buttons": {
+            "cancel": "Cancel",
+            "save": "Save"
+        },
+        "menu": {
+            "title": "Settings",
+            "general": "General",
+            "security": "Security",
+            "system": "System"
+        },
+        "general": {
+            "theme": "Theme",
+            "language": "Default language",
+            "theme_dark": "Dark",
+            "theme_light": "Light"
+        },
+        "security": {
+            "auth": "Authentication",
+            "require_login": "Require login",
+            "session_days": "Session duration (days)",
+            "locking": "Card locking",
+            "enable_locking": "Enable locking",
+            "lock_timeout": "Lock timeout (sec)",
+            "mask_chars": "Visible characters",
+            "locking_password_label": "Card password",
+            "locking_password_saved": "Saved password",
+            "locking_password_exists": "A saved password already exists",
+            "ip_security": "IP security",
+            "ip_current": "Current IP: {ip}",
+            "ip_unknown": "Unknown",
+            "ip_allowed_hint": "Allowed IPs (comma or newline separated)",
+            "errors": {
+                "missing_password": "You must enter the password",
+                "invalid_password": "Incorrect password",
+                "define_password": "You must set a card password"
+            }
+        },
+        "system": {
+            "title": "System",
+            "run_mode_label": "Run mode: {mode}",
+            "run_mode": {
+                "web": "Web",
+                "desktop": "Desktop"
+            },
+            "debug": "Debug mode"
+        },
+        "disable_overlay": {
+            "title": "Confirm disable",
+            "message": "Confirm the password to disable locking",
+            "cancel": "Cancel",
+            "confirm": "Confirm"
+        }
+    },
+    "common": {
+        "buttons": {
+            "ok": "Ok"
         }
     }
 }

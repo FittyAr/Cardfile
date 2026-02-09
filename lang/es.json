@@ -1,6 +1,8 @@
 {
     "login": {
         "title": "Iniciar Sesión",
+        "brand": "CardFile",
+        "subtitle": "Ingresa tus credenciales para continuar",
         "username": {
             "label": "Usuario",
             "hint": "ejemplo@correo.com"
@@ -22,6 +24,8 @@
     },
     "new_user": {
         "title": "Nuevo Usuario",
+        "brand": "CardFile",
+        "subtitle": "Crea una cuenta para empezar",
         "fields": {
             "name": {
                 "label": "Nombre"
@@ -60,6 +64,37 @@
             "hint": "Escriba para buscar..."
         },
         "read_mode": "Modo lectura",
+        "tabs": {
+            "editor": "Editor",
+            "reader": "Lector"
+        },
+        "sidebar": {
+            "title": "Mis Tarjetas",
+            "new_card": "Nueva Tarjeta",
+            "recycle": "Papelera",
+            "settings": "Configuración",
+            "logout": "Cerrar Sesión"
+        },
+        "header": {
+            "rename_tooltip": "Cambiar nombre de tarjeta",
+            "delete_tooltip": "Eliminar tarjeta",
+            "lock_tooltip": "Bloquear tarjeta",
+            "unlock_tooltip": "Desbloquear tarjeta"
+        },
+        "save_indicator": "Guardado",
+        "counter": {
+            "empty": "0 tarjetas",
+            "singular": "tarjeta",
+            "plural": "tarjetas"
+        },
+        "empty_state": {
+            "no_cards": "No hay tarjetas",
+            "select_card": "Selecciona una tarjeta"
+        },
+        "list": {
+            "updated": "Actualizado: {date}",
+            "no_date": "Sin fecha"
+        },
         "delete": {
             "no_selection": "Por favor seleccione una ficha para eliminar",
             "confirm_title": "Confirmar eliminación",
@@ -71,6 +106,24 @@
             "yes": "Sí",
             "no": "No",
             "ok": "Ok"
+        },
+        "markdown_toolbar": {
+            "bold": "Negrita",
+            "italic": "Cursiva",
+            "strike": "Tachado",
+            "code": "Código",
+            "h1": "H1",
+            "h2": "H2",
+            "h3": "H3",
+            "list": "Lista",
+            "list_numbered": "Lista Nº",
+            "quote": "Cita",
+            "link": "Enlace",
+            "image": "Imagen",
+            "table": "Tabla",
+            "checklist": "Checklist",
+            "placeholder": "texto",
+            "table_template": "\n| Col 1 | Col 2 |\n|-------|-------|\n|       |       |\n"
         }
     },
     "navigation": {
@@ -86,6 +139,7 @@
     },
     "new_card": {
         "title": "Nueva Tarjeta",
+        "subtitle": "Ingresa el título para tu nueva tarjeta de notas.",
         "name": {
             "label": "Nombre de la Tarjeta",
             "empty_error": "Por favor ingrese un nombre para la tarjeta"
@@ -100,6 +154,7 @@
     },
     "edit_card": {
         "title": "Cambiar nombre de tarjeta",
+        "subtitle": "Cambia el nombre de tu tarjeta.",
         "name": {
             "label": "Nombre de la Tarjeta",
             "empty_error": "Por favor ingrese un nombre para la tarjeta"
@@ -108,6 +163,9 @@
             "update": "Actualizar",
             "cancel": "Cancelar"
         },
+        "errors": {
+            "no_selection": "Error: No hay ficha seleccionada"
+        },
         "messages": {
             "success": "Ficha actualizada exitosamente",
             "error": "Error al actualizar la ficha"
@@ -115,6 +173,11 @@
     },
     "recycle": {
         "title": "Papelera de Reciclaje",
+        "empty_state": "La papelera está vacía",
+        "list": {
+            "deleted": "Eliminado: {date}",
+            "no_date": "Sin fecha"
+        },
         "buttons": {
             "restore": "Restaurar",
             "delete": "Eliminar",
@@ -126,9 +189,88 @@
             "delete_success": "Ficha eliminada permanentemente",
             "delete_error": "Error al eliminar la ficha"
         },
+        "empty_trash": {
+            "button": "Vaciar papelera",
+            "title": "Vaciar papelera",
+            "message": "¿Borrar todo permanentemente?",
+            "success": "Papelera vaciada",
+            "error": "Error al vaciar la papelera"
+        },
         "delete_confirmation": {
             "title": "Confirmar eliminación permanente",
             "message": "¿Está seguro que desea eliminar permanentemente esta ficha? Esta acción no se puede deshacer."
+        }
+    },
+    "unlock_card": {
+        "title": "Desbloquear tarjeta",
+        "password_label": "Contraseña de tarjetas",
+        "buttons": {
+            "cancel": "Cancelar",
+            "unlock": "Desbloquear"
+        },
+        "errors": {
+            "no_password": "No hay contraseña configurada",
+            "invalid_password": "Contraseña incorrecta"
+        }
+    },
+    "settings": {
+        "title": "Configuración",
+        "buttons": {
+            "cancel": "Cancelar",
+            "save": "Guardar"
+        },
+        "menu": {
+            "title": "Configuración",
+            "general": "General",
+            "security": "Seguridad",
+            "system": "Sistema"
+        },
+        "general": {
+            "theme": "Tema",
+            "language": "Idioma predeterminado",
+            "theme_dark": "Oscuro",
+            "theme_light": "Claro"
+        },
+        "security": {
+            "auth": "Autenticación",
+            "require_login": "Requerir inicio de sesión",
+            "session_days": "Duración de sesión (días)",
+            "locking": "Bloqueo de tarjetas",
+            "enable_locking": "Habilitar bloqueo",
+            "lock_timeout": "Tiempo de bloqueo (seg)",
+            "mask_chars": "Caracteres visibles",
+            "locking_password_label": "Contraseña de tarjetas",
+            "locking_password_saved": "Contraseña guardada",
+            "locking_password_exists": "Ya existe una contraseña guardada",
+            "ip_security": "Seguridad IP",
+            "ip_current": "IP actual: {ip}",
+            "ip_unknown": "Desconocida",
+            "ip_allowed_hint": "IPs permitidas (separadas por coma o líneas)",
+            "errors": {
+                "missing_password": "Debes ingresar la contraseña",
+                "invalid_password": "Contraseña incorrecta",
+                "define_password": "Debes definir una contraseña de tarjetas"
+            }
+        },
+        "system": {
+            "title": "Sistema",
+            "run_mode_label": "Modo de ejecución: {mode}",
+            "run_mode": {
+                "web": "Web",
+                "desktop": "Escritorio"
+            },
+            "debug": "Modo debug"
+        },
+        "disable_overlay": {
+            "title": "Confirmar deshabilitado",
+            "message": "Confirma la contraseña para deshabilitar el bloqueo",
+            "cancel": "Cancelar",
+            "confirm": "Confirmar"
+        }
+    },
+    "common": {
+        "buttons": {
+            "ok": "Ok"
         }
     }
 }

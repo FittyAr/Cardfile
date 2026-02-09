@@ -50,7 +50,7 @@ async def new_card_modal(page: ft.Page, on_close: Callable, on_success: Callable
             page.show_dialog(ft.SnackBar(
                 content=ft.Text(config.get_text("new_card.errors.save_error")),
                 bgcolor=ft.Colors.RED_400,
-                action="Ok",
+                action=config.get_text("common.buttons.ok"),
                 duration=2000
             ))
             page.update()
@@ -106,7 +106,7 @@ async def new_card_modal(page: ft.Page, on_close: Callable, on_success: Callable
                 ft.Container(height=theme_manager.space_12),
                 
                 ft.Text(
-                    "Ingresa el título para tu nueva tarjeta de notas.",
+                    config.get_text("new_card.subtitle"),
                     size=theme_manager.text_size_md,
                     color=theme_manager.subtext,
                     text_align=ft.TextAlign.CENTER,

@@ -15,9 +15,10 @@ theme_manager = ThemeManager()
 
 async def settings_modal(page: ft.Page, on_close: Callable, on_success: Callable):
     config = Config()
+    t = config.translations["settings"]
     is_web = is_web_runtime(page)
     client_ip = getattr(page, "client_ip", None) if is_web else None
-    run_mode = "Web" if is_web else "Escritorio"
+    run_mode = t["system"]["run_mode"]["web"] if is_web else t["system"]["run_mode"]["desktop"]
     auth_manager = AuthManager(page)
     user_id = await auth_manager.get_authenticated_user_id()
     session = get_session()
@@ -82,18 +83,18 @@ async def settings_modal(page: ft.Page, on_close: Callable, on_success: Callable
         entered_password = (disable_password_field.value or "").strip()
         if not entered_password:
             page.show_dialog(ft.SnackBar(
-                content=ft.Text("Debes ingresar la contraseña"),
+                content=ft.Text(t["security"]["errors"]["missing_password"]),
                 bgcolor=ft.Colors.RED_400,
-                action="Ok",
+                action=config.get_text("common.buttons.ok"),
                 duration=2000
             ))
             page.update()
             return
         if not verify_lock_password(entered_password, locking_settings["password_hash"]):
             page.show_dialog(ft.SnackBar(
-                content=ft.Text("Contraseña incorrecta"),
+                content=ft.Text(t["security"]["errors"]["invalid_password"]),
                 bgcolor=ft.Colors.RED_400,
-                action="Ok",
+                action=config.get_text("common.buttons.ok"),
                 duration=2000
             ))
             page.update()
@@ -148,9 +149,9 @@ async def settings_modal(page: ft.Page, on_close: Callable, on_success: Callable
                 if locking_enabled_switch.value:
                     if not password_value and not has_password_hash:
                         page.show_dialog(ft.SnackBar(
-                            content=ft.Text("Debes definir una contraseña de tarjetas"),
+                            content=ft.Text(t["security"]["errors"]["define_password"]),
                             bgcolor=ft.Colors.RED_400,
-                            action="Ok",
+                            action=config.get_text("common.buttons.ok"),
                             duration=2000
                         ))
                         page.update()
@@ -193,7 +194,7 @@ async def settings_modal(page: ft.Page, on_close: Callable, on_success: Callable
         theme_options = [
             ft.DropdownOption(
                 name,
-                f'{ThemeColors.THEMES[name]["name"]} ({"Oscuro" if ThemeColors.THEMES[name]["is_dark"] else "Claro"})'
+                f'{ThemeColors.THEMES[name]["name"]} ({t["general"]["theme_dark"] if ThemeColors.THEMES[name]["is_dark"] else t["general"]["theme_light"]})'
             )
             for name in ThemeColors.THEMES
         ]
@@ -229,15 +230,15 @@ async def settings_modal(page: ft.Page, on_close: Callable, on_success: Callable
             value=state["locking_enabled"]
         )
         locking_password_field = ft.TextField(
-            label="Contraseña de tarjetas",
+            label=t["security"]["locking_password_label"],
             password=True,
             can_reveal_password=True,
-            hint_text="Contraseña guardada" if locking_settings["password_hash"] else "",
+            hint_text=t["security"]["locking_password_saved"] if locking_settings["password_hash"] else "",
             width=theme_manager.input_width,
             value=state["locking_password"],
         )
         locking_password_hint = ft.Text(
-            "Ya existe una contraseña guardada",
+            t["security"]["locking_password_exists"],
             color=theme_manager.subtext,
             size=theme_manager.text_size_sm,
             visible=bool(locking_settings["password_hash"]),
@@ -264,7 +265,7 @@ async def settings_modal(page: ft.Page, on_close: Callable, on_success: Callable
             )
 
         disable_password_field = ft.TextField(
-            label="Contraseña de tarjetas",
+            label=t["security"]["locking_password_label"],
             password=True,
             can_reveal_password=True,
             width=theme_manager.input_width,
@@ -275,10 +276,10 @@ async def settings_modal(page: ft.Page, on_close: Callable, on_success: Callable
         general_section = ft.Container(
             content=ft.Column(
                 [
-                    ft.Text("Tema", size=theme_manager.text_size_md, weight=ft.FontWeight.W_600, color=theme_manager.text),
+                    ft.Text(t["general"]["theme"], size=theme_manager.text_size_md, weight=ft.FontWeight.W_600, color=theme_manager.text),
                     theme_dd,
                     ft.Container(height=theme_manager.space_8),
-                    ft.Text("Idioma predeterminado", size=theme_manager.text_size_md, weight=ft.FontWeight.W_600, color=theme_manager.text),
+                    ft.Text(t["general"]["language"], size=theme_manager.text_size_md, weight=ft.FontWeight.W_600, color=theme_manager.text),
                     language_dd,
                 ],
                 spacing=theme_manager.space_12,
@@ -288,26 +289,26 @@ async def settings_modal(page: ft.Page, on_close: Callable, on_success: Callable
         )
 
         security_items = [
-            ft.Text("Autenticación", size=theme_manager.text_size_md, weight=ft.FontWeight.W_600, color=theme_manager.text),
+            ft.Text(t["security"]["auth"], size=theme_manager.text_size_md, weight=ft.FontWeight.W_600, color=theme_manager.text),
             ft.Row(
                 [
-                    ft.Text("Requerir inicio de sesión", color=theme_manager.subtext),
+                    ft.Text(t["security"]["require_login"], color=theme_manager.subtext),
                     require_login_switch,
                 ],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
             ),
             ft.Row(
                 [
-                    ft.Text("Duración de sesión (días)", color=theme_manager.subtext),
+                    ft.Text(t["security"]["session_days"], color=theme_manager.subtext),
                     session_days_field,
                 ],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
             ),
             ft.Container(height=theme_manager.space_8),
-            ft.Text("Bloqueo de tarjetas", size=theme_manager.text_size_md, weight=ft.FontWeight.W_600, color=theme_manager.text),
+            ft.Text(t["security"]["locking"], size=theme_manager.text_size_md, weight=ft.FontWeight.W_600, color=theme_manager.text),
             ft.Row(
                 [
-                    ft.Text("Habilitar bloqueo", color=theme_manager.subtext),
+                    ft.Text(t["security"]["enable_locking"], color=theme_manager.subtext),
                     locking_enabled_switch,
                 ],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -316,14 +317,14 @@ async def settings_modal(page: ft.Page, on_close: Callable, on_success: Callable
             locking_password_hint,
             ft.Row(
                 [
-                    ft.Text("Tiempo de bloqueo (seg)", color=theme_manager.subtext),
+                    ft.Text(t["security"]["lock_timeout"], color=theme_manager.subtext),
                     locking_timeout_field,
                 ],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
             ),
             ft.Row(
                 [
-                    ft.Text("Caracteres visibles", color=theme_manager.subtext),
+                    ft.Text(t["security"]["mask_chars"], color=theme_manager.subtext),
                     locking_mask_field,
                 ],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -334,9 +335,9 @@ async def settings_modal(page: ft.Page, on_close: Callable, on_success: Callable
             security_items.extend(
                 [
                     ft.Container(height=theme_manager.space_8),
-                    ft.Text("Seguridad IP", size=theme_manager.text_size_md, weight=ft.FontWeight.W_600, color=theme_manager.text),
-                    ft.Text(f"IP actual: {client_ip or 'Desconocida'}", color=theme_manager.subtext),
-                    ft.Text("IPs permitidas (separadas por coma o líneas)", color=theme_manager.subtext),
+                    ft.Text(t["security"]["ip_security"], size=theme_manager.text_size_md, weight=ft.FontWeight.W_600, color=theme_manager.text),
+                    ft.Text(t["security"]["ip_current"].format(ip=client_ip or t["security"]["ip_unknown"]), color=theme_manager.subtext),
+                    ft.Text(t["security"]["ip_allowed_hint"], color=theme_manager.subtext),
                     allowed_ips_field,
                 ]
             )
@@ -353,12 +354,12 @@ async def settings_modal(page: ft.Page, on_close: Callable, on_success: Callable
         system_section = ft.Container(
             content=ft.Column(
                 [
-                    ft.Text("Sistema", size=theme_manager.text_size_md, weight=ft.FontWeight.W_600, color=theme_manager.text),
-                    ft.Text(f"Modo de ejecución: {run_mode}", color=theme_manager.subtext),
+                    ft.Text(t["system"]["title"], size=theme_manager.text_size_md, weight=ft.FontWeight.W_600, color=theme_manager.text),
+                    ft.Text(t["system"]["run_mode_label"].format(mode=run_mode), color=theme_manager.subtext),
                     ft.Container(height=theme_manager.space_8),
                     ft.Row(
                         [
-                            ft.Text("Modo debug", color=theme_manager.subtext),
+                            ft.Text(t["system"]["debug"], color=theme_manager.subtext),
                             debug_switch,
                         ],
                         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -404,11 +405,11 @@ async def settings_modal(page: ft.Page, on_close: Callable, on_success: Callable
 
         menu = ft.Column(
             [
-                ft.Text("Configuración", size=theme_manager.text_size_lg, weight=ft.FontWeight.BOLD, color=theme_manager.text),
+                ft.Text(t["menu"]["title"], size=theme_manager.text_size_lg, weight=ft.FontWeight.BOLD, color=theme_manager.text),
                 ft.Container(height=theme_manager.space_8),
-                build_menu_item("general", "General", ft.Icons.TUNE),
-                build_menu_item("security", "Seguridad", ft.Icons.SHIELD_OUTLINED),
-                build_menu_item("system", "Sistema", ft.Icons.SETTINGS_APPLICATIONS),
+                build_menu_item("general", t["menu"]["general"], ft.Icons.TUNE),
+                build_menu_item("security", t["menu"]["security"], ft.Icons.SHIELD_OUTLINED),
+                build_menu_item("system", t["menu"]["system"], ft.Icons.SETTINGS_APPLICATIONS),
             ],
             spacing=theme_manager.space_4,
             expand=True,
@@ -431,7 +432,7 @@ async def settings_modal(page: ft.Page, on_close: Callable, on_success: Callable
                 ft.Row(
                     [
                         ft.Icon(ft.Icons.SETTINGS_OUTLINED, color=theme_manager.primary, size=theme_manager.icon_size_lg),
-                        ft.Text("Configuración", size=theme_manager.text_size_xxl, weight=ft.FontWeight.BOLD, color=theme_manager.text),
+                        ft.Text(t["title"], size=theme_manager.text_size_xxl, weight=ft.FontWeight.BOLD, color=theme_manager.text),
                     ],
                     alignment=ft.MainAxisAlignment.START,
                     spacing=theme_manager.space_12,
@@ -450,11 +451,11 @@ async def settings_modal(page: ft.Page, on_close: Callable, on_success: Callable
                     content=ft.Row(
                         [
                             ft.TextButton(
-                                content=ft.Text("Cancelar", color=ft.Colors.RED_400),
+                                content=ft.Text(t["buttons"]["cancel"], color=ft.Colors.RED_400),
                                 on_click=cancel_clicked,
                             ),
                             ft.Button(
-                                content=ft.Text("Guardar", weight=ft.FontWeight.BOLD),
+                                content=ft.Text(t["buttons"]["save"], weight=ft.FontWeight.BOLD),
                                 width=theme_manager.button_width,
                                 height=theme_manager.button_height,
                                 color=ft.Colors.WHITE,
@@ -497,22 +498,22 @@ async def settings_modal(page: ft.Page, on_close: Callable, on_success: Callable
                     ft.Row(
                         [
                             ft.Icon(ft.Icons.LOCK_OUTLINED, color=theme_manager.primary, size=theme_manager.icon_size_lg),
-                            ft.Text("Confirmar deshabilitado", size=theme_manager.text_size_xl, weight=ft.FontWeight.BOLD, color=theme_manager.text),
+                            ft.Text(t["disable_overlay"]["title"], size=theme_manager.text_size_xl, weight=ft.FontWeight.BOLD, color=theme_manager.text),
                         ],
                         alignment=ft.MainAxisAlignment.CENTER,
                         spacing=theme_manager.space_12,
                     ),
                     ft.Divider(height=1, color=theme_manager.divider_color),
-                    ft.Text("Confirma la contraseña para deshabilitar el bloqueo", color=theme_manager.subtext),
+                    ft.Text(t["disable_overlay"]["message"], color=theme_manager.subtext),
                     disable_password_field,
                     ft.Row(
                         [
                             ft.TextButton(
-                                content=ft.Text("Cancelar", color=ft.Colors.RED_400),
+                                content=ft.Text(t["disable_overlay"]["cancel"], color=ft.Colors.RED_400),
                                 on_click=cancel_disable_clicked,
                             ),
                             ft.Button(
-                                content=ft.Text("Confirmar", weight=ft.FontWeight.BOLD),
+                                content=ft.Text(t["disable_overlay"]["confirm"], weight=ft.FontWeight.BOLD),
                                 width=theme_manager.button_width,
                                 height=theme_manager.button_height,
                                 color=ft.Colors.WHITE,

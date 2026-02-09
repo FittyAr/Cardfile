@@ -22,7 +22,7 @@ from cardfile.theme.manager import ThemeManager
 theme_manager = ThemeManager()
 
 
-def create_search_field(on_change: Callable) -> ft.TextField:
+def create_search_field(on_change: Callable, t: dict) -> ft.TextField:
     """
     Crea campo de búsqueda para filtrar tarjetas.
     
@@ -33,7 +33,7 @@ def create_search_field(on_change: Callable) -> ft.TextField:
         ft.TextField configurado para búsqueda
     """
     return ft.TextField(
-        hint_text="Buscar tarjetas...",
+        hint_text=t["search"]["hint"],
         prefix_icon=ft.Icons.SEARCH,
         focused_border_color=theme_manager.primary,
         border_color=theme_manager.border_color,
@@ -51,7 +51,8 @@ def create_sidebar(
     new_card_callback: Callable,
     recycle_bin_callback: Callable,
     settings_callback: Callable,
-    logout_callback: Callable
+    logout_callback: Callable,
+    t: dict
 ) -> ft.Container:
     """
     Crea el sidebar con búsqueda, lista de tarjetas y botones de acción.
@@ -75,7 +76,7 @@ def create_sidebar(
                         [
                             ft.Icon(ft.Icons.FOLDER, size=theme_manager.icon_size_md, color=theme_manager.primary),
                             ft.Text(
-                                "Mis Tarjetas",
+                                t["sidebar"]["title"],
                                 size=theme_manager.text_size_lg,
                                 weight=ft.FontWeight.BOLD,
                                 color=theme_manager.text,
@@ -113,7 +114,7 @@ def create_sidebar(
                                 content=ft.Row(
                                     [
                                         ft.Button(
-                                            "Nueva Tarjeta",
+                                            t["sidebar"]["new_card"],
                                             icon=ft.Icons.ADD,
                                             on_click=new_card_callback,
                                             expand=True,
@@ -121,17 +122,17 @@ def create_sidebar(
                                         ),
                                         ft.IconButton(
                                             icon=ft.Icons.DELETE_OUTLINE,
-                                            tooltip="Papelera",
+                                            tooltip=t["sidebar"]["recycle"],
                                             on_click=recycle_bin_callback,
                                         ),
                                         ft.IconButton(
                                             icon=ft.Icons.SETTINGS_OUTLINED,
-                                            tooltip="Configuración",
+                                            tooltip=t["sidebar"]["settings"],
                                             on_click=settings_callback,
                                         ),
                                         ft.IconButton(
                                             icon=ft.Icons.LOGOUT_ROUNDED,
-                                            tooltip="Cerrar Sesión",
+                                            tooltip=t["sidebar"]["logout"],
                                             icon_color=ft.Colors.RED_400,
                                             on_click=logout_callback,
                                         ),
@@ -159,7 +160,8 @@ def create_card_header(
     save_indicator: ft.Row,
     edit_callback: Callable,
     delete_callback: Callable,
-    lock_callback: Callable
+    lock_callback: Callable,
+    t: dict
 ) -> Tuple[ft.Container, ft.IconButton, ft.IconButton, ft.IconButton]:
     """
     Crea el header del panel principal con título, indicador de guardado y acciones.
@@ -168,7 +170,7 @@ def create_card_header(
     # Botones de acción (Edit/Delete) que se habilitarán/deshabilitarán en Card.py
     edit_button = ft.IconButton(
         icon=ft.Icons.EDIT_OUTLINED,
-        tooltip="Cambiar nombre de tarjeta",
+        tooltip=t["header"]["rename_tooltip"],
         on_click=edit_callback,
         icon_color=theme_manager.primary,
         disabled=True, # Iniciamos deshabilitado
@@ -176,7 +178,7 @@ def create_card_header(
     
     delete_button = ft.IconButton(
         icon=ft.Icons.DELETE_OUTLINE,
-        tooltip="Eliminar tarjeta",
+        tooltip=t["header"]["delete_tooltip"],
         on_click=delete_callback,
         icon_color=ft.Colors.RED_400,
         disabled=True, # Iniciamos deshabilitado
@@ -184,7 +186,7 @@ def create_card_header(
 
     lock_button = ft.IconButton(
         icon=ft.Icons.LOCK_OUTLINE,
-        tooltip="Bloquear tarjeta",
+        tooltip=t["header"]["lock_tooltip"],
         on_click=lock_callback,
         icon_color=theme_manager.primary,
         disabled=True,
@@ -206,7 +208,8 @@ def create_card_header(
 
 def create_custom_tabs(
     on_editor_click: Callable,
-    on_preview_click: Callable
+    on_preview_click: Callable,
+    t: dict
 ) -> Tuple[ft.Row, ft.Container, ft.Container]:
     """
     Crea tabs personalizados para Editor/Preview.
@@ -218,8 +221,10 @@ def create_custom_tabs(
     Returns:
         Tupla con (tabs_row, editor_btn, preview_btn)
     """
+    editor_icon = ft.Icon(ft.Icons.EDIT_OUTLINED, size=theme_manager.icon_size_md, color=ft.Colors.WHITE)
+    editor_text = ft.Text(t["tabs"]["editor"], size=theme_manager.text_size_md, weight=ft.FontWeight.W_600, color=ft.Colors.WHITE)
     editor_btn = ft.Container(
-        content=ft.Text("✏️ Editor", size=theme_manager.text_size_md, weight=ft.FontWeight.W_600, color=ft.Colors.WHITE),
+        content=ft.Row([editor_icon, editor_text], spacing=theme_manager.space_8),
         padding=ft.Padding.symmetric(horizontal=theme_manager.space_20, vertical=theme_manager.space_12),
         border_radius=theme_manager.tab_radius,
         bgcolor=theme_manager.primary,
@@ -227,8 +232,10 @@ def create_custom_tabs(
         on_click=on_editor_click,
     )
     
+    preview_icon = ft.Icon(ft.Icons.VISIBILITY_OUTLINED, size=theme_manager.icon_size_md, color=theme_manager.text)
+    preview_text = ft.Text(t["tabs"]["reader"], size=theme_manager.text_size_md, weight=ft.FontWeight.W_600, color=theme_manager.text)
     preview_btn = ft.Container(
-        content=ft.Text("👁️ Lector", size=theme_manager.text_size_md, weight=ft.FontWeight.W_600, color=theme_manager.text),
+        content=ft.Row([preview_icon, preview_text], spacing=theme_manager.space_8),
         padding=ft.Padding.symmetric(horizontal=theme_manager.space_20, vertical=theme_manager.space_12),
         border_radius=theme_manager.tab_radius,
         bgcolor=theme_manager.subtle_bg,
@@ -244,7 +251,7 @@ def create_custom_tabs(
     return tabs_row, editor_btn, preview_btn
 
 
-def create_save_indicator() -> ft.Row:
+def create_save_indicator(t: dict) -> ft.Row:
     """
     Crea indicador visual de guardado.
     
@@ -254,14 +261,14 @@ def create_save_indicator() -> ft.Row:
     return ft.Row(
         [
             ft.Icon(ft.Icons.CHECK_CIRCLE, color=ft.Colors.GREEN_400, size=theme_manager.icon_size_sm),
-            ft.Text("Guardado", size=theme_manager.text_size_sm, color=ft.Colors.GREEN_400),
+            ft.Text(t["save_indicator"], size=theme_manager.text_size_sm, color=ft.Colors.GREEN_400),
         ],
         spacing=theme_manager.space_8,
         visible=False,
     )
 
 
-def create_card_counter() -> ft.Text:
+def create_card_counter(t: dict) -> ft.Text:
     """
     Crea texto para mostrar contador de tarjetas.
     
@@ -269,7 +276,7 @@ def create_card_counter() -> ft.Text:
         ft.Text para el contador
     """
     return ft.Text(
-        "0 tarjetas",
+        t["counter"]["empty"],
         size=theme_manager.text_size_sm,
         color=theme_manager.subtext,
     )

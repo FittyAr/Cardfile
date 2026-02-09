@@ -10,6 +10,7 @@ theme_manager = ThemeManager()
 
 async def recycle_modal(page: ft.Page, on_close: Callable, on_success: Callable):
     config = Config()
+    t = config.translations["recycle"]
     selected_ficha = None
     from cardfile.view.components.auth_manager import AuthManager
     auth_manager = AuthManager(page)
@@ -39,7 +40,7 @@ async def recycle_modal(page: ft.Page, on_close: Callable, on_success: Callable)
                                 color=ft.Colors.WHITE if is_selected else theme_manager.text,
                             ),
                             ft.Text(
-                                f"Eliminado: {ficha.updated_at.strftime('%d/%m/%Y')}" if ficha.updated_at else "Sin fecha",
+                                t["list"]["deleted"].format(date=ficha.updated_at.strftime("%d/%m/%Y")) if ficha.updated_at else t["list"]["no_date"],
                                 size=theme_manager.text_size_sm,
                                 color=ft.Colors.with_opacity(0.8, ft.Colors.WHITE) if is_selected else theme_manager.subtext,
                             ),
@@ -58,7 +59,7 @@ async def recycle_modal(page: ft.Page, on_close: Callable, on_success: Callable)
             if not fichas:
                 fichas_list.controls = [
                     ft.Container(
-                        content=ft.Text("La papelera está vacía", size=theme_manager.text_size_md, color=theme_manager.subtext),
+                        content=ft.Text(t["empty_state"], size=theme_manager.text_size_md, color=theme_manager.subtext),
                         padding=theme_manager.space_20,
                         alignment=ft.Alignment.CENTER
                     )
@@ -107,7 +108,7 @@ async def recycle_modal(page: ft.Page, on_close: Callable, on_success: Callable)
                 page.show_dialog(ft.SnackBar(
                     content=ft.Text(config.get_text("recycle.messages.restore_success")),
                     bgcolor=ft.Colors.GREEN_400,
-                    action="Ok",
+                    action=config.get_text("common.buttons.ok"),
                     duration=2000
                 ))
                 page.update()
@@ -123,7 +124,7 @@ async def recycle_modal(page: ft.Page, on_close: Callable, on_success: Callable)
             page.show_dialog(ft.SnackBar(
                 content=ft.Text(config.get_text("recycle.messages.restore_error")),
                 bgcolor=ft.Colors.RED_400,
-                action="Ok",
+                action=config.get_text("common.buttons.ok"),
                 duration=2000
             ))
             page.update()
@@ -158,7 +159,7 @@ async def recycle_modal(page: ft.Page, on_close: Callable, on_success: Callable)
                         page.show_dialog(ft.SnackBar(
                             content=ft.Text(config.get_text("recycle.messages.delete_success")),
                             bgcolor=ft.Colors.GREEN_400,
-                            action="Ok",
+                            action=config.get_text("common.buttons.ok"),
                             duration=2000
                         ))
                         page.update()
@@ -174,7 +175,7 @@ async def recycle_modal(page: ft.Page, on_close: Callable, on_success: Callable)
                     page.show_dialog(ft.SnackBar(
                         content=ft.Text(config.get_text("recycle.messages.delete_error")),
                         bgcolor=ft.Colors.RED_400,
-                        action="Ok",
+                        action=config.get_text("common.buttons.ok"),
                         duration=2000
                     ))
                     page.update()
@@ -213,14 +214,14 @@ async def recycle_modal(page: ft.Page, on_close: Callable, on_success: Callable)
                     ).delete()
                     session.commit()
                     await load_inactive_fichas()
-                    page.show_dialog(ft.SnackBar(content=ft.Text("Papelera vaciada"), bgcolor=ft.Colors.GREEN_400, duration=2000))
+                    page.show_dialog(ft.SnackBar(content=ft.Text(t["empty_trash"]["success"]), bgcolor=ft.Colors.GREEN_400, duration=2000))
                     page.update()
                     await asyncio.sleep(0.5)
                     if on_success: await on_success()
                     else: await on_close()
                 except Exception as e:
                     session.rollback()
-                    page.show_dialog(ft.SnackBar(content=ft.Text("Error al vaciar la papelera"), bgcolor=ft.Colors.RED_400, duration=2000))
+                    page.show_dialog(ft.SnackBar(content=ft.Text(t["empty_trash"]["error"]), bgcolor=ft.Colors.RED_400, duration=2000))
                 finally:
                     session.close()
             empty_dialog.open = False
@@ -228,8 +229,8 @@ async def recycle_modal(page: ft.Page, on_close: Callable, on_success: Callable)
         
         empty_dialog = ft.AlertDialog(
             modal=True,
-            title=ft.Text("Vaciar papelera"),
-            content=ft.Text("¿Borrar todo permanentemente?"),
+            title=ft.Text(t["empty_trash"]["title"]),
+            content=ft.Text(t["empty_trash"]["message"]),
             actions=[
                 ft.TextButton(content=ft.Text(config.get_text("card.buttons.no")), on_click=confirm_empty_trash),
                 ft.TextButton(content=ft.Text(config.get_text("card.buttons.yes")), on_click=confirm_empty_trash),
@@ -262,7 +263,7 @@ async def recycle_modal(page: ft.Page, on_close: Callable, on_success: Callable)
     )
 
     btn_empty_trash = ft.TextButton(
-        content=ft.Row([ft.Icon(ft.Icons.DELETE_SWEEP_OUTLINED, size=theme_manager.icon_size_md), ft.Text("Vaciar papelera")]),
+        content=ft.Row([ft.Icon(ft.Icons.DELETE_SWEEP_OUTLINED, size=theme_manager.icon_size_md), ft.Text(t["empty_trash"]["button"])]),
         style=ft.ButtonStyle(color=ft.Colors.RED_400), on_click=empty_trash_clicked,
     )
 

@@ -71,6 +71,24 @@
             "yes": "Oui",
             "no": "Non",
             "ok": "Ok"
+        },
+        "markdown_toolbar": {
+            "bold": "Gras",
+            "italic": "Italique",
+            "strike": "Barré",
+            "code": "Code",
+            "h1": "H1",
+            "h2": "H2",
+            "h3": "H3",
+            "list": "Liste",
+            "list_numbered": "Liste numérotée",
+            "quote": "Citation",
+            "link": "Lien",
+            "image": "Image",
+            "table": "Tableau",
+            "checklist": "Liste de contrôle",
+            "placeholder": "texte",
+            "table_template": "\n| Col 1 | Col 2 |\n|-------|-------|\n|       |       |\n"
         }
     },
     "navigation": {
