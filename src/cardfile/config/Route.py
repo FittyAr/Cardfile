@@ -84,6 +84,8 @@ async def views_handler(page: Page, route: str = None):
         elif route == '/Setup':
             from cardfile.view.wizard.wizard_manager import WizardManager
             async def on_wizard_complete():
+                from cardfile.data.database.setup import init_db
+                init_db()
                 await page.push_route("/newUser")
             
             wizard = WizardManager(page, on_wizard_complete)

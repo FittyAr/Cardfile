@@ -28,10 +28,15 @@ def resolve_route(
     is_authenticated: bool,
     require_login: bool,
     is_first_run: bool,
+    needs_account_creation: bool = False,
 ) -> str:
     normalized = normalize_route(requested_route)
     if is_first_run:
         return "/Setup"
+    if needs_account_creation:
+        if normalized == "/newUser":
+            return "/newUser"
+        return "/newUser"
     if not require_login:
         if normalized in {"/", "/Login", "/newUser"}:
             return "/Card"

@@ -24,8 +24,15 @@ class AuthManager:
         """
         session = get_session()
         try:
+            print(f"DEBUG: Intentando login para: {email}")
             user = session.query(Usuario).filter(Usuario.email == email).first()
-            if user and self.verify_password_hash(user.contraseña, password):
+            if not user:
+                print(f"DEBUG: Usuario no encontrado para el email: {email}")
+                return False
+            
+            print(f"DEBUG: Usuario encontrado: {user.nombre} (ID: {user.id})")
+            if self.verify_password_hash(user.contraseña, password):
+                print(f"DEBUG: Contraseña verificada exitosamente")
                 # Guardar sesión de forma persistente
                 prefs = ft.SharedPreferences()
                 await prefs.set("user_id", str(user.id))
@@ -35,6 +42,11 @@ class AuthManager:
                 user.last_login = datetime.now()
                 session.commit()
                 return True
+            else:
+                print(f"DEBUG: Error verificación contraseña para: {email}")
+            return False
+        except Exception as e:
+            print(f"DEBUG: Exception during login: {str(e)}")
             return False
         finally:
             session.close()

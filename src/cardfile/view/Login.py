@@ -65,9 +65,6 @@ async def login_view(page: ft.Page):
 
     from cardfile.view.components.auth_manager import AuthManager
     auth_manager = AuthManager(page)
-    if await auth_manager.is_authenticated():
-        await page.push_route("/Card")
-        return ft.Container()
     
     async def login_clicked(e):
         if not username.value or not password.value:

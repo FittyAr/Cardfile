@@ -16,14 +16,17 @@ theme_manager = ThemeManager()
 
 
 def check_first_run():
+    """Retorna True si la base de datos no está configurada o el archivo SQLite no existe."""
     config = Config()
     uri = config.get_database_uri()
     if uri.startswith("sqlite:///"):
-        db_path = uri[10:]
+        db_path = uri[len("sqlite:///"):]
         if not os.path.exists(db_path):
             return True
+    return False
             
-    # If DB exists, check if there are users
+def needs_account_creation():
+    """Retorna True si no existen usuarios en la base de datos."""
     try:
         session = get_session()
         user_exists = session.query(Usuario).first() is not None
@@ -85,7 +88,8 @@ async def main(page: Page):
             normalized_route,
             is_authenticated,
             auth_manager.require_login,
-            is_first_run
+            is_first_run,
+            needs_account_creation()
         )
         if resolved_route != normalized_route:
             await page.push_route(resolved_route)
@@ -118,7 +122,8 @@ async def main(page: Page):
         "/",
         await auth_manager.is_authenticated(),
         auth_manager.require_login,
-        is_first_run
+        is_first_run,
+        needs_account_creation()
     )
     await page.push_route(initial_route)
 

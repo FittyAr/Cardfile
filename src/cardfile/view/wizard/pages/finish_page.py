@@ -1,6 +1,6 @@
 import flet as ft
 from cardfile.view.wizard.pages.base_page import WizardPage
-from cardfile.data.database.setup import init_db
+
 
 
 class FinishPage(WizardPage):
@@ -32,11 +32,7 @@ class FinishPage(WizardPage):
             ft.Divider(height=20, color=ft.Colors.TRANSPARENT),
             summary,
             ft.Divider(height=20, color=ft.Colors.TRANSPARENT),
-            ft.Text("Haz clic en 'Siguiente' para aplicar los cambios e iniciar la aplicación.")
+            ft.Text("Haz clic en el botón de la derecha para aplicar los cambios e iniciar la aplicación.")
         ]
 
-    async def on_leave(self):
-        # Final persistence of some special flags if needed
-        # The Manager handles the common temp_data persistence.
-        # Here we perform DB initialization if the path changed.
-        init_db()
+
