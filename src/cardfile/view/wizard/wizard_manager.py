@@ -83,17 +83,17 @@ class WizardManager:
             controls=[
                 ft.Container(
                     content=ft.Column([
-                        ft.Text(self.config.get_text("wizard.title", "Configuración Inicial"), 
+                        ft.Text(self.config.get_text("wizard.title"), 
                                size=32, weight=ft.FontWeight.BOLD),
                         self.container,
                         ft.Row([
                             ft.Button(
-                                self.config.get_text("common.buttons.back", "Atrás"),
+                                self.config.get_text("common.buttons.back"),
                                 on_click=self.prev_page,
                                 visible=self.current_page_index > 0
                             ),
                             ft.Button(
-                                self.config.get_text("common.buttons.next", "Siguiente"),
+                                self.config.get_text("common.buttons.next"),
                                 on_click=self.next_page,
                                 color=ft.Colors.WHITE,
                                 bgcolor=self.theme.primary

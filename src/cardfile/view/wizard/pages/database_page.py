@@ -5,13 +5,7 @@ from cardfile.config.runtime import get_os_platform
 
 class DatabasePage(WizardPage):
     async def build_content(self):
-        self.t = self.config.translations.get("wizard", {}).get("database", {
-            "title": "Base de Datos",
-            "subtitle": "Configura la conexión a la base de datos.",
-            "sqlite_label": "Archivo SQLite",
-            "uri_preview": "URI: {uri}",
-            "docker_recommend": "Se recomienda usar '/app/database.db' para que los datos sean persistentes fuera del contenedor."
-        })
+        self.t = self.config.translations.get("wizard", {}).get("database", {})
 
         os_platform = get_os_platform()
         is_docker = os_platform == 'docker'

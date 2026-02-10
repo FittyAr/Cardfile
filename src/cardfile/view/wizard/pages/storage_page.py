@@ -6,17 +6,10 @@ from cardfile.config.runtime import get_os_platform, get_data_dir
 class StoragePage(WizardPage):
     async def build_content(self):
         os_platform = get_os_platform()
-        self.t = self.config.translations.get("wizard", {}).get("storage", {
-            "title": "Almacenamiento",
-            "subtitle": f"Plataforma detectada: {os_platform.capitalize()}",
-            "question": "¿Dónde deseas guardar tus datos?",
-            "portable_title": "Modo Portable",
-            "portable_desc": "La base de datos y configuración se guardarán en la carpeta del programa.",
-            "standard_title": "Modo Estándar",
-            "standard_desc": "Usa las carpetas recomendadas por el sistema (AppData, etc.).",
-            "path_preview": "Ruta destino: {path}",
-            "docker_recommend": "Entorno Docker detectado. Se recomienda usar '/app' para asegurar la persistencia vía volúmenes.",
-        })
+        self.t = self.config.translations.get("wizard", {}).get("storage", {})
+        
+        # Subtitle usually contains the detected platform
+        subtitle = self.t.get("subtitle", "Plataforma detectada: {platform}").format(platform=os_platform.capitalize())
 
         is_docker = os_platform == 'docker'
         
@@ -70,7 +63,7 @@ class StoragePage(WizardPage):
 
         return [
             ft.Text(self.t["title"], size=24, weight=ft.FontWeight.W_600),
-            ft.Text(self.t["subtitle"]),
+            ft.Text(subtitle),
             ft.Divider(height=20, color=ft.Colors.TRANSPARENT),
             ft.Text(self.t["docker_recommend"], size=11, color=ft.Colors.ORANGE_400, visible=is_docker),
             ft.Text(self.t["question"], weight=ft.FontWeight.BOLD),

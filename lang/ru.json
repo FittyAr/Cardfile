@@ -148,5 +148,58 @@
             "title": "Подтвердите окончательное удаление",
             "message": "Вы уверены, что хотите окончательно удалить эту карточку? Это действие нельзя отменить."
         }
+    },
+    "common": {
+        "buttons": {
+            "ok": "Ok",
+            "back": "Назад",
+            "next": "Далее"
+        }
+    },
+    "wizard": {
+        "title": "Initial Setup",
+        "welcome": {
+            "title": "Welcome to Cardfile",
+            "subtitle": "Let's configure your new installation.",
+            "mode_question": "How do you want to perform the configuration?",
+            "quick_title": "Quick Mode",
+            "quick_desc": "Recommended configuration for most users. Uses default values.",
+            "adv_title": "Advanced Mode",
+            "adv_desc": "Full control over data location and system configuration.",
+            "docker_notice": "In Docker environments, Advanced Mode is required to ensure correct volume persistence."
+        },
+        "language": {
+            "title": "Language",
+            "subtitle": "Select the main language of the application.",
+            "label": "Language"
+        },
+        "storage": {
+            "title": "Storage",
+            "subtitle": "Platform detected: {platform}",
+            "question": "Where do you want to save your data?",
+            "portable_title": "Portable Mode",
+            "portable_desc": "The database and configuration will be saved in the program folder.",
+            "standard_title": "Standard Mode",
+            "standard_desc": "Uses the folders recommended by the system (AppData, etc.).",
+            "path_preview": "Destination path: {path}",
+            "docker_recommend": "Docker environment detected. We recommend using '/app' to ensure persistence via volumes."
+        },
+        "database": {
+            "title": "Database",
+            "subtitle": "Configure the database connection.",
+            "sqlite_label": "SQLite File",
+            "uri_preview": "URI: {uri}",
+            "docker_recommend": "It is recommended to use '/app/database.db' so that the data is persistent outside the container."
+        },
+        "finish": {
+            "title": "All set!",
+            "subtitle": "We have collected all the necessary information.",
+            "summary_title": "Configuration summary:",
+            "lang_label": "Language: {val}",
+            "storage_label": "Storage Mode: {val}",
+            "db_label": "Database: {val}",
+            "confirm_btn": "Finish Installation",
+            "apply_hint": "Click the button on the right to apply the changes and start the application."
+        }
     }
-} 
+}

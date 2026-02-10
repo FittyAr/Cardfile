@@ -270,7 +270,55 @@
     },
     "common": {
         "buttons": {
-            "ok": "Ok"
+            "ok": "Ok",
+            "back": "Atrás",
+            "next": "Siguiente"
+        }
+    },
+    "wizard": {
+        "title": "Configuración Inicial",
+        "welcome": {
+            "title": "Bienvenido a Cardfile",
+            "subtitle": "Vamos a configurar tu nueva instalación.",
+            "mode_question": "¿Cómo deseas realizar la configuración?",
+            "quick_title": "Modo Rápido",
+            "quick_desc": "Configuración recomendada para la mayoría de los usuarios. Usa valores predeterminados.",
+            "adv_title": "Modo Avanzado",
+            "adv_desc": "Control total sobre la ubicación de datos y configuración del sistema.",
+            "docker_notice": "En entornos Docker, se requiere el Modo Avanzado para asegurar la persistencia correcta de los volúmenes."
+        },
+        "language": {
+            "title": "Idioma",
+            "subtitle": "Selecciona el idioma principal de la aplicación.",
+            "label": "Idioma"
+        },
+        "storage": {
+            "title": "Almacenamiento",
+            "subtitle": "Plataforma detectada: {platform}",
+            "question": "¿Dónde deseas guardar tus datos?",
+            "portable_title": "Modo Portable",
+            "portable_desc": "La base de datos y configuración se guardarán en la carpeta del programa.",
+            "standard_title": "Modo Estándar",
+            "standard_desc": "Usa las carpetas recomendadas por el sistema (AppData, etc.).",
+            "path_preview": "Ruta destino: {path}",
+            "docker_recommend": "Entorno Docker detectado. Se recomienda usar '/app' para asegurar la persistencia vía volúmenes."
+        },
+        "database": {
+            "title": "Base de Datos",
+            "subtitle": "Configura la conexión a la base de datos.",
+            "sqlite_label": "Archivo SQLite",
+            "uri_preview": "URI: {uri}",
+            "docker_recommend": "Se recomienda usar '/app/database.db' para que los datos sean persistentes fuera del contenedor."
+        },
+        "finish": {
+            "title": "¡Todo listo!",
+            "subtitle": "Hemos recopilado toda la información necesaria.",
+            "summary_title": "Resumen de configuración:",
+            "lang_label": "Idioma: {val}",
+            "storage_label": "Modo Almacenamiento: {val}",
+            "db_label": "Base de Datos: {val}",
+            "confirm_btn": "Finalizar Instalación",
+            "apply_hint": "Haz clic en el botón de la derecha para aplicar los cambios e iniciar la aplicación."
         }
     }
 }

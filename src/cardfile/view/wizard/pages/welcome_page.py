@@ -5,16 +5,7 @@ from cardfile.config.runtime import get_os_platform
 
 class WelcomePage(WizardPage):
     async def build_content(self):
-        self.t = self.config.translations.get("wizard", {}).get("welcome", {
-            "title": "Bienvenido a Cardfile",
-            "subtitle": "Vamos a configurar tu nueva instalación.",
-            "mode_question": "¿Cómo deseas realizar la configuración?",
-            "quick_title": "Modo Rápido",
-            "quick_desc": "Configuración recomendada para la mayoría de los usuarios. Usa valores predeterminados.",
-            "adv_title": "Modo Avanzado",
-            "adv_desc": "Control total sobre la ubicación de datos y configuración del sistema.",
-            "docker_notice": "En entornos Docker, se requiere el Modo Avanzado para asegurar la persistencia correcta de los volúmenes."
-        })
+        self.t = self.config.translations.get("wizard", {}).get("welcome", {})
 
         is_docker = get_os_platform() == 'docker'
         

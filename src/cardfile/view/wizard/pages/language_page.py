@@ -4,10 +4,7 @@ from cardfile.view.wizard.pages.base_page import WizardPage
 
 class LanguagePage(WizardPage):
     async def build_content(self):
-        self.t = self.config.translations.get("wizard", {}).get("language", {
-            "title": "Idioma",
-            "subtitle": "Selecciona el idioma principal de la aplicación.",
-        })
+        self.t = self.config.translations.get("wizard", {}).get("language", {})
 
         language_options = [
             ft.dropdown.Option(opt["value"], opt["text"])
