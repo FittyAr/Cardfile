@@ -6,9 +6,10 @@ ROUTE_MAPPING = {
     "/newcard": "/newCard",
     "/editcard": "/editCard",
     "/recycle": "/recycle",
+    "/setup": "/Setup",
 }
 
-VALID_ROUTES = {"/Card", "/Login", "/newUser"}
+VALID_ROUTES = {"/Card", "/Login", "/newUser", "/Setup"}
 MODAL_ROUTES = {"/newCard", "/editCard", "/recycle"}
 
 
@@ -30,7 +31,7 @@ def resolve_route(
 ) -> str:
     normalized = normalize_route(requested_route)
     if is_first_run:
-        return "/newUser"
+        return "/Setup"
     if not require_login:
         if normalized in {"/", "/Login", "/newUser"}:
             return "/Card"

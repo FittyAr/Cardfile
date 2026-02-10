@@ -1,5 +1,6 @@
 import flet as ft
 from flet import Page
+import os
 
 from cardfile.config.Route import views_handler
 from cardfile.config.auth_flow import resolve_route, normalize_route
@@ -13,17 +14,27 @@ from cardfile.theme.manager import ThemeManager
 
 theme_manager = ThemeManager()
 
-init_db()
 
 def check_first_run():
-    session = get_session()
+    config = Config()
+    uri = config.get_database_uri()
+    if uri.startswith("sqlite:///"):
+        db_path = uri[10:]
+        if not os.path.exists(db_path):
+            return True
+            
+    # If DB exists, check if there are users
     try:
+        session = get_session()
         user_exists = session.query(Usuario).first() is not None
         return not user_exists
     except Exception:
         return True
     finally:
-        session.close()
+        try:
+            session.close()
+        except:
+            pass
 
 async def main(page: Page):
     page.title = "CardFile"
@@ -98,11 +109,16 @@ async def main(page: Page):
     page.on_route_change = route_change
     page.on_view_pop = view_pop
 
+    is_first_run = check_first_run()
+    if not is_first_run:
+        from cardfile.data.database.setup import init_db
+        init_db()
+
     initial_route = resolve_route(
         "/",
         await auth_manager.is_authenticated(),
         auth_manager.require_login,
-        check_first_run()
+        is_first_run
     )
     await page.push_route(initial_route)
 

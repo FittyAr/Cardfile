@@ -4,14 +4,40 @@ import sys
 import shutil
 from typing import Optional, Dict, Any, List
 import glob
-
-DATABASE_URI = 'sqlite:///database.db'
+from cardfile.config.runtime import get_data_dir
 
 
 class Config:
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(Config, cls).__new__(cls)
+        return cls._instance
+
     def __init__(self, config_file="config.json"):
-        self.config_file = self._resolve_config_path(config_file)
-        self.config_data = self.load_config()
+        if hasattr(self, "_initialized") and self._initialized:
+            return
+        
+        self._initialized = True
+        self.config_filename = config_file
+        # Determine if we are in portable mode by checking for config.json in app dir
+        self.is_portable = self._check_if_portable()
+        self.base_data_dir = get_data_dir("Cardfile", portable=self.is_portable)
+        
+        # Ensure base data dir exists
+        if not os.path.exists(self.base_data_dir):
+            os.makedirs(self.base_data_dir, exist_ok=True)
+
+        self.config_file = os.path.join(self.base_data_dir, self.config_filename)
+        
+        # Initialize default config if not exists
+        if not os.path.exists(self.config_file):
+            self.config_data = self._get_defaults()
+            self.save_config()
+        else:
+            self.config_data = self.load_config()
+
         self.available_languages = self._discover_languages()
         self.language_names = self._get_language_names()
         self.current_language = self.get("app.language.default", "es")
@@ -19,73 +45,84 @@ class Config:
         self.translations: Dict[str, Any] = {}
         self._load_translations()
 
+    def _get_defaults(self) -> Dict[str, Any]:
+        """Return default configuration."""
+        return {
+            "app": {
+                "name": "Cardfile",
+                "language": {
+                    "default": "es",
+                    "path": "./lang"
+                },
+                "theme": "snow",
+                "auth": {
+                    "require_login": True,
+                    "session_expiry_days": 7
+                },
+                "debug": False
+            },
+            "database": {
+                "uri": "sqlite:///database.db"
+            }
+        }
+
+    def _check_if_portable(self) -> bool:
+        """Check if config.json exists in the application root directory."""
+        if getattr(sys, "frozen", False):
+            app_dir = os.path.dirname(sys.executable)
+        else:
+            # Look in src/cardfile for config.json
+            app_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        
+        # Also check Root/config.json for compatibility or if mounted in /app in Docker
+        if os.path.exists(os.path.join(app_dir, self.config_filename)):
+            return True
+        
+        root_dir = os.path.abspath(os.path.join(app_dir, "..", ".."))
+        return os.path.exists(os.path.join(root_dir, self.config_filename))
+
     def _base_dir(self) -> str:
+        """Returns the project root directory."""
         if getattr(sys, "frozen", False):
             return os.path.dirname(sys.executable)
+        # From src/cardfile/config/config.py -> .. (config) -> .. (cardfile) -> .. (src) -> .. (root)
         return os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 
-    def _resolve_config_path(self, config_file: str) -> str:
-        if os.path.isabs(config_file):
-            return config_file
-        base_dir = self._base_dir()
-        candidate = os.path.join(base_dir, config_file)
-        if os.path.exists(candidate):
-            return candidate
-        bundle_dir = getattr(sys, "_MEIPASS", None)
-        if bundle_dir:
-            bundled = os.path.join(bundle_dir, config_file)
-            if os.path.exists(bundled):
-                os.makedirs(base_dir, exist_ok=True)
-                try:
-                    shutil.copyfile(bundled, candidate)
-                except Exception:
-                    return bundled
-                return candidate
-        return candidate
-
     def _resolve_path(self, path: str) -> str:
+        """Resolves a relative path to either the data directory or the bundle directory."""
         if os.path.isabs(path):
             return path
-        base_dir = os.path.dirname(self.config_file)
+        
+        # Try relative to the script location (for bundled assets like lang)
+        base_dir = self._base_dir()
         candidate = os.path.join(base_dir, path)
         if os.path.exists(candidate):
             return candidate
+            
         bundle_dir = getattr(sys, "_MEIPASS", None)
         if bundle_dir:
             bundled = os.path.join(bundle_dir, path)
             if os.path.exists(bundled):
-                try:
-                    if os.path.isdir(bundled):
-                        os.makedirs(candidate, exist_ok=True)
-                        shutil.copytree(bundled, candidate, dirs_exist_ok=True)
-                    else:
-                        os.makedirs(os.path.dirname(candidate), exist_ok=True)
-                        shutil.copyfile(bundled, candidate)
-                except Exception:
-                    return bundled
-                return candidate
+                return bundled
+                
         return candidate
 
     def _discover_languages(self) -> List[str]:
-        """
-        Descubre automáticamente los idiomas disponibles en la carpeta lang
-        Retorna una lista de códigos de idioma (ej: ['es', 'en', 'pt_BR', 'fr'])
-        """
         lang_path = self._resolve_path(self.get("app.language.path", "./lang"))
         if not os.path.exists(lang_path):
-            os.makedirs(lang_path)
+            # Try to find it in the source tree if not found
+            src_lang_path = os.path.abspath(os.path.join(self._base_dir(), "lang"))
+            if os.path.exists(src_lang_path):
+                lang_path = src_lang_path
+            else:
+                os.makedirs(lang_path, exist_ok=True)
             
-        # Buscar todos los archivos .json en la carpeta lang
         pattern = os.path.join(lang_path, "*.json")
         language_files = glob.glob(pattern)
-        
-        # Extraer los códigos de idioma de los nombres de archivo
         languages = [os.path.splitext(os.path.basename(f))[0] for f in language_files]
         
         if not languages:
-            # Si no hay idiomas, usar español como fallback
             languages = ["es"]
-            
         return sorted(languages)
 
     def _get_language_names(self) -> Dict[str, str]:
@@ -119,12 +156,12 @@ class Config:
         lang_file = os.path.join(lang_path, f"{self.current_language}.json")
         
         if not os.path.exists(lang_file):
-            # Si el archivo no existe, intentar usar el idioma por defecto
-            self.current_language = self.get("app.language.default", "es")
-            lang_file = os.path.join(lang_path, f"{self.current_language}.json")
-            
+            # Try fallback to 'es' in the same path
+            lang_file = os.path.join(lang_path, "es.json")
             if not os.path.exists(lang_file):
-                raise FileNotFoundError(f"Archivo de idioma '{lang_file}' no encontrado.")
+                # Hard fallback: return empty dict if no translations found
+                self.translations = {}
+                return
         
         with open(lang_file, 'r', encoding='utf-8') as file:
             self.translations = json.load(file)
@@ -148,21 +185,18 @@ class Config:
         """
         keys = key.split(".")
         data = self.translations
-        
         for k in keys:
             if isinstance(data, dict) and k in data:
                 data = data[k]
             else:
                 return default
-        
         return str(data) if data is not None else default
 
     def load_config(self):
         """Carga la configuración desde un archivo JSON"""
         if not os.path.exists(self.config_file):
-            raise FileNotFoundError(f"Archivo de configuración '{self.config_file}' no encontrado.")
-        
-        with open(self.config_file, 'r') as file:
+            return self._get_defaults()
+        with open(self.config_file, 'r', encoding='utf-8') as file:
             return json.load(file)
 
     def get(self, key, default=None):
@@ -194,6 +228,15 @@ class Config:
                 json.dump(self.config_data, file, indent=4, ensure_ascii=False)
         except Exception as e:
             print(f"Error saving config file: {e}")
+
+    def get_database_uri(self) -> str:
+        """Get the database URI, making sure it points to the correct subdirectory if relative."""
+        uri = self.get("database.uri", "sqlite:///database.db")
+        if uri.startswith("sqlite:///"):
+            db_file = uri[10:]
+            if not os.path.isabs(db_file):
+                return f"sqlite:///{os.path.join(self.base_data_dir, db_file)}"
+        return uri
 
     def set_theme(self, theme_name: str) -> None:
         """Cambia el tema actual"""

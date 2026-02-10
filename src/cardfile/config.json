@@ -1,0 +1,48 @@
+{
+    "app": {
+        "name": "Cardfile",
+        "language": {
+            "default": "en",
+            "path": "./lang",
+            "available": [
+                "es",
+                "en",
+                "pt_BR",
+                "fr"
+            ]
+        },
+        "theme": "midnight",
+        "auth": {
+            "require_login": true,
+            "session_expiry_days": 7
+        },
+        "debug": false,
+        "secret_key": "your_secret_key",
+        "StartMetod": "Web",
+        "web": {
+            "allowed_ips": [
+                "0.0.0.0"
+            ]
+        }
+    },
+    "database": {
+        "uri": "sqlite:////app/database.db",
+        "database_Server_Name": "SQLite",
+        "For_RemoteServerDB": {
+            "host": "localhost",
+            "port": 3306,
+            "user": "root",
+            "password": "password",
+            "name": "my_database"
+        },
+        "For_SQLite": {
+            "StringConnection": "sqlite:///database.db"
+        },
+        "Init_Data": {
+            "Username": "admin",
+            "Password": "admin",
+            "Email": "test@test.com"
+        }
+    },
+    "is_portable": false
+}

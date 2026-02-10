@@ -81,6 +81,14 @@ async def views_handler(page: Page, route: str = None):
                 spacing=26,
                 padding=ft.Padding.all(20),
             )
+        elif route == '/Setup':
+            from cardfile.view.wizard.wizard_manager import WizardManager
+            async def on_wizard_complete():
+                await page.push_route("/newUser")
+            
+            wizard = WizardManager(page, on_wizard_complete)
+            await wizard.start()
+            return wizard.get_view()
         else:
             return None
     

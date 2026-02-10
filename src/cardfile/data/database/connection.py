@@ -1,9 +1,15 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
-from cardfile.config.config import DATABASE_URI
+from cardfile.config.config import Config
 
-engine = create_engine(DATABASE_URI, echo=True)
-Session = scoped_session(sessionmaker(bind=engine))
+
+def get_engine():
+    config = Config()
+    uri = config.get_database_uri()
+    return create_engine(uri, echo=config.get("app.debug", False))
+
 
 def get_session():
-    return Session()
+    engine = get_engine()
+    session_factory = sessionmaker(bind=engine)
+    return scoped_session(session_factory)()

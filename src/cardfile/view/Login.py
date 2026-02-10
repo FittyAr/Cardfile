@@ -71,12 +71,13 @@ async def login_view(page: ft.Page):
     
     async def login_clicked(e):
         if not username.value or not password.value:
-            page.show_dialog(ft.SnackBar(
+            page.snack_bar = ft.SnackBar(
                 content=ft.Text(config.get_text("login.errors.empty_fields")),
                 bgcolor=ft.Colors.RED_400,
                 action=config.get_text("common.buttons.ok"),
                 duration=2000
-            ))
+            )
+            page.snack_bar.open = True
             page.update()
             return
 
@@ -85,23 +86,25 @@ async def login_view(page: ft.Page):
             if await auth_manager.login(username.value.strip(), password.value):
                 await page.push_route("/Card")
             else:
-                page.show_dialog(ft.SnackBar(
+                page.snack_bar = ft.SnackBar(
                     content=ft.Text(config.get_text("login.errors.invalid_credentials")),
                     bgcolor=ft.Colors.RED_400,
                     action=config.get_text("common.buttons.ok"),
                     duration=2000
-                ))
+                )
+                page.snack_bar.open = True
                 password.value = ""
                 page.update()
 
         except Exception as e:
             print(f"Error de login: {str(e)}")
-            page.show_dialog(ft.SnackBar(
+            page.snack_bar = ft.SnackBar(
                 content=ft.Text(config.get_text("login.errors.login_error")),
                 bgcolor=ft.Colors.RED_400,
                 action=config.get_text("common.buttons.ok"),
                 duration=2000
-            ))
+            )
+            page.snack_bar.open = True
             page.update()
     def verify_password(stored_hash: str, provided_password: str) -> bool:
         """Verifica si la contraseña proporcionada coincide con el hash almacenado."""

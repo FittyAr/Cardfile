@@ -12,7 +12,7 @@ services:
       # Persistir la base de datos
       - ../database.db:/app/database.db
       # Montar configuración
-      - ../config.json:/app/config.json
+      - ../src/cardfile/config.json:/app/src/cardfile/config.json
       # Montar archivos de idioma (solo lectura)
       - ../lang:/app/lang:ro
     environment:
