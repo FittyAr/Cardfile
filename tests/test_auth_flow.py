@@ -3,8 +3,8 @@ from config.auth_flow import resolve_route, normalize_route
 
 
 class AuthFlowTests(unittest.TestCase):
-    def test_first_run_forces_new_user(self):
-        self.assertEqual(resolve_route("/Login", False, True, True), "/newUser")
+    def test_first_run_forces_setup(self):
+        self.assertEqual(resolve_route("/Login", False, True, True), "/Setup")
 
     def test_login_redirects_when_authenticated(self):
         self.assertEqual(resolve_route("/Login", True, True, False), "/Card")
