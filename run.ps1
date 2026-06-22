@@ -6,6 +6,8 @@ param (
     [switch]$Build
 )
 
+$env:NO_AT_BRIDGE = "1"
+
 # Colors and formatting helpers
 function Write-Color {
     param (

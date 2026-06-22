@@ -5,6 +5,9 @@
 
 set -euo pipefail
 
+# Silenciar advertencias de accesibilidad de ATK en entornos Linux
+export NO_AT_BRIDGE=1
+
 ESC=$(printf '\033')
 BOLD="${ESC}[1m"
 GREEN="${ESC}[0;32m"
