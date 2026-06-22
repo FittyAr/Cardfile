@@ -140,7 +140,7 @@ jobs:
           cp dist/Cardfile "$DEB_DIR/usr/bin/cardfile"
 
           # Copy icon
-          cp assets/icon.png "$DEB_DIR/usr/share/pixmaps/cardfile.png"
+          cp assets/logo_trasparente_1.png "$DEB_DIR/usr/share/pixmaps/cardfile.png"
 
           # Create .desktop file
           echo "[Desktop Entry]" > "$DEB_DIR/usr/share/applications/cardfile.desktop"

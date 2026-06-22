@@ -5,7 +5,7 @@ import os
 from cardfile.config.Route import views_handler
 from cardfile.config.auth_flow import resolve_route, normalize_route
 from cardfile.config.config import Config
-from cardfile.config.runtime import is_web_runtime
+from cardfile.config.runtime import is_web_runtime, get_os_platform
 from cardfile.config.security import is_ip_allowed
 from cardfile.data.database.setup import init_db
 from cardfile.data.database.connection import get_session
@@ -73,6 +73,10 @@ async def main(page: Page):
         if hasattr(page, "window") and page.window:
             page.window.width = 1000
             page.window.height = 800
+            if get_os_platform() == "linux":
+                page.window.icon = config._resolve_path("assets/logo_trasparente_1.png")
+            else:
+                page.window.icon = config._resolve_path("assets/icon.ico")
     except Exception:
         pass
 
