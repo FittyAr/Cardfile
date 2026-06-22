@@ -154,10 +154,12 @@ jobs:
 
           # Build Debian package
           dpkg-deb --build "$DEB_DIR"
-          mv "${DEB_DIR}.deb" dist_release/
 
           # Package RPM (using alien to convert the DEB package)
           sudo alien --to-rpm --scripts "${DEB_DIR}.deb"
+
+          # Move packages to release directory
+          mv "${DEB_DIR}.deb" dist_release/
           mv *.rpm dist_release/
 
       - name: Upload Linux assets
