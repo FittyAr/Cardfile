@@ -69,6 +69,12 @@ async def main(page: Page):
         requested_route = e.route
         is_first_run = check_first_run()
         is_authenticated = await auth_manager.is_authenticated()
+        if is_first_run and is_authenticated:
+            prefs = ft.SharedPreferences()
+            await prefs.remove("user_id")
+            await prefs.remove("username")
+            is_authenticated = False
+
         normalized_route = normalize_route(requested_route)
         resolved_route = resolve_route(
             normalized_route,
@@ -98,11 +104,19 @@ async def main(page: Page):
     page.on_route_change = route_change
     page.on_view_pop = view_pop
 
+    is_first_run = check_first_run()
+    is_authenticated = await auth_manager.is_authenticated()
+    if is_first_run and is_authenticated:
+        prefs = ft.SharedPreferences()
+        await prefs.remove("user_id")
+        await prefs.remove("username")
+        is_authenticated = False
+
     initial_route = resolve_route(
         "/",
-        await auth_manager.is_authenticated(),
+        is_authenticated,
         auth_manager.require_login,
-        check_first_run()
+        is_first_run
     )
     await page.push_route(initial_route)
 
