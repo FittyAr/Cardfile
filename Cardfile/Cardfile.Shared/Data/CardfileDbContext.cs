@@ -19,6 +19,7 @@ namespace Cardfile.Shared.Data
         public DbSet<User> Users { get; set; }
         public DbSet<AppConfig> AppConfigs { get; set; }
         public DbSet<CardAttachment> CardAttachments { get; set; }
+        public DbSet<UserPreferences> UserPreferences { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -105,22 +106,43 @@ namespace Cardfile.Shared.Data
 
                 // Índice para email si existe
                 entity.HasIndex(u => u.Email).IsUnique();
+
+                // Relación 1:1 con UserPreferences
+                entity.HasOne(u => u.Preferences)
+                      .WithOne()
+                      .HasForeignKey<UserPreferences>(p => p.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // Configuración de la entidad UserPreferences
+            modelBuilder.Entity<UserPreferences>(entity =>
+            {
+                entity.HasKey(p => p.Id);
+                entity.Property(p => p.ThemeMode).HasMaxLength(20);
+                entity.Property(p => p.AccentColor).HasMaxLength(20);
+                entity.Property(p => p.Language).HasMaxLength(20);
+
+                entity.HasIndex(p => p.UserId).IsUnique();
             });
 
             // Configuración de la entidad AppConfig
             modelBuilder.Entity<AppConfig>(entity =>
             {
                 entity.HasKey(ac => ac.Id);
+                entity.Property(ac => ac.IsConfigured).IsRequired();
                 entity.Property(ac => ac.DatabaseType).IsRequired().HasMaxLength(50);
                 entity.Property(ac => ac.ConnectionString).HasMaxLength(1000);
                 entity.Property(ac => ac.Language).HasMaxLength(20);
                 entity.Property(ac => ac.LastUser).HasMaxLength(100);
                 entity.Property(ac => ac.LastUserEmail).HasMaxLength(200);
+                entity.Property(ac => ac.ThemeMode).HasMaxLength(20);
+                entity.Property(ac => ac.AccentColor).HasMaxLength(20);
             });
         }
 
         /// <summary>
-        /// Método para aplicar migraciones automáticamente
+        /// Asegura que la base de datos y el esquema existen utilizando únicamente Entity Framework.
+        /// No se ejecuta SQL directo.
         /// </summary>
         public async Task EnsureDatabaseCreatedAsync()
         {

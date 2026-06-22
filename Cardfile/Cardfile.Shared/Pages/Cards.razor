@@ -7,6 +7,7 @@
 @inject Cardfile.Shared.Services.ICardService CardService
 @inject Cardfile.Shared.Services.ITagService TagService
 @inject Cardfile.Shared.Services.ICardAttachmentService AttachmentService
+@inject Cardfile.Shared.Services.IAppSettingsService AppSettingsService
 
 <PageTitle>My Cards</PageTitle>
 
@@ -34,39 +35,42 @@
     </FluentCard>
 
     <!-- Statistics Cards -->
-    <FluentGrid Spacing="3" Style="width: 100%;">
-        <FluentGridItem xs="12" sm="6" md="3">
-            <FluentCard Style="width: 100%; padding: 25px; text-align: center; background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);">
-                <FluentIcon Value="@(new Icons.Regular.Size32.Library())" />
-                <FluentLabel Typo="Typography.H4" Style="margin: 10px 0 5px 0; font-weight: 600;">@cards.Count</FluentLabel>
-                <FluentLabel Typo="Typography.Body" Color="Color.Neutral">Total Cards</FluentLabel>
-            </FluentCard>
-        </FluentGridItem>
-        
-        <FluentGridItem xs="12" sm="6" md="3">
-            <FluentCard Style="width: 100%; padding: 25px; text-align: center; background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
-                <FluentIcon Value="@(new Icons.Regular.Size32.Tag())" />
-                <FluentLabel Typo="Typography.H4" Style="margin: 10px 0 5px 0; font-weight: 600;">@uniqueTags.Count</FluentLabel>
-                <FluentLabel Typo="Typography.Body" Color="Color.Neutral">Unique Tags</FluentLabel>
-            </FluentCard>
-        </FluentGridItem>
-        
-        <FluentGridItem xs="12" sm="6" md="3">
-            <FluentCard Style="width: 100%; padding: 25px; text-align: center; background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);">
-                <FluentIcon Value="@(new Icons.Regular.Size32.Calendar())" />
-                <FluentLabel Typo="Typography.H4" Style="margin: 10px 0 5px 0; font-weight: 600;">@GetRecentCards().Count()</FluentLabel>
-                <FluentLabel Typo="Typography.Body" Color="Color.Neutral">Recent Cards</FluentLabel>
-            </FluentCard>
-        </FluentGridItem>
-        
-        <FluentGridItem xs="12" sm="6" md="3">
-            <FluentCard Style="width: 100%; padding: 25px; text-align: center; background: linear-gradient(135deg, #d299c2 0%, #fef9d7 100%);">
-                <FluentIcon Value="@(new Icons.Regular.Size32.Edit())" />
-                <FluentLabel Typo="Typography.H4" Style="margin: 10px 0 5px 0; font-weight: 600;">@GetRecentlyUpdated().Count()</FluentLabel>
-                <FluentLabel Typo="Typography.Body" Color="Color.Neutral">Recently Updated</FluentLabel>
-            </FluentCard>
-        </FluentGridItem>
-    </FluentGrid>
+    @if (showStatisticsCards)
+    {
+        <FluentGrid Spacing="3" Style="width: 100%;">
+            <FluentGridItem xs="12" sm="6" md="3">
+                <FluentCard Style="width: 100%; padding: 25px; text-align: center; background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);">
+                    <FluentIcon Value="@(new Icons.Regular.Size32.Library())" />
+                    <FluentLabel Typo="Typography.H4" Style="margin: 10px 0 5px 0; font-weight: 600;">@cards.Count</FluentLabel>
+                    <FluentLabel Typo="Typography.Body" Color="Color.Neutral">Total Cards</FluentLabel>
+                </FluentCard>
+            </FluentGridItem>
+            
+            <FluentGridItem xs="12" sm="6" md="3">
+                <FluentCard Style="width: 100%; padding: 25px; text-align: center; background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
+                    <FluentIcon Value="@(new Icons.Regular.Size32.Tag())" />
+                    <FluentLabel Typo="Typography.H4" Style="margin: 10px 0 5px 0; font-weight: 600;">@uniqueTags.Count</FluentLabel>
+                    <FluentLabel Typo="Typography.Body" Color="Color.Neutral">Unique Tags</FluentLabel>
+                </FluentCard>
+            </FluentGridItem>
+            
+            <FluentGridItem xs="12" sm="6" md="3">
+                <FluentCard Style="width: 100%; padding: 25px; text-align: center; background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);">
+                    <FluentIcon Value="@(new Icons.Regular.Size32.Calendar())" />
+                    <FluentLabel Typo="Typography.H4" Style="margin: 10px 0 5px 0; font-weight: 600;">@GetRecentCards().Count()</FluentLabel>
+                    <FluentLabel Typo="Typography.Body" Color="Color.Neutral">Recent Cards</FluentLabel>
+                </FluentCard>
+            </FluentGridItem>
+            
+            <FluentGridItem xs="12" sm="6" md="3">
+                <FluentCard Style="width: 100%; padding: 25px; text-align: center; background: linear-gradient(135deg, #d299c2 0%, #fef9d7 100%);">
+                    <FluentIcon Value="@(new Icons.Regular.Size32.Edit())" />
+                    <FluentLabel Typo="Typography.H4" Style="margin: 10px 0 5px 0; font-weight: 600;">@GetRecentlyUpdated().Count()</FluentLabel>
+                    <FluentLabel Typo="Typography.Body" Color="Color.Neutral">Recently Updated</FluentLabel>
+                </FluentCard>
+            </FluentGridItem>
+        </FluentGrid>
+    }
 
     <!-- Filters and Sorting -->
     <FluentCard Style="padding: 20px;" AreaRestricted="false">
@@ -117,7 +121,7 @@
             @foreach (var card in GetFilteredCards())
             {
                 <FluentGridItem xs="12" sm="12" md="4" lg="4" xl="4" xxl="4">
-                    <FluentCard Style="height: 100%; min-height: 320px; transition: all 0.3s ease; cursor: pointer; position: relative;"
+                    <FluentCard Style="@GetCardStyle()"
                               @onclick="() => SelectCard(card)"
                               Class="card-hover">
                         
@@ -153,7 +157,7 @@
                                 @card.Content
                             </FluentLabel>
 
-                            @if (card.Attachments?.Any() == true)
+                            @if (showAttachments && card.Attachments?.Any() == true)
                             {
                                 <div style="margin-top: 10px;">
                                     <FluentStack Orientation="Orientation.Horizontal" Wrap="true" VerticalGap="6" HorizontalGap="6">
@@ -348,12 +352,14 @@
                     </FluentStack>
                 }
 
-                @if (viewingCard.Attachments?.Any() == true)
+                @* Attachments block: avoid nullable warnings by using a local variable *@
+                @{ var attachments = viewingCard?.Attachments; }
+                @if (attachments?.Any() == true)
                 {
                     <FluentDivider />
                     <FluentLabel Typo="Typography.H6">Attachments</FluentLabel>
                     <FluentStack Orientation="Orientation.Vertical" VerticalGap="8">
-                        @foreach (var a in viewingCard.Attachments)
+                        @foreach (var a in attachments!)
                         {
                             <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="8">
                                 <FluentIcon Value="@(new Icons.Regular.Size16.Attach())" />
@@ -366,20 +372,25 @@
                     </FluentStack>
                 }
 
-                <FluentDivider />
-                <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="8">
-                    <FluentIcon Value="@(new Icons.Regular.Size16.Calendar())" />
-                    <FluentLabel Color="Color.Neutral" Style="font-size: 12px;">
-                        Created: @viewingCard.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")
-                    </FluentLabel>
-                    @if (viewingCard.UpdatedAt.HasValue && viewingCard.UpdatedAt != viewingCard.CreatedAt)
-                    {
-                        <FluentIcon Value="@(new Icons.Regular.Size16.Edit())" />
+                @* Dates block: guard against nulls and avoid CS0165 with a scoped variable *@
+                @if (viewingCard is not null)
+                {
+                    <FluentDivider />
+                    <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="8">
+                        <FluentIcon Value="@(new Icons.Regular.Size16.Calendar())" />
                         <FluentLabel Color="Color.Neutral" Style="font-size: 12px;">
-                            Updated: @viewingCard.UpdatedAt.Value.ToLocalTime().ToString("MMM dd, yyyy")
+                            Created: @viewingCard.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")
                         </FluentLabel>
-                    }
-                </FluentStack>
+                        @{ var updated = viewingCard.UpdatedAt; }
+                        @if (updated.HasValue && updated.Value != viewingCard.CreatedAt)
+                        {
+                            <FluentIcon Value="@(new Icons.Regular.Size16.Edit())" />
+                            <FluentLabel Color="Color.Neutral" Style="font-size: 12px;">
+                                Updated: @updated.Value.ToLocalTime().ToString("MMM dd, yyyy")
+                            </FluentLabel>
+                        }
+                    </FluentStack>
+                }
             </FluentStack>
         }
     </FluentDialogBody>
@@ -451,10 +462,6 @@
     [Inject]
     private Microsoft.AspNetCore.Components.NavigationManager Navigation { get; set; } = default!;
 
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadCardsAsync();
-    }
 
     private async Task LoadCardsAsync()
     {
@@ -825,5 +832,47 @@
         // Usar NavigationManager para navegar al data URL, lo que iniciará la descarga
         Navigation.NavigateTo(dataUrl, forceLoad: true);
         await Task.CompletedTask;
+    }
+
+    private bool showStatisticsCards = true;
+    private bool compactCards = false;
+    private bool showAttachments = true;
+
+    private string GetCardStyle()
+    {
+        return compactCards
+            ? "height: 100%; min-height: 240px; transition: all 0.3s ease; cursor: pointer; position: relative;"
+            : "height: 100%; min-height: 320px; transition: all 0.3s ease; cursor: pointer; position: relative;";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUISettingsAsync();
+        await LoadCardsAsync();
+    }
+
+    /// <summary>
+    /// Carga las configuraciones de UI desde el servicio de configuración.
+    /// Este método se llama tanto en la inicialización como cuando se navega de vuelta a la página.
+    /// </summary>
+    private async Task LoadUISettingsAsync()
+    {
+        var ui = await AppSettingsService.GetUISettingsAsync();
+        if (ui != null)
+        {
+            showStatisticsCards = ui.ShowStatisticsCards;
+            compactCards = ui.CompactCards;
+            showAttachments = ui.ShowAttachments;
+        }
+    }
+
+    /// <summary>
+    /// Se ejecuta cada vez que se navega a esta página, incluyendo navegación de vuelta.
+    /// Esto asegura que las configuraciones de UI se actualicen si fueron cambiadas en Settings.
+    /// </summary>
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadUISettingsAsync();
+        StateHasChanged();
     }
 }

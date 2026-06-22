@@ -20,6 +20,36 @@ builder.Services.AddFluentUIComponents();
 var databaseType = builder.Configuration["cardfileSettings:databaseConfiguration:databaseType"] ?? "SQLite";
 var connectionString = builder.Configuration["cardfileSettings:databaseConfiguration:connectionString"] ?? "Data Source=cardfile.db";
 
+// Normalizar ruta de SQLite a absoluta si es relativa y mostrar en logs la ruta efectiva
+if (databaseType.Equals("SQLite", StringComparison.OrdinalIgnoreCase))
+{
+    try
+    {
+        const string key = "Data Source=";
+        var parts = connectionString.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        for (int i = 0; i < parts.Length; i++)
+        {
+            var p = parts[i];
+            if (p.StartsWith(key, StringComparison.OrdinalIgnoreCase))
+            {
+                var value = p.Substring(key.Length);
+                if (!System.IO.Path.IsPathRooted(value))
+                {
+                    var absolute = System.IO.Path.Combine(AppContext.BaseDirectory, value);
+                    parts[i] = $"{key}{absolute}";
+                }
+                break;
+            }
+        }
+        connectionString = string.Join(";", parts);
+        Console.WriteLine($"[Startup] Usando SQLite con cadena de conexión: {connectionString}");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[Startup] Error normalizando cadena de conexión SQLite: {ex.Message}");
+    }
+}
+
 builder.Services.AddDbContext<CardfileDbContext>(options =>
 {
     if (databaseType.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase) || databaseType.Equals("Postgres", StringComparison.OrdinalIgnoreCase))
@@ -60,8 +90,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 // Authorization services for Blazor components
 builder.Services.AddAuthorizationCore();
 
-// Settings service based on appsettings.json persistence
-builder.Services.AddSingleton<IAppSettingsService, AppSettingsService>();
+// Settings service based on per-user + global persistence
+builder.Services.AddScoped<IAppSettingsService, AppSettingsService>();
 
 var app = builder.Build();
 

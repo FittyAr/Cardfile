@@ -19,7 +19,7 @@
                 <!-- System Configuration Option -->
                 <FluentMenuItem @onclick="NavigateToSystemConfiguration">
                     <FluentIcon Value="@(new Icons.Regular.Size16.Settings())" Slot="start" />
-                    System Configuration
+                    Settings
                 </FluentMenuItem>
                 
                 <!-- Change Password Option -->
@@ -134,7 +134,7 @@
     /// </summary>
     private void NavigateToSystemConfiguration()
     {
-        Navigation.NavigateTo("/initial-config");
+        Navigation.NavigateTo("/settings");
     }
 
     /// <summary>
@@ -166,6 +166,8 @@
     /// </summary>
     private async Task HandleLogoutAsync()
     {
+        // Ensure at least one await to avoid CS1998 and keep method signature compatible with @onclick
+        await Task.CompletedTask;
         try
         {
             // Redirigir al endpoint /logout que elimina la cookie y preserva la preferencia RememberCredentials

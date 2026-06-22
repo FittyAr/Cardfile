@@ -66,6 +66,18 @@ public interface IAppSettingsService
     /// </summary>
     /// <returns>Información del último usuario</returns>
     Task<LastUserInfo?> GetLastUserAsync();
+
+    /// <summary>
+    /// Obtiene las configuraciones de interfaz de usuario (UI)
+    /// </summary>
+    /// <returns>Configuraciones de UI actuales</returns>
+    Task<UISettings> GetUISettingsAsync();
+
+    /// <summary>
+    /// Actualiza las configuraciones de interfaz de usuario (UI)
+    /// </summary>
+    /// <param name="settings">Nuevas configuraciones de UI</param>
+    Task UpdateUISettingsAsync(UISettings settings);
 }
 
 /// <summary>
@@ -92,6 +104,11 @@ public class AppSettings
     /// Información del último usuario que utilizó la aplicación
     /// </summary>
     public LastUserInfo? LastUser { get; set; }
+
+    /// <summary>
+    /// Configuraciones de la interfaz de usuario
+    /// </summary>
+    public UISettings UISettings { get; set; } = new();
 
     /// <summary>
     /// Fecha de última actualización de la configuración
@@ -144,4 +161,35 @@ public class LastUserInfo
     /// Fecha del último acceso
     /// </summary>
     public DateTime LastLogin { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>
+/// Configuraciones visuales y de comportamiento de la UI
+/// </summary>
+public class UISettings
+{
+    /// <summary>
+    /// Muestra u oculta las tarjetas de estadísticas en la vista de Cards
+    /// </summary>
+    public bool ShowStatisticsCards { get; set; } = true;
+
+    /// <summary>
+    /// Activa el modo compacto para las tarjetas de Cards
+    /// </summary>
+    public bool CompactCards { get; set; } = false;
+
+    /// <summary>
+    /// Muestra u oculta los adjuntos en tarjetas y diálogos
+    /// </summary>
+    public bool ShowAttachments { get; set; } = true;
+
+    /// <summary>
+    /// Modo de tema visual: "system" | "light" | "dark"
+    /// </summary>
+    public string ThemeMode { get; set; } = "system";
+
+    /// <summary>
+    /// Color de acento en formato HEX (por ejemplo, #0063B1)
+    /// </summary>
+    public string AccentColor { get; set; } = "#0063B1";
 }

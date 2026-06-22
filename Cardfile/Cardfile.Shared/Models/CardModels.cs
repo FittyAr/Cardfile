@@ -95,6 +95,9 @@ namespace Cardfile.Shared.Models
 
         // Relación con las tarjetas del usuario
         public ICollection<Card> Cards { get; set; } = new List<Card>();
+
+        // Preferencias de interfaz del usuario (relación 1:1)
+        public UserPreferences? Preferences { get; set; }
     }
 
     // Modelo para configuración de la aplicación
@@ -103,6 +106,9 @@ namespace Cardfile.Shared.Models
         // Identificador único de la configuración
         [Key]
         public Guid Id { get; set; }
+
+        // Indica si la aplicación ha sido configurada inicialmente
+        public bool IsConfigured { get; set; } = false;
 
         // Tipo de base de datos (ej: SQLite, PostgreSQL)
         [Required]
@@ -137,11 +143,27 @@ namespace Cardfile.Shared.Models
         // Indica si se deben recordar las credenciales
         public bool RememberCredentials { get; set; } = false;
 
+        // Configuraciones globales de UI (para usuarios no autenticados)
+        // Muestra u oculta tarjetas de estadísticas
+        public bool ShowStatisticsCards { get; set; } = true;
+
+        // Modo compacto de tarjetas
+        public bool CompactCards { get; set; } = false;
+
+        // Muestra u oculta adjuntos
+        public bool ShowAttachments { get; set; } = true;
+
+        // Modo de tema: system | light | dark
+        [MaxLength(20)]
+        public string ThemeMode { get; set; } = "system";
+
+        // Color de acento HEX
+        [MaxLength(20)]
+        public string AccentColor { get; set; } = "#0063B1";
+
         // Fecha de última actualización de configuración
         public DateTime? LastUpdated { get; set; }
     }
-
-
 
     /// <summary>
     /// Modelo de archivo adjunto para tarjetas
@@ -149,38 +171,64 @@ namespace Cardfile.Shared.Models
     public class CardAttachment
     {
         public Guid Id { get; set; }
-        
         /// <summary>
         /// ID de la tarjeta a la que pertenece el archivo
         /// </summary>
         public Guid CardId { get; set; }
-        
         /// <summary>
         /// Nombre original del archivo
         /// </summary>
         public string FileName { get; set; } = string.Empty;
-        
         /// <summary>
         /// Tipo MIME del archivo
         /// </summary>
         public string ContentType { get; set; } = string.Empty;
-        
         /// <summary>
         /// Tamaño del archivo en bytes
         /// </summary>
         public long FileSize { get; set; }
-        
         /// <summary>
         /// Contenido del archivo en formato Base64
         /// </summary>
         public byte[] FileData { get; set; } = Array.Empty<byte>();
-        
         /// <summary>
         /// Fecha de subida del archivo
         /// </summary>
         public DateTime UploadedAt { get; set; }
-        
         // Propiedades de navegación
         public Card? Card { get; set; }
     }
 }
+    // Preferencias por usuario para UI y otros ajustes personales
+    public class UserPreferences
+    {
+        [Key]
+        public Guid Id { get; set; }
+
+        [Required]
+        public Guid UserId { get; set; }
+
+        // Muestra u oculta tarjetas de estadísticas
+        public bool ShowStatisticsCards { get; set; } = true;
+
+        // Modo compacto de tarjetas
+        public bool CompactCards { get; set; } = false;
+
+        // Muestra u oculta adjuntos
+        public bool ShowAttachments { get; set; } = true;
+
+        // Modo de tema: system | light | dark
+        [MaxLength(20)]
+        public string ThemeMode { get; set; } = "system";
+
+        // Color de acento HEX
+        [MaxLength(20)]
+        public string AccentColor { get; set; } = "#0063B1";
+
+        // Idioma preferido del usuario
+        [MaxLength(20)]
+        public string Language { get; set; } = "es";
+
+        // Fecha de última actualización
+        public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
+    }

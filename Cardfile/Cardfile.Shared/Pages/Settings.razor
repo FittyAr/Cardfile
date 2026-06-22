@@ -1,0 +1,158 @@
+@page "/settings"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.FluentUI.AspNetCore.Components
+@using Cardfile.Shared.Services
+@using Microsoft.Extensions.Logging
+@inject IAppSettingsService AppSettingsService
+@inject NavigationManager Navigation
+@inject ILogger<Settings> Logger
+
+<PageTitle>Settings</PageTitle>
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="20" Style="padding: 20px;">
+    <FluentLabel Typo="Typography.H3">Application Settings</FluentLabel>
+
+    <FluentTabs Id="settings-tabs" Style="width: 100%;">
+        <FluentTab Label="Visual">
+            <ChildContent>
+                <FluentCard Style="padding: 20px;">
+                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="14">
+                        <FluentLabel Typo="Typography.H5">Appearance</FluentLabel>
+                        <FluentDivider />
+
+                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10" VerticalAlignment="VerticalAlignment.Center">
+                            <FluentSwitch @bind-Checked="ui.ShowStatisticsCards">Show statistics cards</FluentSwitch>
+                        </FluentStack>
+
+                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10" VerticalAlignment="VerticalAlignment.Center">
+                            <FluentSwitch @bind-Checked="ui.CompactCards">Compact card layout</FluentSwitch>
+                        </FluentStack>
+
+                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10" VerticalAlignment="VerticalAlignment.Center">
+                            <FluentSwitch @bind-Checked="ui.ShowAttachments">Show attachments</FluentSwitch>
+                        </FluentStack>
+
+                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="12" Wrap="true">
+                            <FluentSelect TOption="string" Label="Theme" Style="min-width: 220px;" @bind-Value="ui.ThemeMode">
+                                <FluentOption Value="system">System</FluentOption>
+                                <FluentOption Value="light">Light</FluentOption>
+                                <FluentOption Value="dark">Dark</FluentOption>
+                            </FluentSelect>
+
+                            <div style="display:flex; flex-direction:column; gap:6px;">
+                                <label style="font-size: .875rem; color: var(--neutral-foreground-rest);">Accent color</label>
+                                <input type="color" value="@ui.AccentColor" @onchange="OnAccentChanged" style="width: 48px; height: 32px; border: none; background: transparent; padding: 0;" />
+                            </div>
+                        </FluentStack>
+
+                        <FluentDivider />
+
+                        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Right" HorizontalGap="12">
+                            <FluentButton Appearance="Appearance.Neutral" OnClick="NavigateBack">Back</FluentButton>
+                            <FluentButton Appearance="Appearance.Accent" OnClick="SaveVisualSettingsAsync">Save Changes</FluentButton>
+                        </FluentStack>
+
+                        @if (!string.IsNullOrEmpty(saveMessage))
+                        {
+                            <FluentLabel Color="Color.Success">@saveMessage</FluentLabel>
+                        }
+                    </FluentStack>
+                </FluentCard>
+            </ChildContent>
+        </FluentTab>
+        <FluentTab Label="Initial">
+            <ChildContent>
+                <InitialConfiguration />
+            </ChildContent>
+        </FluentTab>
+    </FluentTabs>
+</FluentStack>
+
+@code {
+    /// <summary>
+    /// Backing model for visual UI settings bound to the form.
+    /// </summary>
+    private UISettings ui = new();
+
+    /// <summary>
+    /// Currently selected language (ISO code), synchronized with AppSettings.
+    /// </summary>
+    private string selectedLanguage = "es";
+
+    /// <summary>
+    /// Feedback message after saving.
+    /// </summary>
+    private string? saveMessage;
+
+    /// <summary>
+    /// Initialize and load current settings.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        ui = await AppSettingsService.GetUISettingsAsync();
+        selectedLanguage = await AppSettingsService.GetLanguageAsync();
+    }
+
+    /// <summary>
+    /// Persist UI settings and language updates.
+    /// </summary>
+    private async Task SaveVisualSettingsAsync()
+    {
+        Console.WriteLine("*** BOTÓN SAVE CHANGES EJECUTADO ***");
+        Console.WriteLine("MÉTODO EJECUTADO - SaveVisualSettingsAsync iniciado");
+        Logger.LogInformation("*** FRONTEND LOG - BOTÓN SAVE CHANGES EJECUTADO ***");
+        Logger.LogInformation("FRONTEND LOG - Método SaveVisualSettingsAsync ejecutado");
+        
+        // Log detallado de cada propiedad individual
+        Console.WriteLine($"*** FRONTEND - ui.ShowStatisticsCards: {ui.ShowStatisticsCards} ***");
+        Console.WriteLine($"*** FRONTEND - ui.CompactCards: {ui.CompactCards} ***");
+        Console.WriteLine($"*** FRONTEND - ui.ShowAttachments: {ui.ShowAttachments} ***");
+        Console.WriteLine($"*** FRONTEND - ui.ThemeMode: {ui.ThemeMode} ***");
+        Console.WriteLine($"*** FRONTEND - ui.AccentColor: {ui.AccentColor} ***");
+        
+        Logger.LogInformation("FRONTEND LOG - Valores antes de enviar: ShowStatisticsCards={ShowStatisticsCards}, CompactCards={CompactCards}, ShowAttachments={ShowAttachments}, ThemeMode={ThemeMode}, AccentColor={AccentColor}", ui.ShowStatisticsCards, ui.CompactCards, ui.ShowAttachments, ui.ThemeMode, ui.AccentColor);
+        
+        // Crear una copia del objeto para asegurar que se envían los valores correctos
+        var settingsToSend = new UISettings
+        {
+            ShowStatisticsCards = ui.ShowStatisticsCards,
+            CompactCards = ui.CompactCards,
+            ShowAttachments = ui.ShowAttachments,
+            ThemeMode = ui.ThemeMode,
+            AccentColor = ui.AccentColor
+        };
+        
+        Console.WriteLine($"*** FRONTEND - settingsToSend.ShowStatisticsCards: {settingsToSend.ShowStatisticsCards} ***");
+        
+        await AppSettingsService.UpdateUISettingsAsync(settingsToSend);
+        await AppSettingsService.UpdateLanguageAsync(selectedLanguage);
+        
+        // Recargar configuraciones desde la base de datos para confirmar que se guardaron
+        ui = await AppSettingsService.GetUISettingsAsync();
+        Logger.LogInformation("FRONTEND LOG - Valores después de guardar y recargar: ShowStatisticsCards={ShowStatisticsCards}, CompactCards={CompactCards}, ShowAttachments={ShowAttachments}, ThemeMode={ThemeMode}, AccentColor={AccentColor}", ui.ShowStatisticsCards, ui.CompactCards, ui.ShowAttachments, ui.ThemeMode, ui.AccentColor);
+        
+        saveMessage = "Settings saved successfully.";
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Update AccentColor when the color input changes.
+    /// </summary>
+    private void OnAccentChanged(ChangeEventArgs e)
+    {
+        var value = e?.Value?.ToString();
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            ui.AccentColor = value!;
+        }
+    }
+
+    /// <summary>
+    /// Navigate back to Home page.
+    /// </summary>
+    private void NavigateBack()
+    {
+        Navigation.NavigateTo("/");
+    }
+}
