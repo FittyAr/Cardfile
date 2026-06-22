@@ -90,13 +90,14 @@ app = BUNDLE(
     name='Cardfile.app',
     icon='assets/icon.ico',
     bundle_identifier=None,
-    version='1.0.3',
+    version='1.0.4',
     info_plist={
         'NSHighResolutionCapable': 'True',
-        'CFBundleShortVersionString': '1.0.3',
-        'CFBundleVersion': '1.0.3'
+        'CFBundleShortVersionString': '1.0.4',
+        'CFBundleVersion': '1.0.4'
     }
 ) 
+
 
 
 
