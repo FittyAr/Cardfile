@@ -28,7 +28,7 @@ jobs:
 
       - name: Build
         run: |
-          python build.py
+          powershell .\run.ps1 -Build
 
       - name: Sign executable (optional)
         if: ${{ secrets.CODESIGN_PFX_BASE64 != '' && secrets.CODESIGN_PFX_PASSWORD != '' }}
