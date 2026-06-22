@@ -1,4 +1,4 @@
-# -*- mode: python ; coding: utf-8 -*-
+﻿# -*- mode: python ; coding: utf-8 -*-
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
 block_cipher = None
@@ -90,10 +90,11 @@ app = BUNDLE(
     name='Cardfile.app',
     icon='assets/icon.ico',
     bundle_identifier=None,
-    version='1.0.0',
+    version='1.0.1',
     info_plist={
         'NSHighResolutionCapable': 'True',
-        'CFBundleShortVersionString': '1.0.0',
-        'CFBundleVersion': '1.0.0'
+        'CFBundleShortVersionString': '1.0.1',
+        'CFBundleVersion': '1.0.1'
     }
 ) 
+
