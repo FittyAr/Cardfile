@@ -127,16 +127,14 @@ jobs:
           mkdir -p "$DEB_DIR/usr/share/pixmaps"
 
           # Write Debian control file
-          cat <<EOF > "$DEB_DIR/DEBIAN/control"
-Package: cardfile
-Version: ${VERSION_NUM}
-Section: utils
-Priority: optional
-Architecture: amd64
-Maintainer: FittyAr <https://github.com/FittyAr/Cardfile>
-Description: Cardfile Manager
- A clean and modern card index database manager built with Python and Flet.
-EOF
+          echo "Package: cardfile" > "$DEB_DIR/DEBIAN/control"
+          echo "Version: ${VERSION_NUM}" >> "$DEB_DIR/DEBIAN/control"
+          echo "Section: utils" >> "$DEB_DIR/DEBIAN/control"
+          echo "Priority: optional" >> "$DEB_DIR/DEBIAN/control"
+          echo "Architecture: amd64" >> "$DEB_DIR/DEBIAN/control"
+          echo "Maintainer: FittyAr <https://github.com/FittyAr/Cardfile>" >> "$DEB_DIR/DEBIAN/control"
+          echo "Description: Cardfile Manager" >> "$DEB_DIR/DEBIAN/control"
+          echo " A clean and modern card index database manager built with Python and Flet." >> "$DEB_DIR/DEBIAN/control"
 
           # Copy binary to usr/bin
           cp dist/Cardfile "$DEB_DIR/usr/bin/cardfile"
@@ -145,16 +143,14 @@ EOF
           cp assets/icon.png "$DEB_DIR/usr/share/pixmaps/cardfile.png"
 
           # Create .desktop file
-          cat <<EOF > "$DEB_DIR/usr/share/applications/cardfile.desktop"
-[Desktop Entry]
-Name=Cardfile
-Comment=Cardfile Database Manager
-Exec=cardfile
-Icon=cardfile
-Terminal=false
-Type=Application
-Categories=Utility;Database;
-EOF
+          echo "[Desktop Entry]" > "$DEB_DIR/usr/share/applications/cardfile.desktop"
+          echo "Name=Cardfile" >> "$DEB_DIR/usr/share/applications/cardfile.desktop"
+          echo "Comment=Cardfile Database Manager" >> "$DEB_DIR/usr/share/applications/cardfile.desktop"
+          echo "Exec=cardfile" >> "$DEB_DIR/usr/share/applications/cardfile.desktop"
+          echo "Icon=cardfile" >> "$DEB_DIR/usr/share/applications/cardfile.desktop"
+          echo "Terminal=false" >> "$DEB_DIR/usr/share/applications/cardfile.desktop"
+          echo "Type=Application" >> "$DEB_DIR/usr/share/applications/cardfile.desktop"
+          echo "Categories=Utility;Database;" >> "$DEB_DIR/usr/share/applications/cardfile.desktop"
 
           # Build Debian package
           dpkg-deb --build "$DEB_DIR"
