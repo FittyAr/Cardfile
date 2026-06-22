@@ -20,7 +20,7 @@ a = Analysis(
     pathex=['src'],
     binaries=[],
     datas=[
-        ('config.json', '.'),
+        ('src/cardfile/config.json', '.'),
         ('lang/*.json', 'lang'),
         ('src/cardfile/view/*.py', 'cardfile/view'),
         ('assets/*', 'assets'),
@@ -97,4 +97,5 @@ app = BUNDLE(
         'CFBundleVersion': '1.0.1'
     }
 ) 
+
 
