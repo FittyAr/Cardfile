@@ -266,7 +266,7 @@ while ($true) {
         }
         "3" {
             Write-Color "`n[INFO] Ejecutando pruebas unitarias...`n" "Green"
-            $env:PYTHONPATH = "src"
+            $env:PYTHONPATH = "src;src/cardfile"
             Run-And-Pause { python -m unittest discover -s tests }
             $env:PYTHONPATH = $null
         }

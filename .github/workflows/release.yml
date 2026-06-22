@@ -1,18 +1,20 @@
-name: build-and-release
+name: Release
 
 on:
   push:
     tags:
-      - "v*"
+      - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
   build-windows:
+    name: Build (Windows)
     runs-on: windows-latest
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Python
@@ -38,17 +40,155 @@ jobs:
           [IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String("${{ secrets.CODESIGN_PFX_BASE64 }}"))
           signtool sign /f $pfxPath /p "${{ secrets.CODESIGN_PFX_PASSWORD }}" /tr http://timestamp.digicert.com /td sha256 /fd sha256 dist\Cardfile.exe
 
-      - name: Package
+      - name: Package release assets
+        shell: bash
         run: |
-          mkdir release
-          copy dist\\Cardfile.exe release\\Cardfile.exe
-          copy config.json release\\config.json
-          xcopy /E /I lang release\\lang
-          powershell -Command "Compress-Archive -Path release\\* -DestinationPath Cardfile-$env:GITHUB_REF_NAME-windows.zip -Force"
+          VERSION="${GITHUB_REF_NAME:-latest}"
+          VERSION_NUM="${VERSION#v}"
+          VERSION_NUM="${VERSION_NUM:-1.0.1}"
+          PKG_NAME="Cardfile-${VERSION}-windows"
+          mkdir -p "$PKG_NAME"
+          mkdir -p dist_release
+
+          # Copy resources
+          cp dist/Cardfile.exe "$PKG_NAME/"
+          cp src/cardfile/config.json "$PKG_NAME/"
+          cp -r lang "$PKG_NAME/"
+          cp -r assets "$PKG_NAME/"
+
+          # Compress portable zip
+          powershell -Command "Compress-Archive -Path '$PKG_NAME\*' -DestinationPath '${PKG_NAME}.zip' -Force"
+          mv "${PKG_NAME}.zip" dist_release/
+
+          # Compile Inno Setup installer
+          MSYS_NO_PATHCONV=1 "C:\Program Files (x86)\Inno Setup 6\iscc.exe" /DAppVersion="$VERSION_NUM" /DSourceDir="$PKG_NAME" /O"dist_release" /F"Cardfile-setup-${VERSION_NUM}-x64" installer.iss
+
+      - name: Upload Windows assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-assets
+          path: dist_release/*
+
+  build-linux:
+    name: Build (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Install packaging tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y alien rpm
+
+      - name: Build executable
+        run: |
+          chmod +x run.sh
+          ./run.sh --build
+
+      - name: Package release assets
+        run: |
+          VERSION="${GITHUB_REF_NAME:-latest}"
+          VERSION_NUM="${VERSION#v}"
+          VERSION_NUM="${VERSION_NUM:-1.0.1}"
+          PKG_NAME="Cardfile-${VERSION}-linux-x86_64"
+          mkdir -p "$PKG_NAME"
+          mkdir -p dist_release
+
+          # Copy resources
+          cp dist/Cardfile "$PKG_NAME/"
+          cp src/cardfile/config.json "$PKG_NAME/"
+          cp -r lang "$PKG_NAME/"
+          cp -r assets "$PKG_NAME/"
+
+          # Compress tar.gz
+          tar -czf "${PKG_NAME}.tar.gz" "$PKG_NAME"
+          mv "${PKG_NAME}.tar.gz" dist_release/
+
+          # Package DEB
+          DEB_DIR="cardfile_${VERSION_NUM}_amd64"
+          mkdir -p "$DEB_DIR/DEBIAN"
+          mkdir -p "$DEB_DIR/usr/bin"
+          mkdir -p "$DEB_DIR/usr/share/applications"
+          mkdir -p "$DEB_DIR/usr/share/pixmaps"
+
+          # Write Debian control file
+          cat <<EOF > "$DEB_DIR/DEBIAN/control"
+Package: cardfile
+Version: ${VERSION_NUM}
+Section: utils
+Priority: optional
+Architecture: amd64
+Maintainer: FittyAr <https://github.com/FittyAr/Cardfile>
+Description: Cardfile Manager
+ A clean and modern card index database manager built with Python and Flet.
+EOF
+
+          # Copy binary to usr/bin
+          cp dist/Cardfile "$DEB_DIR/usr/bin/cardfile"
+
+          # Copy icon
+          cp assets/icon.png "$DEB_DIR/usr/share/pixmaps/cardfile.png"
+
+          # Create .desktop file
+          cat <<EOF > "$DEB_DIR/usr/share/applications/cardfile.desktop"
+[Desktop Entry]
+Name=Cardfile
+Comment=Cardfile Database Manager
+Exec=cardfile
+Icon=cardfile
+Terminal=false
+Type=Application
+Categories=Utility;Database;
+EOF
+
+          # Build Debian package
+          dpkg-deb --build "$DEB_DIR"
+          mv "${DEB_DIR}.deb" dist_release/
+
+          # Package RPM (using alien to convert the DEB package)
+          sudo alien --to-rpm --scripts "${DEB_DIR}.deb"
+          mv *.rpm dist_release/
+
+      - name: Upload Linux assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-assets
+          path: dist_release/*
+
+  publish:
+    name: Create / Update GitHub Release
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Download Windows assets
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-assets
+          path: dist_all
+
+      - name: Download Linux assets
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-assets
+          path: dist_all
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
+          files: dist_all/*
           generate_release_notes: true
-          files: |
-            Cardfile-${{ github.ref_name }}-windows.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

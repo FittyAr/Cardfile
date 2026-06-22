@@ -251,7 +251,7 @@ while true; do
             ;;
         3)
             echo -e "\n${GREEN}[INFO]${RESET} Ejecutando pruebas unitarias...\n"
-            PYTHONPATH=src run_and_pause python -m unittest discover -s tests
+            PYTHONPATH=src:src/cardfile run_and_pause python -m unittest discover -s tests
             ;;
         4)
             echo -e "\n${GREEN}[INFO]${RESET} Validando sintaxis de archivos Python...\n"
