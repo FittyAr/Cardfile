@@ -153,11 +153,19 @@ function Bump-Version-And-Release {
         return
     }
 
+    $CurrentBranch = git branch --show-current
+    if ($CurrentBranch -ne "dev") {
+        Write-Color "[WARN] Se recomienda estar en la rama 'dev' para realizar la publicación." "Yellow"
+    }
+
     Write-Color "`n[WARN] Se realizarán las siguientes acciones en git:" "Yellow"
-    Write-Color "  1. git commit -am `"Bump version to v$NewVer`"" "White"
-    Write-Color "  2. git tag v$NewVer" "White"
-    Write-Color "  3. git push origin v$NewVer" "White"
-    Write-Color "  4. git push" "White"
+    Write-Color "  1. Confirmar cambios en '$CurrentBranch' (git commit)" "White"
+    Write-Color "  2. Subir cambios a 'origin/$CurrentBranch' (git push)" "White"
+    Write-Color "  3. Cambiar a la rama 'main' (git checkout main)" "White"
+    Write-Color "  4. Fusionar '$CurrentBranch' en 'main' (git merge)" "White"
+    Write-Color "  5. Crear etiqueta 'v$NewVer' (git tag)" "White"
+    Write-Color "  6. Subir rama 'main' y etiqueta a origin (git push)" "White"
+    Write-Color "  7. Regresar a la rama '$CurrentBranch' (git checkout)" "White"
 
     $Confirm = Read-Host "¿Confirmar publicación? (s/n)"
     if ($Confirm -ne "s" -and $Confirm -ne "si" -and $Confirm -ne "y" -and $Confirm -ne "yes") {
@@ -167,10 +175,33 @@ function Bump-Version-And-Release {
 
     git add build.spec
     git commit -m "Bump version to v$NewVer"
+    git push origin $CurrentBranch
+
+    Write-Color "`n[INFO] Cambiando a la rama 'main'..." "Green"
+    git checkout main
+    if ($LASTEXITCODE -ne 0) {
+        Write-Color "[ERROR] No se pudo cambiar a la rama 'main'." "Red"
+        return
+    }
+
+    Write-Color "[INFO] Fusionando la rama '$CurrentBranch' en 'main'..." "Green"
+    git merge $CurrentBranch --no-edit
+    if ($LASTEXITCODE -ne 0) {
+        Write-Color "[ERROR] Conflicto al fusionar '$CurrentBranch' en 'main'. Abortando fusión..." "Red"
+        git merge --abort
+        git checkout $CurrentBranch
+        return
+    }
+
+    Write-Color "[INFO] Creando etiqueta v$NewVer..." "Green"
     git tag "v$NewVer"
+
+    Write-Color "[INFO] Subiendo rama 'main' y etiqueta v$NewVer al servidor remoto..." "Green"
+    git push origin main
     git push origin "v$NewVer"
-    $Branch = git branch --show-current
-    git push origin "$Branch"
+
+    Write-Color "[INFO] Regresando a la rama '$CurrentBranch'..." "Green"
+    git checkout $CurrentBranch
     Write-Color "`n[SUCCESS] Versión v$NewVer publicada e insertada en Git." "Green"
 }
 

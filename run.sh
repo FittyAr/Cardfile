@@ -145,11 +145,20 @@ with open('build.spec', 'w', encoding='utf-8') as f:
         return
     fi
 
+    local CURRENT_BRANCH
+    CURRENT_BRANCH=$(git branch --show-current)
+    if [[ "$CURRENT_BRANCH" != "dev" ]]; then
+        echo -e "${YELLOW}[WARN]${RESET} Se recomienda estar en la rama 'dev' para realizar la publicación."
+    fi
+
     echo -e "\n${YELLOW}[WARN]${RESET} Se realizarán las siguientes acciones en git:"
-    echo "  1. git commit -am \"Bump version to v$NEW_VER\""
-    echo "  2. git tag v$NEW_VER"
-    echo "  3. git push origin v$NEW_VER"
-    echo "  4. git push"
+    echo "  1. Confirmar cambios en '$CURRENT_BRANCH' (git commit)"
+    echo "  2. Subir cambios a 'origin/$CURRENT_BRANCH' (git push)"
+    echo "  3. Cambiar a la rama 'main' (git checkout main)"
+    echo "  4. Fusionar '$CURRENT_BRANCH' en 'main' (git merge)"
+    echo "  5. Crear etiqueta 'v$NEW_VER' (git tag)"
+    echo "  6. Subir rama 'main' y etiqueta a origin (git push)"
+    echo "  7. Regresar a la rama '$CURRENT_BRANCH' (git checkout)"
 
     read -rp "¿Confirmar publicación? (s/n): " CONFIRM
     if [[ "$CONFIRM" != "s" && "$CONFIRM" != "si" && "$CONFIRM" != "y" && "$CONFIRM" != "yes" ]]; then
@@ -159,11 +168,33 @@ with open('build.spec', 'w', encoding='utf-8') as f:
 
     git add build.spec
     git commit -m "Bump version to v$NEW_VER"
+    git push origin "$CURRENT_BRANCH"
+
+    echo -e "\n${GREEN}[INFO]${RESET} Cambiando a la rama 'main'..."
+    git checkout main
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}[ERROR]${RESET} No se pudo cambiar a la rama 'main'."
+        return
+    fi
+
+    echo -e "${GREEN}[INFO]${RESET} Fusionando la rama '$CURRENT_BRANCH' en 'main'..."
+    git merge "$CURRENT_BRANCH" --no-edit
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}[ERROR]${RESET} Conflicto al fusionar '$CURRENT_BRANCH' en 'main'. Abortando fusión..."
+        git merge --abort
+        git checkout "$CURRENT_BRANCH"
+        return
+    fi
+
+    echo -e "${GREEN}[INFO]${RESET} Creando etiqueta v$NEW_VER..."
     git tag "v$NEW_VER"
+
+    echo -e "${GREEN}[INFO]${RESET} Subiendo rama 'main' y etiqueta v$NEW_VER al servidor remoto..."
+    git push origin main
     git push origin "v$NEW_VER"
-    local BRANCH
-    BRANCH=$(git branch --show-current)
-    git push origin "$BRANCH"
+
+    echo -e "${GREEN}[INFO]${RESET} Regresando a la rama '$CURRENT_BRANCH'..."
+    git checkout "$CURRENT_BRANCH"
     echo -e "\n${GREEN}[SUCCESS]${RESET} Versión v$NEW_VER publicada e insertada en Git."
 }
 
