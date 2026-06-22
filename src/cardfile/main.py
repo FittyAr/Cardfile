@@ -16,12 +16,12 @@ theme_manager = ThemeManager()
 
 
 def check_first_run():
-    """Retorna True si la base de datos no está configurada o el archivo SQLite no existe."""
+    """Retorna True si la base de datos no está configurada, el archivo SQLite no existe o está vacío (0 bytes)."""
     config = Config()
     uri = config.get_database_uri()
     if uri.startswith("sqlite:///"):
         db_path = uri[len("sqlite:///"):]
-        if not os.path.exists(db_path):
+        if not os.path.exists(db_path) or os.path.getsize(db_path) == 0:
             return True
     return False
             
