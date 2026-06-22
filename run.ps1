@@ -117,13 +117,10 @@ function Bump-Version-And-Release {
     
     $CurrVer = "Desconocida"
     if (Test-Path "build.spec") {
-        $CurrVer = python -c "
-import re
-with open('build.spec', 'r') as f:
-    c = f.read()
-m = re.search(r`\"version\s*=\s*'([^']+)'`\", c)
-print(m.group(1) if m else 'Desconocida')
-" 2>$null
+        $Content = Get-Content "build.spec" -Raw
+        if ($Content -match "version\s*=\s*'([^']+)'") {
+            $CurrVer = $Matches[1]
+        }
         if (!$CurrVer) { $CurrVer = "Desconocida" }
     }
     Write-Color "Versión actual detectada en build.spec: $CurrVer" "White"
@@ -140,17 +137,11 @@ print(m.group(1) if m else 'Desconocida')
     }
 
     if (Test-Path "build.spec") {
-        # Executing Python inline tool to update version
-        python -c "
-import re
-with open('build.spec', 'r', encoding='utf-8') as f:
-    c = f.read()
-c = re.sub(r`\"(version\s*=\s*')[^']+'`\", r`\"\g<1>$NewVer'`\", c)
-c = re.sub(r`\"('CFBundleShortVersionString'\s*:\s*')[^']+'`\", r`\"\g<1>$NewVer'`\", c)
-c = re.sub(r`\"('CFBundleVersion'\s*:\s*')[^']+'`\", r`\"\g<1>$NewVer'`\", c)
-with open('build.spec', 'w', encoding='utf-8') as f:
-    f.write(c)
-"
+        $Content = Get-Content "build.spec" -Raw -Encoding utf8
+        $Content = $Content -replace "version\s*=\s*'[^']+'", "version='$NewVer'"
+        $Content = $Content -replace "'CFBundleShortVersionString'\s*:\s*'[^']+'", "'CFBundleShortVersionString': '$NewVer'"
+        $Content = $Content -replace "'CFBundleVersion'\s*:\s*'[^']+'", "'CFBundleVersion': '$NewVer'"
+        Set-Content "build.spec" $Content -Encoding utf8
         Write-Color "[OK] build.spec actualizado a la versión $NewVer" "Green"
     } else {
         Write-Color "[ERROR] No se encontró build.spec" "Red"
