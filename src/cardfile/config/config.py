@@ -234,6 +234,12 @@ class Config:
         uri = self.get("database.uri", "sqlite:///database.db")
         if uri.startswith("sqlite:///"):
             db_file = uri[10:]
+            from cardfile.config.runtime import get_os_platform
+            if get_os_platform() != "docker":
+                if db_file.startswith("/app/"):
+                    db_file = db_file[5:]
+                elif db_file.startswith("app/"):
+                    db_file = db_file[4:]
             if not os.path.isabs(db_file):
                 return f"sqlite:///{os.path.join(self.base_data_dir, db_file)}"
         return uri

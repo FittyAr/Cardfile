@@ -27,7 +27,10 @@ class DatabasePage(WizardPage):
             self.manager.temp_data["database.uri"] = initial_uri
         else:
             initial_uri = self.config.get("database.uri", "sqlite:///database.db")
+            if initial_uri.startswith("sqlite:////app/") or initial_uri.startswith("sqlite:///app/"):
+                initial_uri = "sqlite:///database.db"
             initial_file = initial_uri.replace("sqlite:///", "")
+            self.manager.temp_data["database.uri"] = initial_uri
 
         db_file_input = ft.TextField(
             label=self.t["sqlite_label"],
