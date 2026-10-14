@@ -7,8 +7,6 @@ use diesel::sql_types::{BigInt, Bool, Nullable, Text};
 use crate::rows::parse_id;
 use crate::{Database, DbResult};
 
-diesel::define_sql_function!(fn lower(x: Text) -> Text);
-
 /// Turn free text typed by the user into a safe FTS5 query.
 ///
 /// Every word becomes a quoted prefix term (`"word"*`), so FTS5 operators typed by the

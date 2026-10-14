@@ -11,7 +11,8 @@ pub mod pdf;
 pub mod rules;
 
 pub use export::{
-    BlobResolver, MarkdownOptions, NoBlobs, escape_html, to_html, to_markdown, to_plain_text,
+    BlobResolver, MarkdownOptions, NoBlobs, escape_html, is_safe_link, to_html, to_markdown,
+    to_plain_text,
 };
 pub use markdown_in::{from_markdown, looks_like_markdown};
 pub use model::{

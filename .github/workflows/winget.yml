@@ -2,11 +2,17 @@
 # Requires the secret WINGET_TOKEN: a classic PAT with `public_repo` scope of an account
 # that has forked microsoft/winget-pkgs. The first version must be submitted manually
 # (see docs/RELEASING.md); later versions are automated here.
+#
+# Called by release.yml as a dist `publish-jobs` entry. A `release` trigger would never
+# fire: the release is created with GITHUB_TOKEN, whose events start no workflows.
 name: winget
 
 on:
-  release:
-    types: [released]
+  workflow_call:
+    inputs:
+      plan:
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       tag:
@@ -16,11 +22,11 @@ on:
 jobs:
   publish:
     runs-on: windows-latest
-    if: ${{ github.event_name == 'workflow_dispatch' || !github.event.release.prerelease }}
+    if: ${{ github.event_name == 'workflow_dispatch' || !fromJson(inputs.plan).announcement_is_prerelease }}
     steps:
       - uses: vedantmgoyal9/winget-releaser@v2
         with:
           identifier: FittyAr.Cardfile
           installers-regex: 'Cardfile-.*-setup-(x64|arm64)\.exe$'
-          release-tag: ${{ inputs.tag || github.event.release.tag_name }}
+          release-tag: ${{ inputs.tag || fromJson(inputs.plan).announcement_tag }}
           token: ${{ secrets.WINGET_TOKEN }}

@@ -19,8 +19,14 @@ pr-run-mode = "plan"
 include = ["packaging/dictionaries", "packaging/out/THIRD_PARTY_LICENSES.html"]
 # Install Linux GUI build dependencies and fetch dictionaries/licenses before building.
 github-build-setup = "../build-setup.yml"
-# Native installers (Inno Setup, MSIX, .deb, .rpm, AppImage) and minisign signatures.
+# Native installers (Inno Setup, MSIX, .deb, .rpm, AppImage).
 global-artifacts-jobs = ["./package"]
+# After the release exists: checksums + minisign signatures, then winget (stable only).
+publish-jobs = ["./sign", "./winget"]
+# Pre-releases still need signatures; winget.yml skips them itself.
+publish-prereleases = true
+# sign.yml attaches SHA256SUMS and *.minisig to the release.
+github-custom-job-permissions = { "sign" = { contents = "write" }, "winget" = { contents = "read" } }
 
 [dist.github-custom-runners]
 global = "ubuntu-latest"

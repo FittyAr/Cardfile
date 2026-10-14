@@ -92,6 +92,11 @@ impl DataPaths {
 }
 
 fn exe_dir() -> Option<PathBuf> {
+    // Inside an AppImage the executable lives in a temporary read-only mount; the
+    // portable data belongs next to the `.AppImage` file itself.
+    if let Some(appimage) = std::env::var_os("APPIMAGE") {
+        return Path::new(&appimage).parent().map(Path::to_owned);
+    }
     std::env::current_exe().ok()?.parent().map(Path::to_owned)
 }
 

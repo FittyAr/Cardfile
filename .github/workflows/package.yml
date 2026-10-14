@@ -1,6 +1,6 @@
-# Native installers built from the `dist` archives, plus checksums and minisign
-# signatures. Called by release.yml (dist `global-artifacts-jobs`); everything
-# uploaded as `artifacts-*` is attached to the GitHub release.
+# Native installers built from the `dist` archives. Called by release.yml (dist
+# `global-artifacts-jobs`); everything uploaded as `artifacts-*` is attached to the
+# GitHub release. Checksums and signatures are added later by sign.yml.
 name: Package
 
 on:
@@ -50,7 +50,8 @@ jobs:
         run: |
           $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
           if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress; }
-          & $iscc /DAppVersion=$env:VERSION /DArch=${{ matrix.arch }} "/DSourceDir=$env:SRC" packaging\windows\installer.iss
+          $fileVersion = $env:VERSION -replace '-.*$', ''
+          & $iscc /DAppVersion=$env:VERSION /DFileVersion=$fileVersion /DArch=${{ matrix.arch }} "/DSourceDir=$env:SRC" packaging\windows\installer.iss
           if ($LASTEXITCODE -ne 0) { throw "iscc failed" }
       - name: MSIX (Microsoft Store)
         shell: pwsh
@@ -126,37 +127,3 @@ jobs:
             packaging/out/*.rpm
             packaging/out/*.AppImage
 
-  sign:
-    needs: [windows, linux]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download everything
-        uses: actions/download-artifact@v8
-        with:
-          pattern: artifacts-*
-          path: all
-          merge-multiple: true
-      - name: Checksums and minisign signatures
-        env:
-          MINISIGN_SECRET_KEY: ${{ secrets.MINISIGN_SECRET_KEY }}
-        run: |
-          mkdir -p out
-          cd all
-          rm -f *.json *.sha256
-          FILES=$(ls | grep -E '\.(zip|tar\.xz|exe|msix|deb|rpm|AppImage|ps1|sh)$')
-          sha256sum $FILES > ../out/SHA256SUMS
-          cp ../out/SHA256SUMS .
-          if [ -n "$MINISIGN_SECRET_KEY" ]; then
-            sudo apt-get update && sudo apt-get install -y minisign
-            echo "$MINISIGN_SECRET_KEY" > /tmp/minisign.key
-            for f in $FILES SHA256SUMS; do
-              minisign -S -s /tmp/minisign.key -m "$f" -x "../out/$f.minisig" -t "Cardfile release file: $f"
-            done
-            rm -f /tmp/minisign.key
-          else
-            echo "::warning::MINISIGN_SECRET_KEY is not set; release files are not signed"
-          fi
-      - uses: actions/upload-artifact@v7
-        with:
-          name: artifacts-signatures
-          path: out/*

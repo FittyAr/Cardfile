@@ -200,13 +200,15 @@ impl Builder {
             Tag::Emphasis => self.push_style(|s| s.italic = true),
             Tag::Strong => self.push_style(|s| s.bold = true),
             Tag::Strikethrough => self.push_style(|s| s.strike = true),
-            Tag::Link { dest_url, .. } => {
+            // Unsafe schemes keep their text but lose the link.
+            Tag::Link { dest_url, .. } | Tag::Image { dest_url, .. } => {
                 let url = dest_url.to_string();
-                self.push_style(|s| s.link = Some(url));
-            }
-            Tag::Image { dest_url, .. } => {
-                let url = dest_url.to_string();
-                self.push_style(|s| s.link = Some(url));
+                let safe = crate::is_safe_link(&url);
+                self.push_style(|s| {
+                    if safe {
+                        s.link = Some(url);
+                    }
+                });
             }
             _ => {}
         }
@@ -267,6 +269,18 @@ impl Builder {
 mod tests {
     use super::*;
     use crate::model::Mark;
+
+    #[test]
+    fn drops_unsafe_link_schemes() {
+        let doc = from_markdown("[ok](https://a.b) [bad](javascript:alert(1)) [f](file:///c:/x)");
+        let links: Vec<_> = doc.blocks[0]
+            .text
+            .spans()
+            .filter_map(|(_, s)| s.link.clone())
+            .collect();
+        assert_eq!(links, ["https://a.b"]);
+        assert_eq!(crate::to_plain_text(&doc).trim(), "ok bad f");
+    }
 
     #[test]
     fn parses_common_markdown() {

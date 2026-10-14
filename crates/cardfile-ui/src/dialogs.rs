@@ -85,16 +85,32 @@ pub fn ask_password<V: 'static>(
                 let Some(hash) = AppState::lock_password_hash(cx) else {
                     return true;
                 };
-                if !cardfile_crypto::verify_password(&hash, &pw) {
-                    error_state.update(cx, |e, cx| {
-                        *e = Some(t("card.unlock.wrong"));
-                        cx.notify();
-                    });
-                    return false;
-                }
+                // Argon2 takes hundreds of milliseconds: verify in the background and
+                // close the dialog only once the password is known to be right.
+                let check = {
+                    let pw = pw.clone();
+                    cx.background_spawn(async move { cardfile_crypto::verify_password(&hash, &pw) })
+                };
                 let f = on_ok.clone();
-                view.update(cx, |v, cx| f(v, pw, window, cx));
-                true
+                let view = view.clone();
+                let error_state = error_state.clone();
+                window
+                    .spawn(cx, async move |cx| {
+                        let ok = check.await;
+                        let _ = cx.update(|window, cx| {
+                            if ok {
+                                window.close_dialog(cx);
+                                view.update(cx, |v, cx| f(v, pw, window, cx));
+                            } else {
+                                error_state.update(cx, |e, cx| {
+                                    *e = Some(t("card.unlock.wrong"));
+                                    cx.notify();
+                                });
+                            }
+                        });
+                    })
+                    .detach();
+                false
             })
     });
 }

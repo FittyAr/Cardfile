@@ -229,7 +229,7 @@ fn md_inline(rt: &RichText, opts: &MarkdownOptions) -> String {
                 s = format!("<span style=\"{css}\">{s}</span>");
             }
         }
-        if let Some(link) = &style.link {
+        if let Some(link) = style.link.as_ref().filter(|l| is_safe_link(l)) {
             s = format!("[{s}]({})", link.replace(' ', "%20").replace(')', "%29"));
         }
         out.push_str(lead);
@@ -299,12 +299,17 @@ pub fn escape_html(s: &str) -> String {
     out
 }
 
-fn safe_href(link: &str) -> String {
+/// Whether a link target is safe to export or hand to the OS opener. Only web, mail
+/// and in-page links pass; `javascript:`, `file:` and custom protocols could run code.
+pub fn is_safe_link(link: &str) -> bool {
     let lower = link.trim().to_ascii_lowercase();
-    let allowed = ["http://", "https://", "mailto:", "#"]
+    ["http://", "https://", "mailto:", "#"]
         .iter()
-        .any(|p| lower.starts_with(p));
-    if allowed {
+        .any(|p| lower.starts_with(p))
+}
+
+fn safe_href(link: &str) -> String {
+    if is_safe_link(link) {
         escape_html(link)
     } else {
         "#".into()

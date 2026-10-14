@@ -466,7 +466,9 @@ impl CardPane {
         if card.lock_mode == mode {
             return;
         }
-        if card.lock_mode == LockMode::Encrypted && self.access != Access::Open {
+        // A locked Private or Encrypted card must be unlocked first, or changing the
+        // mode would reveal it without the password.
+        if card.lock_mode.hides_content() && self.access != Access::Open {
             window.push_notification(Notification::warning(t("card.protect.unlock_first")), cx);
             return;
         }
@@ -492,12 +494,7 @@ impl CardPane {
         let doc = self.editor.read(cx).document().clone();
         let password = self.card_password.clone();
         let db = AppState::db(cx);
-        let content_doc = if self.access == Access::Locked {
-            // Private card switching to a mode without password: content is in the card.
-            Document::from_json(&card.content).unwrap_or_default()
-        } else {
-            doc
-        };
+        let content_doc = doc;
         let task = cx.background_spawn(async move {
             let json = content_doc.to_json();
             let plain = cardfile_doc::to_plain_text(&content_doc);

@@ -1,10 +1,15 @@
 ; Cardfile Windows installer (Inno Setup 6).
 ; Built in CI by .github/workflows/package.yml:
-;   iscc /DAppVersion=2.0.0 /DSourceDir=path\to\unzipped /DArch=x64 packaging\windows\installer.iss
+;   iscc /DAppVersion=2.0.0-beta.1 /DFileVersion=2.0.0 /DSourceDir=path\to\unzipped /DArch=x64 packaging\windows\installer.iss
 
 #define AppName "Cardfile"
 #ifndef AppVersion
   #define AppVersion "0.0.0"
+#endif
+; VersionInfoVersion must be numeric (no "-alpha.1"): CI passes the version without
+; its pre-release suffix.
+#ifndef FileVersion
+  #define FileVersion "0.0.0"
 #endif
 #ifndef Arch
   #define Arch "x64"
@@ -26,7 +31,7 @@ AppPublisher={#AppPublisher}
 AppPublisherURL={#AppURL}
 AppSupportURL={#AppURL}/issues
 AppUpdatesURL={#AppURL}/releases
-VersionInfoVersion={#AppVersion}
+VersionInfoVersion={#FileVersion}
 DefaultDirName={autopf}\{#AppName}
 DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes

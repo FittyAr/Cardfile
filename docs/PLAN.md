@@ -253,7 +253,7 @@ Se valida con un **spike temprano** (Fase 1) antes de construir el resto de la U
 |----------|-----------|------|
 | `ci.yml` | PR y push a `main` | fmt, clippy, test (matriz Windows/Linux), `cargo deny`, título de PR semántico |
 | `release.yml` | tag `v*` | generado/ampliado desde `dist`: build por target, archivos, instaladores shell/PowerShell, Inno Setup, MSIX, `.deb`, `.rpm`, AppImage, `SHA256SUMS`, firma minisign, licencias de terceros, GitHub Release con changelog `git-cliff` |
-| `winget.yml` | release publicada | `winget-releaser` → PR a `microsoft/winget-pkgs` para `FittyAr.Cardfile` (requiere PAT `WINGET_TOKEN`; la primera versión se envía a mano) |
+| `winget.yml` | llamado por `release.yml` (publish job) | `winget-releaser` → PR a `microsoft/winget-pkgs` para `FittyAr.Cardfile` (requiere PAT `WINGET_TOKEN`; la primera versión se envía a mano) |
 | `store.yml` | manual / release estable | sube el MSIX a Partner Center (`msstore` CLI; secretos de Azure AD de Partner Center) |
 
 Targets: `x86_64-pc-windows-msvc`, `aarch64-pc-windows-msvc`, `x86_64-unknown-linux-gnu`,
@@ -404,3 +404,13 @@ Pendiente:
   pega texto plano o Markdown.
 - Rendimiento con decenas de miles de tarjetas: contadores con `COUNT(*)` en vez de listar.
 - macOS cuando exista cuenta Apple Developer.
+- Revisión de los PR #1–#4 (pendiente tras los arreglos incluidos en #4):
+  - `cardfile-updater` solo avisa de nuevas versiones; la verificación minisign se implementa
+    junto con cualquier descarga automática.
+  - Imágenes y adjuntos de tarjetas cifradas se guardan sin cifrar en `blobs` (solo el documento
+    va cifrado). Cifrarlos por tarjeta y sin deduplicar entre usuarios.
+  - `cards_fts` se une a `cards` por el `rowid` implícito, que `VACUUM` puede renumerar: agregar
+    una columna `card_id UNINDEXED` o un `INTEGER PRIMARY KEY` explícito.
+  - Buscar sin distinguir mayúsculas falla en textos cuyo `to_lowercase` cambia de longitud
+    (`İ`, `ẞ`, `K`).
+  - Carga del diccionario Hunspell y algunas lecturas de DB del login todavía en el hilo de UI.

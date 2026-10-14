@@ -13,7 +13,7 @@ generates `.github/workflows/release.yml`. Don't edit that file by hand: change
 | `Cardfile-<version>-setup-<arch>.exe` | `package.yml` | Inno Setup installer, also used by winget |
 | `Cardfile-<version>-<arch>.msix` | `package.yml` | For Microsoft Store submission (the Store signs it) |
 | `.deb`, `.rpm`, `.AppImage` | `package.yml` | Linux packages for x86_64 and aarch64 |
-| `SHA256SUMS`, `*.minisig` | `package.yml` | Checksums and minisign signatures |
+| `SHA256SUMS`, `*.minisig` | `sign.yml` | Checksums and minisign signatures of every file above, attached once the release exists |
 
 ## One-time setup
 
@@ -38,7 +38,7 @@ minisign -G -W -p minisign.pub -s minisign.key
    wingetcreate new https://github.com/FittyAr/Cardfile/releases/download/v2.0.0/Cardfile-2.0.0-setup-x64.exe
    ```
    Use the identifier `FittyAr.Cardfile`.
-4. After that, `.github/workflows/winget.yml` opens a pull request for every stable release. Pre-releases are skipped.
+4. After that, `.github/workflows/winget.yml` (called by `release.yml`) opens a pull request for every stable release. Pre-releases are skipped.
 
 ### 3. Microsoft Store
 
@@ -71,7 +71,7 @@ The MSIX build detects that it runs from `WindowsApps` and turns off Cardfile's 
    git push origin v2.0.0
    ```
 5. Wait for **Release** to finish, then check the GitHub release page.
-6. Stable releases trigger **winget** automatically. Run **Microsoft Store** manually.
+6. Stable releases run **winget** automatically (a `publish-jobs` step of `release.yml`; it can also be run by hand with a tag). Run **Microsoft Store** manually.
 
 Tags with a pre-release suffix (`v2.0.0-alpha.1`) are published as GitHub pre-releases.
 

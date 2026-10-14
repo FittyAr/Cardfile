@@ -31,29 +31,34 @@ pub fn open(
 ) {
     let db = AppState::db(cx);
     let id = card.id;
-    let task = run_db(cx, move |_| db.card_revisions(id));
+    let lock_mode = card.lock_mode;
+    // Each revision has its own salt, so decrypting runs Argon2 once per entry: keep
+    // it on the background executor.
+    let task = run_db(cx, move |_| {
+        let revs = db.card_revisions(id)?;
+        Ok(revs
+            .into_iter()
+            .filter_map(|r| {
+                let doc = match (&r.encrypted, lock_mode, &password) {
+                    (Some(p), LockMode::Encrypted, Some(pw)) => {
+                        let json =
+                            cardfile_crypto::decrypt(p, pw, id.to_string().as_bytes()).ok()?;
+                        Document::from_json(&json).ok()?
+                    }
+                    (None, _, _) => Document::from_json(&r.content).ok()?,
+                    _ => return None,
+                };
+                Some(Entry {
+                    title: r.title,
+                    doc,
+                    created_at: r.created_at,
+                })
+            })
+            .collect::<Vec<Entry>>())
+    });
     window
         .spawn(cx, async move |cx| {
-            let Ok(revs) = task.await else { return };
-            let entries: Vec<Entry> = revs
-                .into_iter()
-                .filter_map(|r| {
-                    let doc = match (&r.encrypted, card.lock_mode, &password) {
-                        (Some(p), LockMode::Encrypted, Some(pw)) => {
-                            let json =
-                                cardfile_crypto::decrypt(p, pw, id.to_string().as_bytes()).ok()?;
-                            Document::from_json(&json).ok()?
-                        }
-                        (None, _, _) => Document::from_json(&r.content).ok()?,
-                        _ => return None,
-                    };
-                    Some(Entry {
-                        title: r.title,
-                        doc,
-                        created_at: r.created_at,
-                    })
-                })
-                .collect();
+            let Ok(entries) = task.await else { return };
             let _ = cx.update(|window, cx| show(entries, pane, window, cx));
         })
         .detach();

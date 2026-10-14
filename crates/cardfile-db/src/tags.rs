@@ -79,6 +79,10 @@ impl Database {
                     tags::rev.eq(tags::rev + 1),
                 ))
                 .execute(conn)?;
+            // Losing a tag is a change to each card, so sync must see it.
+            diesel::update(cards::table.filter(cards::id.eq_any(&cards)))
+                .set((cards::updated_at.eq(now), cards::rev.eq(cards::rev + 1)))
+                .execute(conn)?;
             for card in cards {
                 refresh_fts_tags(conn, &card)?;
             }

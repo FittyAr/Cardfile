@@ -182,7 +182,8 @@ pub fn export_all(owner: UserId, format: Format, window: &mut Window, cx: &mut A
                     }
                     let mut name = file_name(&card.title);
                     let mut n = 2;
-                    while !used.insert(name.clone()) {
+                    // Windows and macOS file names are case-insensitive.
+                    while !used.insert(name.to_lowercase()) {
                         name = format!("{} ({n})", file_name(&card.title));
                         n += 1;
                     }

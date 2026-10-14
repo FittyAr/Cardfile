@@ -122,7 +122,12 @@ impl CardfileApp {
         focus.focus(window, cx);
         self.screen = Screen::Workspace(ws);
         self.last_activity = Instant::now();
-        crate::updater::check_on_startup(window, cx);
+        // `sign_in` also runs after every auto-lock unlock; check once per process.
+        static UPDATE_CHECKED: std::sync::atomic::AtomicBool =
+            std::sync::atomic::AtomicBool::new(false);
+        if !UPDATE_CHECKED.swap(true, std::sync::atomic::Ordering::Relaxed) {
+            crate::updater::check_on_startup(window, cx);
+        }
         cx.notify();
     }
 

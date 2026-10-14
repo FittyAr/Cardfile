@@ -102,7 +102,7 @@ impl Database {
                     cards::rev.eq(cards::rev + 1),
                 ))
                 .execute(conn)?;
-            set_card_blobs(conn, id, &update.blob_ids)?;
+            add_card_blobs(conn, id, &update.blob_ids)?;
             load_card(conn, id)
         })
     }
@@ -185,7 +185,11 @@ impl Database {
             let hi = key_of(conn, after)?;
             let key = order::key_between(lo.as_deref(), hi.as_deref());
             diesel::update(cards::table.find(id.to_string()))
-                .set((cards::sort_key.eq(key), cards::rev.eq(cards::rev + 1)))
+                .set((
+                    cards::sort_key.eq(key),
+                    cards::updated_at.eq(now_millis()),
+                    cards::rev.eq(cards::rev + 1),
+                ))
                 .execute(conn)?;
             Ok(())
         })
@@ -352,9 +356,9 @@ fn prune_revisions(conn: &mut SqliteConnection, id: CardId, keep: u32) -> DbResu
     Ok(())
 }
 
-fn set_card_blobs(conn: &mut SqliteConnection, id: CardId, blob_ids: &[String]) -> DbResult<()> {
-    diesel::delete(card_blobs::table.filter(card_blobs::card_id.eq(id.to_string())))
-        .execute(conn)?;
+/// Link blobs to a card. Links are only ever added: older revisions may still show a
+/// blob the current content dropped, so links go away only when the card is purged.
+fn add_card_blobs(conn: &mut SqliteConnection, id: CardId, blob_ids: &[String]) -> DbResult<()> {
     let mut ids: Vec<&String> = blob_ids.iter().collect();
     ids.sort();
     ids.dedup();
@@ -516,5 +520,54 @@ mod tests {
                 .unwrap_err()
                 .is_not_found()
         );
+    }
+
+    #[test]
+    fn blobs_dropped_from_content_survive_for_history() {
+        let (db, user) = db_with_user();
+        let keep = db.create_card(user.id, new_card("keep")).unwrap();
+        let gone = db.create_card(user.id, new_card("gone")).unwrap();
+        let blob = db.put_blob(b"img", "image/png", None).unwrap();
+        let with_blob = ContentUpdate {
+            title: "keep".into(),
+            blob_ids: vec![blob.id.0.clone()],
+            ..Default::default()
+        };
+        db.update_card_content(keep.id, with_blob, 10, 0).unwrap();
+        // The image is removed again; the previous revision still shows it.
+        let without = ContentUpdate {
+            title: "keep 2".into(),
+            ..Default::default()
+        };
+        db.update_card_content(keep.id, without, 10, 0).unwrap();
+        // Age the blob past the grace period, then purge an unrelated card (runs GC).
+        db.with(|conn| {
+            diesel::sql_query("UPDATE blobs SET created_at = 0").execute(conn)?;
+            Ok(())
+        })
+        .unwrap();
+        db.delete_card(gone.id).unwrap();
+        db.purge_card(gone.id).unwrap();
+        assert!(db.blob(&blob.id.0).unwrap().is_some());
+        // Once the card itself is purged the blob goes too.
+        db.delete_card(keep.id).unwrap();
+        db.purge_card(keep.id).unwrap();
+        assert!(db.blob(&blob.id.0).unwrap().is_none());
+    }
+
+    #[test]
+    fn move_card_bumps_updated_at() {
+        let (db, user) = db_with_user();
+        let a = db.create_card(user.id, new_card("a")).unwrap();
+        let b = db.create_card(user.id, new_card("b")).unwrap();
+        db.with(|conn| {
+            diesel::sql_query("UPDATE cards SET updated_at = 0").execute(conn)?;
+            Ok(())
+        })
+        .unwrap();
+        db.move_card(a.id, Some(b.id), None).unwrap();
+        let a = db.card(a.id).unwrap();
+        assert!(a.updated_at > 0);
+        assert_eq!(a.rev, 2);
     }
 }

@@ -275,10 +275,11 @@ pub fn word_range(text: &str, offset: usize) -> std::ops::Range<usize> {
 }
 
 pub fn utf8_to_utf16(text: &str, offset: usize) -> usize {
-    text[..offset.min(text.len())]
-        .chars()
-        .map(char::len_utf16)
-        .sum()
+    let mut offset = offset.min(text.len());
+    while !text.is_char_boundary(offset) {
+        offset -= 1;
+    }
+    text[..offset].chars().map(char::len_utf16).sum()
 }
 
 pub fn utf16_to_utf8(text: &str, offset16: usize) -> usize {

@@ -812,6 +812,16 @@ impl Model {
         }
     }
 
+    /// Whether Tab can move to another cell without adding a row.
+    pub fn has_next_cell(&self) -> bool {
+        let slot = self.sel.head.slot;
+        self.doc.is_cell(slot)
+            && self
+                .doc
+                .next_slot(slot)
+                .is_some_and(|t| t.block == slot.block)
+    }
+
     /// Tab inside a table moves to the next cell, adding a row at the end.
     pub fn table_next_cell(&mut self, backwards: bool) -> bool {
         let slot = self.sel.head.slot;

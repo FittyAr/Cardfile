@@ -760,7 +760,10 @@ impl RichEditor {
             .doc
             .slot_text(pos.slot)
             .map_or("", |t| t.text.as_str());
-        let e = if e < text.len() && text[..e].ends_with(' ') {
+        let e = if text
+            .get(..e)
+            .is_some_and(|t| e < text.len() && t.ends_with(' '))
+        {
             e - 1
         } else {
             e
@@ -888,11 +891,18 @@ impl RichEditor {
             return;
         }
         if self.model.in_table() {
-            self.model.table_next_cell(false);
-            // Adding a row at the end of a table is an edit.
-            self.revision += 1;
-            cx.emit(EditorEvent::Changed);
-            self.after_move(cx);
+            if self.read_only {
+                // Read-only cards can move between cells but never grow a row.
+                if self.model.has_next_cell() {
+                    self.model.table_next_cell(false);
+                    self.after_move(cx);
+                }
+                return;
+            }
+            // Adding a row at the end of a table is an edit; `edit` records it only then.
+            self.edit(EditKind::Other, cx, |m| {
+                m.table_next_cell(false);
+            });
             return;
         }
         let kind = self.model.current_block_kind();
@@ -914,11 +924,7 @@ impl RichEditor {
             return;
         }
         if let Some((doc, sel)) = self.history.undo(&self.model.doc, self.model.sel) {
-            self.model.doc = doc;
-            self.model.set_selection(sel);
-            self.revision += 1;
-            cx.emit(EditorEvent::Changed);
-            self.after_move(cx);
+            self.restore_snapshot(doc, sel, cx);
         }
     }
     fn redo(&mut self, _: &Redo, _: &mut Window, cx: &mut Context<Self>) {
@@ -926,12 +932,20 @@ impl RichEditor {
             return;
         }
         if let Some((doc, sel)) = self.history.redo(&self.model.doc, self.model.sel) {
-            self.model.doc = doc;
-            self.model.set_selection(sel);
-            self.revision += 1;
-            cx.emit(EditorEvent::Changed);
-            self.after_move(cx);
+            self.restore_snapshot(doc, sel, cx);
         }
+    }
+
+    /// Swap in a document from history; offsets cached against the old one are stale.
+    fn restore_snapshot(&mut self, doc: Document, sel: Selection, cx: &mut Context<Self>) {
+        self.model.doc = doc;
+        self.model.set_selection(sel);
+        self.marked = None;
+        self.revision += 1;
+        cx.emit(EditorEvent::Changed);
+        self.refresh_matches(false, cx);
+        self.validate_slash();
+        self.after_move(cx);
     }
 
     fn copy(&mut self, _: &Copy, _: &mut Window, cx: &mut Context<Self>) {
@@ -965,7 +979,9 @@ impl RichEditor {
         if let Some(entry) = item.entries().first() {
             match entry {
                 ClipboardEntry::String(s) => {
-                    if !plain && let Some(frag) = s.metadata_json::<Document>() {
+                    if !plain && let Some(mut frag) = s.metadata_json::<Document>() {
+                        // Clipboard JSON comes from outside; restore the model's invariants.
+                        frag.normalize();
                         self.edit(EditKind::Other, cx, |m| m.insert_fragment(&frag));
                         return;
                     }
@@ -1317,7 +1333,11 @@ impl RichEditor {
         self.model.sel.is_empty()
     }
     fn open_link_at_caret(&mut self, _: &OpenLinkAtCaret, _: &mut Window, cx: &mut Context<Self>) {
-        if let Some(url) = self.model.link_at_caret() {
+        if let Some(url) = self
+            .model
+            .link_at_caret()
+            .filter(|u| cardfile_doc::is_safe_link(u))
+        {
             cx.emit(EditorEvent::OpenLink(url));
         }
     }
@@ -1395,6 +1415,7 @@ impl RichEditor {
         }
         if ev.modifiers.control
             && let Some(url) = self.link_at(pos)
+            && cardfile_doc::is_safe_link(&url)
         {
             cx.emit(EditorEvent::OpenLink(url));
             return;

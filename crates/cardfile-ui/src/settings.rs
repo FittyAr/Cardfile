@@ -646,13 +646,6 @@ impl SettingsView {
         let new = self.new_pw.read(cx).value().to_string();
         let confirm = self.confirm_pw.read(cx).value().to_string();
         let old_hash = AppState::lock_password_hash(cx);
-        if let Some(h) = &old_hash
-            && !cardfile_crypto::verify_password(h, &current)
-        {
-            self.pw_error = Some(t("card.unlock.wrong").into());
-            cx.notify();
-            return;
-        }
         if new.chars().count() < 4 {
             self.pw_error = Some(t("wizard.error.password_short").into());
             cx.notify();
@@ -672,8 +665,15 @@ impl SettingsView {
         self.pw_error = None;
         cx.notify();
         let task = cx.background_spawn(async move {
+            // Argon2 is slow by design: verify here, off the UI thread.
+            if let Some(h) = &old_hash
+                && !cardfile_crypto::verify_password(h, &current)
+            {
+                return Err(anyhow::anyhow!(t("card.unlock.wrong")));
+            }
             let hash = cardfile_crypto::hash_password(&new)?;
-            // Re-encrypt encrypted cards with the new password.
+            // Re-encrypt everything first; nothing is written unless all of it succeeds.
+            let mut rekey = cardfile_db::Rekey::default();
             if old_hash.is_some() {
                 let filter = cardfile_core::CardFilter::default();
                 let mut all = db.list_cards(session.user.id, &filter)?;
@@ -695,16 +695,23 @@ impl SettingsView {
                     let aad = card.id.to_string();
                     let json = cardfile_crypto::decrypt(payload, &current, aad.as_bytes())?;
                     let fresh = cardfile_crypto::encrypt(&json, &new, aad.as_bytes())?;
-                    db.set_card_lock(card.id, LockMode::Encrypted, "", "", Some(&fresh))?;
+                    rekey.cards.push((card.id, fresh));
+                    for rev in db.card_revisions(card.id)? {
+                        let Some(payload) = &rev.encrypted else {
+                            continue;
+                        };
+                        let json = cardfile_crypto::decrypt(payload, &current, aad.as_bytes())?;
+                        let fresh = cardfile_crypto::encrypt(&json, &new, aad.as_bytes())?;
+                        rekey.revisions.push((rev.id, fresh));
+                    }
                 }
             }
-            if auth == AuthMode::NoPassword {
-                let mut settings = db.user_settings(session.user.id)?;
-                settings.lock_password_hash = Some(hash.clone());
-                db.save_user_settings(session.user.id, &settings)?;
+            let slot = if auth == AuthMode::NoPassword {
+                cardfile_db::PasswordSlot::LockSetting
             } else {
-                db.set_password_hash(session.user.id, Some(&hash))?;
-            }
+                cardfile_db::PasswordSlot::Account
+            };
+            db.change_password(session.user.id, slot, &hash, &rekey)?;
             anyhow::Ok(hash)
         });
         cx.spawn_in(window, async move |this, cx| {
@@ -765,7 +772,13 @@ impl SettingsView {
         let to_none = mode == AuthMode::NoPassword;
         let from_none = current == AuthMode::NoPassword;
         let hash2 = hash.clone();
+        let multi_only = mode != AuthMode::MultiUser;
         let task = cx.background_spawn(async move {
+            // `self.users` loads asynchronously and may still be empty: count accounts
+            // from the database before allowing a single-user mode.
+            if multi_only && db.list_users()?.len() > 1 {
+                return Err(anyhow::anyhow!(t("settings.security.auth_one_user")));
+            }
             if to_none {
                 let mut s = db.user_settings(user_id)?;
                 s.lock_password_hash = hash2.clone();

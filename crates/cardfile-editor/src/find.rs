@@ -147,7 +147,7 @@ impl RichEditor {
         self.select_current_match(cx);
     }
 
-    fn replace_current(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+    fn replace_current(&mut self, _window: &mut Window, cx: &mut Context<Self>) {
         let Some(bar) = &self.find else { return };
         let Some((slot, range)) = bar.current.and_then(|i| bar.matches.get(i)).cloned() else {
             return;
@@ -168,8 +168,8 @@ impl RichEditor {
             }
             m.input_rules = rules;
         });
-        self.refresh_matches(false, cx);
-        self.find_step(true, window, cx);
+        // The next match now sits at or after the caret; stepping would skip it.
+        self.refresh_matches(true, cx);
     }
 
     fn replace_all_matches(&mut self, cx: &mut Context<Self>) {
