@@ -1,0 +1,79 @@
+_version: 1
+
+app:
+  name: Cardfile
+test:
+  greeting: "Hello, %{name}!"
+
+editor:
+  placeholder: "Start writing…"
+  link:
+    title: Insert link
+    text_placeholder: Text to display
+  toolbar:
+    undo: Undo
+    redo: Redo
+    bold: Bold
+    italic: Italic
+    underline: Underline
+    strikethrough: Strikethrough
+    code: Inline code
+    clear_formatting: Clear formatting
+    text_color: Text color
+    highlight: Highlight
+    default_color: Default
+    no_highlight: None
+    block_type: Paragraph style
+    paragraph: Normal text
+    heading1: Heading 1
+    heading2: Heading 2
+    heading3: Heading 3
+    quote: Quote
+    code_block: Code block
+    bullet_list: Bulleted list
+    numbered_list: Numbered list
+    check_list: Checklist
+    align: Alignment
+    align_left: Align left
+    align_center: Center
+    align_right: Align right
+    align_justify: Justify
+    size: Text size
+    size_small: Small
+    size_normal: Normal
+    size_large: Large
+    size_huge: Huge
+    indent: Increase indent
+    outdent: Decrease indent
+    link: Link
+    remove_link: Remove link
+    insert: Insert
+    image: Image…
+    attachment: Attachment…
+    table: Table
+    divider: Divider
+  table:
+    row_above: Insert row above
+    row_below: Insert row below
+    col_left: Insert column left
+    col_right: Insert column right
+    delete_row: Delete row
+    delete_col: Delete column
+    toggle_header: Header row
+    delete: Delete table
+  image:
+    smaller: Smaller
+    larger: Larger
+    fit: Fit width
+  menu:
+    cut: Cut
+    copy: Copy
+    paste: Paste
+    paste_plain: Paste as plain text
+    select_all: Select all
+    open_link: Open link
+    add_to_dictionary: Add to dictionary
+    no_suggestions: No suggestions
+  attachment:
+    open_hint: Double-click to open
+  read_only: This card is read-only. Unlock it to edit.

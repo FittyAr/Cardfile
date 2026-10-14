@@ -13,3 +13,18 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
+cardfile-core.workspace = true
+cardfile-doc.workspace = true
+diesel.workspace = true
+diesel_migrations.workspace = true
+libsqlite3-sys.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+blake3.workspace = true
+parking_lot.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+pretty_assertions.workspace = true

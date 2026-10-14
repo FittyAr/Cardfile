@@ -13,3 +13,11 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
+cardfile-doc.workspace = true
+unicode-segmentation.workspace = true
+cardfile-i18n.workspace = true
+gpui-kit.workspace = true
+
+[dev-dependencies]
+pretty_assertions.workspace = true
+gpui-pre = { version = "=0.3.9", features = ["test-support"] }
