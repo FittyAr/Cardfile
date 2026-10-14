@@ -25,6 +25,7 @@ use parking_lot::Mutex;
 pub use cards::ContentUpdate;
 pub use error::{DbError, DbResult};
 pub use search::fts_query;
+pub use users::{PasswordSlot, Rekey};
 
 const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
 

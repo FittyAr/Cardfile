@@ -87,7 +87,10 @@ CREATE INDEX card_blobs_blob ON card_blobs (blob_id);
 
 -- Full-text search. `tags` holds the space-separated tag names of the card.
 -- Content of private/encrypted cards is never indexed.
+-- Rows link to cards by `card_id`, not rowid: `cards` has a TEXT primary key, so its
+-- implicit rowid may be renumbered by VACUUM.
 CREATE VIRTUAL TABLE cards_fts USING fts5 (
+    card_id UNINDEXED,
     title,
     body,
     tags,
@@ -95,9 +98,9 @@ CREATE VIRTUAL TABLE cards_fts USING fts5 (
 );
 
 CREATE TRIGGER cards_fts_insert AFTER INSERT ON cards BEGIN
-    INSERT INTO cards_fts (rowid, title, body, tags)
+    INSERT INTO cards_fts (card_id, title, body, tags)
     VALUES (
-        NEW.rowid,
+        NEW.id,
         NEW.title,
         CASE WHEN NEW.lock_mode IN ('private', 'encrypted') THEN '' ELSE NEW.plain_text END,
         ''
@@ -108,9 +111,9 @@ CREATE TRIGGER cards_fts_update AFTER UPDATE OF title, plain_text, lock_mode ON 
     UPDATE cards_fts SET
         title = NEW.title,
         body = CASE WHEN NEW.lock_mode IN ('private', 'encrypted') THEN '' ELSE NEW.plain_text END
-    WHERE rowid = NEW.rowid;
+    WHERE card_id = NEW.id;
 END;
 
 CREATE TRIGGER cards_fts_delete AFTER DELETE ON cards BEGIN
-    DELETE FROM cards_fts WHERE rowid = OLD.rowid;
+    DELETE FROM cards_fts WHERE card_id = OLD.id;
 END;

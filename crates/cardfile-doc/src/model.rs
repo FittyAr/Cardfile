@@ -77,6 +77,25 @@ impl Document {
     }
 
     /// IDs of all blobs referenced by images and attachments.
+    /// Rewrite image and attachment blob references; `f` returns the new reference or
+    /// `None` to keep the old one.
+    pub fn map_blob_refs<E>(
+        &mut self,
+        mut f: impl FnMut(&str) -> Result<Option<String>, E>,
+    ) -> Result<(), E> {
+        for block in &mut self.blocks {
+            let blob = match &mut block.kind {
+                BlockKind::Image(img) => &mut img.blob,
+                BlockKind::Attachment(att) => &mut att.blob,
+                _ => continue,
+            };
+            if let Some(new) = f(blob)? {
+                *blob = new;
+            }
+        }
+        Ok(())
+    }
+
     pub fn blob_ids(&self) -> Vec<String> {
         self.blocks
             .iter()

@@ -102,13 +102,14 @@ impl Database {
                     cards::rev.eq(cards::rev + 1),
                 ))
                 .execute(conn)?;
-            set_card_blobs(conn, id, &update.blob_ids)?;
+            add_card_blobs(conn, id, &update.blob_ids)?;
             load_card(conn, id)
         })
     }
 
     /// Change the protection level. For [`LockMode::Encrypted`] pass the ciphertext and
     /// an empty `content`; when leaving encryption pass the decrypted content.
+    /// `blob_ids` are the blob references of the new content.
     pub fn set_card_lock(
         &self,
         id: CardId,
@@ -116,6 +117,7 @@ impl Database {
         content: &str,
         plain_text: &str,
         encrypted: Option<&EncryptedPayload>,
+        blob_ids: &[String],
     ) -> DbResult<Card> {
         if (mode == LockMode::Encrypted) != encrypted.is_some() {
             return Err(cardfile_core::Error::Invalid(
@@ -134,13 +136,19 @@ impl Database {
                     cards::rev.eq(cards::rev + 1),
                 ))
                 .execute(conn)?;
-            // Old plaintext revisions must not survive encryption.
+            // Old plaintext revisions and images must not survive encryption.
             if mode == LockMode::Encrypted {
                 diesel::delete(
                     card_revisions::table.filter(card_revisions::card_id.eq(id.to_string())),
                 )
                 .execute(conn)?;
+                let keep: Vec<&str> = blob_ids
+                    .iter()
+                    .map(|r| cardfile_core::BlobRef::parse(r).id)
+                    .collect();
+                crate::blobs::unlink_card_blobs(conn, &id.to_string(), &keep)?;
             }
+            add_card_blobs(conn, id, blob_ids)?;
             load_card(conn, id)
         })
     }
@@ -185,7 +193,11 @@ impl Database {
             let hi = key_of(conn, after)?;
             let key = order::key_between(lo.as_deref(), hi.as_deref());
             diesel::update(cards::table.find(id.to_string()))
-                .set((cards::sort_key.eq(key), cards::rev.eq(cards::rev + 1)))
+                .set((
+                    cards::sort_key.eq(key),
+                    cards::updated_at.eq(now_millis()),
+                    cards::rev.eq(cards::rev + 1),
+                ))
                 .execute(conn)?;
             Ok(())
         })
@@ -352,10 +364,14 @@ fn prune_revisions(conn: &mut SqliteConnection, id: CardId, keep: u32) -> DbResu
     Ok(())
 }
 
-fn set_card_blobs(conn: &mut SqliteConnection, id: CardId, blob_ids: &[String]) -> DbResult<()> {
-    diesel::delete(card_blobs::table.filter(card_blobs::card_id.eq(id.to_string())))
-        .execute(conn)?;
-    let mut ids: Vec<&String> = blob_ids.iter().collect();
+/// Link blobs to a card. Links are only ever added: older revisions may still show a
+/// blob the current content dropped, so links go away only when the card is purged.
+fn add_card_blobs(conn: &mut SqliteConnection, id: CardId, blob_ids: &[String]) -> DbResult<()> {
+    // Documents hold references; sealed ones carry their key after the id.
+    let mut ids: Vec<&str> = blob_ids
+        .iter()
+        .map(|r| cardfile_core::BlobRef::parse(r).id)
+        .collect();
     ids.sort();
     ids.dedup();
     let rows: Vec<_> = ids
@@ -491,11 +507,11 @@ mod tests {
             ciphertext: "c".into(),
         };
         assert!(
-            db.set_card_lock(card.id, LockMode::Encrypted, "", "", None)
+            db.set_card_lock(card.id, LockMode::Encrypted, "", "", None, &[])
                 .is_err()
         );
         let card = db
-            .set_card_lock(card.id, LockMode::Encrypted, "", "", Some(&payload))
+            .set_card_lock(card.id, LockMode::Encrypted, "", "", Some(&payload), &[])
             .unwrap();
         assert_eq!(card.lock_mode, LockMode::Encrypted);
         assert_eq!(card.encrypted, Some(payload));
@@ -516,5 +532,128 @@ mod tests {
                 .unwrap_err()
                 .is_not_found()
         );
+    }
+
+    #[test]
+    fn blobs_dropped_from_content_survive_for_history() {
+        let (db, user) = db_with_user();
+        let keep = db.create_card(user.id, new_card("keep")).unwrap();
+        let gone = db.create_card(user.id, new_card("gone")).unwrap();
+        let blob = db.put_blob(b"img", "image/png", None).unwrap();
+        let with_blob = ContentUpdate {
+            title: "keep".into(),
+            blob_ids: vec![blob.id.0.clone()],
+            ..Default::default()
+        };
+        db.update_card_content(keep.id, with_blob, 10, 0).unwrap();
+        // The image is removed again; the previous revision still shows it.
+        let without = ContentUpdate {
+            title: "keep 2".into(),
+            ..Default::default()
+        };
+        db.update_card_content(keep.id, without, 10, 0).unwrap();
+        // Age the blob past the grace period, then purge an unrelated card (runs GC).
+        db.with(|conn| {
+            diesel::sql_query("UPDATE blobs SET created_at = 0").execute(conn)?;
+            Ok(())
+        })
+        .unwrap();
+        db.delete_card(gone.id).unwrap();
+        db.purge_card(gone.id).unwrap();
+        assert!(db.blob(&blob.id.0).unwrap().is_some());
+        // Once the card itself is purged the blob goes too.
+        db.delete_card(keep.id).unwrap();
+        db.purge_card(keep.id).unwrap();
+        assert!(db.blob(&blob.id.0).unwrap().is_none());
+    }
+
+    #[test]
+    fn move_card_bumps_updated_at() {
+        let (db, user) = db_with_user();
+        let a = db.create_card(user.id, new_card("a")).unwrap();
+        let b = db.create_card(user.id, new_card("b")).unwrap();
+        db.with(|conn| {
+            diesel::sql_query("UPDATE cards SET updated_at = 0").execute(conn)?;
+            Ok(())
+        })
+        .unwrap();
+        db.move_card(a.id, Some(b.id), None).unwrap();
+        let a = db.card(a.id).unwrap();
+        assert!(a.updated_at > 0);
+        assert_eq!(a.rev, 2);
+    }
+
+    #[test]
+    fn encrypting_a_card_drops_its_plaintext_blobs() {
+        let (db, user) = db_with_user();
+        let card = db.create_card(user.id, new_card("secret")).unwrap();
+        let other = db.create_card(user.id, new_card("other")).unwrap();
+        let mine = db.put_blob(b"mine", "image/png", None).unwrap().id.0;
+        let shared = db.put_blob(b"shared", "image/png", None).unwrap().id.0;
+        let link = |id, blobs: Vec<String>| {
+            let upd = ContentUpdate {
+                title: "t".into(),
+                blob_ids: blobs,
+                ..Default::default()
+            };
+            db.update_card_content(id, upd, 10, 0).unwrap();
+        };
+        link(card.id, vec![mine.clone(), shared.clone()]);
+        link(other.id, vec![shared.clone()]);
+        db.put_sealed_blob("s1", b"nonce+ciphertext").unwrap();
+        let sealed = cardfile_core::BlobRef::sealed("s1", "key");
+        let payload = EncryptedPayload {
+            v: 1,
+            salt: "s".into(),
+            nonce: "n".into(),
+            m_cost: 1,
+            t_cost: 1,
+            p_cost: 1,
+            ciphertext: "c".into(),
+        };
+        db.set_card_lock(
+            card.id,
+            LockMode::Encrypted,
+            "",
+            "",
+            Some(&payload),
+            &[sealed],
+        )
+        .unwrap();
+        // Plaintext only this card used is gone; the shared one and the sealed one stay.
+        assert!(db.blob(&mine).unwrap().is_none());
+        assert!(db.blob(&shared).unwrap().is_some());
+        let s1 = db.blob("s1").unwrap().unwrap();
+        assert_eq!(s1.meta.mime, "application/octet-stream");
+        assert_eq!(s1.meta.file_name, None);
+        // The sealed blob is linked by its id, so GC keeps it.
+        db.with(|conn| {
+            diesel::sql_query("UPDATE blobs SET created_at = 0").execute(conn)?;
+            Ok(())
+        })
+        .unwrap();
+        db.collect_garbage_blobs().unwrap();
+        assert!(db.blob("s1").unwrap().is_some());
+        // Decrypt and encrypt again: the sealed blob is still in use and must stay.
+        let sealed = cardfile_core::BlobRef::sealed("s1", "key");
+        db.set_card_lock(
+            card.id,
+            LockMode::None,
+            "{}",
+            "",
+            None,
+            std::slice::from_ref(&sealed),
+        )
+        .unwrap();
+        db.set_card_lock(
+            card.id,
+            LockMode::Encrypted,
+            "",
+            "",
+            Some(&payload),
+            &[sealed],
+        )
+        .unwrap();
+        assert!(db.blob("s1").unwrap().is_some());
     }
 }

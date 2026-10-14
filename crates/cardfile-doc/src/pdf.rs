@@ -594,7 +594,8 @@ fn block_style(block: &Block) -> BlockStyle {
 
 fn load_image(blobs: &dyn BlobResolver, id: &str, mime: &str) -> Option<PdfImage> {
     let (m, bytes) = blobs.resolve(id)?;
-    let mime = if m.is_empty() { mime.to_owned() } else { m };
+    // The document's MIME type wins: sealed blobs are stored as octet-stream.
+    let mime = if mime.is_empty() { m } else { mime.to_owned() };
     let data: krilla::Data = bytes.into();
     match mime.as_str() {
         "image/png" => PdfImage::from_png(data, true).ok(),

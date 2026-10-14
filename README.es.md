@@ -46,6 +46,10 @@ Cada [release](https://github.com/FittyAr/Cardfile/releases) también incluye `.
 AppImage y el instalador de Inno Setup. Microsoft Store y los repositorios de Linux están en
 camino.
 
+## Documentación
+
+- [Guía de usuario](docs/GUIA_DE_USUARIO.md)
+
 ## Compilar desde el código fuente
 
 Necesitás la última versión estable de [Rust](https://rustup.rs).

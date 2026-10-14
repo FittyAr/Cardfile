@@ -3,6 +3,7 @@
 //! This crate is deliberately free of UI and database dependencies so the rules
 //! it encodes (lock modes, settings, ordering) can be tested in isolation.
 
+mod blob_ref;
 mod error;
 mod ids;
 mod model;
@@ -10,6 +11,7 @@ pub mod order;
 mod settings;
 mod time;
 
+pub use blob_ref::BlobRef;
 pub use error::{Error, Result};
 pub use ids::{BlobId, CardId, RevisionId, TagId, UserId};
 pub use model::{

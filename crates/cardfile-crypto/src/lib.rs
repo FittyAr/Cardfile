@@ -8,7 +8,7 @@
 use argon2::password_hash::{PasswordHasher, PasswordVerifier};
 use argon2::{Algorithm, Argon2, Params, Version};
 use base64::Engine as _;
-use base64::engine::general_purpose::STANDARD as B64;
+use base64::engine::general_purpose::{STANDARD as B64, URL_SAFE_NO_PAD as B64URL};
 use cardfile_core::EncryptedPayload;
 use chacha20poly1305::aead::{Aead, KeyInit, Payload};
 use chacha20poly1305::{XChaCha20Poly1305, XNonce};
@@ -162,6 +162,51 @@ pub fn decrypt(
         .map_err(|_| CryptoError::Malformed("plaintext is not UTF-8".into()))
 }
 
+/// Seal blob bytes (an image or attachment of an encrypted card) under a fresh random
+/// key. Returns the base64url key and `nonce || ciphertext`. No key derivation is
+/// involved, so this is fast; the key itself is protected by the card's encrypted
+/// document. `aad` is the blob id.
+pub fn seal_blob(data: &[u8], aad: &[u8]) -> CryptoResult<(Zeroizing<String>, Vec<u8>)> {
+    let key = Zeroizing::new(random::<KEY_LEN>()?);
+    let nonce: [u8; NONCE_LEN] = random()?;
+    let cipher =
+        XChaCha20Poly1305::new_from_slice(key.as_ref()).map_err(|_| CryptoError::Decrypt)?;
+    let ciphertext = cipher
+        .encrypt(&XNonce::from(nonce), Payload { msg: data, aad })
+        .map_err(|_| CryptoError::Decrypt)?;
+    let mut sealed = Vec::with_capacity(NONCE_LEN + ciphertext.len());
+    sealed.extend_from_slice(&nonce);
+    sealed.extend_from_slice(&ciphertext);
+    Ok((Zeroizing::new(B64URL.encode(key.as_ref())), sealed))
+}
+
+/// Open bytes produced by [`seal_blob`] with its key and the same `aad`.
+pub fn open_blob(key: &str, sealed: &[u8], aad: &[u8]) -> CryptoResult<Zeroizing<Vec<u8>>> {
+    let key = Zeroizing::new(
+        B64URL
+            .decode(key)
+            .map_err(|e| CryptoError::Malformed(format!("blob key: {e}")))?,
+    );
+    if sealed.len() < NONCE_LEN {
+        return Err(CryptoError::Malformed("sealed blob too short".into()));
+    }
+    let (nonce, ciphertext) = sealed.split_at(NONCE_LEN);
+    let nonce: [u8; NONCE_LEN] = nonce
+        .try_into()
+        .map_err(|_| CryptoError::Malformed("nonce length".into()))?;
+    let cipher = XChaCha20Poly1305::new_from_slice(&key).map_err(|_| CryptoError::Decrypt)?;
+    cipher
+        .decrypt(
+            &XNonce::from(nonce),
+            Payload {
+                msg: ciphertext,
+                aad,
+            },
+        )
+        .map(Zeroizing::new)
+        .map_err(|_| CryptoError::Decrypt)
+}
+
 /// Rough password strength from 0 (empty) to 4 (strong), for UI hints only.
 pub fn password_strength(password: &str) -> u8 {
     let len = password.chars().count();
@@ -191,6 +236,21 @@ pub fn password_strength(password: &str) -> u8 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn sealed_blobs_round_trip() {
+        let (key, sealed) = seal_blob(b"png bytes", b"blob-1").unwrap();
+        assert!(!sealed.windows(9).any(|w| w == b"png bytes"));
+        assert_eq!(
+            open_blob(&key, &sealed, b"blob-1").unwrap().as_slice(),
+            b"png bytes"
+        );
+        // Bound to its id, and a different key fails.
+        assert!(open_blob(&key, &sealed, b"blob-2").is_err());
+        let (other, _) = seal_blob(b"x", b"blob-1").unwrap();
+        assert!(open_blob(&other, &sealed, b"blob-1").is_err());
+        assert!(open_blob(&key, &sealed[..10], b"blob-1").is_err());
+    }
 
     #[test]
     fn password_hash_roundtrip() {

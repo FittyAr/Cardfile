@@ -79,6 +79,10 @@ impl Database {
                     tags::rev.eq(tags::rev + 1),
                 ))
                 .execute(conn)?;
+            // Losing a tag is a change to each card, so sync must see it.
+            diesel::update(cards::table.filter(cards::id.eq_any(&cards)))
+                .set((cards::updated_at.eq(now), cards::rev.eq(cards::rev + 1)))
+                .execute(conn)?;
             for card in cards {
                 refresh_fts_tags(conn, &card)?;
             }
@@ -124,7 +128,7 @@ fn refresh_fts_tags(conn: &mut SqliteConnection, card_id: &str) -> DbResult<()> 
              SELECT group_concat(t.name, ' ') FROM card_tags ct
              JOIN tags t ON t.id = ct.tag_id AND t.deleted_at IS NULL
              WHERE ct.card_id = ?1), '')
-         WHERE rowid = (SELECT rowid FROM cards WHERE id = ?1)",
+         WHERE card_id = ?1",
     )
     .bind::<diesel::sql_types::Text, _>(card_id)
     .execute(conn)?;

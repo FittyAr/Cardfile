@@ -1,0 +1,58 @@
+# Checksums and minisign signatures for every release file. Called by release.yml as a
+# dist `publish-jobs` entry, so it runs after the release exists and after *all*
+# artifact jobs (local, global and the native packages) have finished.
+name: Sign
+
+on:
+  workflow_call:
+    inputs:
+      plan:
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TAG: ${{ fromJson(inputs.plan).announcement_tag }}
+    steps:
+      - name: Download everything
+        uses: actions/download-artifact@v8
+        with:
+          pattern: artifacts-*
+          path: all
+          merge-multiple: true
+      - name: Checksums and minisign signatures
+        env:
+          MINISIGN_SECRET_KEY: ${{ secrets.MINISIGN_SECRET_KEY }}
+          MINISIGN_PUBLIC_KEY: ${{ vars.MINISIGN_PUBLIC_KEY }}
+        run: |
+          mkdir -p out
+          cd all
+          rm -f *.json *.sha256
+          FILES=$(ls | grep -E '\.(zip|tar\.xz|exe|msix|deb|rpm|AppImage|ps1|sh)$')
+          sha256sum $FILES > ../out/SHA256SUMS
+          cp ../out/SHA256SUMS .
+          if [ -n "$MINISIGN_SECRET_KEY" ]; then
+            sudo apt-get update && sudo apt-get install -y minisign
+            echo "$MINISIGN_SECRET_KEY" > /tmp/minisign.key
+            for f in $FILES SHA256SUMS; do
+              # The app checks this exact comment (cardfile-updater `trusted_comment`).
+              minisign -S -s /tmp/minisign.key -m "$f" -x "../out/$f.minisig" -t "Cardfile $TAG release file: $f"
+            done
+            rm -f /tmp/minisign.key
+            # The app trusts only this public key (cardfile-updater PUBLIC_KEY).
+            if [ -n "$MINISIGN_PUBLIC_KEY" ]; then
+              for f in $FILES SHA256SUMS; do
+                minisign -V -P "$MINISIGN_PUBLIC_KEY" -m "$f" -x "../out/$f.minisig" -q
+              done
+            fi
+          else
+            echo "::warning::MINISIGN_SECRET_KEY is not set; release files are not signed"
+          fi
+      - name: Attach to the release
+        run: gh release upload "$TAG" out/* --clobber --repo "$GITHUB_REPOSITORY"

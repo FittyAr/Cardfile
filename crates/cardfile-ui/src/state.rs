@@ -1,9 +1,10 @@
 //! Application-wide state shared by every view.
 
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use anyhow::Result;
-use cardfile_core::{AppSettings, AuthMode, User, UserSettings};
+use cardfile_core::{AppSettings, AuthMode, BlobRef, User, UserSettings};
 use cardfile_db::Database;
 use cardfile_editor::BlobStore;
 use gpui_kit::{App, AppContext as _, Global, Task};
@@ -86,24 +87,72 @@ pub fn run_db<T: Send + 'static>(
     cx.background_spawn(async move { f(()).map_err(anyhow::Error::from) })
 }
 
-/// [`BlobStore`] backed by the database, for the editor.
-pub struct DbBlobs(pub Database);
+/// [`BlobStore`] backed by the database, for the editor. While [`Self::set_sealing`]
+/// is on (the open card is encrypted) new blobs are sealed; reads open sealed
+/// references whatever the setting.
+pub struct DbBlobs {
+    db: Database,
+    sealing: AtomicBool,
+}
+
+impl DbBlobs {
+    pub fn new(db: Database) -> Self {
+        Self {
+            db,
+            sealing: AtomicBool::new(false),
+        }
+    }
+
+    pub fn set_sealing(&self, on: bool) {
+        self.sealing.store(on, Ordering::Relaxed);
+    }
+
+    /// Store `data` sealed and return its reference (see [`BlobRef`]).
+    pub fn put_sealed(&self, data: &[u8]) -> Result<String> {
+        let id = BlobRef::new_sealed_id();
+        let (key, sealed) = cardfile_crypto::seal_blob(data, id.as_bytes())?;
+        self.db.put_sealed_blob(&id, &sealed)?;
+        Ok(BlobRef::sealed(&id, &key))
+    }
+
+    /// Bytes of a blob reference, opening sealed blobs.
+    pub fn read(&self, reference: &str) -> Result<Option<(String, Vec<u8>)>> {
+        let r = BlobRef::parse(reference);
+        let Some(blob) = self.db.blob(r.id)? else {
+            return Ok(None);
+        };
+        let data = match r.key {
+            Some(key) => cardfile_crypto::open_blob(key, &blob.data, r.id.as_bytes())?.to_vec(),
+            None => blob.data,
+        };
+        Ok(Some((blob.meta.mime, data)))
+    }
+}
 
 impl BlobStore for DbBlobs {
     fn put(&self, data: &[u8], mime: &str, file_name: Option<&str>) -> Option<String> {
-        self.0
-            .put_blob(data, mime, file_name)
-            .map(|m| m.id.0)
-            .map_err(|e| tracing::error!("store blob: {e}"))
+        let stored = if self.sealing.load(Ordering::Relaxed) {
+            self.put_sealed(data)
+        } else {
+            self.db
+                .put_blob(data, mime, file_name)
+                .map(|m| m.id.0)
+                .map_err(anyhow::Error::from)
+        };
+        stored
+            .map_err(|e| tracing::error!("store blob: {e:#}"))
             .ok()
     }
 
     fn get(&self, id: &str) -> Option<(String, Vec<u8>)> {
-        self.0
-            .blob(id)
+        self.read(id)
+            .map_err(|e| tracing::warn!("read blob: {e:#}"))
             .ok()
             .flatten()
-            .map(|b| (b.meta.mime, b.data))
+    }
+
+    fn is_private(&self, id: &str) -> bool {
+        BlobRef::parse(id).key.is_some()
     }
 }
 
@@ -114,7 +163,7 @@ impl cardfile_doc::BlobResolver for DbBlobs {
 }
 
 pub fn blob_store(cx: &App) -> Arc<DbBlobs> {
-    Arc::new(DbBlobs(AppState::db(cx)))
+    Arc::new(DbBlobs::new(AppState::db(cx)))
 }
 
 pub trait TaskExt {

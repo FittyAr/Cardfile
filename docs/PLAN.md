@@ -253,7 +253,7 @@ Se valida con un **spike temprano** (Fase 1) antes de construir el resto de la U
 |----------|-----------|------|
 | `ci.yml` | PR y push a `main` | fmt, clippy, test (matriz Windows/Linux), `cargo deny`, título de PR semántico |
 | `release.yml` | tag `v*` | generado/ampliado desde `dist`: build por target, archivos, instaladores shell/PowerShell, Inno Setup, MSIX, `.deb`, `.rpm`, AppImage, `SHA256SUMS`, firma minisign, licencias de terceros, GitHub Release con changelog `git-cliff` |
-| `winget.yml` | release publicada | `winget-releaser` → PR a `microsoft/winget-pkgs` para `FittyAr.Cardfile` (requiere PAT `WINGET_TOKEN`; la primera versión se envía a mano) |
+| `winget.yml` | llamado por `release.yml` (publish job) | `winget-releaser` → PR a `microsoft/winget-pkgs` para `FittyAr.Cardfile` (requiere PAT `WINGET_TOKEN`; la primera versión se envía a mano) |
 | `store.yml` | manual / release estable | sube el MSIX a Partner Center (`msstore` CLI; secretos de Azure AD de Partner Center) |
 
 Targets: `x86_64-pc-windows-msvc`, `aarch64-pc-windows-msvc`, `x86_64-unknown-linux-gnu`,
@@ -375,3 +375,39 @@ Cada fase termina con PR(s) mergeados, CI verde y criterios de aceptación cumpl
 1. No hay importación ni restauración de ningún tipo.
 2. Se acepta la excepción MPL-2.0 para `spellbook`.
 3. macOS queda fuera hasta contar con cuenta Apple Developer.
+
+---
+
+## 9. Estado (2026-10-14)
+
+| Fase | Estado | PR |
+|------|--------|----|
+| 0 — Limpieza y andamiaje | ✅ | #1 |
+| 1 — Spike del editor | ✅ (validado con tests de interacción GPUI) | #2 |
+| 2 — Núcleo de datos | ✅ | #2 |
+| 3 — Shell de la aplicación | ✅ | #3 |
+| 4 — Seguridad | ✅ | #3, #4 |
+| 5 — Editor completo | ✅ (buscar/reemplazar y menú `/` en #4) | #2, #4 |
+| 6 — Organización y exportación | ✅ | #3 |
+| 7 — Corrector ortográfico | ✅ (diccionarios descargados en CI) | #3 |
+| 8 — Empaquetado y distribución | ✅ configurado; se valida con el primer tag | #3 |
+| 9 — Pulido y estable | 🔶 en curso | — |
+
+Revisión de los PR #1–#4 (incluida en #4): imágenes y adjuntos de tarjetas cifradas sellados con
+una clave por blob guardada dentro del documento cifrado (`sealed:<id>:<clave>`); el updater solo
+anuncia releases con `SHA256SUMS` firmado por la clave minisign incrustada; `cards_fts` enlazado
+por `card_id`; búsqueda sin mayúsculas con plegado Unicode; Argon2, diccionarios y lecturas del
+login fuera del hilo de UI.
+
+Pendiente:
+
+- Primer release `v2.0.0-alpha.1`: secreto y variable minisign ya configurados; falta `WINGET_TOKEN`
+  (`docs/RELEASING.md`), crear el tag y revisar
+  los artefactos generados por el pipeline.
+- Primera publicación manual en winget (`wingetcreate new`) y en Microsoft Store (Partner Center).
+- Traducciones: `locales/en.yml` está completo; copiar a `locales/<lang>.yml` para cada idioma.
+- Flathub y AUR.
+- Pegado de HTML enriquecido: GPUI expone el portapapeles solo como texto, imagen o rutas; hoy se
+  pega texto plano o Markdown.
+- Rendimiento con decenas de miles de tarjetas: contadores con `COUNT(*)` en vez de listar.
+- macOS cuando exista cuenta Apple Developer.

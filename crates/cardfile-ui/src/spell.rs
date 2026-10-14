@@ -10,7 +10,7 @@ use std::sync::Arc;
 
 use cardfile_core::UserSettings;
 use cardfile_editor::SpellChecker;
-use gpui_kit::{App, Global};
+use gpui_kit::{App, AppContext as _, Global, Task};
 use parking_lot::{Mutex, RwLock};
 
 pub struct Speller {
@@ -103,23 +103,41 @@ pub fn available_languages(cx: &App) -> Vec<String> {
     langs
 }
 
-/// The spell checker for the user's settings, loading the dictionary on first use.
-pub fn checker(settings: &UserSettings, cx: &mut App) -> Option<Arc<dyn SpellChecker>> {
+/// The spell checker for the user's settings. The first use of a language reads and
+/// parses its dictionary (several MB) on the background executor.
+pub fn checker(settings: &UserSettings, cx: &mut App) -> Task<Option<Arc<dyn SpellChecker>>> {
     if !settings.spellcheck {
-        return None;
+        return Task::ready(None);
     }
     let lang = settings.spellcheck_language.clone();
     if !cx.has_global::<Dictionaries>() {
         cx.set_global(Dictionaries::default());
     }
     if let Some(cached) = cx.global::<Dictionaries>().0.get(&lang) {
-        return cached.clone().map(|s| s as Arc<dyn SpellChecker>);
+        return Task::ready(cached.clone().map(|s| s as Arc<dyn SpellChecker>));
     }
     let personal = crate::state::AppState::get(cx)
         .paths
         .dictionaries()
         .join("personal.txt");
-    let loaded = search_dirs(cx).into_iter().find_map(|dir| {
+    let dirs = search_dirs(cx);
+    let load = {
+        let lang = lang.clone();
+        cx.background_spawn(async move { load(&lang, dirs, personal) })
+    };
+    cx.spawn(async move |cx| {
+        let loaded = load.await;
+        cx.update(|cx| {
+            cx.global_mut::<Dictionaries>()
+                .0
+                .insert(lang, loaded.clone());
+        });
+        loaded.map(|s| s as Arc<dyn SpellChecker>)
+    })
+}
+
+fn load(lang: &str, dirs: Vec<PathBuf>, personal: PathBuf) -> Option<Arc<Speller>> {
+    let loaded = dirs.into_iter().find_map(|dir| {
         let aff = std::fs::read_to_string(dir.join(format!("{lang}.aff"))).ok()?;
         let dic = std::fs::read_to_string(dir.join(format!("{lang}.dic"))).ok()?;
         match Speller::new(&aff, &dic, personal.clone()) {
@@ -133,10 +151,7 @@ pub fn checker(settings: &UserSettings, cx: &mut App) -> Option<Arc<dyn SpellChe
     if loaded.is_none() {
         tracing::info!("no spelling dictionary for {lang}");
     }
-    cx.global_mut::<Dictionaries>()
-        .0
-        .insert(lang, loaded.clone());
-    loaded.map(|s| s as Arc<dyn SpellChecker>)
+    loaded
 }
 
 #[cfg(test)]

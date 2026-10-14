@@ -57,6 +57,11 @@ minisign -Vm <file> -P <public key from docs/SIGNING.md>
 The Windows executables are not Authenticode-signed (only the Microsoft Store package is), so
 SmartScreen may warn on first run.
 
+## Documentation
+
+- [User guide](docs/USER_GUIDE.md)
+- [Releasing](docs/RELEASING.md) and [verifying downloads](docs/SIGNING.md)
+
 ## Build from source
 
 Requires the latest stable [Rust](https://rustup.rs).

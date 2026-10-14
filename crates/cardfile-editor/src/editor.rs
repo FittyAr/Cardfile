@@ -8,9 +8,9 @@ use std::time::Duration;
 use cardfile_doc::{Align, Attachment, Block, BlockKind, Document, Image, Mark, TextSize};
 use gpui_kit::{
     Action, App, Bounds, ClipboardEntry, ClipboardItem, Context, EntityInputHandler, EventEmitter,
-    FocusHandle, Focusable, KeyBinding, MouseButton, MouseDownEvent, MouseMoveEvent, MouseUpEvent,
-    PathPromptOptions, Pixels, Point, ScrollHandle, Task, UTF16Selection, Window, actions, point,
-    px,
+    FocusHandle, Focusable, Global, KeyBinding, MouseButton, MouseDownEvent, MouseMoveEvent,
+    MouseUpEvent, PathPromptOptions, Pixels, Point, ScrollHandle, Task, UTF16Selection, Window,
+    actions, point, px,
 };
 
 use crate::history::{EditKind, History};
@@ -108,6 +108,11 @@ actions!(
         ImageFit,
         OpenLinkAtCaret,
         AddWordToDictionary,
+        Find,
+        FindReplace,
+        FindNext,
+        FindPrevious,
+        Cancel,
     ]
 );
 
@@ -132,7 +137,20 @@ pub trait BlobStore: Send + Sync + 'static {
     fn put(&self, data: &[u8], mime: &str, file_name: Option<&str>) -> Option<String>;
     /// Load `(mime, bytes)`.
     fn get(&self, id: &str) -> Option<(String, Vec<u8>)>;
+    /// Whether the reference carries a secret (e.g. the key of an encrypted card's
+    /// image) and so must not be put on the system clipboard.
+    fn is_private(&self, _id: &str) -> bool {
+        false
+    }
 }
+
+/// The last fragment copied in this process, with every blob reference intact. The
+/// system clipboard gets a copy without private blobs; pasting the same text back
+/// inside Cardfile uses this one.
+#[derive(Default)]
+struct InternalClipboard(Option<(String, Document)>);
+
+impl Global for InternalClipboard {}
 
 /// Spell checking backend.
 pub trait SpellChecker: Send + Sync + 'static {
@@ -226,6 +244,11 @@ pub fn default_key_bindings() -> Vec<KeyBinding> {
         KeyBinding::new("ctrl-[", Outdent, c),
         KeyBinding::new("ctrl-enter", ToggleCheck, c),
         KeyBinding::new("alt-enter", OpenLinkAtCaret, c),
+        KeyBinding::new("ctrl-f", Find, c),
+        KeyBinding::new("ctrl-h", FindReplace, c),
+        KeyBinding::new("f3", FindNext, c),
+        KeyBinding::new("shift-f3", FindPrevious, c),
+        KeyBinding::new("escape", Cancel, c),
     ]
 }
 
@@ -257,6 +280,8 @@ pub struct RichEditor {
     pub(crate) base_font_size: Pixels,
     pub(crate) placeholder: Option<String>,
     revision: u64,
+    pub(crate) find: Option<crate::find::FindBar>,
+    pub(crate) slash: Option<crate::slash::SlashMenu>,
 }
 
 impl EventEmitter<EditorEvent> for RichEditor {}
@@ -290,6 +315,8 @@ impl RichEditor {
             base_font_size: px(15.),
             placeholder: None,
             revision: 0,
+            find: None,
+            slash: None,
         }
     }
 
@@ -310,7 +337,9 @@ impl RichEditor {
         self.history.clear();
         self.layouts.clear();
         self.marked = None;
+        self.slash = None;
         self.scroll.set_offset(point(px(0.), px(0.)));
+        self.refresh_matches(false, cx);
         cx.notify();
     }
 
@@ -378,6 +407,11 @@ impl RichEditor {
             .blocks
             .get(self.model.caret().slot.block)
             .map_or(Align::Left, |b| b.align)
+    }
+
+    /// The selected text as plain text.
+    pub fn selected_text(&self) -> String {
+        self.model.selected_text()
     }
 
     pub fn in_table(&self) -> bool {
@@ -556,8 +590,24 @@ impl RichEditor {
             self.history.record(&before, sel, kind);
             self.revision += 1;
             cx.emit(EditorEvent::Changed);
+            if self.find.is_some() {
+                self.refresh_matches(false, cx);
+            }
         }
+        self.validate_slash();
         self.after_move(cx);
+    }
+
+    pub(crate) fn edit_with(&mut self, cx: &mut Context<Self>, f: impl FnOnce(&mut Model)) {
+        self.edit(EditKind::Other, cx, f);
+    }
+
+    pub(crate) fn request_autoscroll(&mut self) {
+        self.autoscroll = true;
+    }
+
+    pub(crate) fn pick_files_public(&mut self, images: bool, cx: &mut Context<Self>) {
+        self.pick_files(images, cx);
     }
 
     fn after_move(&mut self, cx: &mut Context<Self>) {
@@ -576,6 +626,7 @@ impl RichEditor {
         }
         self.history.seal();
         self.marked = None;
+        self.validate_slash();
         self.after_move(cx);
     }
 
@@ -722,7 +773,10 @@ impl RichEditor {
             .doc
             .slot_text(pos.slot)
             .map_or("", |t| t.text.as_str());
-        let e = if e < text.len() && text[..e].ends_with(' ') {
+        let e = if text
+            .get(..e)
+            .is_some_and(|t| e < text.len() && t.ends_with(' '))
+        {
             e - 1
         } else {
             e
@@ -741,9 +795,15 @@ impl RichEditor {
         self.horizontal(false, false, false, cx);
     }
     fn move_up(&mut self, _: &MoveUp, _: &mut Window, cx: &mut Context<Self>) {
+        if self.slash_key(crate::slash::SlashKey::Up, cx) {
+            return;
+        }
         self.vertical(false, false, false, cx);
     }
     fn move_down(&mut self, _: &MoveDown, _: &mut Window, cx: &mut Context<Self>) {
+        if self.slash_key(crate::slash::SlashKey::Down, cx) {
+            return;
+        }
         self.vertical(true, false, false, cx);
     }
     fn move_word_left(&mut self, _: &MoveWordLeft, _: &mut Window, cx: &mut Context<Self>) {
@@ -830,6 +890,9 @@ impl RichEditor {
         self.edit(EditKind::Other, cx, Model::delete_forward);
     }
     fn enter(&mut self, _: &Enter, _: &mut Window, cx: &mut Context<Self>) {
+        if self.slash_key(crate::slash::SlashKey::Enter, cx) {
+            return;
+        }
         self.marked = None;
         self.edit(EditKind::Other, cx, Model::enter);
     }
@@ -837,12 +900,22 @@ impl RichEditor {
         self.edit(EditKind::Other, cx, Model::soft_break);
     }
     fn tab(&mut self, _: &Tab, _: &mut Window, cx: &mut Context<Self>) {
+        if self.slash_key(crate::slash::SlashKey::Enter, cx) {
+            return;
+        }
         if self.model.in_table() {
-            self.model.table_next_cell(false);
-            // Adding a row at the end of a table is an edit.
-            self.revision += 1;
-            cx.emit(EditorEvent::Changed);
-            self.after_move(cx);
+            if self.read_only {
+                // Read-only cards can move between cells but never grow a row.
+                if self.model.has_next_cell() {
+                    self.model.table_next_cell(false);
+                    self.after_move(cx);
+                }
+                return;
+            }
+            // Adding a row at the end of a table is an edit; `edit` records it only then.
+            self.edit(EditKind::Other, cx, |m| {
+                m.table_next_cell(false);
+            });
             return;
         }
         let kind = self.model.current_block_kind();
@@ -864,11 +937,7 @@ impl RichEditor {
             return;
         }
         if let Some((doc, sel)) = self.history.undo(&self.model.doc, self.model.sel) {
-            self.model.doc = doc;
-            self.model.set_selection(sel);
-            self.revision += 1;
-            cx.emit(EditorEvent::Changed);
-            self.after_move(cx);
+            self.restore_snapshot(doc, sel, cx);
         }
     }
     fn redo(&mut self, _: &Redo, _: &mut Window, cx: &mut Context<Self>) {
@@ -876,18 +945,57 @@ impl RichEditor {
             return;
         }
         if let Some((doc, sel)) = self.history.redo(&self.model.doc, self.model.sel) {
-            self.model.doc = doc;
-            self.model.set_selection(sel);
-            self.revision += 1;
-            cx.emit(EditorEvent::Changed);
-            self.after_move(cx);
+            self.restore_snapshot(doc, sel, cx);
         }
+    }
+
+    /// Swap in a document from history; offsets cached against the old one are stale.
+    fn restore_snapshot(&mut self, doc: Document, sel: Selection, cx: &mut Context<Self>) {
+        self.model.doc = doc;
+        self.model.set_selection(sel);
+        self.marked = None;
+        self.revision += 1;
+        cx.emit(EditorEvent::Changed);
+        self.refresh_matches(false, cx);
+        self.validate_slash();
+        self.after_move(cx);
     }
 
     fn copy(&mut self, _: &Copy, _: &mut Window, cx: &mut Context<Self>) {
         if let Some(frag) = self.model.selected_fragment() {
             let text = cardfile_doc::to_plain_text(&frag);
-            cx.write_to_clipboard(ClipboardItem::new_string_with_json_metadata(text, frag));
+            let mut public = frag.clone();
+            if let Some(store) = &self.blobs {
+                public.blocks.retain(|b| match &b.kind {
+                    BlockKind::Image(img) => !store.is_private(&img.blob),
+                    BlockKind::Attachment(att) => !store.is_private(&att.blob),
+                    _ => true,
+                });
+                public.normalize();
+            }
+            cx.set_global(InternalClipboard(Some((text.clone(), frag))));
+            cx.write_to_clipboard(ClipboardItem::new_string_with_json_metadata(text, public));
+        }
+    }
+
+    /// Store a pasted fragment's images and attachments again through this editor's
+    /// store, so they follow the target card's protection (sealed in an encrypted
+    /// card, plain elsewhere) instead of keeping the source card's references.
+    fn adopt_fragment_blobs(&self, frag: &mut Document) {
+        let Some(store) = &self.blobs else { return };
+        for block in &mut frag.blocks {
+            let (blob, mime, file_name) = match &mut block.kind {
+                BlockKind::Image(img) => (&mut img.blob, img.mime.clone(), None),
+                BlockKind::Attachment(att) => {
+                    (&mut att.blob, att.mime.clone(), Some(att.file_name.clone()))
+                }
+                _ => continue,
+            };
+            if let Some((_, data)) = store.get(blob)
+                && let Some(new) = store.put(&data, &mime, file_name.as_deref())
+            {
+                *blob = new;
+            }
         }
     }
     fn cut(&mut self, a: &Cut, window: &mut Window, cx: &mut Context<Self>) {
@@ -915,7 +1023,17 @@ impl RichEditor {
         if let Some(entry) = item.entries().first() {
             match entry {
                 ClipboardEntry::String(s) => {
-                    if !plain && let Some(frag) = s.metadata_json::<Document>() {
+                    if !plain && let Some(mut frag) = s.metadata_json::<Document>() {
+                        if let Some((text, internal)) = cx
+                            .try_global::<InternalClipboard>()
+                            .and_then(|c| c.0.clone())
+                            && text == *s.text()
+                        {
+                            frag = internal;
+                        }
+                        // Clipboard JSON comes from outside; restore the model's invariants.
+                        frag.normalize();
+                        self.adopt_fragment_blobs(&mut frag);
                         self.edit(EditKind::Other, cx, |m| m.insert_fragment(&frag));
                         return;
                     }
@@ -1267,7 +1385,11 @@ impl RichEditor {
         self.model.sel.is_empty()
     }
     fn open_link_at_caret(&mut self, _: &OpenLinkAtCaret, _: &mut Window, cx: &mut Context<Self>) {
-        if let Some(url) = self.model.link_at_caret() {
+        if let Some(url) = self
+            .model
+            .link_at_caret()
+            .filter(|u| cardfile_doc::is_safe_link(u))
+        {
             cx.emit(EditorEvent::OpenLink(url));
         }
     }
@@ -1345,6 +1467,7 @@ impl RichEditor {
         }
         if ev.modifiers.control
             && let Some(url) = self.link_at(pos)
+            && cardfile_doc::is_safe_link(&url)
         {
             cx.emit(EditorEvent::OpenLink(url));
             return;
@@ -1442,6 +1565,37 @@ impl RichEditor {
         Some(image)
     }
 
+    fn find_action(&mut self, _: &Find, window: &mut Window, cx: &mut Context<Self>) {
+        self.open_find(false, window, cx);
+    }
+    fn find_replace(&mut self, _: &FindReplace, window: &mut Window, cx: &mut Context<Self>) {
+        let replace = !self.read_only;
+        self.open_find(replace, window, cx);
+    }
+    fn find_next(&mut self, _: &FindNext, window: &mut Window, cx: &mut Context<Self>) {
+        if self.find.is_none() {
+            self.open_find(false, window, cx);
+        }
+        self.find_step(true, window, cx);
+    }
+    fn find_previous(&mut self, _: &FindPrevious, window: &mut Window, cx: &mut Context<Self>) {
+        if self.find.is_none() {
+            self.open_find(false, window, cx);
+        }
+        self.find_step(false, window, cx);
+    }
+    fn cancel(&mut self, _: &Cancel, window: &mut Window, cx: &mut Context<Self>) {
+        if self.slash_key(crate::slash::SlashKey::Escape, cx) {
+            return;
+        }
+        if self.find.is_some() {
+            self.close_find(window, cx);
+        } else if !self.model.sel.is_empty() {
+            let head = self.model.sel.head;
+            self.move_caret(head, false, cx);
+        }
+    }
+
     /// Register action handlers on the editor root element.
     pub(crate) fn bind_actions(
         div: gpui_kit::Stateful<gpui_kit::Div>,
@@ -1533,6 +1687,11 @@ impl RichEditor {
             .on_action(cx.listener(Self::image_fit))
             .on_action(cx.listener(Self::replace_word))
             .on_action(cx.listener(Self::add_word_to_dictionary))
+            .on_action(cx.listener(Self::find_action))
+            .on_action(cx.listener(Self::find_replace))
+            .on_action(cx.listener(Self::find_next))
+            .on_action(cx.listener(Self::find_previous))
+            .on_action(cx.listener(Self::cancel))
     }
 }
 
@@ -1658,6 +1817,7 @@ impl EntityInputHandler for RichEditor {
             m.pending_style = pending;
             m.insert_text(text);
         });
+        self.maybe_open_slash(text);
     }
 
     fn replace_and_mark_text_in_range(

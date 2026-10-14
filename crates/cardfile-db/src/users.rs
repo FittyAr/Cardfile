@@ -1,10 +1,42 @@
-use cardfile_core::{User, UserId, now_millis};
+use cardfile_core::{CardId, EncryptedPayload, RevisionId, User, UserId, UserSettings, now_millis};
 use diesel::prelude::*;
 
-use crate::rows::UserRow;
-use crate::schema::users;
-use crate::search::lower;
-use crate::{Database, DbResult};
+use crate::rows::{UserRow, payload_json};
+use crate::schema::{card_revisions, cards, users};
+use crate::{Database, DbError, DbResult};
+
+/// Where a user's password hash is stored.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PasswordSlot {
+    /// The account password (password sign-in modes).
+    Account,
+    /// The lock password kept in user settings ("no password" sign-in).
+    LockSetting,
+}
+
+/// Ciphertext re-encrypted under a new password, see [`Database::change_password`].
+#[derive(Clone, Debug, Default)]
+pub struct Rekey {
+    pub cards: Vec<(CardId, EncryptedPayload)>,
+    pub revisions: Vec<(RevisionId, EncryptedPayload)>,
+}
+
+/// Usernames compare case-insensitively across all of Unicode. SQLite's `lower()` and
+/// `COLLATE NOCASE` only fold ASCII ("JOSÉ" ≠ "josé"), so matching happens in Rust; a
+/// handful of accounts per file makes the scan cheap.
+fn username_key(username: &str) -> String {
+    username.trim().to_lowercase()
+}
+
+fn find_live_by_username(conn: &mut SqliteConnection, username: &str) -> DbResult<Option<UserRow>> {
+    let key = username_key(username);
+    Ok(users::table
+        .filter(users::deleted_at.is_null())
+        .select(UserRow::as_select())
+        .load(conn)?
+        .into_iter()
+        .find(|row| username_key(&row.username) == key))
+}
 
 impl Database {
     /// Create an account. `password_hash` is an Argon2 PHC string or `None`.
@@ -28,7 +60,13 @@ impl Database {
             deleted_at: None,
             rev: 1,
         };
-        self.with(|conn| {
+        self.tx(|conn| {
+            if find_live_by_username(conn, &row.username)?.is_some() {
+                return Err(DbError::Query(diesel::result::Error::DatabaseError(
+                    diesel::result::DatabaseErrorKind::UniqueViolation,
+                    Box::new(format!("username already taken: {}", row.username)),
+                )));
+            }
             let row: UserRow = diesel::insert_into(users::table)
                 .values(&row)
                 .returning(UserRow::as_returning())
@@ -62,16 +100,62 @@ impl Database {
 
     /// Case-insensitive lookup of a live account.
     pub fn user_by_username(&self, username: &str) -> DbResult<Option<User>> {
-        let username = username.trim().to_lowercase();
         self.with(|conn| {
-            users::table
-                .filter(users::deleted_at.is_null())
-                .filter(lower(users::username).eq(username))
-                .select(UserRow::as_select())
-                .first(conn)
-                .optional()?
+            find_live_by_username(conn, username)?
                 .map(TryInto::try_into)
                 .transpose()
+        })
+    }
+
+    /// Store a new password hash together with every ciphertext re-encrypted under it,
+    /// in one transaction: a partial rekey would leave cards no password can open.
+    pub fn change_password(
+        &self,
+        user: UserId,
+        slot: PasswordSlot,
+        hash: &str,
+        rekey: &Rekey,
+    ) -> DbResult<()> {
+        let now = now_millis();
+        self.tx(|conn| {
+            for (id, payload) in &rekey.cards {
+                diesel::update(cards::table.find(id.to_string()))
+                    .set((
+                        cards::encrypted.eq(payload_json(Some(payload))),
+                        cards::updated_at.eq(now),
+                        cards::rev.eq(cards::rev + 1),
+                    ))
+                    .execute(conn)?;
+            }
+            for (id, payload) in &rekey.revisions {
+                diesel::update(card_revisions::table.find(id.to_string()))
+                    .set(card_revisions::encrypted.eq(payload_json(Some(payload))))
+                    .execute(conn)?;
+            }
+            let user_id = user.to_string();
+            let target = || users::table.find(&user_id);
+            match slot {
+                PasswordSlot::Account => {
+                    diesel::update(target())
+                        .set(users::password_hash.eq(hash))
+                        .execute(conn)?;
+                }
+                PasswordSlot::LockSetting => {
+                    let json: String = target().select(users::settings).first(conn)?;
+                    let mut settings: UserSettings =
+                        serde_json::from_str(&json).unwrap_or_default();
+                    settings.lock_password_hash = Some(hash.to_owned());
+                    let json = serde_json::to_string(&settings)
+                        .map_err(|e| DbError::Corrupt(e.to_string()))?;
+                    diesel::update(target())
+                        .set(users::settings.eq(json))
+                        .execute(conn)?;
+                }
+            }
+            diesel::update(target())
+                .set((users::updated_at.eq(now), users::rev.eq(users::rev + 1)))
+                .execute(conn)?;
+            Ok(())
         })
     }
 
@@ -142,5 +226,59 @@ mod tests {
         assert!(db.list_users().unwrap().is_empty());
         // Username is free again after deletion.
         db.create_user("alice", "New", None, false).unwrap();
+    }
+
+    #[test]
+    fn usernames_fold_non_ascii_case() {
+        let db = db();
+        let jose = db.create_user("JOSÉ", "José", None, false).unwrap();
+        assert_eq!(
+            db.user_by_username("josé").unwrap().map(|u| u.id),
+            Some(jose.id)
+        );
+        let err = db.create_user("josé", "Other", None, false).unwrap_err();
+        assert!(err.is_unique_violation());
+    }
+
+    #[test]
+    fn change_password_rewrites_payloads_and_hash_together() {
+        use cardfile_core::{EncryptedPayload, NewCard};
+
+        let (db, alice) = db_with_user();
+        let card = db.create_card(alice.id, NewCard::default()).unwrap();
+        let payload = EncryptedPayload {
+            v: 1,
+            salt: "s".into(),
+            nonce: "n".into(),
+            m_cost: 1,
+            t_cost: 1,
+            p_cost: 1,
+            ciphertext: "c".into(),
+        };
+        let rekey = super::Rekey {
+            cards: vec![(card.id, payload.clone())],
+            revisions: vec![],
+        };
+        db.change_password(alice.id, super::PasswordSlot::LockSetting, "h1", &rekey)
+            .unwrap();
+        assert_eq!(db.card(card.id).unwrap().encrypted, Some(payload));
+        assert_eq!(
+            db.user_settings(alice.id)
+                .unwrap()
+                .lock_password_hash
+                .as_deref(),
+            Some("h1")
+        );
+        db.change_password(
+            alice.id,
+            super::PasswordSlot::Account,
+            "h2",
+            &super::Rekey::default(),
+        )
+        .unwrap();
+        assert_eq!(
+            db.user(alice.id).unwrap().password_hash.as_deref(),
+            Some("h2")
+        );
     }
 }

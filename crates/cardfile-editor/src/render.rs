@@ -28,6 +28,8 @@ struct Palette {
     border: Hsla,
     primary: Hsla,
     header_bg: Hsla,
+    found: Hsla,
+    found_current: Hsla,
     font: SharedString,
     mono: SharedString,
 }
@@ -46,6 +48,8 @@ impl Palette {
             border: th.border,
             primary: th.primary,
             header_bg: th.muted,
+            found: th.warning.opacity(0.3),
+            found_current: th.warning.opacity(0.75),
             font: th.font_family.clone(),
             mono: th.mono_font_family.clone(),
         }
@@ -91,6 +95,8 @@ impl RichEditor {
             selection: pal.selection,
             caret: pal.caret,
             misspelled: pal.danger,
+            found: pal.found,
+            found_current: pal.found_current,
             bold: bold || cell_header,
             italic: matches!(block.kind, BlockKind::Quote),
             mono: matches!(block.kind, BlockKind::Code { .. }),
@@ -479,9 +485,14 @@ impl Render for RichEditor {
             }))
             .child(scroll)
             .child(input_handler);
+        let root = root.children(self.render_slash(cx));
         let editor = entity.clone();
-        Self::bind_actions(root, cx)
-            .context_menu(move |menu, _window, cx| Self::context_menu(&editor, menu, cx))
+        let root = Self::bind_actions(root, cx)
+            .context_menu(move |menu, _window, cx| Self::context_menu(&editor, menu, cx));
+        v_flex()
+            .size_full()
+            .children(self.render_find_bar(cx))
+            .child(div().flex_1().min_h_0().child(root))
     }
 }
 

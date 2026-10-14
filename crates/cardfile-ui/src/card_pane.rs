@@ -1,8 +1,9 @@
 //! The card being edited: title, editor, protection, tags, history and export.
 
+use std::sync::Arc;
 use std::time::Duration;
 
-use cardfile_core::{Card, CardId, LockMode, Tag, TagId, mask_title};
+use cardfile_core::{BlobRef, Card, CardId, LockMode, Tag, TagId, mask_title};
 use cardfile_db::ContentUpdate;
 use cardfile_doc::Document;
 use cardfile_editor::{EditorEvent, EditorToolbar, RichEditor};
@@ -21,7 +22,7 @@ use gpui_kit::{
 };
 use zeroize::Zeroizing;
 
-use crate::state::{AppState, run_db};
+use crate::state::{AppState, DbBlobs, run_db};
 use crate::widgets::{error, format_date};
 
 /// Delay between the last edit and the automatic save.
@@ -56,6 +57,8 @@ pub struct CardPane {
     access: Access,
     tags: Vec<Tag>,
     editor: Entity<RichEditor>,
+    /// The editor's blob store; seals new images while an encrypted card is open.
+    blobs: Arc<DbBlobs>,
     toolbar: Entity<EditorToolbar>,
     title: Entity<InputState>,
     unlock: Entity<InputState>,
@@ -67,6 +70,11 @@ pub struct CardPane {
     title_dirty: bool,
     save_task: Option<Task<()>>,
     relock_task: Option<Task<()>>,
+    /// Loads the spelling dictionary; replaced when the settings change again.
+    spell_task: Option<Task<()>>,
+    /// Card whose protection is being changed. Saves wait for it: they would write
+    /// with the old lock mode (e.g. plaintext over a card just encrypted).
+    lock_change: Option<CardId>,
     suppress_title_event: bool,
     _subs: Vec<Subscription>,
 }
@@ -75,9 +83,10 @@ impl EventEmitter<CardPaneEvent> for CardPane {}
 
 impl CardPane {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+        let blobs = crate::state::blob_store(cx);
         let editor = cx.new(|cx| {
             let mut e = RichEditor::new(Document::default(), cx);
-            e.set_blob_store(crate::state::blob_store(cx));
+            e.set_blob_store(blobs.clone());
             e.set_placeholder(Some(t("editor.placeholder")));
             e
         });
@@ -112,6 +121,9 @@ impl CardPane {
             }),
         ];
         let mut pane = Self {
+            blobs,
+            spell_task: None,
+            lock_change: None,
             card: None,
             access: Access::Empty,
             tags: Vec::new(),
@@ -148,12 +160,18 @@ impl CardPane {
 
     pub fn apply_user_settings(&mut self, cx: &mut Context<Self>) {
         let s = AppState::user_settings(cx);
-        let spell = crate::spell::checker(&s, cx);
         self.editor.update(cx, |e, cx| {
             e.set_font_size(px(s.editor_font_size), cx);
             e.set_input_rules(s.markdown_shortcuts);
-            e.set_spell_checker(spell, cx);
         });
+        let spell = crate::spell::checker(&s, cx);
+        self.spell_task = Some(cx.spawn(async move |this, cx| {
+            let spell = spell.await;
+            let _ = this.update(cx, |this, cx| {
+                this.editor
+                    .update(cx, |e, cx| e.set_spell_checker(spell, cx));
+            });
+        }));
     }
 
     /// Show `card` (or nothing). Saves the previous card first.
@@ -180,6 +198,8 @@ impl CardPane {
             }
         };
         self.set_title(&card.title, window, cx);
+        self.blobs
+            .set_sealing(card.lock_mode == LockMode::Encrypted);
         match self.access {
             Access::Locked => {
                 self.set_editor_doc(Document::default(), true, cx);
@@ -276,6 +296,10 @@ impl CardPane {
         let Some(card) = self.card.as_ref() else {
             return;
         };
+        if self.lock_change == Some(card.id) {
+            // Retried when the protection change finishes.
+            return;
+        }
         if self.access != Access::Open || !self.is_dirty(cx) {
             return;
         }
@@ -466,7 +490,9 @@ impl CardPane {
         if card.lock_mode == mode {
             return;
         }
-        if card.lock_mode == LockMode::Encrypted && self.access != Access::Open {
+        // A locked Private or Encrypted card must be unlocked first, or changing the
+        // mode would reveal it without the password.
+        if card.lock_mode.hides_content() && self.access != Access::Open {
             window.push_notification(Notification::warning(t("card.protect.unlock_first")), cx);
             return;
         }
@@ -492,46 +518,94 @@ impl CardPane {
         let doc = self.editor.read(cx).document().clone();
         let password = self.card_password.clone();
         let db = AppState::db(cx);
-        let content_doc = if self.access == Access::Locked {
-            // Private card switching to a mode without password: content is in the card.
-            Document::from_json(&card.content).unwrap_or_default()
-        } else {
-            doc
-        };
+        let mut content_doc = doc;
+        let blobs = self.blobs.clone();
+        // The document is rewritten in the background; edits made meanwhile would be lost.
+        let was_open = self.access == Access::Open;
+        if was_open {
+            self.editor.update(cx, |e, cx| e.set_read_only(true, cx));
+        }
+        let card_id = card.id;
+        self.lock_change = Some(card_id);
         let task = cx.background_spawn(async move {
+            if mode == LockMode::Encrypted {
+                // Re-store plaintext images sealed; the old copies are dropped below.
+                content_doc.map_blob_refs(|r| {
+                    if BlobRef::parse(r).key.is_some() {
+                        return anyhow::Ok(None);
+                    }
+                    let Some((_, data)) = blobs.read(r)? else {
+                        // Already broken; keep the reference rather than fail the change.
+                        tracing::warn!("missing blob {r} while encrypting a card");
+                        return Ok(None);
+                    };
+                    Ok(Some(blobs.put_sealed(&data)?))
+                })?;
+            }
             let json = content_doc.to_json();
             let plain = cardfile_doc::to_plain_text(&content_doc);
+            let blob_ids = content_doc.blob_ids();
             let card = if mode == LockMode::Encrypted {
                 let pw = password.ok_or_else(|| anyhow::anyhow!("missing password"))?;
                 let payload = cardfile_crypto::encrypt(&json, &pw, card.id.to_string().as_bytes())?;
-                db.set_card_lock(card.id, mode, "", "", Some(&payload))?
+                db.set_card_lock(card.id, mode, "", "", Some(&payload), &blob_ids)?
             } else {
-                db.set_card_lock(card.id, mode, &json, &plain, None)?
+                db.set_card_lock(card.id, mode, &json, &plain, None, &blob_ids)?
             };
-            anyhow::Ok(card)
+            anyhow::Ok((card, content_doc))
         });
         cx.spawn_in(window, async move |this, cx| match task.await {
-            Ok(saved) => {
+            Ok((saved, doc)) => {
                 let _ = this.update_in(cx, |this, window, cx| {
+                    this.lock_change = None;
+                    // Another card may have been opened meanwhile.
+                    if this.card.as_ref().map(|c| c.id) != Some(saved.id) {
+                        return;
+                    }
                     let keep_open = this.access == Access::Open;
                     let password = this.card_password.clone();
-                    let doc = this.editor.read(cx).document().clone();
+                    this.blobs
+                        .set_sealing(saved.lock_mode == LockMode::Encrypted);
                     this.card = Some(saved);
                     if keep_open {
-                        // Stay unlocked after changing protection.
+                        // Stay unlocked after changing protection. Image references
+                        // may have been rewritten to sealed ones.
                         this.access = Access::Open;
                         this.card_password = password;
+                        if this.editor.read(cx).document() != &doc {
+                            this.set_editor_doc(doc, false, cx);
+                        }
                         this.editor.update(cx, |e, cx| e.set_read_only(false, cx));
-                        let _ = doc;
                     } else {
                         let card = this.card.clone();
                         this.open(card, window, cx);
+                    }
+                    // A title typed meanwhile is saved now, with the new lock mode.
+                    if this.is_dirty(cx) {
+                        this.save(cx);
                     }
                     cx.emit(CardPaneEvent::Saved);
                     cx.notify();
                 });
             }
-            Err(e) => tracing::error!("change protection: {e:#}"),
+            Err(e) => {
+                tracing::error!("change protection: {e:#}");
+                let _ = this.update_in(cx, |this, window, cx| {
+                    this.lock_change = None;
+                    let same_card = this.card.as_ref().map(|c| c.id) == Some(card_id);
+                    if was_open && same_card {
+                        this.editor.update(cx, |e, cx| e.set_read_only(false, cx));
+                        if this.is_dirty(cx) {
+                            this.save(cx);
+                        }
+                    }
+                    let error = format!("{e:#}");
+                    window.push_notification(
+                        Notification::error(t_args("card.protect.failed", &[("error", &error)])),
+                        cx,
+                    );
+                });
+            }
         })
         .detach();
     }
@@ -596,6 +670,25 @@ impl CardPane {
             self.purge(window, cx);
             return;
         }
+        if AppState::user_settings(cx).confirm_delete {
+            let pane = cx.entity();
+            crate::dialogs::confirm(
+                t("card.delete"),
+                t_args("card.delete_body", &[("title", &card.title)]),
+                t("card.delete"),
+                window,
+                cx,
+                move |window, cx| pane.update(cx, |p, cx| p.delete_now(window, cx)),
+            );
+            return;
+        }
+        self.delete_now(window, cx);
+    }
+
+    fn delete_now(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let Some(card) = self.card.clone() else {
+            return;
+        };
         self.flush_save(cx);
         let db = AppState::db(cx);
         let id = card.id;

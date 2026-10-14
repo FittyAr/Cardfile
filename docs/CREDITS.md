@@ -26,6 +26,7 @@ its license ships with each release as `THIRD_PARTY_LICENSES.html` (`cargo about
 | [cargo-deb](https://github.com/kornelski/cargo-deb), [cargo-generate-rpm](https://github.com/cat-in-136/cargo-generate-rpm), [linuxdeploy](https://github.com/linuxdeploy/linuxdeploy) | Linux packages (build tools, not shipped) | MIT |
 | [cargo-about](https://github.com/EmbarkStudios/cargo-about) | Third-party license report | MIT OR Apache-2.0 |
 | [minisign](https://jedisct1.github.io/minisign/) | Release signatures (CI tool) | ISC |
+| [minisign-verify](https://github.com/jedisct1/rust-minisign-verify) | Update signature check; its test vector is reused in `cardfile-updater` tests | MIT |
 
 ## Dictionaries
 

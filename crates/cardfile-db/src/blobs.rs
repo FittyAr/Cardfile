@@ -32,6 +32,26 @@ impl Database {
         })
     }
 
+    /// Store a blob sealed with [`cardfile_crypto`]-style per-blob encryption under
+    /// `id` (see [`cardfile_core::BlobRef`]). Name and type stay in the encrypted
+    /// document, so the row only reveals the size.
+    pub fn put_sealed_blob(&self, id: &str, sealed: &[u8]) -> DbResult<()> {
+        let size = i64::try_from(sealed.len()).unwrap_or(i64::MAX);
+        self.with(|conn| {
+            diesel::insert_into(blobs::table)
+                .values((
+                    blobs::id.eq(id),
+                    blobs::mime.eq("application/octet-stream"),
+                    blobs::size.eq(size),
+                    blobs::file_name.eq(None::<String>),
+                    blobs::data.eq(sealed),
+                    blobs::created_at.eq(now_millis()),
+                ))
+                .execute(conn)?;
+            Ok(())
+        })
+    }
+
     pub fn blob(&self, id: &str) -> DbResult<Option<Blob>> {
         self.with(|conn| {
             let row: Option<BlobRow> = blobs::table
@@ -61,6 +81,35 @@ impl Database {
     pub fn collect_garbage_blobs(&self) -> DbResult<usize> {
         self.with(gc)
     }
+}
+
+/// Unlink every blob from a card except `keep` and delete the unlinked ones no other
+/// card uses, without the grace period: used when a card becomes encrypted so its
+/// plaintext images go (its sealed ones are in `keep`).
+pub(crate) fn unlink_card_blobs(
+    conn: &mut SqliteConnection,
+    card_id: &str,
+    keep: &[&str],
+) -> DbResult<()> {
+    let linked: Vec<String> = card_blobs::table
+        .filter(card_blobs::card_id.eq(card_id))
+        .filter(card_blobs::blob_id.ne_all(keep))
+        .select(card_blobs::blob_id)
+        .load(conn)?;
+    diesel::delete(
+        card_blobs::table
+            .filter(card_blobs::card_id.eq(card_id))
+            .filter(card_blobs::blob_id.eq_any(&linked)),
+    )
+    .execute(conn)?;
+    let still_used = card_blobs::table.select(card_blobs::blob_id);
+    diesel::delete(
+        blobs::table
+            .filter(blobs::id.eq_any(&linked))
+            .filter(blobs::id.ne_all(still_used)),
+    )
+    .execute(conn)?;
+    Ok(())
 }
 
 /// Delete blobs unreferenced by any card, keeping ones added in the last hour (an

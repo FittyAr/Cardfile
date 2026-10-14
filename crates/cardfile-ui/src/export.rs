@@ -112,7 +112,7 @@ pub fn export_card(
         .unwrap_or_else(|| PathBuf::from("."));
     let suggested = format!("{}.{}", file_name(&title), format.extension());
     let rx = cx.prompt_for_new_path(&dir, Some(&suggested));
-    let blobs = DbBlobs(AppState::db(cx));
+    let blobs = DbBlobs::new(AppState::db(cx));
     window
         .spawn(cx, async move |cx| {
             let Ok(Ok(Some(path))) = rx.await else { return };
@@ -148,7 +148,7 @@ pub fn export_all(owner: UserId, format: Format, window: &mut Window, cx: &mut A
                 let stamp = jiff::Zoned::now().strftime("%Y-%m-%d").to_string();
                 let dir = base.join(format!("Cardfile export {stamp}"));
                 std::fs::create_dir_all(&dir)?;
-                let blobs = DbBlobs(db.clone());
+                let blobs = DbBlobs::new(db.clone());
                 let tags = db.list_tags(owner)?;
                 let summaries = db.list_cards(owner, &CardFilter::default())?;
                 let mut skipped = 0;
@@ -182,7 +182,8 @@ pub fn export_all(owner: UserId, format: Format, window: &mut Window, cx: &mut A
                     }
                     let mut name = file_name(&card.title);
                     let mut n = 2;
-                    while !used.insert(name.clone()) {
+                    // Windows and macOS file names are case-insensitive.
+                    while !used.insert(name.to_lowercase()) {
                         name = format!("{} ({n})", file_name(&card.title));
                         n += 1;
                     }
@@ -191,10 +192,10 @@ pub fn export_all(owner: UserId, format: Format, window: &mut Window, cx: &mut A
                     std::fs::write(dir.join(format!("{name}.{}", format.extension())), bytes)?;
                     if format == Format::Markdown {
                         for id in doc.blob_ids() {
-                            if let Some(blob) = db.blob(&id)? {
+                            if let Some((_, data)) = blobs.read(&id)? {
                                 let bdir = dir.join("blobs");
                                 std::fs::create_dir_all(&bdir)?;
-                                std::fs::write(bdir.join(&id), blob.data)?;
+                                std::fs::write(bdir.join(cardfile_doc::blob_file_name(&id)), data)?;
                             }
                         }
                     }
@@ -231,15 +232,15 @@ pub fn export_all(owner: UserId, format: Format, window: &mut Window, cx: &mut A
 
 /// Save an attachment to a temporary folder and open it with the system handler.
 pub fn open_attachment(blob: String, file_name: String, window: &mut Window, cx: &mut App) {
-    let db = AppState::db(cx);
+    let blobs = DbBlobs::new(AppState::db(cx));
     let task = cx.background_spawn(async move {
-        let blob = db
-            .blob(&blob)?
+        let (_, data) = blobs
+            .read(&blob)?
             .ok_or_else(|| anyhow::anyhow!("attachment not found"))?;
         let dir = std::env::temp_dir().join("cardfile-attachments");
         std::fs::create_dir_all(&dir)?;
         let path = dir.join(self::file_name(&file_name));
-        std::fs::write(&path, blob.data)?;
+        std::fs::write(&path, data)?;
         open::that_detached(&path)?;
         anyhow::Ok(())
     });

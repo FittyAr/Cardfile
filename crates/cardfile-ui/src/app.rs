@@ -17,6 +17,8 @@ use crate::wizard::{Wizard, WizardEvent};
 use crate::workspace::{Workspace, WorkspaceEvent};
 
 enum Screen {
+    /// Before the first screen is known (e.g. while the account loads).
+    Loading,
     Wizard(Entity<Wizard>),
     Login(Entity<LoginView>),
     Workspace(Entity<Workspace>),
@@ -34,9 +36,8 @@ impl CardfileApp {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         // Any keystroke counts as activity for the auto-lock timer.
         let subs = vec![cx.observe_keystrokes(|this, _, _, _| this.last_activity = Instant::now())];
-        let placeholder = Screen::Wizard(cx.new(|cx| Wizard::new(false, window, cx)));
         let mut app = Self {
-            screen: placeholder,
+            screen: Screen::Loading,
             last_activity: Instant::now(),
             _idle_task: None,
             _subs: subs,
@@ -66,18 +67,23 @@ impl CardfileApp {
         match state.app.auth_mode {
             AuthMode::NoPassword => {
                 let db = AppState::db(cx);
-                let user = db.list_users().ok().and_then(|u| u.into_iter().next());
-                match user {
-                    Some(user) => {
-                        let settings = db.user_settings(user.id).unwrap_or_default();
-                        self.sign_in(Session { user, settings }, window, cx);
-                    }
-                    None => {
-                        // Database without users: run the wizard again.
-                        AppState::get_mut(cx).app.initialized = false;
-                        self.route(window, cx);
-                    }
-                }
+                let task = cx.background_spawn(async move {
+                    let user = db.list_users().ok().and_then(|u| u.into_iter().next())?;
+                    let settings = db.user_settings(user.id).unwrap_or_default();
+                    Some(Session { user, settings })
+                });
+                cx.spawn_in(window, async move |this, cx| {
+                    let session = task.await;
+                    let _ = this.update_in(cx, |this, window, cx| match session {
+                        Some(session) => this.sign_in(session, window, cx),
+                        None => {
+                            // Database without users: run the wizard again.
+                            AppState::get_mut(cx).app.initialized = false;
+                            this.route(window, cx);
+                        }
+                    });
+                })
+                .detach();
             }
             _ => self.show_login(None, window, cx),
         }
@@ -122,7 +128,12 @@ impl CardfileApp {
         focus.focus(window, cx);
         self.screen = Screen::Workspace(ws);
         self.last_activity = Instant::now();
-        crate::updater::check_on_startup(window, cx);
+        // `sign_in` also runs after every auto-lock unlock; check once per process.
+        static UPDATE_CHECKED: std::sync::atomic::AtomicBool =
+            std::sync::atomic::AtomicBool::new(false);
+        if !UPDATE_CHECKED.swap(true, std::sync::atomic::Ordering::Relaxed) {
+            crate::updater::check_on_startup(window, cx);
+        }
         cx.notify();
     }
 
@@ -250,6 +261,7 @@ impl SpawnExt for Context<'_, CardfileApp> {
 impl Render for CardfileApp {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let content = match &self.screen {
+            Screen::Loading => div().into_any_element(),
             Screen::Wizard(v) => v.clone().into_any_element(),
             Screen::Login(v) => v.clone().into_any_element(),
             Screen::Workspace(v) => v.clone().into_any_element(),
