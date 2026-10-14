@@ -96,6 +96,9 @@ pub struct Block {
     pub align: Align,
     #[serde(default, skip_serializing_if = "is_default")]
     pub indent: u8,
+    /// Text size of the whole block (paragraphs, lists, quotes).
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub size: TextSize,
     /// Text of textual blocks; empty for dividers, images, attachments and tables.
     #[serde(default, skip_serializing_if = "RichText::is_empty")]
     pub text: RichText,
@@ -107,6 +110,7 @@ impl Block {
             kind,
             align: Align::Left,
             indent: 0,
+            size: TextSize::Normal,
             text: text.into(),
         }
     }
@@ -274,16 +278,10 @@ pub struct Style {
     pub strike: bool,
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub code: bool,
-    #[serde(skip_serializing_if = "std::ops::Not::not")]
-    pub superscript: bool,
-    #[serde(skip_serializing_if = "std::ops::Not::not")]
-    pub subscript: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub color: Option<Color>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub highlight: Option<Color>,
-    #[serde(skip_serializing_if = "is_default")]
-    pub size: TextSize,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub link: Option<String>,
 }
@@ -302,8 +300,6 @@ pub enum Mark {
     Underline,
     Strike,
     Code,
-    Superscript,
-    Subscript,
 }
 
 impl Mark {
@@ -314,8 +310,6 @@ impl Mark {
             Self::Underline => s.underline,
             Self::Strike => s.strike,
             Self::Code => s.code,
-            Self::Superscript => s.superscript,
-            Self::Subscript => s.subscript,
         }
     }
 
@@ -326,18 +320,6 @@ impl Mark {
             Self::Underline => s.underline = on,
             Self::Strike => s.strike = on,
             Self::Code => s.code = on,
-            Self::Superscript => {
-                s.superscript = on;
-                if on {
-                    s.subscript = false;
-                }
-            }
-            Self::Subscript => {
-                s.subscript = on;
-                if on {
-                    s.superscript = false;
-                }
-            }
         }
     }
 }

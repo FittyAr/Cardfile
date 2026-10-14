@@ -4,6 +4,7 @@
 //! JSON are export formats only; users never edit Markdown directly.
 
 mod export;
+mod markdown_in;
 mod model;
 
 pub mod rules;
@@ -11,6 +12,7 @@ pub mod rules;
 pub use export::{
     BlobResolver, MarkdownOptions, NoBlobs, escape_html, to_html, to_markdown, to_plain_text,
 };
+pub use markdown_in::{from_markdown, looks_like_markdown};
 pub use model::{
     Align, Attachment, Block, BlockKind, Color, DOC_VERSION, Document, Image, MAX_INDENT, Mark,
     RichText, Run, Style, Table, TextSize,

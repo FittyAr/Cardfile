@@ -224,12 +224,6 @@ fn md_inline(rt: &RichText, opts: &MarkdownOptions) -> String {
             if style.underline {
                 s = format!("<u>{s}</u>");
             }
-            if style.superscript {
-                s = format!("<sup>{s}</sup>");
-            }
-            if style.subscript {
-                s = format!("<sub>{s}</sub>");
-            }
             let css = extra_css(style);
             if !css.is_empty() {
                 s = format!("<span style=\"{css}\">{s}</span>");
@@ -252,9 +246,6 @@ fn extra_css(style: &Style) -> String {
     }
     if let Some(c) = &style.highlight {
         let _ = write!(css, "background-color:{};", sanitize_color(c));
-    }
-    if style.size != TextSize::Normal {
-        let _ = write!(css, "font-size:{}em;", style.size.scale());
     }
     css
 }
@@ -339,12 +330,6 @@ fn html_inline(rt: &RichText) -> String {
         if style.strike {
             s = format!("<s>{s}</s>");
         }
-        if style.superscript {
-            s = format!("<sup>{s}</sup>");
-        }
-        if style.subscript {
-            s = format!("<sub>{s}</sub>");
-        }
         let css = extra_css(style);
         if !css.is_empty() {
             s = format!("<span style=\"{css}\">{s}</span>");
@@ -361,6 +346,9 @@ fn block_attrs(block: &Block) -> String {
     let mut css = String::new();
     if block.align != Align::Left {
         let _ = write!(css, "text-align:{};", align_name(block.align));
+    }
+    if block.size != TextSize::Normal {
+        let _ = write!(css, "font-size:{}em;", block.size.scale());
     }
     if block.indent > 0 && !block.kind.is_list() {
         let _ = write!(css, "margin-left:{}em;", block.indent as f32 * 1.5);
