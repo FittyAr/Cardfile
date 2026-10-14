@@ -1,0 +1,389 @@
+_version: 1
+
+app:
+  name: Cardfile
+test:
+  greeting: "Hallo, %{name}!"
+
+editor:
+  placeholder: "Los geht's mit Schreiben…"
+  link:
+    title: Link einfügen
+    text_placeholder: Anzuzeigender Text
+  toolbar:
+    undo: Rückgängig
+    redo: Wiederholen
+    bold: Fett
+    italic: Kursiv
+    underline: Unterstrichen
+    strikethrough: Durchgestrichen
+    code: Inline-Code
+    clear_formatting: Formatierung entfernen
+    text_color: Textfarbe
+    highlight: Hervorhebung
+    default_color: Standard
+    no_highlight: Keine
+    block_type: Absatzformat
+    paragraph: Normaler Text
+    heading1: Überschrift 1
+    heading2: Überschrift 2
+    heading3: Überschrift 3
+    quote: Zitat
+    code_block: Codeblock
+    bullet_list: Aufzählung
+    numbered_list: Nummerierte Liste
+    check_list: Checkliste
+    align: Ausrichtung
+    align_left: Linksbündig
+    align_center: Zentriert
+    align_right: Rechtsbündig
+    align_justify: Blocksatz
+    size: Textgröße
+    size_small: Klein
+    size_normal: Normal
+    size_large: Groß
+    size_huge: Sehr groß
+    indent: Einzug vergrößern
+    outdent: Einzug verkleinern
+    link: Link
+    remove_link: Link entfernen
+    insert: Einfügen
+    image: Bild…
+    attachment: Anhang…
+    table: Tabelle
+    divider: Trennlinie
+  table:
+    row_above: Zeile oberhalb einfügen
+    row_below: Zeile unterhalb einfügen
+    col_left: Spalte links einfügen
+    col_right: Spalte rechts einfügen
+    delete_row: Zeile löschen
+    delete_col: Spalte löschen
+    toggle_header: Kopfzeile
+    delete: Tabelle löschen
+  image:
+    smaller: Kleiner
+    larger: Größer
+    fit: An Breite anpassen
+  menu:
+    cut: Ausschneiden
+    copy: Kopieren
+    paste: Einfügen
+    paste_plain: Als unformatierten Text einfügen
+    select_all: Alles auswählen
+    open_link: Link öffnen
+    add_to_dictionary: Zum Wörterbuch hinzufügen
+    no_suggestions: Keine Vorschläge
+  attachment:
+    open_hint: Zum Öffnen doppelklicken
+  read_only: Diese Karte ist schreibgeschützt. Entsperren Sie sie zum Bearbeiten.
+  find:
+    placeholder: In Karte suchen
+    replace_placeholder: Ersetzen durch
+    no_results: Keine Ergebnisse
+    count: "%{i} von %{n}"
+    case: Groß-/Kleinschreibung beachten
+    previous: Vorheriger Treffer (Umschalt+F3)
+    next: Nächster Treffer (F3)
+    replace: Ersetzen
+    replace_one: Ersetzen
+    replace_all: Alle ersetzen
+
+common:
+  back: Zurück
+  next: Weiter
+  ok: OK
+  cancel: Abbrechen
+
+time:
+  just_now: gerade eben
+  minutes_ago: "vor %{n} Min."
+  hours_ago: "vor %{n} Std."
+  days_ago: "vor %{n} T."
+
+lock:
+  none: Ungeschützt
+  read_only: Schreibgeschützt
+  read_only_desc: Sichtbar, aber zum Bearbeiten ist ein Klick zum Entsperren nötig. Verhindert versehentliche Änderungen.
+  private: Privat
+  private_desc: Titel maskiert und Inhalt verborgen, bis Sie Ihr Passwort eingeben.
+  encrypted: Verschlüsselt
+  encrypted_desc: Inhalt wird mit Ihrem Passwort auf dem Datenträger verschlüsselt. Ein vergessenes Passwort kann nicht wiederhergestellt werden.
+
+wizard:
+  step:
+    welcome: Willkommen
+    storage: Speicher
+    security: Anmeldung
+    protection: Kartenschutz
+    appearance: Darstellung
+    finish: Fertig
+  welcome:
+    title: Willkommen bei Cardfile
+    body: "Ihre digitale Kartei für Notizen, Ideen und alles, was Sie aufbewahren möchten. Richten wir sie in wenigen Schritten ein."
+  storage:
+    standard: Standard
+    standard_desc: "Die Daten werden in Ihrem Benutzerprofil gespeichert:"
+    portable: Portabel
+    portable_desc: Die Daten werden in einem Ordner „data“ neben Cardfile gespeichert, sodass Sie sie auf einem USB-Stick mitnehmen können.
+    portable_unavailable: Der portable Modus ist nicht verfügbar, da der Programmordner nicht beschreibbar ist.
+  security:
+    none: Kein Passwort
+    none_desc: Cardfile öffnet sich direkt. Am besten für einen persönlichen Computer.
+    single: Passwort
+    single_desc: Ein durch ein Passwort geschütztes Konto.
+    multi: Mehrere Benutzer
+    multi_desc: Jede Person meldet sich mit Benutzername und Passwort an und hat eigene Karten.
+    username: Benutzername
+    display_name: Anzeigename
+    password: Passwort
+    confirm: Passwort bestätigen
+    lock_password: Sperrpasswort (optional)
+    lock_password_hint: Wird zum Entsperren privater und verschlüsselter Karten verwendet. Sie können es später in den Einstellungen festlegen.
+    allow_registration: Neuen Benutzern erlauben, auf dem Anmeldebildschirm ein Konto zu erstellen
+  protection:
+    intro: Wählen Sie, welche Schutzstufen für Karten verwendet werden können.
+    default: Schutz für neue Karten
+    needs_password: Private und verschlüsselte Karten benötigen ein Sperrpasswort. Gehen Sie zurück, um eines festzulegen, oder tun Sie es später in den Einstellungen.
+  appearance:
+    intro: Wählen Sie ein Design. Sie können es jederzeit in den Einstellungen ändern.
+  finish:
+    intro: "Alles ist bereit:"
+    later: All das lässt sich später in den Einstellungen ändern.
+    start: Cardfile verwenden
+  error:
+    username: Geben Sie einen Benutzernamen ein.
+    password_short: Das Passwort muss mindestens 4 Zeichen lang sein.
+    password_mismatch: Die Passwörter stimmen nicht überein.
+    portable: Der portable Modus konnte nicht aktiviert werden
+
+login:
+  title: Anmelden
+  register_title: Konto erstellen
+  locked_title: "Cardfile ist gesperrt, %{name}"
+  username: Benutzername
+  display_name: Anzeigename
+  password: Passwort
+  confirm: Passwort bestätigen
+  sign_in: Anmelden
+  unlock: Entsperren
+  create: Konto erstellen
+  need_account: Konto erstellen
+  have_account: Ich habe bereits ein Konto
+  error:
+    invalid: Falscher Benutzername oder falsches Passwort.
+    taken: Dieser Benutzername ist bereits vergeben.
+
+welcome:
+  title: Willkommen bei Cardfile
+  body: |
+    ## Erste Schritte
+
+    Cardfile speichert Ihre Notizen als **Karten**. Erstellen Sie eine mit der Schaltfläche **+** oder mit **Strg+N**.
+
+    - Formatieren Sie Text mit der Symbolleiste oder Tastenkürzeln: **Strg+B** fett, *Strg+I* kursiv, Strg+U unterstrichen.
+    - Tippen Sie `# ` für eine Überschrift, `- ` für eine Liste oder `[] ` für eine Checkliste.
+    - Fügen Sie Bilder und Dateien per Einfügen oder Ziehen in eine Karte ein.
+    - Mit **Strg+F** durchsuchen Sie alle Karten, mit **Strg+Umschalt+P** sehen Sie alle Befehle.
+
+    ## Schützen Sie Ihre Karten
+
+    Mit der Schloss-Schaltfläche oben auf einer Karte machen Sie sie *schreibgeschützt*, *privat* oder *verschlüsselt*.
+
+    - [ ] Erstellen Sie Ihre erste Karte
+    - [ ] Probieren Sie ein Schlagwort aus, um Karten zu ordnen
+
+search:
+  placeholder: Karten durchsuchen
+  focus: Karten durchsuchen
+
+nav:
+  all: Alle Karten
+  favorites: Favoriten
+  recycle_bin: Papierkorb
+  tags: SCHLAGWÖRTER
+
+list:
+  count: "%{n} Karten"
+  empty: Noch keine Karten vorhanden.
+  no_results: Keine Karte entspricht Ihrer Suche.
+
+sort:
+  title: Sortieren
+  manual: Manuell (zum Umordnen ziehen)
+  updated: Zuletzt geändert
+  created: Erstellungsdatum
+  title_asc: Titel
+
+card:
+  new: Neue Karte
+  untitled: Ohne Titel
+  delete: In den Papierkorb verschieben
+  delete_body: "„%{title}“ in den Papierkorb verschieben? Sie können sie später wiederherstellen."
+  restore: Wiederherstellen
+  pin: Oben anheften
+  unpin: Lösen
+  favorite: Zu Favoriten hinzufügen
+  unfavorite: Aus Favoriten entfernen
+  tags: Schlagwörter
+  history: Versionsverlauf
+  none_selected: Keine Karte ausgewählt
+  none_hint: Wählen Sie eine Karte aus oder drücken Sie Strg+N, um eine zu erstellen.
+  read_only_banner: Diese Karte ist schreibgeschützt.
+  unlock_edit: Bearbeiten
+  deleted_banner: Diese Karte befindet sich im Papierkorb.
+  saving: Wird gespeichert…
+  updated: "Gespeichert %{date}"
+  words: "%{n} Wörter"
+  unlock:
+    private: Diese Karte ist privat
+    encrypted: Diese Karte ist verschlüsselt
+    placeholder: Passwort
+    button: Entsperren
+    hint: Die Karte wird nach einer Zeit der Inaktivität wieder gesperrt.
+    wrong: Falsches Passwort.
+    no_password: Es ist kein Sperrpasswort festgelegt. Legen Sie eines unter Einstellungen → Sicherheit fest.
+  protect:
+    tooltip: Kartenschutz
+    unlock_first: Entsperren Sie zuerst die Karte.
+    needs_password: Legen Sie zuerst unter Einstellungen → Sicherheit ein Sperrpasswort fest.
+    encrypt_title: Karte verschlüsseln
+    encrypt_body: Geben Sie Ihr Passwort ein, um diese Karte zu verschlüsseln. Ohne dieses lässt sich die Karte nicht öffnen.
+    failed: "Der Schutz konnte nicht geändert werden: %{error}"
+  purge:
+    title: Endgültig löschen
+    body: Diese Karte wird für immer gelöscht. Dies kann nicht rückgängig gemacht werden.
+    confirm: Endgültig löschen
+
+tags:
+  new: Neues Schlagwort…
+  edit: Schlagwort bearbeiten
+  delete: Schlagwort löschen
+  delete_body: "Das Schlagwort „%{name}“ löschen? Die Karten behalten ihren Inhalt."
+  name: Name des Schlagworts
+  exists: Ein Schlagwort mit diesem Namen existiert bereits.
+
+history:
+  title: Versionsverlauf
+  restore: Diese Version wiederherstellen
+  empty: Noch keine früheren Versionen.
+
+recycle:
+  empty: Papierkorb leeren
+  empty_title: Papierkorb leeren
+  empty_body: Alle Karten im Papierkorb werden für immer gelöscht.
+
+export:
+  markdown: Als Markdown exportieren
+  html: Als HTML exportieren
+  pdf: Als PDF exportieren
+  json: Als JSON exportieren
+  choose_folder: Ordner für den Export auswählen
+  done: "Exportiert nach %{path}"
+  failed: "Export fehlgeschlagen: %{error}"
+  skipped: "%{n} private oder verschlüsselte Karten wurden nicht exportiert."
+
+backup:
+  done: "Sicherung gespeichert unter %{path}"
+
+menu:
+  settings: Einstellungen
+  command_palette: Befehlspalette
+  keymap: Tastenkürzel bearbeiten
+  export_all: Alle Karten exportieren
+  backup: Jetzt sichern
+  open_data_folder: Datenordner öffnen
+  check_updates: Nach Updates suchen
+  about: Über Cardfile
+  lock: Sperren
+  sign_out: Abmelden
+  quit: Beenden
+
+palette:
+  placeholder: Befehl eingeben…
+
+updates:
+  title: Update verfügbar
+  available: "Cardfile %{version} ist verfügbar. Zum Herunterladen klicken."
+  latest: Sie haben die neueste Version.
+  failed: "Die Suche nach Updates ist fehlgeschlagen: %{error}"
+  managed: Updates für diese Installation werden von Ihrem App-Store oder Paketmanager verwaltet.
+
+about:
+  version: "Version %{version}"
+  description: Eine moderne digitale Kartei für Ihre Notizen.
+  license: Freie Software unter der MIT- oder Apache-2.0-Lizenz.
+  website: Webseite
+  third_party: Lizenzen von Drittanbietern
+
+settings:
+  title: Einstellungen
+  open: Öffnen
+  never: Nie
+  "off": "Aus"
+  seconds: "%{n} Sekunden"
+  minutes: "%{n} Minuten"
+  tab:
+    general: Allgemein
+    editor: Editor
+    security: Sicherheit
+    users: Benutzer
+    data: Daten
+  general:
+    theme: Design
+    language: Sprache
+    language_hint: Weitere Sprachen folgen.
+    font_size: Textgröße im Editor
+    confirm_delete: Vor dem Löschen von Karten nachfragen
+    check_updates: Beim Start nach Updates suchen
+    check_updates_hint: Prüft nur bei GitHub, ob es eine neuere Version gibt. Es werden keine Daten gesendet.
+    keymap: Tastenkürzel
+    keymap_hint: Bearbeiten Sie keymap.json, um ein Kürzel zu ändern. Zum Anwenden neu starten.
+  editor:
+    markdown_shortcuts: Markdown-Kürzel
+    markdown_shortcuts_hint: "Eingaben wie # , - , [] , **fett** und Ähnliches formatieren den Text automatisch."
+    spellcheck: Rechtschreibung prüfen
+    spellcheck_hint: Falsch geschriebene Wörter werden unterstrichen. Rechtsklick für Vorschläge.
+    no_dictionaries: Keine Wörterbücher installiert.
+    spell_language: Wörterbuch
+    search_scope: Suchen in
+    scope_title: Nur Titel
+    scope_content: Titel und Inhalt
+    scope_all: Titel, Inhalt und Schlagwörter
+    default_lock: Schutz für neue Karten
+    default_lock_hint: Wird beim Erstellen einer Karte angewendet.
+    history: Aufbewahrte Versionen pro Karte
+    history_hint: Beim Bearbeiten wird höchstens alle 5 Minuten eine Version gespeichert.
+  security:
+    auto_lock: Nach Inaktivität sperren
+    auto_lock_hint: Fragt nach dieser Zeit ohne Aktivität erneut nach Ihrem Passwort.
+    relock: Entsperrte private Karten ausblenden nach
+    relock_hint: Private und verschlüsselte Karten werden nach dieser Zeit ohne Bearbeitung wieder gesperrt.
+    mask: Sichtbare Zeichen privater Titel
+    mask_hint: Der Rest des Titels wird in der Liste maskiert.
+    lock_modes: Verfügbare Schutzstufen
+    auth_mode: Anmeldemodus
+    auth_mode_hint: Wie Personen Cardfile auf diesem Computer öffnen.
+    auth_one_user: Entfernen Sie die anderen Benutzerkonten, bevor Sie zu einem Einzelkonto-Modus wechseln.
+    auth_needs_password: Legen Sie zuerst unten ein Passwort fest.
+    auth_changed: Anmeldemodus geändert. Er gilt ab dem nächsten Start von Cardfile.
+    change_password: Passwort ändern
+    lock_password: Sperrpasswort
+    password_hint: Dieses Passwort entsperrt private und verschlüsselte Karten. Verschlüsselte Karten werden bei einer Änderung neu verschlüsselt.
+    current_password: Aktuelles Passwort
+    new_password: Neues Passwort
+    save_password: Passwort speichern
+    password_saved: Passwort geändert.
+  users:
+    admin: Administrator
+    add: Benutzer hinzufügen
+    create: Erstellen
+    delete: Benutzer löschen
+    delete_body: Das Konto wird entfernt. Seine Karten bleiben in der Datenbank.
+    invalid: Geben Sie einen Benutzernamen und ein Passwort mit mindestens 4 Zeichen ein.
+  data:
+    location: Datenordner
+    portable: Der portable Modus ist aktiv.
+    standard: Standardmodus.
+    export: Exportieren
+    export_hint: Exportiert alle Karten, die weder privat noch verschlüsselt sind.

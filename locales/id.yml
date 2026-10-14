@@ -1,0 +1,389 @@
+_version: 1
+
+app:
+  name: Cardfile
+test:
+  greeting: "Halo, %{name}!"
+
+editor:
+  placeholder: "Mulai menulis…"
+  link:
+    title: Sisipkan tautan
+    text_placeholder: Teks yang ditampilkan
+  toolbar:
+    undo: Urungkan
+    redo: Ulangi
+    bold: Tebal
+    italic: Miring
+    underline: Garis bawah
+    strikethrough: Coret
+    code: Kode sebaris
+    clear_formatting: Hapus pemformatan
+    text_color: Warna teks
+    highlight: Sorot
+    default_color: Bawaan
+    no_highlight: Tidak ada
+    block_type: Gaya paragraf
+    paragraph: Teks biasa
+    heading1: Judul 1
+    heading2: Judul 2
+    heading3: Judul 3
+    quote: Kutipan
+    code_block: Blok kode
+    bullet_list: Daftar berpoin
+    numbered_list: Daftar bernomor
+    check_list: Daftar periksa
+    align: Perataan
+    align_left: Rata kiri
+    align_center: Rata tengah
+    align_right: Rata kanan
+    align_justify: Rata kiri-kanan
+    size: Ukuran teks
+    size_small: Kecil
+    size_normal: Normal
+    size_large: Besar
+    size_huge: Sangat besar
+    indent: Tambah indentasi
+    outdent: Kurangi indentasi
+    link: Tautan
+    remove_link: Hapus tautan
+    insert: Sisipkan
+    image: Gambar…
+    attachment: Lampiran…
+    table: Tabel
+    divider: Pembatas
+  table:
+    row_above: Sisipkan baris di atas
+    row_below: Sisipkan baris di bawah
+    col_left: Sisipkan kolom di kiri
+    col_right: Sisipkan kolom di kanan
+    delete_row: Hapus baris
+    delete_col: Hapus kolom
+    toggle_header: Baris header
+    delete: Hapus tabel
+  image:
+    smaller: Lebih kecil
+    larger: Lebih besar
+    fit: Sesuaikan lebar
+  menu:
+    cut: Potong
+    copy: Salin
+    paste: Tempel
+    paste_plain: Tempel sebagai teks biasa
+    select_all: Pilih semua
+    open_link: Buka tautan
+    add_to_dictionary: Tambahkan ke kamus
+    no_suggestions: Tidak ada saran
+  attachment:
+    open_hint: Klik dua kali untuk membuka
+  read_only: Kartu ini hanya-baca. Buka kuncinya untuk mengedit.
+  find:
+    placeholder: Cari di kartu
+    replace_placeholder: Ganti dengan
+    no_results: Tidak ada hasil
+    count: "%{i} dari %{n}"
+    case: Cocokkan huruf besar/kecil
+    previous: Kecocokan sebelumnya (Shift+F3)
+    next: Kecocokan berikutnya (F3)
+    replace: Ganti
+    replace_one: Ganti
+    replace_all: Ganti semua
+
+common:
+  back: Kembali
+  next: Berikutnya
+  ok: OK
+  cancel: Batal
+
+time:
+  just_now: baru saja
+  minutes_ago: "%{n} mnt lalu"
+  hours_ago: "%{n} jam lalu"
+  days_ago: "%{n} hari lalu"
+
+lock:
+  none: Tanpa perlindungan
+  read_only: Hanya-baca
+  read_only_desc: Terlihat, tetapi untuk mengedit perlu satu klik untuk membuka kunci. Mencegah perubahan tidak disengaja.
+  private: Pribadi
+  private_desc: Judul disamarkan dan isi disembunyikan sampai Anda memasukkan kata sandi.
+  encrypted: Terenkripsi
+  encrypted_desc: Isi dienkripsi di disk dengan kata sandi Anda. Kata sandi yang terlupa tidak dapat dipulihkan.
+
+wizard:
+  step:
+    welcome: Selamat datang
+    storage: Penyimpanan
+    security: Masuk
+    protection: Perlindungan kartu
+    appearance: Tampilan
+    finish: Siap
+  welcome:
+    title: Selamat datang di Cardfile
+    body: "Kotak kartu digital Anda untuk catatan, ide, dan apa pun yang ingin Anda simpan. Mari atur dalam beberapa langkah."
+  storage:
+    standard: Standar
+    standard_desc: "Data disimpan di profil pengguna Anda:"
+    portable: Portabel
+    portable_desc: Data disimpan di folder “data” di samping Cardfile, sehingga bisa dibawa dengan flash drive USB.
+    portable_unavailable: Mode portabel tidak tersedia karena folder program tidak dapat ditulisi.
+  security:
+    none: Tanpa kata sandi
+    none_desc: Cardfile langsung terbuka. Paling cocok untuk komputer pribadi.
+    single: Kata sandi
+    single_desc: Satu akun yang dilindungi kata sandi.
+    multi: Banyak pengguna
+    multi_desc: Setiap orang masuk dengan nama pengguna dan kata sandi serta memiliki kartu sendiri.
+    username: Nama pengguna
+    display_name: Nama tampilan
+    password: Kata sandi
+    confirm: Konfirmasi kata sandi
+    lock_password: Kata sandi kunci (opsional)
+    lock_password_hint: Dipakai untuk membuka kunci kartu pribadi dan terenkripsi. Anda dapat mengaturnya nanti di Pengaturan.
+    allow_registration: Izinkan pengguna baru membuat akun dari layar masuk
+  protection:
+    intro: Pilih tingkat perlindungan yang dapat digunakan untuk kartu.
+    default: Perlindungan untuk kartu baru
+    needs_password: Kartu pribadi dan terenkripsi memerlukan kata sandi kunci. Kembali untuk mengaturnya, atau atur nanti di Pengaturan.
+  appearance:
+    intro: Pilih tema. Anda dapat mengubahnya kapan saja di Pengaturan.
+  finish:
+    intro: "Semuanya siap:"
+    later: Semua ini dapat diubah nanti di Pengaturan.
+    start: Mulai menggunakan Cardfile
+  error:
+    username: Masukkan nama pengguna.
+    password_short: Kata sandi harus memiliki setidaknya 4 karakter.
+    password_mismatch: Kata sandi tidak cocok.
+    portable: Tidak dapat mengaktifkan mode portabel
+
+login:
+  title: Masuk
+  register_title: Buat akun
+  locked_title: "Cardfile terkunci, %{name}"
+  username: Nama pengguna
+  display_name: Nama tampilan
+  password: Kata sandi
+  confirm: Konfirmasi kata sandi
+  sign_in: Masuk
+  unlock: Buka kunci
+  create: Buat akun
+  need_account: Buat akun
+  have_account: Saya sudah punya akun
+  error:
+    invalid: Nama pengguna atau kata sandi salah.
+    taken: Nama pengguna itu sudah dipakai.
+
+welcome:
+  title: Selamat datang di Cardfile
+  body: |
+    ## Memulai
+
+    Cardfile menyimpan catatan Anda sebagai **kartu**. Buat kartu dengan tombol **+** atau **Ctrl+N**.
+
+    - Format teks dengan bilah alat atau pintasan: **Ctrl+B** tebal, *Ctrl+I* miring, Ctrl+U garis bawah.
+    - Ketik `# ` untuk judul, `- ` untuk daftar, atau `[] ` untuk daftar periksa.
+    - Tempel atau seret gambar dan berkas ke dalam kartu.
+    - Gunakan **Ctrl+F** untuk mencari di semua kartu dan **Ctrl+Shift+P** untuk melihat semua perintah.
+
+    ## Lindungi kartu Anda
+
+    Gunakan tombol gembok di bagian atas kartu untuk menjadikannya *hanya-baca*, *pribadi*, atau *terenkripsi*.
+
+    - [ ] Buat kartu pertama Anda
+    - [ ] Coba label untuk mengatur kartu
+
+search:
+  placeholder: Cari kartu
+  focus: Cari kartu
+
+nav:
+  all: Semua kartu
+  favorites: Favorit
+  recycle_bin: Tempat sampah
+  tags: LABEL
+
+list:
+  count: "%{n} kartu"
+  empty: Belum ada kartu di sini.
+  no_results: Tidak ada kartu yang cocok dengan pencarian Anda.
+
+sort:
+  title: Urutkan
+  manual: Manual (seret untuk mengurutkan ulang)
+  updated: Terakhir diubah
+  created: Tanggal dibuat
+  title_asc: Judul
+
+card:
+  new: Kartu baru
+  untitled: Tanpa judul
+  delete: Pindahkan ke tempat sampah
+  delete_body: "Pindahkan “%{title}” ke tempat sampah? Anda dapat memulihkannya nanti."
+  restore: Pulihkan
+  pin: Sematkan di atas
+  unpin: Lepas sematan
+  favorite: Tambahkan ke favorit
+  unfavorite: Hapus dari favorit
+  tags: Label
+  history: Riwayat versi
+  none_selected: Tidak ada kartu yang dipilih
+  none_hint: Pilih kartu atau tekan Ctrl+N untuk membuat kartu.
+  read_only_banner: Kartu ini hanya-baca.
+  unlock_edit: Edit
+  deleted_banner: Kartu ini ada di tempat sampah.
+  saving: Menyimpan…
+  updated: "Disimpan %{date}"
+  words: "%{n} kata"
+  unlock:
+    private: Kartu ini pribadi
+    encrypted: Kartu ini terenkripsi
+    placeholder: Kata sandi
+    button: Buka kunci
+    hint: Kartu terkunci kembali setelah beberapa waktu tidak aktif.
+    wrong: Kata sandi salah.
+    no_password: Kata sandi kunci belum diatur. Atur di Pengaturan → Keamanan.
+  protect:
+    tooltip: Perlindungan kartu
+    unlock_first: Buka kunci kartu terlebih dahulu.
+    needs_password: Atur kata sandi kunci di Pengaturan → Keamanan terlebih dahulu.
+    encrypt_title: Enkripsi kartu
+    encrypt_body: Masukkan kata sandi Anda untuk mengenkripsi kartu ini. Tanpanya, kartu tidak dapat dibuka.
+    failed: "Tidak dapat mengubah perlindungan: %{error}"
+  purge:
+    title: Hapus permanen
+    body: Kartu ini akan dihapus selamanya. Tindakan ini tidak dapat dibatalkan.
+    confirm: Hapus permanen
+
+tags:
+  new: Label baru…
+  edit: Edit label
+  delete: Hapus label
+  delete_body: "Hapus label “%{name}”? Kartu tetap mempertahankan isinya."
+  name: Nama label
+  exists: Label dengan nama itu sudah ada.
+
+history:
+  title: Riwayat versi
+  restore: Pulihkan versi ini
+  empty: Belum ada versi sebelumnya.
+
+recycle:
+  empty: Kosongkan tempat sampah
+  empty_title: Kosongkan tempat sampah
+  empty_body: Semua kartu di tempat sampah akan dihapus selamanya.
+
+export:
+  markdown: Ekspor sebagai Markdown
+  html: Ekspor sebagai HTML
+  pdf: Ekspor sebagai PDF
+  json: Ekspor sebagai JSON
+  choose_folder: Pilih folder untuk ekspor
+  done: "Diekspor ke %{path}"
+  failed: "Ekspor gagal: %{error}"
+  skipped: "%{n} kartu pribadi atau terenkripsi tidak diekspor."
+
+backup:
+  done: "Cadangan disimpan di %{path}"
+
+menu:
+  settings: Pengaturan
+  command_palette: Palet perintah
+  keymap: Edit pintasan keyboard
+  export_all: Ekspor semua kartu
+  backup: Cadangkan sekarang
+  open_data_folder: Buka folder data
+  check_updates: Periksa pembaruan
+  about: Tentang Cardfile
+  lock: Kunci
+  sign_out: Keluar
+  quit: Tutup
+
+palette:
+  placeholder: Ketik perintah…
+
+updates:
+  title: Pembaruan tersedia
+  available: "Cardfile %{version} tersedia. Klik untuk mengunduh."
+  latest: Anda menggunakan versi terbaru.
+  failed: "Tidak dapat memeriksa pembaruan: %{error}"
+  managed: Pembaruan untuk instalasi ini dikelola oleh toko aplikasi atau manajer paket Anda.
+
+about:
+  version: "Versi %{version}"
+  description: Kotak kartu digital modern untuk catatan Anda.
+  license: Perangkat lunak bebas berlisensi MIT atau Apache 2.0.
+  website: Situs web
+  third_party: Lisensi pihak ketiga
+
+settings:
+  title: Pengaturan
+  open: Buka
+  never: Tidak pernah
+  "off": "Mati"
+  seconds: "%{n} detik"
+  minutes: "%{n} menit"
+  tab:
+    general: Umum
+    editor: Editor
+    security: Keamanan
+    users: Pengguna
+    data: Data
+  general:
+    theme: Tema
+    language: Bahasa
+    language_hint: Bahasa lain segera hadir.
+    font_size: Ukuran teks editor
+    confirm_delete: Tanya sebelum menghapus kartu
+    check_updates: Periksa pembaruan saat memulai
+    check_updates_hint: Hanya memeriksa GitHub untuk versi yang lebih baru. Tidak ada data yang dikirim.
+    keymap: Pintasan keyboard
+    keymap_hint: Edit keymap.json untuk mengubah pintasan apa pun. Mulai ulang untuk menerapkan.
+  editor:
+    markdown_shortcuts: Pintasan Markdown
+    markdown_shortcuts_hint: "Mengetik # , - , [] , **tebal** dan sejenisnya akan memformat teks secara otomatis."
+    spellcheck: Periksa ejaan
+    spellcheck_hint: Kata yang salah eja diberi garis bawah. Klik kanan untuk saran.
+    no_dictionaries: Tidak ada kamus yang terpasang.
+    spell_language: Kamus
+    search_scope: Cari di
+    scope_title: Hanya judul
+    scope_content: Judul dan isi
+    scope_all: Judul, isi, dan label
+    default_lock: Perlindungan untuk kartu baru
+    default_lock_hint: Diterapkan saat kartu dibuat.
+    history: Versi yang disimpan per kartu
+    history_hint: Satu versi disimpan paling sering setiap 5 menit saat mengedit.
+  security:
+    auto_lock: Kunci setelah tidak aktif
+    auto_lock_hint: Meminta kata sandi lagi setelah selang waktu tanpa aktivitas ini.
+    relock: Sembunyikan kartu pribadi yang terbuka setelah
+    relock_hint: Kartu pribadi dan terenkripsi terkunci kembali setelah selang waktu tanpa pengeditan ini.
+    mask: Karakter judul pribadi yang terlihat
+    mask_hint: Sisa judul disamarkan dalam daftar.
+    lock_modes: Tingkat perlindungan yang tersedia
+    auth_mode: Mode masuk
+    auth_mode_hint: Cara orang membuka Cardfile di komputer ini.
+    auth_one_user: Hapus akun pengguna lain sebelum beralih ke mode satu akun.
+    auth_needs_password: Atur kata sandi di bawah terlebih dahulu.
+    auth_changed: Mode masuk diubah. Berlaku saat Cardfile dimulai berikutnya.
+    change_password: Ubah kata sandi
+    lock_password: Kata sandi kunci
+    password_hint: Kata sandi ini membuka kunci kartu pribadi dan terenkripsi. Kartu terenkripsi dienkripsi ulang saat Anda mengubahnya.
+    current_password: Kata sandi saat ini
+    new_password: Kata sandi baru
+    save_password: Simpan kata sandi
+    password_saved: Kata sandi diubah.
+  users:
+    admin: administrator
+    add: Tambah pengguna
+    create: Buat
+    delete: Hapus pengguna
+    delete_body: Akun dihapus. Kartunya tetap ada di basis data.
+    invalid: Masukkan nama pengguna dan kata sandi minimal 4 karakter.
+  data:
+    location: Folder data
+    portable: Mode portabel aktif.
+    standard: Mode standar.
+    export: Ekspor
+    export_hint: Mengekspor semua kartu yang tidak pribadi atau terenkripsi.

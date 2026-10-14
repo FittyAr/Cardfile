@@ -1,0 +1,389 @@
+_version: 1
+
+app:
+  name: Cardfile
+test:
+  greeting: "Ciao, %{name}!"
+
+editor:
+  placeholder: "Inizia a scrivere…"
+  link:
+    title: Inserisci collegamento
+    text_placeholder: Testo da visualizzare
+  toolbar:
+    undo: Annulla
+    redo: Ripeti
+    bold: Grassetto
+    italic: Corsivo
+    underline: Sottolineato
+    strikethrough: Barrato
+    code: Codice inline
+    clear_formatting: Cancella formattazione
+    text_color: Colore del testo
+    highlight: Evidenziazione
+    default_color: Predefinito
+    no_highlight: Nessuna
+    block_type: Stile del paragrafo
+    paragraph: Testo normale
+    heading1: Titolo 1
+    heading2: Titolo 2
+    heading3: Titolo 3
+    quote: Citazione
+    code_block: Blocco di codice
+    bullet_list: Elenco puntato
+    numbered_list: Elenco numerato
+    check_list: Lista di controllo
+    align: Allineamento
+    align_left: Allinea a sinistra
+    align_center: Centra
+    align_right: Allinea a destra
+    align_justify: Giustifica
+    size: Dimensione del testo
+    size_small: Piccolo
+    size_normal: Normale
+    size_large: Grande
+    size_huge: Enorme
+    indent: Aumenta rientro
+    outdent: Riduci rientro
+    link: Collegamento
+    remove_link: Rimuovi collegamento
+    insert: Inserisci
+    image: Immagine…
+    attachment: Allegato…
+    table: Tabella
+    divider: Divisore
+  table:
+    row_above: Inserisci riga sopra
+    row_below: Inserisci riga sotto
+    col_left: Inserisci colonna a sinistra
+    col_right: Inserisci colonna a destra
+    delete_row: Elimina riga
+    delete_col: Elimina colonna
+    toggle_header: Riga di intestazione
+    delete: Elimina tabella
+  image:
+    smaller: Più piccola
+    larger: Più grande
+    fit: Adatta alla larghezza
+  menu:
+    cut: Taglia
+    copy: Copia
+    paste: Incolla
+    paste_plain: Incolla come testo semplice
+    select_all: Seleziona tutto
+    open_link: Apri collegamento
+    add_to_dictionary: Aggiungi al dizionario
+    no_suggestions: Nessun suggerimento
+  attachment:
+    open_hint: Doppio clic per aprire
+  read_only: Questa scheda è di sola lettura. Sbloccala per modificarla.
+  find:
+    placeholder: Trova nella scheda
+    replace_placeholder: Sostituisci con
+    no_results: Nessun risultato
+    count: "%{i} di %{n}"
+    case: Maiuscole/minuscole
+    previous: Corrispondenza precedente (Maiusc+F3)
+    next: Corrispondenza successiva (F3)
+    replace: Sostituisci
+    replace_one: Sostituisci
+    replace_all: Sostituisci tutto
+
+common:
+  back: Indietro
+  next: Avanti
+  ok: OK
+  cancel: Annulla
+
+time:
+  just_now: adesso
+  minutes_ago: "%{n} min fa"
+  hours_ago: "%{n} h fa"
+  days_ago: "%{n} g fa"
+
+lock:
+  none: Non protetta
+  read_only: Sola lettura
+  read_only_desc: Visibile, ma per modificarla serve un clic per sbloccarla. Evita modifiche accidentali.
+  private: Privata
+  private_desc: Titolo mascherato e contenuto nascosto finché non inserisci la password.
+  encrypted: Crittografata
+  encrypted_desc: Contenuto crittografato su disco con la tua password. Una password dimenticata non può essere recuperata.
+
+wizard:
+  step:
+    welcome: Benvenuto
+    storage: Archiviazione
+    security: Accesso
+    protection: Protezione delle schede
+    appearance: Aspetto
+    finish: Fatto
+  welcome:
+    title: Benvenuto in Cardfile
+    body: "Il tuo schedario digitale per appunti, idee e tutto ciò che vuoi conservare. Configuriamolo in pochi passaggi."
+  storage:
+    standard: Standard
+    standard_desc: "I dati sono archiviati nel tuo profilo utente:"
+    portable: Portatile
+    portable_desc: I dati sono archiviati in una cartella «data» accanto a Cardfile, così puoi portarli con te su una chiavetta USB.
+    portable_unavailable: La modalità portatile non è disponibile perché la cartella del programma non è scrivibile.
+  security:
+    none: Nessuna password
+    none_desc: Cardfile si apre direttamente. Ideale per un computer personale.
+    single: Password
+    single_desc: Un account protetto da password.
+    multi: Più utenti
+    multi_desc: Ogni persona accede con nome utente e password e ha le proprie schede.
+    username: Nome utente
+    display_name: Nome visualizzato
+    password: Password
+    confirm: Conferma password
+    lock_password: Password di blocco (facoltativa)
+    lock_password_hint: Serve per sbloccare le schede private e crittografate. Puoi impostarla più tardi nelle Impostazioni.
+    allow_registration: Consenti ai nuovi utenti di creare un account dalla schermata di accesso
+  protection:
+    intro: Scegli quali livelli di protezione si possono usare per le schede.
+    default: Protezione per le nuove schede
+    needs_password: Le schede private e crittografate richiedono una password di blocco. Torna indietro per impostarla oppure fallo più tardi nelle Impostazioni.
+  appearance:
+    intro: Scegli un tema. Puoi cambiarlo in qualsiasi momento nelle Impostazioni.
+  finish:
+    intro: "Tutto è pronto:"
+    later: Tutto questo può essere modificato più tardi nelle Impostazioni.
+    start: Inizia a usare Cardfile
+  error:
+    username: Inserisci un nome utente.
+    password_short: La password deve contenere almeno 4 caratteri.
+    password_mismatch: Le password non corrispondono.
+    portable: Impossibile attivare la modalità portatile
+
+login:
+  title: Accedi
+  register_title: Crea account
+  locked_title: "Cardfile è bloccato, %{name}"
+  username: Nome utente
+  display_name: Nome visualizzato
+  password: Password
+  confirm: Conferma password
+  sign_in: Accedi
+  unlock: Sblocca
+  create: Crea account
+  need_account: Crea un account
+  have_account: Ho già un account
+  error:
+    invalid: Nome utente o password errati.
+    taken: Questo nome utente è già in uso.
+
+welcome:
+  title: Benvenuto in Cardfile
+  body: |
+    ## Per iniziare
+
+    Cardfile conserva i tuoi appunti come **schede**. Creane una con il pulsante **+** o con **Ctrl+N**.
+
+    - Formatta il testo con la barra degli strumenti o con le scorciatoie: **Ctrl+B** grassetto, *Ctrl+I* corsivo, Ctrl+U sottolineato.
+    - Digita `# ` per un titolo, `- ` per un elenco o `[] ` per una lista di controllo.
+    - Incolla o trascina immagini e file in una scheda.
+    - Usa **Ctrl+F** per cercare in tutte le schede e **Ctrl+Maiusc+P** per vedere tutti i comandi.
+
+    ## Proteggi le tue schede
+
+    Usa il pulsante del lucchetto in cima a una scheda per renderla *di sola lettura*, *privata* o *crittografata*.
+
+    - [ ] Crea la tua prima scheda
+    - [ ] Prova un'etichetta per organizzare le schede
+
+search:
+  placeholder: Cerca schede
+  focus: Cerca schede
+
+nav:
+  all: Tutte le schede
+  favorites: Preferite
+  recycle_bin: Cestino
+  tags: ETICHETTE
+
+list:
+  count: "%{n} schede"
+  empty: Ancora nessuna scheda qui.
+  no_results: Nessuna scheda corrisponde alla ricerca.
+
+sort:
+  title: Ordina
+  manual: Manuale (trascina per riordinare)
+  updated: Ultima modifica
+  created: Data di creazione
+  title_asc: Titolo
+
+card:
+  new: Nuova scheda
+  untitled: Senza titolo
+  delete: Sposta nel cestino
+  delete_body: "Spostare «%{title}» nel cestino? Potrai ripristinarla più tardi."
+  restore: Ripristina
+  pin: Fissa in alto
+  unpin: Rimuovi dall'alto
+  favorite: Aggiungi ai preferiti
+  unfavorite: Rimuovi dai preferiti
+  tags: Etichette
+  history: Cronologia delle versioni
+  none_selected: Nessuna scheda selezionata
+  none_hint: Seleziona una scheda o premi Ctrl+N per crearne una.
+  read_only_banner: Questa scheda è di sola lettura.
+  unlock_edit: Modifica
+  deleted_banner: Questa scheda è nel cestino.
+  saving: Salvataggio…
+  updated: "Salvata %{date}"
+  words: "%{n} parole"
+  unlock:
+    private: Questa scheda è privata
+    encrypted: Questa scheda è crittografata
+    placeholder: Password
+    button: Sblocca
+    hint: La scheda si blocca di nuovo dopo un periodo di inattività.
+    wrong: Password errata.
+    no_password: Nessuna password di blocco impostata. Impostane una in Impostazioni → Sicurezza.
+  protect:
+    tooltip: Protezione della scheda
+    unlock_first: Sblocca prima la scheda.
+    needs_password: Imposta prima una password di blocco in Impostazioni → Sicurezza.
+    encrypt_title: Crittografa scheda
+    encrypt_body: Inserisci la tua password per crittografare questa scheda. Senza di essa la scheda non potrà essere aperta.
+    failed: "Impossibile modificare la protezione: %{error}"
+  purge:
+    title: Elimina definitivamente
+    body: Questa scheda verrà eliminata per sempre. L'operazione non può essere annullata.
+    confirm: Elimina definitivamente
+
+tags:
+  new: Nuova etichetta…
+  edit: Modifica etichetta
+  delete: Elimina etichetta
+  delete_body: "Eliminare l'etichetta «%{name}»? Le schede mantengono il loro contenuto."
+  name: Nome dell'etichetta
+  exists: Esiste già un'etichetta con questo nome.
+
+history:
+  title: Cronologia delle versioni
+  restore: Ripristina questa versione
+  empty: Ancora nessuna versione precedente.
+
+recycle:
+  empty: Svuota cestino
+  empty_title: Svuota cestino
+  empty_body: Tutte le schede nel cestino verranno eliminate per sempre.
+
+export:
+  markdown: Esporta come Markdown
+  html: Esporta come HTML
+  pdf: Esporta come PDF
+  json: Esporta come JSON
+  choose_folder: Scegli una cartella per l'esportazione
+  done: "Esportato in %{path}"
+  failed: "Esportazione non riuscita: %{error}"
+  skipped: "%{n} schede private o crittografate non sono state esportate."
+
+backup:
+  done: "Backup salvato in %{path}"
+
+menu:
+  settings: Impostazioni
+  command_palette: Tavolozza dei comandi
+  keymap: Modifica scorciatoie da tastiera
+  export_all: Esporta tutte le schede
+  backup: Esegui backup ora
+  open_data_folder: Apri cartella dati
+  check_updates: Verifica aggiornamenti
+  about: Informazioni su Cardfile
+  lock: Blocca
+  sign_out: Esci
+  quit: Esci dal programma
+
+palette:
+  placeholder: Digita un comando…
+
+updates:
+  title: Aggiornamento disponibile
+  available: "Cardfile %{version} è disponibile. Fai clic per scaricare."
+  latest: Hai l'ultima versione.
+  failed: "Impossibile verificare gli aggiornamenti: %{error}"
+  managed: Gli aggiornamenti di questa installazione sono gestiti dal tuo app store o gestore di pacchetti.
+
+about:
+  version: "Versione %{version}"
+  description: Uno schedario digitale moderno per i tuoi appunti.
+  license: Software libero con licenza MIT o Apache 2.0.
+  website: Sito web
+  third_party: Licenze di terze parti
+
+settings:
+  title: Impostazioni
+  open: Apri
+  never: Mai
+  "off": "Disattivato"
+  seconds: "%{n} secondi"
+  minutes: "%{n} minuti"
+  tab:
+    general: Generale
+    editor: Editor
+    security: Sicurezza
+    users: Utenti
+    data: Dati
+  general:
+    theme: Tema
+    language: Lingua
+    language_hint: Altre lingue in arrivo.
+    font_size: Dimensione del testo dell'editor
+    confirm_delete: Chiedi conferma prima di eliminare le schede
+    check_updates: Verifica aggiornamenti all'avvio
+    check_updates_hint: Controlla solo su GitHub se esiste una versione più recente. Non viene inviato alcun dato.
+    keymap: Scorciatoie da tastiera
+    keymap_hint: Modifica keymap.json per cambiare qualsiasi scorciatoia. Riavvia per applicare.
+  editor:
+    markdown_shortcuts: Scorciatoie Markdown
+    markdown_shortcuts_hint: "Digitare # , - , [] , **grassetto** e simili formatta automaticamente il testo."
+    spellcheck: Controllo ortografico
+    spellcheck_hint: Le parole errate sono sottolineate. Clic destro per i suggerimenti.
+    no_dictionaries: Nessun dizionario installato.
+    spell_language: Dizionario
+    search_scope: Cerca in
+    scope_title: Solo titoli
+    scope_content: Titoli e contenuto
+    scope_all: Titoli, contenuto ed etichette
+    default_lock: Protezione per le nuove schede
+    default_lock_hint: Applicata alla creazione di una scheda.
+    history: Versioni conservate per scheda
+    history_hint: Durante la modifica viene salvata una versione al massimo ogni 5 minuti.
+  security:
+    auto_lock: Blocca dopo inattività
+    auto_lock_hint: Richiede di nuovo la password dopo questo tempo senza attività.
+    relock: Nascondi le schede private sbloccate dopo
+    relock_hint: Le schede private e crittografate si bloccano di nuovo dopo questo tempo senza modifiche.
+    mask: Caratteri visibili dei titoli privati
+    mask_hint: Il resto del titolo è mascherato nell'elenco.
+    lock_modes: Livelli di protezione disponibili
+    auth_mode: Modalità di accesso
+    auth_mode_hint: Come le persone aprono Cardfile su questo computer.
+    auth_one_user: Rimuovi gli altri account utente prima di passare a una modalità con account singolo.
+    auth_needs_password: Imposta prima una password qui sotto.
+    auth_changed: Modalità di accesso modificata. Verrà applicata al prossimo avvio di Cardfile.
+    change_password: Cambia password
+    lock_password: Password di blocco
+    password_hint: Questa password sblocca le schede private e crittografate. Le schede crittografate vengono ricrittografate quando la cambi.
+    current_password: Password attuale
+    new_password: Nuova password
+    save_password: Salva password
+    password_saved: Password modificata.
+  users:
+    admin: amministratore
+    add: Aggiungi utente
+    create: Crea
+    delete: Elimina utente
+    delete_body: L'account viene rimosso. Le sue schede restano nel database.
+    invalid: Inserisci un nome utente e una password di almeno 4 caratteri.
+  data:
+    location: Cartella dati
+    portable: La modalità portatile è attiva.
+    standard: Modalità standard.
+    export: Esporta
+    export_hint: Esporta tutte le schede che non sono private né crittografate.

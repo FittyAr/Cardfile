@@ -1,0 +1,389 @@
+_version: 1
+
+app:
+  name: Cardfile
+test:
+  greeting: "¡Hola, %{name}!"
+
+editor:
+  placeholder: "Empieza a escribir…"
+  link:
+    title: Insertar enlace
+    text_placeholder: Texto a mostrar
+  toolbar:
+    undo: Deshacer
+    redo: Rehacer
+    bold: Negrita
+    italic: Cursiva
+    underline: Subrayado
+    strikethrough: Tachado
+    code: Código en línea
+    clear_formatting: Borrar formato
+    text_color: Color del texto
+    highlight: Resaltado
+    default_color: Predeterminado
+    no_highlight: Ninguno
+    block_type: Estilo de párrafo
+    paragraph: Texto normal
+    heading1: Título 1
+    heading2: Título 2
+    heading3: Título 3
+    quote: Cita
+    code_block: Bloque de código
+    bullet_list: Lista con viñetas
+    numbered_list: Lista numerada
+    check_list: Lista de tareas
+    align: Alineación
+    align_left: Alinear a la izquierda
+    align_center: Centrar
+    align_right: Alinear a la derecha
+    align_justify: Justificar
+    size: Tamaño del texto
+    size_small: Pequeño
+    size_normal: Normal
+    size_large: Grande
+    size_huge: Enorme
+    indent: Aumentar sangría
+    outdent: Reducir sangría
+    link: Enlace
+    remove_link: Quitar enlace
+    insert: Insertar
+    image: Imagen…
+    attachment: Adjunto…
+    table: Tabla
+    divider: Separador
+  table:
+    row_above: Insertar fila arriba
+    row_below: Insertar fila abajo
+    col_left: Insertar columna a la izquierda
+    col_right: Insertar columna a la derecha
+    delete_row: Eliminar fila
+    delete_col: Eliminar columna
+    toggle_header: Fila de encabezado
+    delete: Eliminar tabla
+  image:
+    smaller: Más pequeña
+    larger: Más grande
+    fit: Ajustar al ancho
+  menu:
+    cut: Cortar
+    copy: Copiar
+    paste: Pegar
+    paste_plain: Pegar como texto sin formato
+    select_all: Seleccionar todo
+    open_link: Abrir enlace
+    add_to_dictionary: Añadir al diccionario
+    no_suggestions: Sin sugerencias
+  attachment:
+    open_hint: Doble clic para abrir
+  read_only: Esta ficha es de solo lectura. Desbloquéala para editarla.
+  find:
+    placeholder: Buscar en la ficha
+    replace_placeholder: Reemplazar con
+    no_results: Sin resultados
+    count: "%{i} de %{n}"
+    case: Distinguir mayúsculas
+    previous: Coincidencia anterior (Mayús+F3)
+    next: Coincidencia siguiente (F3)
+    replace: Reemplazar
+    replace_one: Reemplazar
+    replace_all: Reemplazar todo
+
+common:
+  back: Atrás
+  next: Siguiente
+  ok: Aceptar
+  cancel: Cancelar
+
+time:
+  just_now: ahora mismo
+  minutes_ago: "hace %{n} min"
+  hours_ago: "hace %{n} h"
+  days_ago: "hace %{n} d"
+
+lock:
+  none: Sin protección
+  read_only: Solo lectura
+  read_only_desc: Visible, pero para editar hay que desbloquear con un clic. Evita cambios accidentales.
+  private: Privada
+  private_desc: Título oculto y contenido protegido hasta que introduzcas tu contraseña.
+  encrypted: Cifrada
+  encrypted_desc: Contenido cifrado en el disco con tu contraseña. Una contraseña olvidada no se puede recuperar.
+
+wizard:
+  step:
+    welcome: Bienvenida
+    storage: Almacenamiento
+    security: Inicio de sesión
+    protection: Protección de fichas
+    appearance: Apariencia
+    finish: Listo
+  welcome:
+    title: Te damos la bienvenida a Cardfile
+    body: "Tu fichero digital para notas, ideas y todo lo que quieras guardar. Vamos a configurarlo en unos pocos pasos."
+  storage:
+    standard: Estándar
+    standard_desc: "Los datos se guardan en tu perfil de usuario:"
+    portable: Portátil
+    portable_desc: Los datos se guardan en una carpeta «data» junto a Cardfile, para que puedas llevarlos en un USB.
+    portable_unavailable: El modo portátil no está disponible porque la carpeta del programa no admite escritura.
+  security:
+    none: Sin contraseña
+    none_desc: Cardfile se abre directamente. Ideal para un ordenador personal.
+    single: Contraseña
+    single_desc: Una cuenta protegida por contraseña.
+    multi: Varios usuarios
+    multi_desc: Cada persona inicia sesión con un nombre de usuario y una contraseña y tiene sus propias fichas.
+    username: Nombre de usuario
+    display_name: Nombre visible
+    password: Contraseña
+    confirm: Confirmar contraseña
+    lock_password: Contraseña de bloqueo (opcional)
+    lock_password_hint: Se usa para desbloquear fichas privadas y cifradas. Puedes definirla más tarde en Ajustes.
+    allow_registration: Permitir que nuevos usuarios creen una cuenta desde la pantalla de inicio de sesión
+  protection:
+    intro: Elige qué niveles de protección se pueden usar en las fichas.
+    default: Protección para fichas nuevas
+    needs_password: Las fichas privadas y cifradas necesitan una contraseña de bloqueo. Vuelve atrás para definirla o hazlo más tarde en Ajustes.
+  appearance:
+    intro: Elige un tema. Puedes cambiarlo cuando quieras en Ajustes.
+  finish:
+    intro: "Todo está listo:"
+    later: Todo esto se puede cambiar más tarde en Ajustes.
+    start: Empezar a usar Cardfile
+  error:
+    username: Introduce un nombre de usuario.
+    password_short: La contraseña debe tener al menos 4 caracteres.
+    password_mismatch: Las contraseñas no coinciden.
+    portable: No se pudo activar el modo portátil
+
+login:
+  title: Iniciar sesión
+  register_title: Crear cuenta
+  locked_title: "Cardfile está bloqueado, %{name}"
+  username: Nombre de usuario
+  display_name: Nombre visible
+  password: Contraseña
+  confirm: Confirmar contraseña
+  sign_in: Iniciar sesión
+  unlock: Desbloquear
+  create: Crear cuenta
+  need_account: Crear una cuenta
+  have_account: Ya tengo una cuenta
+  error:
+    invalid: Nombre de usuario o contraseña incorrectos.
+    taken: Ese nombre de usuario ya está en uso.
+
+welcome:
+  title: Te damos la bienvenida a Cardfile
+  body: |
+    ## Primeros pasos
+
+    Cardfile guarda tus notas como **fichas**. Crea una con el botón **+** o con **Ctrl+N**.
+
+    - Da formato al texto con la barra de herramientas o con atajos: **Ctrl+B** negrita, *Ctrl+I* cursiva, Ctrl+U subrayado.
+    - Escribe `# ` para un título, `- ` para una lista o `[] ` para una lista de tareas.
+    - Pega o arrastra imágenes y archivos a una ficha.
+    - Usa **Ctrl+F** para buscar en todas tus fichas y **Ctrl+Shift+P** para ver todos los comandos.
+
+    ## Protege tus fichas
+
+    Usa el botón del candado en la parte superior de una ficha para hacerla *de solo lectura*, *privada* o *cifrada*.
+
+    - [ ] Crea tu primera ficha
+    - [ ] Prueba una etiqueta para organizar las fichas
+
+search:
+  placeholder: Buscar fichas
+  focus: Buscar fichas
+
+nav:
+  all: Todas las fichas
+  favorites: Favoritas
+  recycle_bin: Papelera
+  tags: ETIQUETAS
+
+list:
+  count: "%{n} fichas"
+  empty: Aún no hay fichas aquí.
+  no_results: Ninguna ficha coincide con tu búsqueda.
+
+sort:
+  title: Ordenar
+  manual: Manual (arrastra para reordenar)
+  updated: Última modificación
+  created: Fecha de creación
+  title_asc: Título
+
+card:
+  new: Nueva ficha
+  untitled: Sin título
+  delete: Mover a la papelera
+  delete_body: "¿Mover «%{title}» a la papelera? Podrás restaurarla más tarde."
+  restore: Restaurar
+  pin: Fijar arriba
+  unpin: Desfijar
+  favorite: Añadir a favoritas
+  unfavorite: Quitar de favoritas
+  tags: Etiquetas
+  history: Historial de versiones
+  none_selected: Ninguna ficha seleccionada
+  none_hint: Selecciona una ficha o pulsa Ctrl+N para crear una.
+  read_only_banner: Esta ficha es de solo lectura.
+  unlock_edit: Editar
+  deleted_banner: Esta ficha está en la papelera.
+  saving: Guardando…
+  updated: "Guardado %{date}"
+  words: "%{n} palabras"
+  unlock:
+    private: Esta ficha es privada
+    encrypted: Esta ficha está cifrada
+    placeholder: Contraseña
+    button: Desbloquear
+    hint: La ficha se vuelve a bloquear tras un período de inactividad.
+    wrong: Contraseña incorrecta.
+    no_password: No hay contraseña de bloqueo. Define una en Ajustes → Seguridad.
+  protect:
+    tooltip: Protección de la ficha
+    unlock_first: Desbloquea primero la ficha.
+    needs_password: Primero define una contraseña de bloqueo en Ajustes → Seguridad.
+    encrypt_title: Cifrar ficha
+    encrypt_body: Introduce tu contraseña para cifrar esta ficha. Sin ella no se podrá abrir.
+    failed: "No se pudo cambiar la protección: %{error}"
+  purge:
+    title: Eliminar definitivamente
+    body: Esta ficha se eliminará para siempre. No se puede deshacer.
+    confirm: Eliminar definitivamente
+
+tags:
+  new: Nueva etiqueta…
+  edit: Editar etiqueta
+  delete: Eliminar etiqueta
+  delete_body: "¿Eliminar la etiqueta «%{name}»? Las fichas conservan su contenido."
+  name: Nombre de la etiqueta
+  exists: Ya existe una etiqueta con ese nombre.
+
+history:
+  title: Historial de versiones
+  restore: Restaurar esta versión
+  empty: Aún no hay versiones anteriores.
+
+recycle:
+  empty: Vaciar papelera
+  empty_title: Vaciar papelera
+  empty_body: Todas las fichas de la papelera se eliminarán para siempre.
+
+export:
+  markdown: Exportar como Markdown
+  html: Exportar como HTML
+  pdf: Exportar como PDF
+  json: Exportar como JSON
+  choose_folder: Elige una carpeta para la exportación
+  done: "Exportado a %{path}"
+  failed: "Error al exportar: %{error}"
+  skipped: "%{n} fichas privadas o cifradas no se exportaron."
+
+backup:
+  done: "Copia de seguridad guardada en %{path}"
+
+menu:
+  settings: Ajustes
+  command_palette: Paleta de comandos
+  keymap: Editar atajos de teclado
+  export_all: Exportar todas las fichas
+  backup: Hacer copia de seguridad ahora
+  open_data_folder: Abrir carpeta de datos
+  check_updates: Buscar actualizaciones
+  about: Acerca de Cardfile
+  lock: Bloquear
+  sign_out: Cerrar sesión
+  quit: Salir
+
+palette:
+  placeholder: Escribe un comando…
+
+updates:
+  title: Actualización disponible
+  available: "Cardfile %{version} está disponible. Haz clic para descargar."
+  latest: Tienes la última versión.
+  failed: "No se pudo buscar actualizaciones: %{error}"
+  managed: Las actualizaciones de esta instalación las gestiona tu tienda de aplicaciones o gestor de paquetes.
+
+about:
+  version: "Versión %{version}"
+  description: Un fichero digital moderno para tus notas.
+  license: Software libre bajo licencia MIT o Apache 2.0.
+  website: Sitio web
+  third_party: Licencias de terceros
+
+settings:
+  title: Ajustes
+  open: Abrir
+  never: Nunca
+  "off": "Desactivado"
+  seconds: "%{n} segundos"
+  minutes: "%{n} minutos"
+  tab:
+    general: General
+    editor: Editor
+    security: Seguridad
+    users: Usuarios
+    data: Datos
+  general:
+    theme: Tema
+    language: Idioma
+    language_hint: Pronto habrá más idiomas.
+    font_size: Tamaño del texto del editor
+    confirm_delete: Preguntar antes de eliminar fichas
+    check_updates: Buscar actualizaciones al iniciar
+    check_updates_hint: Solo consulta GitHub para ver si hay una versión más reciente. No se envían datos.
+    keymap: Atajos de teclado
+    keymap_hint: Edita keymap.json para cambiar cualquier atajo. Reinicia para aplicar.
+  editor:
+    markdown_shortcuts: Atajos de Markdown
+    markdown_shortcuts_hint: "Al escribir # , - , [] , **negrita** y similares, el texto se formatea automáticamente."
+    spellcheck: Revisar ortografía
+    spellcheck_hint: Las palabras con errores se subrayan. Haz clic derecho para ver sugerencias.
+    no_dictionaries: No hay diccionarios instalados.
+    spell_language: Diccionario
+    search_scope: Buscar en
+    scope_title: Solo títulos
+    scope_content: Títulos y contenido
+    scope_all: Títulos, contenido y etiquetas
+    default_lock: Protección para fichas nuevas
+    default_lock_hint: Se aplica al crear una ficha.
+    history: Versiones guardadas por ficha
+    history_hint: Se guarda una versión como máximo cada 5 minutos mientras editas.
+  security:
+    auto_lock: Bloquear tras inactividad
+    auto_lock_hint: Vuelve a pedir tu contraseña tras este tiempo sin actividad.
+    relock: Ocultar fichas privadas desbloqueadas después de
+    relock_hint: Las fichas privadas y cifradas se vuelven a bloquear tras este tiempo sin editar.
+    mask: Caracteres visibles de los títulos privados
+    mask_hint: El resto del título se oculta en la lista.
+    lock_modes: Niveles de protección disponibles
+    auth_mode: Modo de inicio de sesión
+    auth_mode_hint: Cómo se abre Cardfile en este ordenador.
+    auth_one_user: Elimina las demás cuentas de usuario antes de cambiar a un modo de una sola cuenta.
+    auth_needs_password: Primero define una contraseña más abajo.
+    auth_changed: Modo de inicio de sesión cambiado. Se aplicará la próxima vez que se inicie Cardfile.
+    change_password: Cambiar contraseña
+    lock_password: Contraseña de bloqueo
+    password_hint: Esta contraseña desbloquea las fichas privadas y cifradas. Las fichas cifradas se vuelven a cifrar al cambiarla.
+    current_password: Contraseña actual
+    new_password: Contraseña nueva
+    save_password: Guardar contraseña
+    password_saved: Contraseña cambiada.
+  users:
+    admin: administrador
+    add: Añadir usuario
+    create: Crear
+    delete: Eliminar usuario
+    delete_body: Se elimina la cuenta. Sus fichas permanecen en la base de datos.
+    invalid: Introduce un nombre de usuario y una contraseña de al menos 4 caracteres.
+  data:
+    location: Carpeta de datos
+    portable: El modo portátil está activo.
+    standard: Modo estándar.
+    export: Exportar
+    export_hint: Exporta todas las fichas que no sean privadas ni cifradas.

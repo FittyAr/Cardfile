@@ -1,0 +1,389 @@
+_version: 1
+
+app:
+  name: Cardfile
+test:
+  greeting: "مرحباً، %{name}!"
+
+editor:
+  placeholder: "ابدأ الكتابة…"
+  link:
+    title: إدراج رابط
+    text_placeholder: النص المراد عرضه
+  toolbar:
+    undo: تراجع
+    redo: إعادة
+    bold: غامق
+    italic: مائل
+    underline: تسطير
+    strikethrough: يتوسطه خط
+    code: رمز مضمّن
+    clear_formatting: مسح التنسيق
+    text_color: لون النص
+    highlight: تمييز
+    default_color: افتراضي
+    no_highlight: بلا
+    block_type: نمط الفقرة
+    paragraph: نص عادي
+    heading1: عنوان 1
+    heading2: عنوان 2
+    heading3: عنوان 3
+    quote: اقتباس
+    code_block: كتلة رمز
+    bullet_list: قائمة نقطية
+    numbered_list: قائمة مرقّمة
+    check_list: قائمة مهام
+    align: المحاذاة
+    align_left: محاذاة إلى اليسار
+    align_center: توسيط
+    align_right: محاذاة إلى اليمين
+    align_justify: ضبط
+    size: حجم النص
+    size_small: صغير
+    size_normal: عادي
+    size_large: كبير
+    size_huge: ضخم
+    indent: زيادة المسافة البادئة
+    outdent: تقليل المسافة البادئة
+    link: رابط
+    remove_link: إزالة الرابط
+    insert: إدراج
+    image: صورة…
+    attachment: مرفق…
+    table: جدول
+    divider: فاصل
+  table:
+    row_above: إدراج صف أعلاه
+    row_below: إدراج صف أسفله
+    col_left: إدراج عمود على اليسار
+    col_right: إدراج عمود على اليمين
+    delete_row: حذف الصف
+    delete_col: حذف العمود
+    toggle_header: صف العنوان
+    delete: حذف الجدول
+  image:
+    smaller: أصغر
+    larger: أكبر
+    fit: ملاءمة العرض
+  menu:
+    cut: قص
+    copy: نسخ
+    paste: لصق
+    paste_plain: لصق كنص عادي
+    select_all: تحديد الكل
+    open_link: فتح الرابط
+    add_to_dictionary: إضافة إلى القاموس
+    no_suggestions: لا توجد اقتراحات
+  attachment:
+    open_hint: انقر نقراً مزدوجاً للفتح
+  read_only: هذه البطاقة للقراءة فقط. افتح قفلها لتحريرها.
+  find:
+    placeholder: بحث في البطاقة
+    replace_placeholder: استبدال بـ
+    no_results: لا توجد نتائج
+    count: "%{i} من %{n}"
+    case: مطابقة حالة الأحرف
+    previous: النتيجة السابقة (Shift+F3)
+    next: النتيجة التالية (F3)
+    replace: استبدال
+    replace_one: استبدال
+    replace_all: استبدال الكل
+
+common:
+  back: رجوع
+  next: التالي
+  ok: موافق
+  cancel: إلغاء
+
+time:
+  just_now: الآن
+  minutes_ago: "قبل %{n} دقيقة"
+  hours_ago: "قبل %{n} ساعة"
+  days_ago: "قبل %{n} يوم"
+
+lock:
+  none: غير محمية
+  read_only: للقراءة فقط
+  read_only_desc: ظاهرة، لكن التحرير يتطلب نقرة واحدة لفتح القفل. تمنع التغييرات العرضية.
+  private: خاصة
+  private_desc: العنوان مخفي والمحتوى محجوب إلى أن تُدخل كلمة المرور.
+  encrypted: مشفّرة
+  encrypted_desc: المحتوى مشفّر على القرص بكلمة مرورك. لا يمكن استرداد كلمة مرور منسية.
+
+wizard:
+  step:
+    welcome: مرحباً
+    storage: التخزين
+    security: تسجيل الدخول
+    protection: حماية البطاقات
+    appearance: المظهر
+    finish: جاهز
+  welcome:
+    title: مرحباً بك في Cardfile
+    body: "صندوق بطاقاتك الرقمي للملاحظات والأفكار وكل ما تريد الاحتفاظ به. لنُعدّه في بضع خطوات."
+  storage:
+    standard: قياسي
+    standard_desc: "تُخزَّن البيانات في ملف المستخدم الخاص بك:"
+    portable: محمول
+    portable_desc: تُخزَّن البيانات في مجلد «data» بجوار Cardfile، فتستطيع حملها على محرك USB.
+    portable_unavailable: الوضع المحمول غير متاح لأن مجلد البرنامج غير قابل للكتابة.
+  security:
+    none: بلا كلمة مرور
+    none_desc: يُفتح Cardfile مباشرة. الأنسب للحاسوب الشخصي.
+    single: كلمة مرور
+    single_desc: حساب واحد محمي بكلمة مرور.
+    multi: عدة مستخدمين
+    multi_desc: يسجّل كل شخص الدخول باسم مستخدم وكلمة مرور ويملك بطاقاته الخاصة.
+    username: اسم المستخدم
+    display_name: الاسم المعروض
+    password: كلمة المرور
+    confirm: تأكيد كلمة المرور
+    lock_password: كلمة مرور القفل (اختيارية)
+    lock_password_hint: تُستخدم لفتح البطاقات الخاصة والمشفّرة. يمكنك تعيينها لاحقاً من الإعدادات.
+    allow_registration: السماح للمستخدمين الجدد بإنشاء حساب من شاشة تسجيل الدخول
+  protection:
+    intro: اختر مستويات الحماية التي يمكن استخدامها للبطاقات.
+    default: الحماية للبطاقات الجديدة
+    needs_password: تحتاج البطاقات الخاصة والمشفّرة إلى كلمة مرور قفل. ارجع لتعيينها، أو عيّنها لاحقاً من الإعدادات.
+  appearance:
+    intro: اختر مظهراً. يمكنك تغييره في أي وقت من الإعدادات.
+  finish:
+    intro: "كل شيء جاهز:"
+    later: يمكن تغيير كل ذلك لاحقاً من الإعدادات.
+    start: ابدأ استخدام Cardfile
+  error:
+    username: أدخل اسم مستخدم.
+    password_short: يجب أن تتكون كلمة المرور من 4 أحرف على الأقل.
+    password_mismatch: كلمتا المرور غير متطابقتين.
+    portable: تعذّر تفعيل الوضع المحمول
+
+login:
+  title: تسجيل الدخول
+  register_title: إنشاء حساب
+  locked_title: "Cardfile مقفل، %{name}"
+  username: اسم المستخدم
+  display_name: الاسم المعروض
+  password: كلمة المرور
+  confirm: تأكيد كلمة المرور
+  sign_in: تسجيل الدخول
+  unlock: فتح القفل
+  create: إنشاء حساب
+  need_account: إنشاء حساب
+  have_account: لديّ حساب بالفعل
+  error:
+    invalid: اسم المستخدم أو كلمة المرور غير صحيحة.
+    taken: اسم المستخدم هذا مستخدم بالفعل.
+
+welcome:
+  title: مرحباً بك في Cardfile
+  body: |
+    ## البداية
+
+    يحفظ Cardfile ملاحظاتك على شكل **بطاقات**. أنشئ بطاقة بزر **+** أو بالضغط على **Ctrl+N**.
+
+    - نسّق النص من شريط الأدوات أو بالاختصارات: **Ctrl+B** غامق، *Ctrl+I* مائل، Ctrl+U تسطير.
+    - اكتب `# ` لعنوان، أو `- ` لقائمة، أو `[] ` لقائمة مهام.
+    - الصق الصور والملفات في البطاقة أو اسحبها إليها.
+    - استخدم **Ctrl+F** للبحث في كل بطاقاتك و**Ctrl+Shift+P** لعرض كل الأوامر.
+
+    ## احمِ بطاقاتك
+
+    استخدم زر القفل أعلى البطاقة لجعلها *للقراءة فقط* أو *خاصة* أو *مشفّرة*.
+
+    - [ ] أنشئ بطاقتك الأولى
+    - [ ] جرّب وسماً لتنظيم البطاقات
+
+search:
+  placeholder: بحث في البطاقات
+  focus: بحث في البطاقات
+
+nav:
+  all: كل البطاقات
+  favorites: المفضلة
+  recycle_bin: سلة المحذوفات
+  tags: الوسوم
+
+list:
+  count: "%{n} بطاقة"
+  empty: لا توجد بطاقات هنا بعد.
+  no_results: لا توجد بطاقات مطابقة لبحثك.
+
+sort:
+  title: ترتيب
+  manual: يدوي (اسحب لإعادة الترتيب)
+  updated: آخر تعديل
+  created: تاريخ الإنشاء
+  title_asc: العنوان
+
+card:
+  new: بطاقة جديدة
+  untitled: بلا عنوان
+  delete: نقل إلى سلة المحذوفات
+  delete_body: "هل تريد نقل «%{title}» إلى سلة المحذوفات؟ يمكنك استعادتها لاحقاً."
+  restore: استعادة
+  pin: تثبيت في الأعلى
+  unpin: إلغاء التثبيت
+  favorite: إضافة إلى المفضلة
+  unfavorite: إزالة من المفضلة
+  tags: الوسوم
+  history: سجل الإصدارات
+  none_selected: لم تُحدَّد أي بطاقة
+  none_hint: حدّد بطاقة أو اضغط Ctrl+N لإنشاء واحدة.
+  read_only_banner: هذه البطاقة للقراءة فقط.
+  unlock_edit: تحرير
+  deleted_banner: هذه البطاقة في سلة المحذوفات.
+  saving: جارٍ الحفظ…
+  updated: "حُفظت %{date}"
+  words: "%{n} كلمة"
+  unlock:
+    private: هذه البطاقة خاصة
+    encrypted: هذه البطاقة مشفّرة
+    placeholder: كلمة المرور
+    button: فتح القفل
+    hint: تُقفل البطاقة مجدداً بعد فترة من عدم النشاط.
+    wrong: كلمة المرور غير صحيحة.
+    no_password: لم تُعيَّن كلمة مرور للقفل. عيّنها من الإعدادات ← الأمان.
+  protect:
+    tooltip: حماية البطاقة
+    unlock_first: افتح قفل البطاقة أولاً.
+    needs_password: عيّن كلمة مرور للقفل أولاً من الإعدادات ← الأمان.
+    encrypt_title: تشفير البطاقة
+    encrypt_body: أدخل كلمة مرورك لتشفير هذه البطاقة. من دونها لا يمكن فتح البطاقة.
+    failed: "تعذّر تغيير الحماية: %{error}"
+  purge:
+    title: حذف نهائي
+    body: ستُحذف هذه البطاقة إلى الأبد. لا يمكن التراجع عن ذلك.
+    confirm: حذف نهائي
+
+tags:
+  new: وسم جديد…
+  edit: تحرير الوسم
+  delete: حذف الوسم
+  delete_body: "هل تريد حذف الوسم «%{name}»؟ تحتفظ البطاقات بمحتواها."
+  name: اسم الوسم
+  exists: يوجد وسم بهذا الاسم بالفعل.
+
+history:
+  title: سجل الإصدارات
+  restore: استعادة هذا الإصدار
+  empty: لا توجد إصدارات سابقة بعد.
+
+recycle:
+  empty: إفراغ سلة المحذوفات
+  empty_title: إفراغ سلة المحذوفات
+  empty_body: ستُحذف كل البطاقات الموجودة في سلة المحذوفات إلى الأبد.
+
+export:
+  markdown: تصدير بصيغة Markdown
+  html: تصدير بصيغة HTML
+  pdf: تصدير بصيغة PDF
+  json: تصدير بصيغة JSON
+  choose_folder: اختر مجلداً للتصدير
+  done: "تم التصدير إلى %{path}"
+  failed: "فشل التصدير: %{error}"
+  skipped: "لم تُصدَّر %{n} بطاقة خاصة أو مشفّرة."
+
+backup:
+  done: "حُفظت النسخة الاحتياطية في %{path}"
+
+menu:
+  settings: الإعدادات
+  command_palette: لوحة الأوامر
+  keymap: تحرير اختصارات لوحة المفاتيح
+  export_all: تصدير كل البطاقات
+  backup: نسخ احتياطي الآن
+  open_data_folder: فتح مجلد البيانات
+  check_updates: التحقق من التحديثات
+  about: حول Cardfile
+  lock: قفل
+  sign_out: تسجيل الخروج
+  quit: إنهاء
+
+palette:
+  placeholder: اكتب أمراً…
+
+updates:
+  title: يتوفر تحديث
+  available: "الإصدار %{version} من Cardfile متاح. انقر للتنزيل."
+  latest: لديك أحدث إصدار.
+  failed: "تعذّر التحقق من التحديثات: %{error}"
+  managed: تُدار تحديثات هذا التثبيت بواسطة متجر التطبيقات أو مدير الحزم لديك.
+
+about:
+  version: "الإصدار %{version}"
+  description: صندوق بطاقات رقمي حديث لملاحظاتك.
+  license: برنامج حر بموجب ترخيص MIT أو Apache 2.0.
+  website: الموقع الإلكتروني
+  third_party: تراخيص الجهات الخارجية
+
+settings:
+  title: الإعدادات
+  open: فتح
+  never: أبداً
+  "off": "متوقف"
+  seconds: "%{n} ثانية"
+  minutes: "%{n} دقيقة"
+  tab:
+    general: عام
+    editor: المحرر
+    security: الأمان
+    users: المستخدمون
+    data: البيانات
+  general:
+    theme: السمة
+    language: اللغة
+    language_hint: ستتوفر لغات أخرى قريباً.
+    font_size: حجم نص المحرر
+    confirm_delete: السؤال قبل حذف البطاقات
+    check_updates: التحقق من التحديثات عند بدء التشغيل
+    check_updates_hint: يتحقق من GitHub فقط بحثاً عن إصدار أحدث. لا تُرسَل أي بيانات.
+    keymap: اختصارات لوحة المفاتيح
+    keymap_hint: عدّل keymap.json لتغيير أي اختصار. أعد التشغيل للتطبيق.
+  editor:
+    markdown_shortcuts: اختصارات Markdown
+    markdown_shortcuts_hint: "كتابة # و - و [] و **غامق** وما شابهها تنسّق النص تلقائياً."
+    spellcheck: التدقيق الإملائي
+    spellcheck_hint: تُسطَّر الكلمات الخاطئة إملائياً. انقر بزر الفأرة الأيمن للاقتراحات.
+    no_dictionaries: لا توجد قواميس مثبّتة.
+    spell_language: القاموس
+    search_scope: البحث في
+    scope_title: العناوين فقط
+    scope_content: العناوين والمحتوى
+    scope_all: العناوين والمحتوى والوسوم
+    default_lock: الحماية للبطاقات الجديدة
+    default_lock_hint: تُطبَّق عند إنشاء بطاقة.
+    history: الإصدارات المحفوظة لكل بطاقة
+    history_hint: يُحفظ إصدار كل 5 دقائق على الأكثر أثناء التحرير.
+  security:
+    auto_lock: القفل بعد عدم النشاط
+    auto_lock_hint: يطلب كلمة مرورك مجدداً بعد هذه المدة من عدم النشاط.
+    relock: إخفاء البطاقات الخاصة المفتوحة بعد
+    relock_hint: تُقفل البطاقات الخاصة والمشفّرة مجدداً بعد هذه المدة دون تحرير.
+    mask: الأحرف الظاهرة من العناوين الخاصة
+    mask_hint: يُخفى باقي العنوان في القائمة.
+    lock_modes: مستويات الحماية المتاحة
+    auth_mode: وضع تسجيل الدخول
+    auth_mode_hint: كيف يفتح الأشخاص Cardfile على هذا الحاسوب.
+    auth_one_user: أزل حسابات المستخدمين الأخرى قبل التبديل إلى وضع الحساب الواحد.
+    auth_needs_password: عيّن كلمة مرور أدناه أولاً.
+    auth_changed: تغيّر وضع تسجيل الدخول. سيُطبَّق عند بدء تشغيل Cardfile في المرة القادمة.
+    change_password: تغيير كلمة المرور
+    lock_password: كلمة مرور القفل
+    password_hint: تفتح كلمة المرور هذه البطاقات الخاصة والمشفّرة. تُعاد تشفير البطاقات المشفّرة عند تغييرها.
+    current_password: كلمة المرور الحالية
+    new_password: كلمة المرور الجديدة
+    save_password: حفظ كلمة المرور
+    password_saved: تم تغيير كلمة المرور.
+  users:
+    admin: مسؤول
+    add: إضافة مستخدم
+    create: إنشاء
+    delete: حذف المستخدم
+    delete_body: سيُزال الحساب. تبقى بطاقاته في قاعدة البيانات.
+    invalid: أدخل اسم مستخدم وكلمة مرور من 4 أحرف على الأقل.
+  data:
+    location: مجلد البيانات
+    portable: الوضع المحمول مفعّل.
+    standard: الوضع القياسي.
+    export: تصدير
+    export_hint: يصدّر كل البطاقات غير الخاصة وغير المشفّرة.

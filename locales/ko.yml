@@ -1,0 +1,389 @@
+_version: 1
+
+app:
+  name: Cardfile
+test:
+  greeting: "안녕하세요, %{name}님!"
+
+editor:
+  placeholder: "글쓰기를 시작하세요…"
+  link:
+    title: 링크 삽입
+    text_placeholder: 표시할 텍스트
+  toolbar:
+    undo: 실행 취소
+    redo: 다시 실행
+    bold: 굵게
+    italic: 기울임꼴
+    underline: 밑줄
+    strikethrough: 취소선
+    code: 인라인 코드
+    clear_formatting: 서식 지우기
+    text_color: 글자 색
+    highlight: 강조 표시
+    default_color: 기본
+    no_highlight: 없음
+    block_type: 단락 스타일
+    paragraph: 일반 텍스트
+    heading1: 제목 1
+    heading2: 제목 2
+    heading3: 제목 3
+    quote: 인용
+    code_block: 코드 블록
+    bullet_list: 글머리 기호 목록
+    numbered_list: 번호 목록
+    check_list: 체크리스트
+    align: 정렬
+    align_left: 왼쪽 정렬
+    align_center: 가운데 정렬
+    align_right: 오른쪽 정렬
+    align_justify: 양쪽 정렬
+    size: 글자 크기
+    size_small: 작게
+    size_normal: 보통
+    size_large: 크게
+    size_huge: 매우 크게
+    indent: 들여쓰기 늘리기
+    outdent: 들여쓰기 줄이기
+    link: 링크
+    remove_link: 링크 제거
+    insert: 삽입
+    image: 이미지…
+    attachment: 첨부 파일…
+    table: 표
+    divider: 구분선
+  table:
+    row_above: 위에 행 삽입
+    row_below: 아래에 행 삽입
+    col_left: 왼쪽에 열 삽입
+    col_right: 오른쪽에 열 삽입
+    delete_row: 행 삭제
+    delete_col: 열 삭제
+    toggle_header: 머리글 행
+    delete: 표 삭제
+  image:
+    smaller: 작게
+    larger: 크게
+    fit: 너비에 맞춤
+  menu:
+    cut: 잘라내기
+    copy: 복사
+    paste: 붙여넣기
+    paste_plain: 일반 텍스트로 붙여넣기
+    select_all: 모두 선택
+    open_link: 링크 열기
+    add_to_dictionary: 사전에 추가
+    no_suggestions: 추천 없음
+  attachment:
+    open_hint: 두 번 클릭하여 열기
+  read_only: 이 카드는 읽기 전용입니다. 편집하려면 잠금을 해제하세요.
+  find:
+    placeholder: 카드에서 찾기
+    replace_placeholder: 바꿀 내용
+    no_results: 결과 없음
+    count: "%{n}개 중 %{i}번째"
+    case: 대소문자 구분
+    previous: 이전 일치 항목 (Shift+F3)
+    next: 다음 일치 항목 (F3)
+    replace: 바꾸기
+    replace_one: 바꾸기
+    replace_all: 모두 바꾸기
+
+common:
+  back: 뒤로
+  next: 다음
+  ok: 확인
+  cancel: 취소
+
+time:
+  just_now: 방금
+  minutes_ago: "%{n}분 전"
+  hours_ago: "%{n}시간 전"
+  days_ago: "%{n}일 전"
+
+lock:
+  none: 보호 안 함
+  read_only: 읽기 전용
+  read_only_desc: 보이지만 편집하려면 한 번 클릭하여 잠금을 해제해야 합니다. 실수로 인한 변경을 막아 줍니다.
+  private: 비공개
+  private_desc: 비밀번호를 입력하기 전까지 제목은 가려지고 내용은 숨겨집니다.
+  encrypted: 암호화
+  encrypted_desc: 내용이 비밀번호로 디스크에 암호화됩니다. 잊어버린 비밀번호는 복구할 수 없습니다.
+
+wizard:
+  step:
+    welcome: 환영합니다
+    storage: 저장소
+    security: 로그인
+    protection: 카드 보호
+    appearance: 모양
+    finish: 완료
+  welcome:
+    title: Cardfile에 오신 것을 환영합니다
+    body: "메모, 아이디어, 간직하고 싶은 모든 것을 위한 디지털 카드 파일입니다. 몇 단계만 거쳐 설정해 보겠습니다."
+  storage:
+    standard: 표준
+    standard_desc: "데이터가 사용자 프로필에 저장됩니다:"
+    portable: 휴대용
+    portable_desc: 데이터가 Cardfile 옆의 “data” 폴더에 저장되므로 USB 드라이브에 담아 다닐 수 있습니다.
+    portable_unavailable: 프로그램 폴더에 쓸 수 없어 휴대용 모드를 사용할 수 없습니다.
+  security:
+    none: 비밀번호 없음
+    none_desc: Cardfile이 바로 열립니다. 개인용 컴퓨터에 가장 적합합니다.
+    single: 비밀번호
+    single_desc: 비밀번호로 보호되는 계정 하나.
+    multi: 여러 사용자
+    multi_desc: 각 사용자가 사용자 이름과 비밀번호로 로그인하며 자신의 카드를 가집니다.
+    username: 사용자 이름
+    display_name: 표시 이름
+    password: 비밀번호
+    confirm: 비밀번호 확인
+    lock_password: 잠금 비밀번호 (선택 사항)
+    lock_password_hint: 비공개 및 암호화된 카드의 잠금을 해제할 때 사용합니다. 나중에 설정에서 지정할 수 있습니다.
+    allow_registration: 새 사용자가 로그인 화면에서 계정을 만들 수 있도록 허용
+  protection:
+    intro: 카드에 사용할 수 있는 보호 수준을 선택하세요.
+    default: 새 카드의 보호 수준
+    needs_password: 비공개 및 암호화된 카드에는 잠금 비밀번호가 필요합니다. 뒤로 가서 설정하거나 나중에 설정에서 지정하세요.
+  appearance:
+    intro: 테마를 선택하세요. 설정에서 언제든지 바꿀 수 있습니다.
+  finish:
+    intro: "모든 준비가 끝났습니다:"
+    later: 이 모든 항목은 나중에 설정에서 변경할 수 있습니다.
+    start: Cardfile 사용 시작
+  error:
+    username: 사용자 이름을 입력하세요.
+    password_short: 비밀번호는 4자 이상이어야 합니다.
+    password_mismatch: 비밀번호가 일치하지 않습니다.
+    portable: 휴대용 모드를 켤 수 없습니다
+
+login:
+  title: 로그인
+  register_title: 계정 만들기
+  locked_title: "Cardfile이 잠겨 있습니다, %{name}님"
+  username: 사용자 이름
+  display_name: 표시 이름
+  password: 비밀번호
+  confirm: 비밀번호 확인
+  sign_in: 로그인
+  unlock: 잠금 해제
+  create: 계정 만들기
+  need_account: 계정 만들기
+  have_account: 이미 계정이 있습니다
+  error:
+    invalid: 사용자 이름 또는 비밀번호가 올바르지 않습니다.
+    taken: 이미 사용 중인 사용자 이름입니다.
+
+welcome:
+  title: Cardfile에 오신 것을 환영합니다
+  body: |
+    ## 시작하기
+
+    Cardfile은 메모를 **카드**로 보관합니다. **+** 버튼이나 **Ctrl+N**으로 카드를 만드세요.
+
+    - 도구 모음이나 단축키로 서식을 지정하세요: **Ctrl+B** 굵게, *Ctrl+I* 기울임꼴, Ctrl+U 밑줄.
+    - `# `를 입력하면 제목, `- `는 목록, `[] `는 체크리스트가 됩니다.
+    - 이미지와 파일을 카드에 붙여넣거나 끌어다 놓으세요.
+    - **Ctrl+F**로 모든 카드를 검색하고 **Ctrl+Shift+P**로 모든 명령을 확인하세요.
+
+    ## 카드 보호하기
+
+    카드 상단의 잠금 버튼으로 카드를 *읽기 전용*, *비공개* 또는 *암호화* 상태로 만들 수 있습니다.
+
+    - [ ] 첫 번째 카드 만들기
+    - [ ] 태그로 카드를 정리해 보기
+
+search:
+  placeholder: 카드 검색
+  focus: 카드 검색
+
+nav:
+  all: 모든 카드
+  favorites: 즐겨찾기
+  recycle_bin: 휴지통
+  tags: 태그
+
+list:
+  count: "카드 %{n}장"
+  empty: 아직 카드가 없습니다.
+  no_results: 검색과 일치하는 카드가 없습니다.
+
+sort:
+  title: 정렬
+  manual: 수동 (끌어서 순서 변경)
+  updated: 최근 수정순
+  created: 생성일순
+  title_asc: 제목순
+
+card:
+  new: 새 카드
+  untitled: 제목 없음
+  delete: 휴지통으로 이동
+  delete_body: "“%{title}” 카드를 휴지통으로 이동할까요? 나중에 복원할 수 있습니다."
+  restore: 복원
+  pin: 맨 위에 고정
+  unpin: 고정 해제
+  favorite: 즐겨찾기에 추가
+  unfavorite: 즐겨찾기에서 제거
+  tags: 태그
+  history: 버전 기록
+  none_selected: 선택된 카드 없음
+  none_hint: 카드를 선택하거나 Ctrl+N을 눌러 새로 만드세요.
+  read_only_banner: 이 카드는 읽기 전용입니다.
+  unlock_edit: 편집
+  deleted_banner: 이 카드는 휴지통에 있습니다.
+  saving: 저장 중…
+  updated: "%{date}에 저장됨"
+  words: "%{n}단어"
+  unlock:
+    private: 이 카드는 비공개입니다
+    encrypted: 이 카드는 암호화되어 있습니다
+    placeholder: 비밀번호
+    button: 잠금 해제
+    hint: 일정 시간 동안 사용하지 않으면 카드가 다시 잠깁니다.
+    wrong: 비밀번호가 올바르지 않습니다.
+    no_password: 잠금 비밀번호가 설정되지 않았습니다. 설정 → 보안에서 지정하세요.
+  protect:
+    tooltip: 카드 보호
+    unlock_first: 먼저 카드의 잠금을 해제하세요.
+    needs_password: 먼저 설정 → 보안에서 잠금 비밀번호를 지정하세요.
+    encrypt_title: 카드 암호화
+    encrypt_body: 이 카드를 암호화하려면 비밀번호를 입력하세요. 비밀번호가 없으면 카드를 열 수 없습니다.
+    failed: "보호 설정을 변경할 수 없습니다: %{error}"
+  purge:
+    title: 영구 삭제
+    body: 이 카드는 영구적으로 삭제됩니다. 되돌릴 수 없습니다.
+    confirm: 영구 삭제
+
+tags:
+  new: 새 태그…
+  edit: 태그 편집
+  delete: 태그 삭제
+  delete_body: "“%{name}” 태그를 삭제할까요? 카드의 내용은 유지됩니다."
+  name: 태그 이름
+  exists: 같은 이름의 태그가 이미 있습니다.
+
+history:
+  title: 버전 기록
+  restore: 이 버전 복원
+  empty: 이전 버전이 아직 없습니다.
+
+recycle:
+  empty: 휴지통 비우기
+  empty_title: 휴지통 비우기
+  empty_body: 휴지통의 모든 카드가 영구적으로 삭제됩니다.
+
+export:
+  markdown: Markdown으로 내보내기
+  html: HTML로 내보내기
+  pdf: PDF로 내보내기
+  json: JSON으로 내보내기
+  choose_folder: 내보낼 폴더 선택
+  done: "%{path}(으)로 내보냈습니다"
+  failed: "내보내기 실패: %{error}"
+  skipped: "비공개 또는 암호화된 카드 %{n}장은 내보내지 않았습니다."
+
+backup:
+  done: "백업을 %{path}에 저장했습니다"
+
+menu:
+  settings: 설정
+  command_palette: 명령 팔레트
+  keymap: 키보드 단축키 편집
+  export_all: 모든 카드 내보내기
+  backup: 지금 백업
+  open_data_folder: 데이터 폴더 열기
+  check_updates: 업데이트 확인
+  about: Cardfile 정보
+  lock: 잠금
+  sign_out: 로그아웃
+  quit: 종료
+
+palette:
+  placeholder: 명령을 입력하세요…
+
+updates:
+  title: 업데이트 사용 가능
+  available: "Cardfile %{version}을(를) 사용할 수 있습니다. 클릭하여 다운로드하세요."
+  latest: 최신 버전을 사용 중입니다.
+  failed: "업데이트를 확인할 수 없습니다: %{error}"
+  managed: 이 설치본의 업데이트는 앱 스토어 또는 패키지 관리자에서 처리합니다.
+
+about:
+  version: "버전 %{version}"
+  description: 메모를 위한 현대적인 디지털 카드 파일.
+  license: MIT 또는 Apache 2.0 라이선스의 자유 소프트웨어.
+  website: 웹사이트
+  third_party: 서드파티 라이선스
+
+settings:
+  title: 설정
+  open: 열기
+  never: 사용 안 함
+  "off": "끔"
+  seconds: "%{n}초"
+  minutes: "%{n}분"
+  tab:
+    general: 일반
+    editor: 편집기
+    security: 보안
+    users: 사용자
+    data: 데이터
+  general:
+    theme: 테마
+    language: 언어
+    language_hint: 더 많은 언어가 추가될 예정입니다.
+    font_size: 편집기 글자 크기
+    confirm_delete: 카드를 삭제하기 전에 확인
+    check_updates: 시작할 때 업데이트 확인
+    check_updates_hint: GitHub에서 새 버전이 있는지만 확인합니다. 어떤 데이터도 전송되지 않습니다.
+    keymap: 키보드 단축키
+    keymap_hint: keymap.json을 편집하면 단축키를 바꿀 수 있습니다. 적용하려면 다시 시작하세요.
+  editor:
+    markdown_shortcuts: Markdown 단축 입력
+    markdown_shortcuts_hint: "# , - , [] , **굵게** 등을 입력하면 텍스트 서식이 자동으로 적용됩니다."
+    spellcheck: 맞춤법 검사
+    spellcheck_hint: 철자가 틀린 단어에 밑줄이 표시됩니다. 오른쪽 클릭으로 추천 단어를 확인하세요.
+    no_dictionaries: 설치된 사전이 없습니다.
+    spell_language: 사전
+    search_scope: 검색 범위
+    scope_title: 제목만
+    scope_content: 제목과 내용
+    scope_all: 제목, 내용, 태그
+    default_lock: 새 카드의 보호 수준
+    default_lock_hint: 카드를 만들 때 적용됩니다.
+    history: 카드당 보관할 버전 수
+    history_hint: 편집하는 동안 버전은 최대 5분마다 한 번 저장됩니다.
+  security:
+    auto_lock: 사용하지 않으면 잠금
+    auto_lock_hint: 이 시간 동안 활동이 없으면 비밀번호를 다시 요구합니다.
+    relock: 잠금 해제된 비공개 카드를 숨기기까지의 시간
+    relock_hint: 비공개 및 암호화된 카드는 이 시간 동안 편집하지 않으면 다시 잠깁니다.
+    mask: 비공개 제목의 표시 글자 수
+    mask_hint: 목록에서 제목의 나머지 부분은 가려집니다.
+    lock_modes: 사용 가능한 보호 수준
+    auth_mode: 로그인 모드
+    auth_mode_hint: 이 컴퓨터에서 Cardfile을 여는 방식입니다.
+    auth_one_user: 단일 계정 모드로 전환하기 전에 다른 사용자 계정을 삭제하세요.
+    auth_needs_password: 먼저 아래에서 비밀번호를 지정하세요.
+    auth_changed: 로그인 모드가 변경되었습니다. 다음에 Cardfile을 시작할 때 적용됩니다.
+    change_password: 비밀번호 변경
+    lock_password: 잠금 비밀번호
+    password_hint: 이 비밀번호로 비공개 및 암호화된 카드의 잠금을 해제합니다. 변경하면 암호화된 카드가 다시 암호화됩니다.
+    current_password: 현재 비밀번호
+    new_password: 새 비밀번호
+    save_password: 비밀번호 저장
+    password_saved: 비밀번호가 변경되었습니다.
+  users:
+    admin: 관리자
+    add: 사용자 추가
+    create: 만들기
+    delete: 사용자 삭제
+    delete_body: 계정이 삭제됩니다. 해당 카드는 데이터베이스에 남습니다.
+    invalid: 사용자 이름과 4자 이상의 비밀번호를 입력하세요.
+  data:
+    location: 데이터 폴더
+    portable: 휴대용 모드가 켜져 있습니다.
+    standard: 표준 모드입니다.
+    export: 내보내기
+    export_hint: 비공개 또는 암호화되지 않은 모든 카드를 내보냅니다.

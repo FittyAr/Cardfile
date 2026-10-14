@@ -1,0 +1,389 @@
+_version: 1
+
+app:
+  name: Cardfile
+test:
+  greeting: "Hallo, %{name}!"
+
+editor:
+  placeholder: "Begin met schrijven…"
+  link:
+    title: Link invoegen
+    text_placeholder: Weer te geven tekst
+  toolbar:
+    undo: Ongedaan maken
+    redo: Opnieuw
+    bold: Vet
+    italic: Cursief
+    underline: Onderstrepen
+    strikethrough: Doorhalen
+    code: Inlinecode
+    clear_formatting: Opmaak wissen
+    text_color: Tekstkleur
+    highlight: Markeren
+    default_color: Standaard
+    no_highlight: Geen
+    block_type: Alineastijl
+    paragraph: Gewone tekst
+    heading1: Kop 1
+    heading2: Kop 2
+    heading3: Kop 3
+    quote: Citaat
+    code_block: Codeblok
+    bullet_list: Lijst met opsommingstekens
+    numbered_list: Genummerde lijst
+    check_list: Checklist
+    align: Uitlijning
+    align_left: Links uitlijnen
+    align_center: Centreren
+    align_right: Rechts uitlijnen
+    align_justify: Uitvullen
+    size: Tekstgrootte
+    size_small: Klein
+    size_normal: Normaal
+    size_large: Groot
+    size_huge: Enorm
+    indent: Inspringing vergroten
+    outdent: Inspringing verkleinen
+    link: Link
+    remove_link: Link verwijderen
+    insert: Invoegen
+    image: Afbeelding…
+    attachment: Bijlage…
+    table: Tabel
+    divider: Scheidingslijn
+  table:
+    row_above: Rij erboven invoegen
+    row_below: Rij eronder invoegen
+    col_left: Kolom links invoegen
+    col_right: Kolom rechts invoegen
+    delete_row: Rij verwijderen
+    delete_col: Kolom verwijderen
+    toggle_header: Koprij
+    delete: Tabel verwijderen
+  image:
+    smaller: Kleiner
+    larger: Groter
+    fit: Aan breedte aanpassen
+  menu:
+    cut: Knippen
+    copy: Kopiëren
+    paste: Plakken
+    paste_plain: Plakken als platte tekst
+    select_all: Alles selecteren
+    open_link: Link openen
+    add_to_dictionary: Aan woordenboek toevoegen
+    no_suggestions: Geen suggesties
+  attachment:
+    open_hint: Dubbelklik om te openen
+  read_only: Deze kaart is alleen-lezen. Ontgrendel hem om te bewerken.
+  find:
+    placeholder: Zoeken in kaart
+    replace_placeholder: Vervangen door
+    no_results: Geen resultaten
+    count: "%{i} van %{n}"
+    case: Hoofdlettergevoelig
+    previous: Vorige overeenkomst (Shift+F3)
+    next: Volgende overeenkomst (F3)
+    replace: Vervangen
+    replace_one: Vervangen
+    replace_all: Alles vervangen
+
+common:
+  back: Terug
+  next: Volgende
+  ok: OK
+  cancel: Annuleren
+
+time:
+  just_now: zojuist
+  minutes_ago: "%{n} min geleden"
+  hours_ago: "%{n} u geleden"
+  days_ago: "%{n} d geleden"
+
+lock:
+  none: Onbeschermd
+  read_only: Alleen-lezen
+  read_only_desc: Zichtbaar, maar bewerken vereist één klik om te ontgrendelen. Voorkomt onbedoelde wijzigingen.
+  private: Privé
+  private_desc: Titel verborgen en inhoud verhuld totdat je je wachtwoord invoert.
+  encrypted: Versleuteld
+  encrypted_desc: Inhoud wordt met je wachtwoord op schijf versleuteld. Een vergeten wachtwoord kan niet worden hersteld.
+
+wizard:
+  step:
+    welcome: Welkom
+    storage: Opslag
+    security: Inloggen
+    protection: Kaartbeveiliging
+    appearance: Uiterlijk
+    finish: Klaar
+  welcome:
+    title: Welkom bij Cardfile
+    body: "Je digitale kaartenbak voor notities, ideeën en alles wat je wilt bewaren. We stellen het in een paar stappen in."
+  storage:
+    standard: Standaard
+    standard_desc: "Gegevens worden opgeslagen in je gebruikersprofiel:"
+    portable: Draagbaar
+    portable_desc: Gegevens worden opgeslagen in een map “data” naast Cardfile, zodat je ze op een USB-stick kunt meenemen.
+    portable_unavailable: De draagbare modus is niet beschikbaar omdat de programmamap niet beschrijfbaar is.
+  security:
+    none: Geen wachtwoord
+    none_desc: Cardfile opent direct. Het beste voor een persoonlijke computer.
+    single: Wachtwoord
+    single_desc: Eén account beveiligd met een wachtwoord.
+    multi: Meerdere gebruikers
+    multi_desc: Elke persoon logt in met een gebruikersnaam en wachtwoord en heeft eigen kaarten.
+    username: Gebruikersnaam
+    display_name: Weergavenaam
+    password: Wachtwoord
+    confirm: Wachtwoord bevestigen
+    lock_password: Vergrendelwachtwoord (optioneel)
+    lock_password_hint: Wordt gebruikt om privé- en versleutelde kaarten te ontgrendelen. Je kunt het later instellen in Instellingen.
+    allow_registration: Nieuwe gebruikers toestaan een account aan te maken via het inlogscherm
+  protection:
+    intro: Kies welke beveiligingsniveaus voor kaarten gebruikt mogen worden.
+    default: Beveiliging voor nieuwe kaarten
+    needs_password: Privé- en versleutelde kaarten hebben een vergrendelwachtwoord nodig. Ga terug om er een in te stellen, of doe het later in Instellingen.
+  appearance:
+    intro: Kies een thema. Je kunt het op elk moment wijzigen in Instellingen.
+  finish:
+    intro: "Alles is klaar:"
+    later: Dit alles kan later worden gewijzigd in Instellingen.
+    start: Cardfile gebruiken
+  error:
+    username: Voer een gebruikersnaam in.
+    password_short: Het wachtwoord moet minstens 4 tekens bevatten.
+    password_mismatch: De wachtwoorden komen niet overeen.
+    portable: Kon de draagbare modus niet inschakelen
+
+login:
+  title: Inloggen
+  register_title: Account aanmaken
+  locked_title: "Cardfile is vergrendeld, %{name}"
+  username: Gebruikersnaam
+  display_name: Weergavenaam
+  password: Wachtwoord
+  confirm: Wachtwoord bevestigen
+  sign_in: Inloggen
+  unlock: Ontgrendelen
+  create: Account aanmaken
+  need_account: Een account aanmaken
+  have_account: Ik heb al een account
+  error:
+    invalid: Onjuiste gebruikersnaam of onjuist wachtwoord.
+    taken: Die gebruikersnaam is al in gebruik.
+
+welcome:
+  title: Welkom bij Cardfile
+  body: |
+    ## Aan de slag
+
+    Cardfile bewaart je notities als **kaarten**. Maak er een met de knop **+** of met **Ctrl+N**.
+
+    - Maak tekst op met de werkbalk of sneltoetsen: **Ctrl+B** vet, *Ctrl+I* cursief, Ctrl+U onderstrepen.
+    - Typ `# ` voor een kop, `- ` voor een lijst of `[] ` voor een checklist.
+    - Plak of sleep afbeeldingen en bestanden in een kaart.
+    - Gebruik **Ctrl+F** om al je kaarten te doorzoeken en **Ctrl+Shift+P** voor alle opdrachten.
+
+    ## Beveilig je kaarten
+
+    Gebruik de slotknop bovenaan een kaart om hem *alleen-lezen*, *privé* of *versleuteld* te maken.
+
+    - [ ] Maak je eerste kaart
+    - [ ] Probeer een label om kaarten te ordenen
+
+search:
+  placeholder: Kaarten zoeken
+  focus: Kaarten zoeken
+
+nav:
+  all: Alle kaarten
+  favorites: Favorieten
+  recycle_bin: Prullenbak
+  tags: LABELS
+
+list:
+  count: "%{n} kaarten"
+  empty: Hier staan nog geen kaarten.
+  no_results: Geen kaarten komen overeen met je zoekopdracht.
+
+sort:
+  title: Sorteren
+  manual: Handmatig (sleep om te herschikken)
+  updated: Laatst gewijzigd
+  created: Aanmaakdatum
+  title_asc: Titel
+
+card:
+  new: Nieuwe kaart
+  untitled: Naamloos
+  delete: Naar prullenbak verplaatsen
+  delete_body: "“%{title}” naar de prullenbak verplaatsen? Je kunt de kaart later herstellen."
+  restore: Herstellen
+  pin: Bovenaan vastzetten
+  unpin: Losmaken
+  favorite: Aan favorieten toevoegen
+  unfavorite: Uit favorieten verwijderen
+  tags: Labels
+  history: Versiegeschiedenis
+  none_selected: Geen kaart geselecteerd
+  none_hint: Selecteer een kaart of druk op Ctrl+N om er een te maken.
+  read_only_banner: Deze kaart is alleen-lezen.
+  unlock_edit: Bewerken
+  deleted_banner: Deze kaart staat in de prullenbak.
+  saving: Opslaan…
+  updated: "Opgeslagen %{date}"
+  words: "%{n} woorden"
+  unlock:
+    private: Deze kaart is privé
+    encrypted: Deze kaart is versleuteld
+    placeholder: Wachtwoord
+    button: Ontgrendelen
+    hint: De kaart wordt na een periode van inactiviteit opnieuw vergrendeld.
+    wrong: Onjuist wachtwoord.
+    no_password: Er is geen vergrendelwachtwoord ingesteld. Stel er een in via Instellingen → Beveiliging.
+  protect:
+    tooltip: Kaartbeveiliging
+    unlock_first: Ontgrendel eerst de kaart.
+    needs_password: Stel eerst een vergrendelwachtwoord in via Instellingen → Beveiliging.
+    encrypt_title: Kaart versleutelen
+    encrypt_body: Voer je wachtwoord in om deze kaart te versleutelen. Zonder wachtwoord kan de kaart niet worden geopend.
+    failed: "Kon de beveiliging niet wijzigen: %{error}"
+  purge:
+    title: Definitief verwijderen
+    body: Deze kaart wordt voorgoed verwijderd. Dit kan niet ongedaan worden gemaakt.
+    confirm: Definitief verwijderen
+
+tags:
+  new: Nieuw label…
+  edit: Label bewerken
+  delete: Label verwijderen
+  delete_body: "Het label “%{name}” verwijderen? Kaarten behouden hun inhoud."
+  name: Labelnaam
+  exists: Er bestaat al een label met die naam.
+
+history:
+  title: Versiegeschiedenis
+  restore: Deze versie herstellen
+  empty: Nog geen eerdere versies.
+
+recycle:
+  empty: Prullenbak legen
+  empty_title: Prullenbak legen
+  empty_body: Alle kaarten in de prullenbak worden voorgoed verwijderd.
+
+export:
+  markdown: Exporteren als Markdown
+  html: Exporteren als HTML
+  pdf: Exporteren als PDF
+  json: Exporteren als JSON
+  choose_folder: Kies een map voor de export
+  done: "Geëxporteerd naar %{path}"
+  failed: "Exporteren mislukt: %{error}"
+  skipped: "%{n} privé- of versleutelde kaarten zijn niet geëxporteerd."
+
+backup:
+  done: "Back-up opgeslagen in %{path}"
+
+menu:
+  settings: Instellingen
+  command_palette: Opdrachtenpalet
+  keymap: Sneltoetsen bewerken
+  export_all: Alle kaarten exporteren
+  backup: Nu een back-up maken
+  open_data_folder: Gegevensmap openen
+  check_updates: Controleren op updates
+  about: Over Cardfile
+  lock: Vergrendelen
+  sign_out: Uitloggen
+  quit: Afsluiten
+
+palette:
+  placeholder: Typ een opdracht…
+
+updates:
+  title: Update beschikbaar
+  available: "Cardfile %{version} is beschikbaar. Klik om te downloaden."
+  latest: Je hebt de nieuwste versie.
+  failed: "Kon niet op updates controleren: %{error}"
+  managed: Updates voor deze installatie worden beheerd door je appstore of pakketbeheerder.
+
+about:
+  version: "Versie %{version}"
+  description: Een moderne digitale kaartenbak voor je notities.
+  license: Vrije software onder de MIT- of Apache 2.0-licentie.
+  website: Website
+  third_party: Licenties van derden
+
+settings:
+  title: Instellingen
+  open: Openen
+  never: Nooit
+  "off": "Uit"
+  seconds: "%{n} seconden"
+  minutes: "%{n} minuten"
+  tab:
+    general: Algemeen
+    editor: Editor
+    security: Beveiliging
+    users: Gebruikers
+    data: Gegevens
+  general:
+    theme: Thema
+    language: Taal
+    language_hint: Er komen meer talen.
+    font_size: Tekstgrootte in de editor
+    confirm_delete: Vragen voordat kaarten worden verwijderd
+    check_updates: Bij het opstarten op updates controleren
+    check_updates_hint: Controleert alleen op GitHub of er een nieuwere versie is. Er worden geen gegevens verzonden.
+    keymap: Sneltoetsen
+    keymap_hint: Bewerk keymap.json om een sneltoets te wijzigen. Herstart om toe te passen.
+  editor:
+    markdown_shortcuts: Markdown-sneltoetsen
+    markdown_shortcuts_hint: "Het typen van # , - , [] , **vet** en dergelijke maakt de tekst automatisch op."
+    spellcheck: Spelling controleren
+    spellcheck_hint: Verkeerd gespelde woorden worden onderstreept. Klik met de rechtermuisknop voor suggesties.
+    no_dictionaries: Geen woordenboeken geïnstalleerd.
+    spell_language: Woordenboek
+    search_scope: Zoeken in
+    scope_title: Alleen titels
+    scope_content: Titels en inhoud
+    scope_all: Titels, inhoud en labels
+    default_lock: Beveiliging voor nieuwe kaarten
+    default_lock_hint: Wordt toegepast wanneer een kaart wordt gemaakt.
+    history: Bewaarde versies per kaart
+    history_hint: Tijdens het bewerken wordt hooguit elke 5 minuten een versie opgeslagen.
+  security:
+    auto_lock: Vergrendelen na inactiviteit
+    auto_lock_hint: Vraagt na deze tijd zonder activiteit opnieuw om je wachtwoord.
+    relock: Ontgrendelde privékaarten verbergen na
+    relock_hint: Privé- en versleutelde kaarten worden na deze tijd zonder bewerken opnieuw vergrendeld.
+    mask: Zichtbare tekens van privétitels
+    mask_hint: De rest van de titel wordt in de lijst verhuld.
+    lock_modes: Beschikbare beveiligingsniveaus
+    auth_mode: Inlogmodus
+    auth_mode_hint: Hoe mensen Cardfile op deze computer openen.
+    auth_one_user: Verwijder de andere gebruikersaccounts voordat je overschakelt naar een modus met één account.
+    auth_needs_password: Stel eerst hieronder een wachtwoord in.
+    auth_changed: Inlogmodus gewijzigd. Dit geldt de volgende keer dat Cardfile start.
+    change_password: Wachtwoord wijzigen
+    lock_password: Vergrendelwachtwoord
+    password_hint: Dit wachtwoord ontgrendelt privé- en versleutelde kaarten. Versleutelde kaarten worden opnieuw versleuteld als je het wijzigt.
+    current_password: Huidig wachtwoord
+    new_password: Nieuw wachtwoord
+    save_password: Wachtwoord opslaan
+    password_saved: Wachtwoord gewijzigd.
+  users:
+    admin: beheerder
+    add: Gebruiker toevoegen
+    create: Aanmaken
+    delete: Gebruiker verwijderen
+    delete_body: Het account wordt verwijderd. De kaarten blijven in de database.
+    invalid: Voer een gebruikersnaam en een wachtwoord van minstens 4 tekens in.
+  data:
+    location: Gegevensmap
+    portable: De draagbare modus is actief.
+    standard: Standaardmodus.
+    export: Exporteren
+    export_hint: Exporteert alle kaarten die niet privé of versleuteld zijn.

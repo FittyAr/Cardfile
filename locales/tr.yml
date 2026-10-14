@@ -1,0 +1,389 @@
+_version: 1
+
+app:
+  name: Cardfile
+test:
+  greeting: "Merhaba, %{name}!"
+
+editor:
+  placeholder: "Yazmaya başlayın…"
+  link:
+    title: Bağlantı ekle
+    text_placeholder: Görüntülenecek metin
+  toolbar:
+    undo: Geri al
+    redo: Yinele
+    bold: Kalın
+    italic: İtalik
+    underline: Altı çizili
+    strikethrough: Üstü çizili
+    code: Satır içi kod
+    clear_formatting: Biçimlendirmeyi temizle
+    text_color: Metin rengi
+    highlight: Vurgu
+    default_color: Varsayılan
+    no_highlight: Yok
+    block_type: Paragraf stili
+    paragraph: Normal metin
+    heading1: Başlık 1
+    heading2: Başlık 2
+    heading3: Başlık 3
+    quote: Alıntı
+    code_block: Kod bloğu
+    bullet_list: Madde işaretli liste
+    numbered_list: Numaralı liste
+    check_list: Yapılacaklar listesi
+    align: Hizalama
+    align_left: Sola hizala
+    align_center: Ortala
+    align_right: Sağa hizala
+    align_justify: İki yana yasla
+    size: Metin boyutu
+    size_small: Küçük
+    size_normal: Normal
+    size_large: Büyük
+    size_huge: Çok büyük
+    indent: Girintiyi artır
+    outdent: Girintiyi azalt
+    link: Bağlantı
+    remove_link: Bağlantıyı kaldır
+    insert: Ekle
+    image: Resim…
+    attachment: Ek…
+    table: Tablo
+    divider: Ayırıcı
+  table:
+    row_above: Üste satır ekle
+    row_below: Alta satır ekle
+    col_left: Sola sütun ekle
+    col_right: Sağa sütun ekle
+    delete_row: Satırı sil
+    delete_col: Sütunu sil
+    toggle_header: Başlık satırı
+    delete: Tabloyu sil
+  image:
+    smaller: Daha küçük
+    larger: Daha büyük
+    fit: Genişliğe sığdır
+  menu:
+    cut: Kes
+    copy: Kopyala
+    paste: Yapıştır
+    paste_plain: Düz metin olarak yapıştır
+    select_all: Tümünü seç
+    open_link: Bağlantıyı aç
+    add_to_dictionary: Sözlüğe ekle
+    no_suggestions: Öneri yok
+  attachment:
+    open_hint: Açmak için çift tıklayın
+  read_only: Bu kart salt okunurdur. Düzenlemek için kilidini açın.
+  find:
+    placeholder: Kartta ara
+    replace_placeholder: Şununla değiştir
+    no_results: Sonuç yok
+    count: "%{i} / %{n}"
+    case: Büyük/küçük harfe duyarlı
+    previous: Önceki eşleşme (Shift+F3)
+    next: Sonraki eşleşme (F3)
+    replace: Değiştir
+    replace_one: Değiştir
+    replace_all: Tümünü değiştir
+
+common:
+  back: Geri
+  next: İleri
+  ok: Tamam
+  cancel: İptal
+
+time:
+  just_now: az önce
+  minutes_ago: "%{n} dk önce"
+  hours_ago: "%{n} sa önce"
+  days_ago: "%{n} gün önce"
+
+lock:
+  none: Korumasız
+  read_only: Salt okunur
+  read_only_desc: Görünür, ancak düzenlemek için tek tıkla kilidi açmak gerekir. Yanlışlıkla yapılan değişiklikleri önler.
+  private: Özel
+  private_desc: Parolanızı girene kadar başlık gizlenir ve içerik görünmez.
+  encrypted: Şifreli
+  encrypted_desc: İçerik, parolanızla diskte şifrelenir. Unutulan bir parola kurtarılamaz.
+
+wizard:
+  step:
+    welcome: Hoş geldiniz
+    storage: Depolama
+    security: Oturum açma
+    protection: Kart koruması
+    appearance: Görünüm
+    finish: Hazır
+  welcome:
+    title: Cardfile'a hoş geldiniz
+    body: "Notlarınız, fikirleriniz ve saklamak istediğiniz her şey için dijital kart dosyanız. Birkaç adımda kuralım."
+  storage:
+    standard: Standart
+    standard_desc: "Veriler kullanıcı profilinizde saklanır:"
+    portable: Taşınabilir
+    portable_desc: Veriler, Cardfile'ın yanındaki bir “data” klasöründe saklanır; böylece USB belleğle taşıyabilirsiniz.
+    portable_unavailable: Program klasörü yazılabilir olmadığı için taşınabilir mod kullanılamıyor.
+  security:
+    none: Parola yok
+    none_desc: Cardfile doğrudan açılır. Kişisel bilgisayar için en uygunu.
+    single: Parola
+    single_desc: Parolayla korunan tek bir hesap.
+    multi: Birden çok kullanıcı
+    multi_desc: Her kişi kullanıcı adı ve parolayla oturum açar ve kendi kartlarına sahip olur.
+    username: Kullanıcı adı
+    display_name: Görünen ad
+    password: Parola
+    confirm: Parolayı onayla
+    lock_password: Kilit parolası (isteğe bağlı)
+    lock_password_hint: Özel ve şifreli kartların kilidini açmak için kullanılır. Daha sonra Ayarlar'dan belirleyebilirsiniz.
+    allow_registration: Yeni kullanıcıların oturum açma ekranından hesap oluşturmasına izin ver
+  protection:
+    intro: Kartlar için hangi koruma düzeylerinin kullanılabileceğini seçin.
+    default: Yeni kartlar için koruma
+    needs_password: Özel ve şifreli kartlar için bir kilit parolası gerekir. Belirlemek için geri dönün ya da daha sonra Ayarlar'dan belirleyin.
+  appearance:
+    intro: Bir tema seçin. İstediğiniz zaman Ayarlar'dan değiştirebilirsiniz.
+  finish:
+    intro: "Her şey hazır:"
+    later: Bunların hepsi daha sonra Ayarlar'dan değiştirilebilir.
+    start: Cardfile'ı kullanmaya başla
+  error:
+    username: Bir kullanıcı adı girin.
+    password_short: Parola en az 4 karakter olmalıdır.
+    password_mismatch: Parolalar eşleşmiyor.
+    portable: Taşınabilir mod etkinleştirilemedi
+
+login:
+  title: Oturum aç
+  register_title: Hesap oluştur
+  locked_title: "Cardfile kilitli, %{name}"
+  username: Kullanıcı adı
+  display_name: Görünen ad
+  password: Parola
+  confirm: Parolayı onayla
+  sign_in: Oturum aç
+  unlock: Kilidi aç
+  create: Hesap oluştur
+  need_account: Hesap oluştur
+  have_account: Zaten hesabım var
+  error:
+    invalid: Kullanıcı adı veya parola hatalı.
+    taken: Bu kullanıcı adı zaten alınmış.
+
+welcome:
+  title: Cardfile'a hoş geldiniz
+  body: |
+    ## Başlarken
+
+    Cardfile notlarınızı **kartlar** olarak saklar. **+** düğmesiyle veya **Ctrl+N** ile bir kart oluşturun.
+
+    - Metni araç çubuğuyla veya kısayollarla biçimlendirin: **Ctrl+B** kalın, *Ctrl+I* italik, Ctrl+U altı çizili.
+    - Başlık için `# `, liste için `- `, yapılacaklar listesi için `[] ` yazın.
+    - Resim ve dosyaları karta yapıştırın veya sürükleyin.
+    - Tüm kartlarınızda aramak için **Ctrl+F**, tüm komutları görmek için **Ctrl+Shift+P** kullanın.
+
+    ## Kartlarınızı koruyun
+
+    Bir kartın üstündeki kilit düğmesiyle onu *salt okunur*, *özel* veya *şifreli* yapın.
+
+    - [ ] İlk kartınızı oluşturun
+    - [ ] Kartları düzenlemek için bir etiket deneyin
+
+search:
+  placeholder: Kartlarda ara
+  focus: Kartlarda ara
+
+nav:
+  all: Tüm kartlar
+  favorites: Sık kullanılanlar
+  recycle_bin: Geri dönüşüm kutusu
+  tags: ETİKETLER
+
+list:
+  count: "%{n} kart"
+  empty: Henüz burada kart yok.
+  no_results: Aramanızla eşleşen kart yok.
+
+sort:
+  title: Sırala
+  manual: Elle (sıralamak için sürükleyin)
+  updated: Son değiştirilme
+  created: Oluşturulma tarihi
+  title_asc: Başlık
+
+card:
+  new: Yeni kart
+  untitled: Adsız
+  delete: Geri dönüşüm kutusuna taşı
+  delete_body: "“%{title}” geri dönüşüm kutusuna taşınsın mı? Daha sonra geri yükleyebilirsiniz."
+  restore: Geri yükle
+  pin: En üste sabitle
+  unpin: Sabitlemeyi kaldır
+  favorite: Sık kullanılanlara ekle
+  unfavorite: Sık kullanılanlardan kaldır
+  tags: Etiketler
+  history: Sürüm geçmişi
+  none_selected: Kart seçilmedi
+  none_hint: Bir kart seçin veya yeni kart oluşturmak için Ctrl+N tuşlarına basın.
+  read_only_banner: Bu kart salt okunurdur.
+  unlock_edit: Düzenle
+  deleted_banner: Bu kart geri dönüşüm kutusunda.
+  saving: Kaydediliyor…
+  updated: "%{date} kaydedildi"
+  words: "%{n} sözcük"
+  unlock:
+    private: Bu kart özel
+    encrypted: Bu kart şifreli
+    placeholder: Parola
+    button: Kilidi aç
+    hint: Kart, bir süre işlem yapılmazsa yeniden kilitlenir.
+    wrong: Parola hatalı.
+    no_password: Kilit parolası belirlenmedi. Ayarlar → Güvenlik bölümünden belirleyin.
+  protect:
+    tooltip: Kart koruması
+    unlock_first: Önce kartın kilidini açın.
+    needs_password: Önce Ayarlar → Güvenlik bölümünde bir kilit parolası belirleyin.
+    encrypt_title: Kartı şifrele
+    encrypt_body: Bu kartı şifrelemek için parolanızı girin. Parola olmadan kart açılamaz.
+    failed: "Koruma değiştirilemedi: %{error}"
+  purge:
+    title: Kalıcı olarak sil
+    body: Bu kart sonsuza dek silinecek. Bu işlem geri alınamaz.
+    confirm: Kalıcı olarak sil
+
+tags:
+  new: Yeni etiket…
+  edit: Etiketi düzenle
+  delete: Etiketi sil
+  delete_body: "“%{name}” etiketi silinsin mi? Kartlar içeriğini korur."
+  name: Etiket adı
+  exists: Bu ada sahip bir etiket zaten var.
+
+history:
+  title: Sürüm geçmişi
+  restore: Bu sürümü geri yükle
+  empty: Henüz önceki sürüm yok.
+
+recycle:
+  empty: Geri dönüşüm kutusunu boşalt
+  empty_title: Geri dönüşüm kutusunu boşalt
+  empty_body: Geri dönüşüm kutusundaki tüm kartlar sonsuza dek silinecek.
+
+export:
+  markdown: Markdown olarak dışa aktar
+  html: HTML olarak dışa aktar
+  pdf: PDF olarak dışa aktar
+  json: JSON olarak dışa aktar
+  choose_folder: Dışa aktarma için bir klasör seçin
+  done: "%{path} konumuna dışa aktarıldı"
+  failed: "Dışa aktarma başarısız: %{error}"
+  skipped: "%{n} özel veya şifreli kart dışa aktarılmadı."
+
+backup:
+  done: "Yedek %{path} konumuna kaydedildi"
+
+menu:
+  settings: Ayarlar
+  command_palette: Komut paleti
+  keymap: Klavye kısayollarını düzenle
+  export_all: Tüm kartları dışa aktar
+  backup: Şimdi yedekle
+  open_data_folder: Veri klasörünü aç
+  check_updates: Güncellemeleri denetle
+  about: Cardfile hakkında
+  lock: Kilitle
+  sign_out: Oturumu kapat
+  quit: Çık
+
+palette:
+  placeholder: Bir komut yazın…
+
+updates:
+  title: Güncelleme mevcut
+  available: "Cardfile %{version} mevcut. İndirmek için tıklayın."
+  latest: En son sürümü kullanıyorsunuz.
+  failed: "Güncellemeler denetlenemedi: %{error}"
+  managed: Bu kurulumun güncellemeleri uygulama mağazanız veya paket yöneticiniz tarafından yönetilir.
+
+about:
+  version: "Sürüm %{version}"
+  description: Notlarınız için modern bir dijital kart dosyası.
+  license: MIT veya Apache 2.0 lisansı altında özgür yazılım.
+  website: Web sitesi
+  third_party: Üçüncü taraf lisansları
+
+settings:
+  title: Ayarlar
+  open: Aç
+  never: Asla
+  "off": "Kapalı"
+  seconds: "%{n} saniye"
+  minutes: "%{n} dakika"
+  tab:
+    general: Genel
+    editor: Düzenleyici
+    security: Güvenlik
+    users: Kullanıcılar
+    data: Veriler
+  general:
+    theme: Tema
+    language: Dil
+    language_hint: Daha fazla dil geliyor.
+    font_size: Düzenleyici metin boyutu
+    confirm_delete: Kartları silmeden önce sor
+    check_updates: Başlangıçta güncellemeleri denetle
+    check_updates_hint: Yalnızca GitHub'da daha yeni bir sürüm olup olmadığına bakar. Hiçbir veri gönderilmez.
+    keymap: Klavye kısayolları
+    keymap_hint: Herhangi bir kısayolu değiştirmek için keymap.json dosyasını düzenleyin. Uygulamak için yeniden başlatın.
+  editor:
+    markdown_shortcuts: Markdown kısayolları
+    markdown_shortcuts_hint: "# , - , [] , **kalın** gibi ifadeleri yazmak metni otomatik olarak biçimlendirir."
+    spellcheck: Yazımı denetle
+    spellcheck_hint: Yanlış yazılan sözcüklerin altı çizilir. Öneriler için sağ tıklayın.
+    no_dictionaries: Yüklü sözlük yok.
+    spell_language: Sözlük
+    search_scope: Arama kapsamı
+    scope_title: Yalnızca başlıklar
+    scope_content: Başlıklar ve içerik
+    scope_all: Başlıklar, içerik ve etiketler
+    default_lock: Yeni kartlar için koruma
+    default_lock_hint: Bir kart oluşturulduğunda uygulanır.
+    history: Kart başına tutulan sürümler
+    history_hint: Düzenleme sırasında en fazla 5 dakikada bir sürüm kaydedilir.
+  security:
+    auto_lock: Hareketsizlikten sonra kilitle
+    auto_lock_hint: Bu süre boyunca etkinlik olmazsa parolanızı yeniden ister.
+    relock: Kilidi açılmış özel kartları şu süreden sonra gizle
+    relock_hint: Özel ve şifreli kartlar, bu süre boyunca düzenlenmezse yeniden kilitlenir.
+    mask: Özel başlıkların görünen karakterleri
+    mask_hint: Başlığın geri kalanı listede gizlenir.
+    lock_modes: Kullanılabilir koruma düzeyleri
+    auth_mode: Oturum açma modu
+    auth_mode_hint: İnsanların bu bilgisayarda Cardfile'ı nasıl açtığı.
+    auth_one_user: Tek hesaplı bir moda geçmeden önce diğer kullanıcı hesaplarını kaldırın.
+    auth_needs_password: Önce aşağıda bir parola belirleyin.
+    auth_changed: Oturum açma modu değişti. Cardfile'ın bir sonraki başlatılışında uygulanır.
+    change_password: Parolayı değiştir
+    lock_password: Kilit parolası
+    password_hint: Bu parola özel ve şifreli kartların kilidini açar. Değiştirdiğinizde şifreli kartlar yeniden şifrelenir.
+    current_password: Geçerli parola
+    new_password: Yeni parola
+    save_password: Parolayı kaydet
+    password_saved: Parola değiştirildi.
+  users:
+    admin: yönetici
+    add: Kullanıcı ekle
+    create: Oluştur
+    delete: Kullanıcıyı sil
+    delete_body: Hesap kaldırılır. Kartları veritabanında kalır.
+    invalid: Bir kullanıcı adı ve en az 4 karakterlik bir parola girin.
+  data:
+    location: Veri klasörü
+    portable: Taşınabilir mod etkin.
+    standard: Standart mod.
+    export: Dışa aktar
+    export_hint: Özel veya şifreli olmayan tüm kartları dışa aktarır.

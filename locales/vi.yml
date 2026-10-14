@@ -1,0 +1,389 @@
+_version: 1
+
+app:
+  name: Cardfile
+test:
+  greeting: "Xin chào, %{name}!"
+
+editor:
+  placeholder: "Bắt đầu viết…"
+  link:
+    title: Chèn liên kết
+    text_placeholder: Văn bản hiển thị
+  toolbar:
+    undo: Hoàn tác
+    redo: Làm lại
+    bold: In đậm
+    italic: In nghiêng
+    underline: Gạch chân
+    strikethrough: Gạch ngang
+    code: Mã nội dòng
+    clear_formatting: Xóa định dạng
+    text_color: Màu chữ
+    highlight: Tô sáng
+    default_color: Mặc định
+    no_highlight: Không
+    block_type: Kiểu đoạn văn
+    paragraph: Văn bản thường
+    heading1: Tiêu đề 1
+    heading2: Tiêu đề 2
+    heading3: Tiêu đề 3
+    quote: Trích dẫn
+    code_block: Khối mã
+    bullet_list: Danh sách dấu đầu dòng
+    numbered_list: Danh sách đánh số
+    check_list: Danh sách kiểm
+    align: Căn lề
+    align_left: Căn trái
+    align_center: Căn giữa
+    align_right: Căn phải
+    align_justify: Căn đều hai bên
+    size: Cỡ chữ
+    size_small: Nhỏ
+    size_normal: Bình thường
+    size_large: Lớn
+    size_huge: Rất lớn
+    indent: Tăng thụt lề
+    outdent: Giảm thụt lề
+    link: Liên kết
+    remove_link: Gỡ liên kết
+    insert: Chèn
+    image: Hình ảnh…
+    attachment: Tệp đính kèm…
+    table: Bảng
+    divider: Đường phân cách
+  table:
+    row_above: Chèn hàng phía trên
+    row_below: Chèn hàng phía dưới
+    col_left: Chèn cột bên trái
+    col_right: Chèn cột bên phải
+    delete_row: Xóa hàng
+    delete_col: Xóa cột
+    toggle_header: Hàng tiêu đề
+    delete: Xóa bảng
+  image:
+    smaller: Nhỏ hơn
+    larger: Lớn hơn
+    fit: Vừa chiều rộng
+  menu:
+    cut: Cắt
+    copy: Sao chép
+    paste: Dán
+    paste_plain: Dán dưới dạng văn bản thuần
+    select_all: Chọn tất cả
+    open_link: Mở liên kết
+    add_to_dictionary: Thêm vào từ điển
+    no_suggestions: Không có gợi ý
+  attachment:
+    open_hint: Nhấp đúp để mở
+  read_only: Thẻ này chỉ có thể đọc. Hãy mở khóa để chỉnh sửa.
+  find:
+    placeholder: Tìm trong thẻ
+    replace_placeholder: Thay bằng
+    no_results: Không có kết quả
+    count: "%{i} trên %{n}"
+    case: Phân biệt chữ hoa/thường
+    previous: Kết quả trước (Shift+F3)
+    next: Kết quả tiếp theo (F3)
+    replace: Thay thế
+    replace_one: Thay thế
+    replace_all: Thay thế tất cả
+
+common:
+  back: Quay lại
+  next: Tiếp theo
+  ok: OK
+  cancel: Hủy
+
+time:
+  just_now: vừa xong
+  minutes_ago: "%{n} phút trước"
+  hours_ago: "%{n} giờ trước"
+  days_ago: "%{n} ngày trước"
+
+lock:
+  none: Không bảo vệ
+  read_only: Chỉ đọc
+  read_only_desc: Hiển thị bình thường, nhưng muốn chỉnh sửa cần nhấp một lần để mở khóa. Tránh thay đổi ngoài ý muốn.
+  private: Riêng tư
+  private_desc: Tiêu đề bị che và nội dung bị ẩn cho đến khi bạn nhập mật khẩu.
+  encrypted: Đã mã hóa
+  encrypted_desc: Nội dung được mã hóa trên đĩa bằng mật khẩu của bạn. Mật khẩu đã quên không thể khôi phục.
+
+wizard:
+  step:
+    welcome: Chào mừng
+    storage: Lưu trữ
+    security: Đăng nhập
+    protection: Bảo vệ thẻ
+    appearance: Giao diện
+    finish: Sẵn sàng
+  welcome:
+    title: Chào mừng đến với Cardfile
+    body: "Hộp thẻ kỹ thuật số của bạn cho ghi chú, ý tưởng và mọi thứ bạn muốn lưu giữ. Hãy thiết lập chỉ trong vài bước."
+  storage:
+    standard: Tiêu chuẩn
+    standard_desc: "Dữ liệu được lưu trong hồ sơ người dùng của bạn:"
+    portable: Di động
+    portable_desc: Dữ liệu được lưu trong thư mục “data” cạnh Cardfile, để bạn mang theo trên USB.
+    portable_unavailable: Chế độ di động không khả dụng vì thư mục chương trình không thể ghi.
+  security:
+    none: Không mật khẩu
+    none_desc: Cardfile mở trực tiếp. Phù hợp nhất với máy tính cá nhân.
+    single: Mật khẩu
+    single_desc: Một tài khoản được bảo vệ bằng mật khẩu.
+    multi: Nhiều người dùng
+    multi_desc: Mỗi người đăng nhập bằng tên người dùng và mật khẩu, và có thẻ riêng.
+    username: Tên người dùng
+    display_name: Tên hiển thị
+    password: Mật khẩu
+    confirm: Xác nhận mật khẩu
+    lock_password: Mật khẩu khóa (tùy chọn)
+    lock_password_hint: Dùng để mở khóa thẻ riêng tư và thẻ đã mã hóa. Bạn có thể đặt sau trong Cài đặt.
+    allow_registration: Cho phép người dùng mới tạo tài khoản từ màn hình đăng nhập
+  protection:
+    intro: Chọn các mức bảo vệ có thể dùng cho thẻ.
+    default: Bảo vệ cho thẻ mới
+    needs_password: Thẻ riêng tư và thẻ đã mã hóa cần có mật khẩu khóa. Hãy quay lại để đặt, hoặc đặt sau trong Cài đặt.
+  appearance:
+    intro: Chọn một giao diện. Bạn có thể đổi bất cứ lúc nào trong Cài đặt.
+  finish:
+    intro: "Mọi thứ đã sẵn sàng:"
+    later: Tất cả những điều này có thể thay đổi sau trong Cài đặt.
+    start: Bắt đầu dùng Cardfile
+  error:
+    username: Hãy nhập tên người dùng.
+    password_short: Mật khẩu phải có ít nhất 4 ký tự.
+    password_mismatch: Mật khẩu không khớp.
+    portable: Không thể bật chế độ di động
+
+login:
+  title: Đăng nhập
+  register_title: Tạo tài khoản
+  locked_title: "Cardfile đã bị khóa, %{name}"
+  username: Tên người dùng
+  display_name: Tên hiển thị
+  password: Mật khẩu
+  confirm: Xác nhận mật khẩu
+  sign_in: Đăng nhập
+  unlock: Mở khóa
+  create: Tạo tài khoản
+  need_account: Tạo tài khoản
+  have_account: Tôi đã có tài khoản
+  error:
+    invalid: Tên người dùng hoặc mật khẩu không đúng.
+    taken: Tên người dùng này đã được sử dụng.
+
+welcome:
+  title: Chào mừng đến với Cardfile
+  body: |
+    ## Bắt đầu
+
+    Cardfile lưu ghi chú của bạn dưới dạng **thẻ**. Tạo thẻ bằng nút **+** hoặc **Ctrl+N**.
+
+    - Định dạng văn bản bằng thanh công cụ hoặc phím tắt: **Ctrl+B** in đậm, *Ctrl+I* in nghiêng, Ctrl+U gạch chân.
+    - Gõ `# ` để tạo tiêu đề, `- ` để tạo danh sách hoặc `[] ` để tạo danh sách kiểm.
+    - Dán hoặc kéo thả hình ảnh và tệp vào thẻ.
+    - Dùng **Ctrl+F** để tìm trong tất cả thẻ và **Ctrl+Shift+P** để xem mọi lệnh.
+
+    ## Bảo vệ thẻ của bạn
+
+    Dùng nút ổ khóa ở đầu thẻ để chuyển thẻ sang *chỉ đọc*, *riêng tư* hoặc *đã mã hóa*.
+
+    - [ ] Tạo thẻ đầu tiên của bạn
+    - [ ] Thử một nhãn để sắp xếp thẻ
+
+search:
+  placeholder: Tìm thẻ
+  focus: Tìm thẻ
+
+nav:
+  all: Tất cả thẻ
+  favorites: Yêu thích
+  recycle_bin: Thùng rác
+  tags: NHÃN
+
+list:
+  count: "%{n} thẻ"
+  empty: Chưa có thẻ nào ở đây.
+  no_results: Không có thẻ nào khớp với tìm kiếm.
+
+sort:
+  title: Sắp xếp
+  manual: Thủ công (kéo để sắp xếp lại)
+  updated: Sửa đổi lần cuối
+  created: Ngày tạo
+  title_asc: Tiêu đề
+
+card:
+  new: Thẻ mới
+  untitled: Chưa đặt tên
+  delete: Chuyển vào thùng rác
+  delete_body: "Chuyển “%{title}” vào thùng rác? Bạn có thể khôi phục sau."
+  restore: Khôi phục
+  pin: Ghim lên đầu
+  unpin: Bỏ ghim
+  favorite: Thêm vào yêu thích
+  unfavorite: Xóa khỏi yêu thích
+  tags: Nhãn
+  history: Lịch sử phiên bản
+  none_selected: Chưa chọn thẻ nào
+  none_hint: Chọn một thẻ hoặc nhấn Ctrl+N để tạo thẻ mới.
+  read_only_banner: Thẻ này chỉ có thể đọc.
+  unlock_edit: Chỉnh sửa
+  deleted_banner: Thẻ này đang ở trong thùng rác.
+  saving: Đang lưu…
+  updated: "Đã lưu %{date}"
+  words: "%{n} từ"
+  unlock:
+    private: Thẻ này là thẻ riêng tư
+    encrypted: Thẻ này đã được mã hóa
+    placeholder: Mật khẩu
+    button: Mở khóa
+    hint: Thẻ sẽ khóa lại sau một thời gian không hoạt động.
+    wrong: Mật khẩu không đúng.
+    no_password: Chưa đặt mật khẩu khóa. Hãy đặt trong Cài đặt → Bảo mật.
+  protect:
+    tooltip: Bảo vệ thẻ
+    unlock_first: Hãy mở khóa thẻ trước.
+    needs_password: Hãy đặt mật khẩu khóa trong Cài đặt → Bảo mật trước.
+    encrypt_title: Mã hóa thẻ
+    encrypt_body: Nhập mật khẩu của bạn để mã hóa thẻ này. Không có mật khẩu sẽ không thể mở thẻ.
+    failed: "Không thể thay đổi mức bảo vệ: %{error}"
+  purge:
+    title: Xóa vĩnh viễn
+    body: Thẻ này sẽ bị xóa vĩnh viễn. Không thể hoàn tác.
+    confirm: Xóa vĩnh viễn
+
+tags:
+  new: Nhãn mới…
+  edit: Sửa nhãn
+  delete: Xóa nhãn
+  delete_body: "Xóa nhãn “%{name}”? Các thẻ vẫn giữ nguyên nội dung."
+  name: Tên nhãn
+  exists: Đã có một nhãn với tên này.
+
+history:
+  title: Lịch sử phiên bản
+  restore: Khôi phục phiên bản này
+  empty: Chưa có phiên bản trước nào.
+
+recycle:
+  empty: Dọn sạch thùng rác
+  empty_title: Dọn sạch thùng rác
+  empty_body: Tất cả thẻ trong thùng rác sẽ bị xóa vĩnh viễn.
+
+export:
+  markdown: Xuất dưới dạng Markdown
+  html: Xuất dưới dạng HTML
+  pdf: Xuất dưới dạng PDF
+  json: Xuất dưới dạng JSON
+  choose_folder: Chọn thư mục để xuất
+  done: "Đã xuất tới %{path}"
+  failed: "Xuất thất bại: %{error}"
+  skipped: "%{n} thẻ riêng tư hoặc đã mã hóa chưa được xuất."
+
+backup:
+  done: "Đã lưu bản sao lưu tại %{path}"
+
+menu:
+  settings: Cài đặt
+  command_palette: Bảng lệnh
+  keymap: Chỉnh sửa phím tắt
+  export_all: Xuất tất cả thẻ
+  backup: Sao lưu ngay
+  open_data_folder: Mở thư mục dữ liệu
+  check_updates: Kiểm tra cập nhật
+  about: Giới thiệu về Cardfile
+  lock: Khóa
+  sign_out: Đăng xuất
+  quit: Thoát
+
+palette:
+  placeholder: Nhập một lệnh…
+
+updates:
+  title: Có bản cập nhật
+  available: "Cardfile %{version} đã có. Nhấp để tải xuống."
+  latest: Bạn đang dùng phiên bản mới nhất.
+  failed: "Không thể kiểm tra cập nhật: %{error}"
+  managed: Cập nhật cho bản cài đặt này do cửa hàng ứng dụng hoặc trình quản lý gói của bạn xử lý.
+
+about:
+  version: "Phiên bản %{version}"
+  description: Hộp thẻ kỹ thuật số hiện đại cho ghi chú của bạn.
+  license: Phần mềm tự do theo giấy phép MIT hoặc Apache 2.0.
+  website: Trang web
+  third_party: Giấy phép của bên thứ ba
+
+settings:
+  title: Cài đặt
+  open: Mở
+  never: Không bao giờ
+  "off": "Tắt"
+  seconds: "%{n} giây"
+  minutes: "%{n} phút"
+  tab:
+    general: Chung
+    editor: Trình soạn thảo
+    security: Bảo mật
+    users: Người dùng
+    data: Dữ liệu
+  general:
+    theme: Giao diện
+    language: Ngôn ngữ
+    language_hint: Sẽ có thêm nhiều ngôn ngữ.
+    font_size: Cỡ chữ trình soạn thảo
+    confirm_delete: Hỏi trước khi xóa thẻ
+    check_updates: Kiểm tra cập nhật khi khởi động
+    check_updates_hint: Chỉ kiểm tra GitHub xem có phiên bản mới hơn không. Không gửi dữ liệu nào.
+    keymap: Phím tắt
+    keymap_hint: Chỉnh sửa keymap.json để đổi bất kỳ phím tắt nào. Khởi động lại để áp dụng.
+  editor:
+    markdown_shortcuts: Phím tắt Markdown
+    markdown_shortcuts_hint: "Gõ # , - , [] , **in đậm** và các mẫu tương tự sẽ tự động định dạng văn bản."
+    spellcheck: Kiểm tra chính tả
+    spellcheck_hint: Từ sai chính tả được gạch chân. Nhấp chuột phải để xem gợi ý.
+    no_dictionaries: Chưa cài từ điển nào.
+    spell_language: Từ điển
+    search_scope: Tìm trong
+    scope_title: Chỉ tiêu đề
+    scope_content: Tiêu đề và nội dung
+    scope_all: Tiêu đề, nội dung và nhãn
+    default_lock: Bảo vệ cho thẻ mới
+    default_lock_hint: Áp dụng khi tạo thẻ.
+    history: Số phiên bản giữ cho mỗi thẻ
+    history_hint: Khi chỉnh sửa, một phiên bản được lưu tối đa mỗi 5 phút.
+  security:
+    auto_lock: Khóa sau khi không hoạt động
+    auto_lock_hint: Hỏi lại mật khẩu sau khoảng thời gian không hoạt động này.
+    relock: Ẩn thẻ riêng tư đã mở khóa sau
+    relock_hint: Thẻ riêng tư và thẻ đã mã hóa sẽ khóa lại sau khoảng thời gian không chỉnh sửa này.
+    mask: Số ký tự hiển thị của tiêu đề riêng tư
+    mask_hint: Phần còn lại của tiêu đề bị che trong danh sách.
+    lock_modes: Các mức bảo vệ khả dụng
+    auth_mode: Chế độ đăng nhập
+    auth_mode_hint: Cách mọi người mở Cardfile trên máy tính này.
+    auth_one_user: Hãy xóa các tài khoản người dùng khác trước khi chuyển sang chế độ một tài khoản.
+    auth_needs_password: Hãy đặt mật khẩu bên dưới trước.
+    auth_changed: Đã đổi chế độ đăng nhập. Sẽ áp dụng vào lần khởi động Cardfile tiếp theo.
+    change_password: Đổi mật khẩu
+    lock_password: Mật khẩu khóa
+    password_hint: Mật khẩu này mở khóa thẻ riêng tư và thẻ đã mã hóa. Thẻ đã mã hóa sẽ được mã hóa lại khi bạn đổi mật khẩu.
+    current_password: Mật khẩu hiện tại
+    new_password: Mật khẩu mới
+    save_password: Lưu mật khẩu
+    password_saved: Đã đổi mật khẩu.
+  users:
+    admin: quản trị viên
+    add: Thêm người dùng
+    create: Tạo
+    delete: Xóa người dùng
+    delete_body: Tài khoản sẽ bị xóa. Các thẻ của tài khoản vẫn còn trong cơ sở dữ liệu.
+    invalid: Hãy nhập tên người dùng và mật khẩu có ít nhất 4 ký tự.
+  data:
+    location: Thư mục dữ liệu
+    portable: Chế độ di động đang bật.
+    standard: Chế độ tiêu chuẩn.
+    export: Xuất
+    export_hint: Xuất tất cả thẻ không phải thẻ riêng tư hoặc đã mã hóa.

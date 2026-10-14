@@ -1,0 +1,389 @@
+_version: 1
+
+app:
+  name: Cardfile
+test:
+  greeting: "Bonjour, %{name} !"
+
+editor:
+  placeholder: "Commencez à écrire…"
+  link:
+    title: Insérer un lien
+    text_placeholder: Texte à afficher
+  toolbar:
+    undo: Annuler
+    redo: Rétablir
+    bold: Gras
+    italic: Italique
+    underline: Souligné
+    strikethrough: Barré
+    code: Code en ligne
+    clear_formatting: Effacer la mise en forme
+    text_color: Couleur du texte
+    highlight: Surlignage
+    default_color: Par défaut
+    no_highlight: Aucun
+    block_type: Style de paragraphe
+    paragraph: Texte normal
+    heading1: Titre 1
+    heading2: Titre 2
+    heading3: Titre 3
+    quote: Citation
+    code_block: Bloc de code
+    bullet_list: Liste à puces
+    numbered_list: Liste numérotée
+    check_list: Liste de contrôle
+    align: Alignement
+    align_left: Aligner à gauche
+    align_center: Centrer
+    align_right: Aligner à droite
+    align_justify: Justifier
+    size: Taille du texte
+    size_small: Petite
+    size_normal: Normale
+    size_large: Grande
+    size_huge: Très grande
+    indent: Augmenter le retrait
+    outdent: Diminuer le retrait
+    link: Lien
+    remove_link: Supprimer le lien
+    insert: Insérer
+    image: Image…
+    attachment: Pièce jointe…
+    table: Tableau
+    divider: Séparateur
+  table:
+    row_above: Insérer une ligne au-dessus
+    row_below: Insérer une ligne en dessous
+    col_left: Insérer une colonne à gauche
+    col_right: Insérer une colonne à droite
+    delete_row: Supprimer la ligne
+    delete_col: Supprimer la colonne
+    toggle_header: Ligne d'en-tête
+    delete: Supprimer le tableau
+  image:
+    smaller: Plus petite
+    larger: Plus grande
+    fit: Ajuster à la largeur
+  menu:
+    cut: Couper
+    copy: Copier
+    paste: Coller
+    paste_plain: Coller en texte brut
+    select_all: Tout sélectionner
+    open_link: Ouvrir le lien
+    add_to_dictionary: Ajouter au dictionnaire
+    no_suggestions: Aucune suggestion
+  attachment:
+    open_hint: Double-cliquez pour ouvrir
+  read_only: Cette fiche est en lecture seule. Déverrouillez-la pour la modifier.
+  find:
+    placeholder: Rechercher dans la fiche
+    replace_placeholder: Remplacer par
+    no_results: Aucun résultat
+    count: "%{i} sur %{n}"
+    case: Respecter la casse
+    previous: Résultat précédent (Maj+F3)
+    next: Résultat suivant (F3)
+    replace: Remplacer
+    replace_one: Remplacer
+    replace_all: Tout remplacer
+
+common:
+  back: Retour
+  next: Suivant
+  ok: OK
+  cancel: Annuler
+
+time:
+  just_now: à l'instant
+  minutes_ago: "il y a %{n} min"
+  hours_ago: "il y a %{n} h"
+  days_ago: "il y a %{n} j"
+
+lock:
+  none: Non protégée
+  read_only: Lecture seule
+  read_only_desc: Visible, mais la modification demande un clic pour déverrouiller. Évite les modifications accidentelles.
+  private: Privée
+  private_desc: Titre masqué et contenu caché jusqu'à la saisie de votre mot de passe.
+  encrypted: Chiffrée
+  encrypted_desc: Contenu chiffré sur le disque avec votre mot de passe. Un mot de passe oublié ne peut pas être récupéré.
+
+wizard:
+  step:
+    welcome: Bienvenue
+    storage: Stockage
+    security: Connexion
+    protection: Protection des fiches
+    appearance: Apparence
+    finish: Terminé
+  welcome:
+    title: Bienvenue dans Cardfile
+    body: "Votre fichier numérique pour vos notes, idées et tout ce que vous souhaitez conserver. Configurons-le en quelques étapes."
+  storage:
+    standard: Standard
+    standard_desc: "Les données sont stockées dans votre profil utilisateur :"
+    portable: Portable
+    portable_desc: Les données sont stockées dans un dossier « data » à côté de Cardfile, pour les emporter sur une clé USB.
+    portable_unavailable: Le mode portable n'est pas disponible car le dossier du programme n'est pas accessible en écriture.
+  security:
+    none: Sans mot de passe
+    none_desc: Cardfile s'ouvre directement. Idéal pour un ordinateur personnel.
+    single: Mot de passe
+    single_desc: Un seul compte protégé par un mot de passe.
+    multi: Plusieurs utilisateurs
+    multi_desc: Chaque personne se connecte avec un nom d'utilisateur et un mot de passe et possède ses propres fiches.
+    username: Nom d'utilisateur
+    display_name: Nom affiché
+    password: Mot de passe
+    confirm: Confirmer le mot de passe
+    lock_password: Mot de passe de verrouillage (facultatif)
+    lock_password_hint: Sert à déverrouiller les fiches privées et chiffrées. Vous pourrez le définir plus tard dans les Paramètres.
+    allow_registration: Autoriser les nouveaux utilisateurs à créer un compte depuis l'écran de connexion
+  protection:
+    intro: Choisissez les niveaux de protection utilisables pour les fiches.
+    default: Protection des nouvelles fiches
+    needs_password: Les fiches privées et chiffrées nécessitent un mot de passe de verrouillage. Revenez en arrière pour en définir un, ou faites-le plus tard dans les Paramètres.
+  appearance:
+    intro: Choisissez un thème. Vous pouvez le modifier à tout moment dans les Paramètres.
+  finish:
+    intro: "Tout est prêt :"
+    later: Tout cela peut être modifié plus tard dans les Paramètres.
+    start: Commencer à utiliser Cardfile
+  error:
+    username: Saisissez un nom d'utilisateur.
+    password_short: Le mot de passe doit comporter au moins 4 caractères.
+    password_mismatch: Les mots de passe ne correspondent pas.
+    portable: Impossible d'activer le mode portable
+
+login:
+  title: Connexion
+  register_title: Créer un compte
+  locked_title: "Cardfile est verrouillé, %{name}"
+  username: Nom d'utilisateur
+  display_name: Nom affiché
+  password: Mot de passe
+  confirm: Confirmer le mot de passe
+  sign_in: Se connecter
+  unlock: Déverrouiller
+  create: Créer un compte
+  need_account: Créer un compte
+  have_account: J'ai déjà un compte
+  error:
+    invalid: Nom d'utilisateur ou mot de passe incorrect.
+    taken: Ce nom d'utilisateur est déjà utilisé.
+
+welcome:
+  title: Bienvenue dans Cardfile
+  body: |
+    ## Pour commencer
+
+    Cardfile conserve vos notes sous forme de **fiches**. Créez-en une avec le bouton **+** ou **Ctrl+N**.
+
+    - Mettez le texte en forme avec la barre d'outils ou les raccourcis : **Ctrl+B** gras, *Ctrl+I* italique, Ctrl+U souligné.
+    - Tapez `# ` pour un titre, `- ` pour une liste ou `[] ` pour une liste de contrôle.
+    - Collez ou glissez des images et des fichiers dans une fiche.
+    - Utilisez **Ctrl+F** pour rechercher dans toutes vos fiches et **Ctrl+Shift+P** pour accéder à toutes les commandes.
+
+    ## Protégez vos fiches
+
+    Utilisez le bouton de cadenas en haut d'une fiche pour la rendre *en lecture seule*, *privée* ou *chiffrée*.
+
+    - [ ] Créez votre première fiche
+    - [ ] Essayez une étiquette pour organiser vos fiches
+
+search:
+  placeholder: Rechercher des fiches
+  focus: Rechercher des fiches
+
+nav:
+  all: Toutes les fiches
+  favorites: Favoris
+  recycle_bin: Corbeille
+  tags: ÉTIQUETTES
+
+list:
+  count: "%{n} fiches"
+  empty: Aucune fiche pour le moment.
+  no_results: Aucune fiche ne correspond à votre recherche.
+
+sort:
+  title: Trier
+  manual: Manuel (glisser pour réorganiser)
+  updated: Dernière modification
+  created: Date de création
+  title_asc: Titre
+
+card:
+  new: Nouvelle fiche
+  untitled: Sans titre
+  delete: Mettre à la corbeille
+  delete_body: "Mettre « %{title} » à la corbeille ? Vous pourrez la restaurer plus tard."
+  restore: Restaurer
+  pin: Épingler en haut
+  unpin: Désépingler
+  favorite: Ajouter aux favoris
+  unfavorite: Retirer des favoris
+  tags: Étiquettes
+  history: Historique des versions
+  none_selected: Aucune fiche sélectionnée
+  none_hint: Sélectionnez une fiche ou appuyez sur Ctrl+N pour en créer une.
+  read_only_banner: Cette fiche est en lecture seule.
+  unlock_edit: Modifier
+  deleted_banner: Cette fiche est dans la corbeille.
+  saving: Enregistrement…
+  updated: "Enregistré %{date}"
+  words: "%{n} mots"
+  unlock:
+    private: Cette fiche est privée
+    encrypted: Cette fiche est chiffrée
+    placeholder: Mot de passe
+    button: Déverrouiller
+    hint: La fiche se verrouille à nouveau après une période d'inactivité.
+    wrong: Mot de passe incorrect.
+    no_password: Aucun mot de passe de verrouillage n'est défini. Définissez-en un dans Paramètres → Sécurité.
+  protect:
+    tooltip: Protection de la fiche
+    unlock_first: Déverrouillez d'abord la fiche.
+    needs_password: Définissez d'abord un mot de passe de verrouillage dans Paramètres → Sécurité.
+    encrypt_title: Chiffrer la fiche
+    encrypt_body: Saisissez votre mot de passe pour chiffrer cette fiche. Sans lui, la fiche ne pourra pas être ouverte.
+    failed: "Impossible de modifier la protection : %{error}"
+  purge:
+    title: Supprimer définitivement
+    body: Cette fiche sera supprimée définitivement. Cette action est irréversible.
+    confirm: Supprimer définitivement
+
+tags:
+  new: Nouvelle étiquette…
+  edit: Modifier l'étiquette
+  delete: Supprimer l'étiquette
+  delete_body: "Supprimer l'étiquette « %{name} » ? Les fiches conservent leur contenu."
+  name: Nom de l'étiquette
+  exists: Une étiquette portant ce nom existe déjà.
+
+history:
+  title: Historique des versions
+  restore: Restaurer cette version
+  empty: Aucune version antérieure pour le moment.
+
+recycle:
+  empty: Vider la corbeille
+  empty_title: Vider la corbeille
+  empty_body: Toutes les fiches de la corbeille seront supprimées définitivement.
+
+export:
+  markdown: Exporter en Markdown
+  html: Exporter en HTML
+  pdf: Exporter en PDF
+  json: Exporter en JSON
+  choose_folder: Choisissez un dossier pour l'exportation
+  done: "Exporté vers %{path}"
+  failed: "Échec de l'exportation : %{error}"
+  skipped: "%{n} fiches privées ou chiffrées n'ont pas été exportées."
+
+backup:
+  done: "Sauvegarde enregistrée dans %{path}"
+
+menu:
+  settings: Paramètres
+  command_palette: Palette de commandes
+  keymap: Modifier les raccourcis clavier
+  export_all: Exporter toutes les fiches
+  backup: Sauvegarder maintenant
+  open_data_folder: Ouvrir le dossier de données
+  check_updates: Rechercher des mises à jour
+  about: À propos de Cardfile
+  lock: Verrouiller
+  sign_out: Se déconnecter
+  quit: Quitter
+
+palette:
+  placeholder: Saisissez une commande…
+
+updates:
+  title: Mise à jour disponible
+  available: "Cardfile %{version} est disponible. Cliquez pour télécharger."
+  latest: Vous disposez de la dernière version.
+  failed: "Impossible de rechercher les mises à jour : %{error}"
+  managed: Les mises à jour de cette installation sont gérées par votre boutique d'applications ou votre gestionnaire de paquets.
+
+about:
+  version: "Version %{version}"
+  description: Un fichier numérique moderne pour vos notes.
+  license: Logiciel libre sous licence MIT ou Apache 2.0.
+  website: Site web
+  third_party: Licences tierces
+
+settings:
+  title: Paramètres
+  open: Ouvrir
+  never: Jamais
+  "off": "Désactivé"
+  seconds: "%{n} secondes"
+  minutes: "%{n} minutes"
+  tab:
+    general: Général
+    editor: Éditeur
+    security: Sécurité
+    users: Utilisateurs
+    data: Données
+  general:
+    theme: Thème
+    language: Langue
+    language_hint: D'autres langues arrivent bientôt.
+    font_size: Taille du texte de l'éditeur
+    confirm_delete: Demander confirmation avant de supprimer des fiches
+    check_updates: Rechercher des mises à jour au démarrage
+    check_updates_hint: Consulte uniquement GitHub pour trouver une version plus récente. Aucune donnée n'est envoyée.
+    keymap: Raccourcis clavier
+    keymap_hint: Modifiez keymap.json pour changer un raccourci. Redémarrez pour appliquer.
+  editor:
+    markdown_shortcuts: Raccourcis Markdown
+    markdown_shortcuts_hint: "Saisir # , - , [] , **gras** et autres met automatiquement le texte en forme."
+    spellcheck: Vérifier l'orthographe
+    spellcheck_hint: Les mots mal orthographiés sont soulignés. Clic droit pour voir les suggestions.
+    no_dictionaries: Aucun dictionnaire installé.
+    spell_language: Dictionnaire
+    search_scope: Rechercher dans
+    scope_title: Titres uniquement
+    scope_content: Titres et contenu
+    scope_all: Titres, contenu et étiquettes
+    default_lock: Protection des nouvelles fiches
+    default_lock_hint: Appliquée à la création d'une fiche.
+    history: Versions conservées par fiche
+    history_hint: Une version est enregistrée au plus toutes les 5 minutes pendant la modification.
+  security:
+    auto_lock: Verrouiller après inactivité
+    auto_lock_hint: Redemande votre mot de passe après cette durée sans activité.
+    relock: Masquer les fiches privées déverrouillées après
+    relock_hint: Les fiches privées et chiffrées se verrouillent à nouveau après cette durée sans modification.
+    mask: Caractères visibles des titres privés
+    mask_hint: Le reste du titre est masqué dans la liste.
+    lock_modes: Niveaux de protection disponibles
+    auth_mode: Mode de connexion
+    auth_mode_hint: Comment les personnes ouvrent Cardfile sur cet ordinateur.
+    auth_one_user: Supprimez les autres comptes utilisateur avant de passer à un mode à compte unique.
+    auth_needs_password: Définissez d'abord un mot de passe ci-dessous.
+    auth_changed: Mode de connexion modifié. Il s'appliquera au prochain démarrage de Cardfile.
+    change_password: Changer le mot de passe
+    lock_password: Mot de passe de verrouillage
+    password_hint: Ce mot de passe déverrouille les fiches privées et chiffrées. Les fiches chiffrées sont rechiffrées lorsque vous le changez.
+    current_password: Mot de passe actuel
+    new_password: Nouveau mot de passe
+    save_password: Enregistrer le mot de passe
+    password_saved: Mot de passe modifié.
+  users:
+    admin: administrateur
+    add: Ajouter un utilisateur
+    create: Créer
+    delete: Supprimer l'utilisateur
+    delete_body: Le compte est supprimé. Ses fiches restent dans la base de données.
+    invalid: Saisissez un nom d'utilisateur et un mot de passe d'au moins 4 caractères.
+  data:
+    location: Dossier de données
+    portable: Le mode portable est actif.
+    standard: Mode standard.
+    export: Exporter
+    export_hint: Exporte toutes les fiches qui ne sont ni privées ni chiffrées.

@@ -1,0 +1,389 @@
+_version: 1
+
+app:
+  name: Cardfile
+test:
+  greeting: "سلام، %{name}!"
+
+editor:
+  placeholder: "شروع به نوشتن کنید…"
+  link:
+    title: درج پیوند
+    text_placeholder: متن نمایشی
+  toolbar:
+    undo: واگرد
+    redo: ازنو
+    bold: پررنگ
+    italic: کج
+    underline: زیرخط
+    strikethrough: خط‌خورده
+    code: کد درون‌خطی
+    clear_formatting: پاک کردن قالب‌بندی
+    text_color: رنگ متن
+    highlight: برجسته‌سازی
+    default_color: پیش‌فرض
+    no_highlight: هیچ
+    block_type: سبک بند
+    paragraph: متن معمولی
+    heading1: عنوان ۱
+    heading2: عنوان ۲
+    heading3: عنوان ۳
+    quote: نقل‌قول
+    code_block: بلوک کد
+    bullet_list: فهرست گلوله‌ای
+    numbered_list: فهرست شماره‌دار
+    check_list: فهرست کارها
+    align: تراز
+    align_left: تراز چپ
+    align_center: وسط‌چین
+    align_right: تراز راست
+    align_justify: هم‌تراز
+    size: اندازه متن
+    size_small: کوچک
+    size_normal: معمولی
+    size_large: بزرگ
+    size_huge: خیلی بزرگ
+    indent: افزایش تورفتگی
+    outdent: کاهش تورفتگی
+    link: پیوند
+    remove_link: حذف پیوند
+    insert: درج
+    image: تصویر…
+    attachment: پیوست…
+    table: جدول
+    divider: جداکننده
+  table:
+    row_above: درج ردیف بالا
+    row_below: درج ردیف پایین
+    col_left: درج ستون چپ
+    col_right: درج ستون راست
+    delete_row: حذف ردیف
+    delete_col: حذف ستون
+    toggle_header: ردیف سرایند
+    delete: حذف جدول
+  image:
+    smaller: کوچک‌تر
+    larger: بزرگ‌تر
+    fit: متناسب با عرض
+  menu:
+    cut: برش
+    copy: رونوشت
+    paste: چسباندن
+    paste_plain: چسباندن به‌صورت متن ساده
+    select_all: انتخاب همه
+    open_link: باز کردن پیوند
+    add_to_dictionary: افزودن به فرهنگ لغت
+    no_suggestions: پیشنهادی وجود ندارد
+  attachment:
+    open_hint: برای باز کردن دوبار کلیک کنید
+  read_only: این کارت فقط‌خواندنی است. برای ویرایش، قفل آن را باز کنید.
+  find:
+    placeholder: جست‌وجو در کارت
+    replace_placeholder: جایگزین با
+    no_results: نتیجه‌ای یافت نشد
+    count: "%{i} از %{n}"
+    case: تطبیق حروف بزرگ و کوچک
+    previous: مورد قبلی (Shift+F3)
+    next: مورد بعدی (F3)
+    replace: جایگزینی
+    replace_one: جایگزینی
+    replace_all: جایگزینی همه
+
+common:
+  back: بازگشت
+  next: بعدی
+  ok: تأیید
+  cancel: لغو
+
+time:
+  just_now: همین الان
+  minutes_ago: "%{n} دقیقه پیش"
+  hours_ago: "%{n} ساعت پیش"
+  days_ago: "%{n} روز پیش"
+
+lock:
+  none: بدون محافظت
+  read_only: فقط‌خواندنی
+  read_only_desc: قابل مشاهده است، اما برای ویرایش باید با یک کلیک قفل را باز کرد. از تغییرات ناخواسته جلوگیری می‌کند.
+  private: خصوصی
+  private_desc: عنوان پنهان و محتوا مخفی می‌ماند تا رمز عبور را وارد کنید.
+  encrypted: رمزگذاری‌شده
+  encrypted_desc: محتوا با رمز عبور شما روی دیسک رمزگذاری می‌شود. رمز فراموش‌شده قابل بازیابی نیست.
+
+wizard:
+  step:
+    welcome: خوش آمدید
+    storage: ذخیره‌سازی
+    security: ورود
+    protection: محافظت از کارت‌ها
+    appearance: ظاهر
+    finish: آماده
+  welcome:
+    title: به Cardfile خوش آمدید
+    body: "کارت‌دان دیجیتال شما برای یادداشت‌ها، ایده‌ها و هر چیزی که می‌خواهید نگه دارید. بیایید در چند مرحله آن را راه‌اندازی کنیم."
+  storage:
+    standard: استاندارد
+    standard_desc: "داده‌ها در نمایه کاربری شما ذخیره می‌شوند:"
+    portable: قابل‌حمل
+    portable_desc: داده‌ها در پوشه «data» کنار Cardfile ذخیره می‌شوند تا بتوانید آن‌ها را روی حافظه USB همراه ببرید.
+    portable_unavailable: حالت قابل‌حمل در دسترس نیست زیرا پوشه برنامه قابل‌نوشتن نیست.
+  security:
+    none: بدون رمز عبور
+    none_desc: Cardfile مستقیم باز می‌شود. مناسب‌ترین گزینه برای رایانه شخصی.
+    single: رمز عبور
+    single_desc: یک حساب که با رمز عبور محافظت می‌شود.
+    multi: چند کاربر
+    multi_desc: هر فرد با نام کاربری و رمز عبور وارد می‌شود و کارت‌های خودش را دارد.
+    username: نام کاربری
+    display_name: نام نمایشی
+    password: رمز عبور
+    confirm: تأیید رمز عبور
+    lock_password: رمز عبور قفل (اختیاری)
+    lock_password_hint: برای باز کردن قفل کارت‌های خصوصی و رمزگذاری‌شده استفاده می‌شود. می‌توانید بعداً در تنظیمات آن را تعیین کنید.
+    allow_registration: اجازه دادن به کاربران جدید برای ساخت حساب از صفحه ورود
+  protection:
+    intro: انتخاب کنید کدام سطوح محافظت برای کارت‌ها قابل استفاده باشند.
+    default: محافظت برای کارت‌های جدید
+    needs_password: کارت‌های خصوصی و رمزگذاری‌شده به رمز عبور قفل نیاز دارند. برای تعیین آن به عقب بازگردید یا بعداً در تنظیمات تعیین کنید.
+  appearance:
+    intro: یک پوسته انتخاب کنید. هر زمان بخواهید می‌توانید آن را در تنظیمات تغییر دهید.
+  finish:
+    intro: "همه چیز آماده است:"
+    later: همه این موارد را بعداً می‌توان در تنظیمات تغییر داد.
+    start: شروع استفاده از Cardfile
+  error:
+    username: یک نام کاربری وارد کنید.
+    password_short: رمز عبور باید دست‌کم ۴ نویسه باشد.
+    password_mismatch: رمزهای عبور مطابقت ندارند.
+    portable: فعال‌سازی حالت قابل‌حمل ممکن نشد
+
+login:
+  title: ورود
+  register_title: ساخت حساب
+  locked_title: "Cardfile قفل است، %{name}"
+  username: نام کاربری
+  display_name: نام نمایشی
+  password: رمز عبور
+  confirm: تأیید رمز عبور
+  sign_in: ورود
+  unlock: باز کردن قفل
+  create: ساخت حساب
+  need_account: ساخت حساب
+  have_account: از قبل حساب دارم
+  error:
+    invalid: نام کاربری یا رمز عبور اشتباه است.
+    taken: این نام کاربری قبلاً گرفته شده است.
+
+welcome:
+  title: به Cardfile خوش آمدید
+  body: |
+    ## شروع کار
+
+    Cardfile یادداشت‌های شما را به‌صورت **کارت** نگه می‌دارد. با دکمه **+** یا **Ctrl+N** کارت بسازید.
+
+    - متن را با نوار ابزار یا میان‌برها قالب‌بندی کنید: **Ctrl+B** پررنگ، *Ctrl+I* کج، Ctrl+U زیرخط.
+    - برای عنوان `# `، برای فهرست `- ` و برای فهرست کارها `[] ` تایپ کنید.
+    - تصاویر و فایل‌ها را در کارت بچسبانید یا بکشید و رها کنید.
+    - با **Ctrl+F** در همه کارت‌ها جست‌وجو کنید و با **Ctrl+Shift+P** همه دستورها را ببینید.
+
+    ## از کارت‌های خود محافظت کنید
+
+    با دکمه قفل در بالای کارت، آن را *فقط‌خواندنی*، *خصوصی* یا *رمزگذاری‌شده* کنید.
+
+    - [ ] اولین کارت خود را بسازید
+    - [ ] یک برچسب را برای سازمان‌دهی کارت‌ها امتحان کنید
+
+search:
+  placeholder: جست‌وجوی کارت‌ها
+  focus: جست‌وجوی کارت‌ها
+
+nav:
+  all: همه کارت‌ها
+  favorites: علاقه‌مندی‌ها
+  recycle_bin: سطل بازیافت
+  tags: برچسب‌ها
+
+list:
+  count: "%{n} کارت"
+  empty: هنوز کارتی در اینجا نیست.
+  no_results: هیچ کارتی با جست‌وجوی شما مطابقت ندارد.
+
+sort:
+  title: مرتب‌سازی
+  manual: دستی (برای ترتیب‌دهی بکشید)
+  updated: آخرین تغییر
+  created: تاریخ ایجاد
+  title_asc: عنوان
+
+card:
+  new: کارت جدید
+  untitled: بدون عنوان
+  delete: انتقال به سطل بازیافت
+  delete_body: "«%{title}» به سطل بازیافت منتقل شود؟ بعداً می‌توانید آن را بازیابی کنید."
+  restore: بازیابی
+  pin: سنجاق در بالا
+  unpin: برداشتن سنجاق
+  favorite: افزودن به علاقه‌مندی‌ها
+  unfavorite: حذف از علاقه‌مندی‌ها
+  tags: برچسب‌ها
+  history: تاریخچه نسخه‌ها
+  none_selected: کارتی انتخاب نشده است
+  none_hint: یک کارت انتخاب کنید یا برای ساخت کارت جدید Ctrl+N را بزنید.
+  read_only_banner: این کارت فقط‌خواندنی است.
+  unlock_edit: ویرایش
+  deleted_banner: این کارت در سطل بازیافت است.
+  saving: در حال ذخیره…
+  updated: "ذخیره‌شده در %{date}"
+  words: "%{n} کلمه"
+  unlock:
+    private: این کارت خصوصی است
+    encrypted: این کارت رمزگذاری شده است
+    placeholder: رمز عبور
+    button: باز کردن قفل
+    hint: کارت پس از مدتی بی‌فعالیتی دوباره قفل می‌شود.
+    wrong: رمز عبور اشتباه است.
+    no_password: رمز عبور قفل تعیین نشده است. آن را در تنظیمات ← امنیت تعیین کنید.
+  protect:
+    tooltip: محافظت از کارت
+    unlock_first: ابتدا قفل کارت را باز کنید.
+    needs_password: ابتدا در تنظیمات ← امنیت یک رمز عبور قفل تعیین کنید.
+    encrypt_title: رمزگذاری کارت
+    encrypt_body: برای رمزگذاری این کارت، رمز عبور خود را وارد کنید. بدون آن کارت باز نخواهد شد.
+    failed: "تغییر محافظت ممکن نشد: %{error}"
+  purge:
+    title: حذف دائمی
+    body: این کارت برای همیشه حذف خواهد شد. این کار قابل بازگشت نیست.
+    confirm: حذف دائمی
+
+tags:
+  new: برچسب جدید…
+  edit: ویرایش برچسب
+  delete: حذف برچسب
+  delete_body: "برچسب «%{name}» حذف شود؟ کارت‌ها محتوای خود را حفظ می‌کنند."
+  name: نام برچسب
+  exists: برچسبی با این نام از قبل وجود دارد.
+
+history:
+  title: تاریخچه نسخه‌ها
+  restore: بازیابی این نسخه
+  empty: هنوز نسخه قبلی‌ای وجود ندارد.
+
+recycle:
+  empty: خالی کردن سطل بازیافت
+  empty_title: خالی کردن سطل بازیافت
+  empty_body: همه کارت‌های سطل بازیافت برای همیشه حذف خواهند شد.
+
+export:
+  markdown: صدور به‌صورت Markdown
+  html: صدور به‌صورت HTML
+  pdf: صدور به‌صورت PDF
+  json: صدور به‌صورت JSON
+  choose_folder: پوشه‌ای برای صدور انتخاب کنید
+  done: "در %{path} صادر شد"
+  failed: "صدور ناموفق بود: %{error}"
+  skipped: "%{n} کارت خصوصی یا رمزگذاری‌شده صادر نشد."
+
+backup:
+  done: "نسخه پشتیبان در %{path} ذخیره شد"
+
+menu:
+  settings: تنظیمات
+  command_palette: پالت دستورها
+  keymap: ویرایش میان‌برهای صفحه‌کلید
+  export_all: صدور همه کارت‌ها
+  backup: پشتیبان‌گیری هم‌اکنون
+  open_data_folder: باز کردن پوشه داده‌ها
+  check_updates: بررسی به‌روزرسانی‌ها
+  about: درباره Cardfile
+  lock: قفل
+  sign_out: خروج از حساب
+  quit: خروج
+
+palette:
+  placeholder: یک دستور تایپ کنید…
+
+updates:
+  title: به‌روزرسانی موجود است
+  available: "Cardfile %{version} در دسترس است. برای دانلود کلیک کنید."
+  latest: شما آخرین نسخه را دارید.
+  failed: "بررسی به‌روزرسانی‌ها ممکن نشد: %{error}"
+  managed: به‌روزرسانی‌های این نصب توسط فروشگاه برنامه یا مدیر بسته شما انجام می‌شود.
+
+about:
+  version: "نسخه %{version}"
+  description: یک کارت‌دان دیجیتال مدرن برای یادداشت‌های شما.
+  license: نرم‌افزار آزاد با مجوز MIT یا Apache 2.0.
+  website: وب‌سایت
+  third_party: مجوزهای شخص ثالث
+
+settings:
+  title: تنظیمات
+  open: باز کردن
+  never: هرگز
+  "off": "خاموش"
+  seconds: "%{n} ثانیه"
+  minutes: "%{n} دقیقه"
+  tab:
+    general: عمومی
+    editor: ویرایشگر
+    security: امنیت
+    users: کاربران
+    data: داده‌ها
+  general:
+    theme: پوسته
+    language: زبان
+    language_hint: زبان‌های بیشتری به‌زودی اضافه می‌شود.
+    font_size: اندازه متن ویرایشگر
+    confirm_delete: پرسش پیش از حذف کارت‌ها
+    check_updates: بررسی به‌روزرسانی هنگام راه‌اندازی
+    check_updates_hint: فقط در GitHub دنبال نسخه جدیدتر می‌گردد. هیچ داده‌ای ارسال نمی‌شود.
+    keymap: میان‌برهای صفحه‌کلید
+    keymap_hint: برای تغییر هر میان‌بر، فایل keymap.json را ویرایش کنید. برای اعمال، دوباره راه‌اندازی کنید.
+  editor:
+    markdown_shortcuts: میان‌برهای Markdown
+    markdown_shortcuts_hint: "تایپ # ، - ، [] ، **پررنگ** و موارد مشابه، متن را خودکار قالب‌بندی می‌کند."
+    spellcheck: بررسی املا
+    spellcheck_hint: کلمات غلط‌املایی زیرخط می‌خورند. برای دیدن پیشنهادها راست‌کلیک کنید.
+    no_dictionaries: هیچ فرهنگ لغتی نصب نشده است.
+    spell_language: فرهنگ لغت
+    search_scope: جست‌وجو در
+    scope_title: فقط عنوان‌ها
+    scope_content: عنوان‌ها و محتوا
+    scope_all: عنوان‌ها، محتوا و برچسب‌ها
+    default_lock: محافظت برای کارت‌های جدید
+    default_lock_hint: هنگام ساخت کارت اعمال می‌شود.
+    history: نسخه‌های نگهداری‌شده برای هر کارت
+    history_hint: هنگام ویرایش، حداکثر هر ۵ دقیقه یک نسخه ذخیره می‌شود.
+  security:
+    auto_lock: قفل پس از بی‌فعالیتی
+    auto_lock_hint: پس از این مدت بدون فعالیت، دوباره رمز عبور را می‌پرسد.
+    relock: پنهان کردن کارت‌های خصوصی بازشده پس از
+    relock_hint: کارت‌های خصوصی و رمزگذاری‌شده پس از این مدت بدون ویرایش دوباره قفل می‌شوند.
+    mask: نویسه‌های قابل‌مشاهده عنوان‌های خصوصی
+    mask_hint: بقیه عنوان در فهرست پنهان می‌شود.
+    lock_modes: سطوح محافظت موجود
+    auth_mode: حالت ورود
+    auth_mode_hint: روشی که افراد با آن Cardfile را روی این رایانه باز می‌کنند.
+    auth_one_user: پیش از رفتن به حالت تک‌حسابی، حساب‌های کاربری دیگر را حذف کنید.
+    auth_needs_password: ابتدا در پایین یک رمز عبور تعیین کنید.
+    auth_changed: حالت ورود تغییر کرد. در دفعه بعد که Cardfile اجرا شود اعمال می‌شود.
+    change_password: تغییر رمز عبور
+    lock_password: رمز عبور قفل
+    password_hint: این رمز عبور قفل کارت‌های خصوصی و رمزگذاری‌شده را باز می‌کند. با تغییر آن، کارت‌های رمزگذاری‌شده دوباره رمزگذاری می‌شوند.
+    current_password: رمز عبور فعلی
+    new_password: رمز عبور جدید
+    save_password: ذخیره رمز عبور
+    password_saved: رمز عبور تغییر کرد.
+  users:
+    admin: مدیر
+    add: افزودن کاربر
+    create: ایجاد
+    delete: حذف کاربر
+    delete_body: حساب حذف می‌شود. کارت‌های آن در پایگاه داده باقی می‌مانند.
+    invalid: یک نام کاربری و رمز عبوری دست‌کم ۴ نویسه‌ای وارد کنید.
+  data:
+    location: پوشه داده‌ها
+    portable: حالت قابل‌حمل فعال است.
+    standard: حالت استاندارد.
+    export: صدور
+    export_hint: همه کارت‌هایی را که خصوصی یا رمزگذاری‌شده نیستند صادر می‌کند.

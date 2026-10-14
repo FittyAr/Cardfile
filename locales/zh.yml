@@ -1,0 +1,389 @@
+_version: 1
+
+app:
+  name: Cardfile
+test:
+  greeting: "你好，%{name}！"
+
+editor:
+  placeholder: "开始书写…"
+  link:
+    title: 插入链接
+    text_placeholder: 显示文本
+  toolbar:
+    undo: 撤销
+    redo: 重做
+    bold: 粗体
+    italic: 斜体
+    underline: 下划线
+    strikethrough: 删除线
+    code: 行内代码
+    clear_formatting: 清除格式
+    text_color: 文字颜色
+    highlight: 高亮
+    default_color: 默认
+    no_highlight: 无
+    block_type: 段落样式
+    paragraph: 正文
+    heading1: 标题 1
+    heading2: 标题 2
+    heading3: 标题 3
+    quote: 引用
+    code_block: 代码块
+    bullet_list: 无序列表
+    numbered_list: 有序列表
+    check_list: 待办清单
+    align: 对齐方式
+    align_left: 左对齐
+    align_center: 居中
+    align_right: 右对齐
+    align_justify: 两端对齐
+    size: 文字大小
+    size_small: 小
+    size_normal: 正常
+    size_large: 大
+    size_huge: 特大
+    indent: 增加缩进
+    outdent: 减少缩进
+    link: 链接
+    remove_link: 移除链接
+    insert: 插入
+    image: 图片…
+    attachment: 附件…
+    table: 表格
+    divider: 分隔线
+  table:
+    row_above: 在上方插入行
+    row_below: 在下方插入行
+    col_left: 在左侧插入列
+    col_right: 在右侧插入列
+    delete_row: 删除行
+    delete_col: 删除列
+    toggle_header: 标题行
+    delete: 删除表格
+  image:
+    smaller: 缩小
+    larger: 放大
+    fit: 适应宽度
+  menu:
+    cut: 剪切
+    copy: 复制
+    paste: 粘贴
+    paste_plain: 粘贴为纯文本
+    select_all: 全选
+    open_link: 打开链接
+    add_to_dictionary: 添加到词典
+    no_suggestions: 无建议
+  attachment:
+    open_hint: 双击打开
+  read_only: 此卡片为只读。解锁后才能编辑。
+  find:
+    placeholder: 在卡片中查找
+    replace_placeholder: 替换为
+    no_results: 无结果
+    count: "第 %{i} 项，共 %{n} 项"
+    case: 区分大小写
+    previous: 上一个匹配项 (Shift+F3)
+    next: 下一个匹配项 (F3)
+    replace: 替换
+    replace_one: 替换
+    replace_all: 全部替换
+
+common:
+  back: 返回
+  next: 下一步
+  ok: 确定
+  cancel: 取消
+
+time:
+  just_now: 刚刚
+  minutes_ago: "%{n} 分钟前"
+  hours_ago: "%{n} 小时前"
+  days_ago: "%{n} 天前"
+
+lock:
+  none: 无保护
+  read_only: 只读
+  read_only_desc: 可见，但编辑需要点击一次解锁。可防止误改。
+  private: 私密
+  private_desc: 标题被遮盖，内容隐藏，直到您输入密码。
+  encrypted: 已加密
+  encrypted_desc: 内容在磁盘上使用您的密码加密。忘记密码将无法恢复。
+
+wizard:
+  step:
+    welcome: 欢迎
+    storage: 存储
+    security: 登录
+    protection: 卡片保护
+    appearance: 外观
+    finish: 完成
+  welcome:
+    title: 欢迎使用 Cardfile
+    body: "您的数字卡片盒，用来保存笔记、想法和一切您想留存的内容。只需几步即可完成设置。"
+  storage:
+    standard: 标准
+    standard_desc: "数据存储在您的用户配置文件中："
+    portable: 便携
+    portable_desc: 数据存储在 Cardfile 旁边的“data”文件夹中，方便您用 U 盘随身携带。
+    portable_unavailable: 由于程序文件夹不可写，便携模式不可用。
+  security:
+    none: 无密码
+    none_desc: Cardfile 直接打开。最适合个人电脑。
+    single: 密码
+    single_desc: 一个受密码保护的账户。
+    multi: 多用户
+    multi_desc: 每个人使用用户名和密码登录，并拥有自己的卡片。
+    username: 用户名
+    display_name: 显示名称
+    password: 密码
+    confirm: 确认密码
+    lock_password: 锁定密码（可选）
+    lock_password_hint: 用于解锁私密卡片和加密卡片。您可以稍后在设置中设定。
+    allow_registration: 允许新用户在登录界面创建账户
+  protection:
+    intro: 选择卡片可以使用哪些保护级别。
+    default: 新卡片的保护级别
+    needs_password: 私密卡片和加密卡片需要锁定密码。请返回设置一个，或稍后在设置中设置。
+  appearance:
+    intro: 选择一个主题。您可以随时在设置中更改。
+  finish:
+    intro: "一切就绪："
+    later: 以上内容都可以稍后在设置中更改。
+    start: 开始使用 Cardfile
+  error:
+    username: 请输入用户名。
+    password_short: 密码至少需要 4 个字符。
+    password_mismatch: 两次输入的密码不一致。
+    portable: 无法启用便携模式
+
+login:
+  title: 登录
+  register_title: 创建账户
+  locked_title: "Cardfile 已锁定，%{name}"
+  username: 用户名
+  display_name: 显示名称
+  password: 密码
+  confirm: 确认密码
+  sign_in: 登录
+  unlock: 解锁
+  create: 创建账户
+  need_account: 创建账户
+  have_account: 我已有账户
+  error:
+    invalid: 用户名或密码错误。
+    taken: 该用户名已被占用。
+
+welcome:
+  title: 欢迎使用 Cardfile
+  body: |
+    ## 快速入门
+
+    Cardfile 以**卡片**的形式保存您的笔记。点击 **+** 按钮或按 **Ctrl+N** 即可新建。
+
+    - 使用工具栏或快捷键设置文字格式：**Ctrl+B** 粗体，*Ctrl+I* 斜体，Ctrl+U 下划线。
+    - 输入 `# ` 创建标题，`- ` 创建列表，`[] ` 创建待办清单。
+    - 可将图片和文件粘贴或拖入卡片。
+    - 按 **Ctrl+F** 搜索所有卡片，按 **Ctrl+Shift+P** 查看全部命令。
+
+    ## 保护您的卡片
+
+    使用卡片顶部的锁形按钮，可将其设为*只读*、*私密*或*加密*。
+
+    - [ ] 创建您的第一张卡片
+    - [ ] 试用标签来整理卡片
+
+search:
+  placeholder: 搜索卡片
+  focus: 搜索卡片
+
+nav:
+  all: 全部卡片
+  favorites: 收藏
+  recycle_bin: 回收站
+  tags: 标签
+
+list:
+  count: "%{n} 张卡片"
+  empty: 这里还没有卡片。
+  no_results: 没有与搜索匹配的卡片。
+
+sort:
+  title: 排序
+  manual: 手动（拖动以重新排序）
+  updated: 最近修改
+  created: 创建日期
+  title_asc: 标题
+
+card:
+  new: 新建卡片
+  untitled: 无标题
+  delete: 移到回收站
+  delete_body: "将“%{title}”移到回收站？您之后可以将其恢复。"
+  restore: 恢复
+  pin: 置顶
+  unpin: 取消置顶
+  favorite: 添加到收藏
+  unfavorite: 从收藏中移除
+  tags: 标签
+  history: 版本历史
+  none_selected: 未选择卡片
+  none_hint: 请选择一张卡片，或按 Ctrl+N 新建。
+  read_only_banner: 此卡片为只读。
+  unlock_edit: 编辑
+  deleted_banner: 此卡片在回收站中。
+  saving: 正在保存…
+  updated: "已保存 %{date}"
+  words: "%{n} 字"
+  unlock:
+    private: 此卡片为私密卡片
+    encrypted: 此卡片已加密
+    placeholder: 密码
+    button: 解锁
+    hint: 一段时间无操作后，卡片会再次锁定。
+    wrong: 密码错误。
+    no_password: 尚未设置锁定密码。请在 设置 → 安全 中设置。
+  protect:
+    tooltip: 卡片保护
+    unlock_first: 请先解锁卡片。
+    needs_password: 请先在 设置 → 安全 中设置锁定密码。
+    encrypt_title: 加密卡片
+    encrypt_body: 输入密码以加密此卡片。没有密码将无法打开该卡片。
+    failed: "无法更改保护级别：%{error}"
+  purge:
+    title: 永久删除
+    body: 此卡片将被永久删除，且无法撤销。
+    confirm: 永久删除
+
+tags:
+  new: 新建标签…
+  edit: 编辑标签
+  delete: 删除标签
+  delete_body: "删除标签“%{name}”？卡片会保留其内容。"
+  name: 标签名称
+  exists: 已存在同名标签。
+
+history:
+  title: 版本历史
+  restore: 恢复此版本
+  empty: 暂无更早的版本。
+
+recycle:
+  empty: 清空回收站
+  empty_title: 清空回收站
+  empty_body: 回收站中的所有卡片都将被永久删除。
+
+export:
+  markdown: 导出为 Markdown
+  html: 导出为 HTML
+  pdf: 导出为 PDF
+  json: 导出为 JSON
+  choose_folder: 选择导出文件夹
+  done: "已导出到 %{path}"
+  failed: "导出失败：%{error}"
+  skipped: "有 %{n} 张私密或加密卡片未导出。"
+
+backup:
+  done: "备份已保存到 %{path}"
+
+menu:
+  settings: 设置
+  command_palette: 命令面板
+  keymap: 编辑键盘快捷键
+  export_all: 导出所有卡片
+  backup: 立即备份
+  open_data_folder: 打开数据文件夹
+  check_updates: 检查更新
+  about: 关于 Cardfile
+  lock: 锁定
+  sign_out: 退出登录
+  quit: 退出
+
+palette:
+  placeholder: 输入命令…
+
+updates:
+  title: 有可用更新
+  available: "Cardfile %{version} 已发布。点击下载。"
+  latest: 您使用的已是最新版本。
+  failed: "无法检查更新：%{error}"
+  managed: 此安装的更新由您的应用商店或包管理器负责。
+
+about:
+  version: "版本 %{version}"
+  description: 一款现代化的数字卡片盒，用于记录您的笔记。
+  license: 自由软件，采用 MIT 或 Apache 2.0 许可证。
+  website: 网站
+  third_party: 第三方许可证
+
+settings:
+  title: 设置
+  open: 打开
+  never: 从不
+  "off": "关闭"
+  seconds: "%{n} 秒"
+  minutes: "%{n} 分钟"
+  tab:
+    general: 常规
+    editor: 编辑器
+    security: 安全
+    users: 用户
+    data: 数据
+  general:
+    theme: 主题
+    language: 语言
+    language_hint: 更多语言即将推出。
+    font_size: 编辑器文字大小
+    confirm_delete: 删除卡片前询问
+    check_updates: 启动时检查更新
+    check_updates_hint: 仅向 GitHub 查询是否有新版本，不会发送任何数据。
+    keymap: 键盘快捷键
+    keymap_hint: 编辑 keymap.json 可更改任意快捷键。重启后生效。
+  editor:
+    markdown_shortcuts: Markdown 快捷输入
+    markdown_shortcuts_hint: "输入 # 、- 、[] 、**粗体** 等内容会自动设置文字格式。"
+    spellcheck: 拼写检查
+    spellcheck_hint: 拼写错误的单词会加下划线。右键单击可查看建议。
+    no_dictionaries: 未安装词典。
+    spell_language: 词典
+    search_scope: 搜索范围
+    scope_title: 仅标题
+    scope_content: 标题和内容
+    scope_all: 标题、内容和标签
+    default_lock: 新卡片的保护级别
+    default_lock_hint: 在创建卡片时应用。
+    history: 每张卡片保留的版本数
+    history_hint: 编辑时，最多每 5 分钟保存一个版本。
+  security:
+    auto_lock: 无操作后锁定
+    auto_lock_hint: 在此时间内无操作后，会再次要求输入密码。
+    relock: 隐藏已解锁私密卡片的时间
+    relock_hint: 私密卡片和加密卡片在此时间内未编辑后会再次锁定。
+    mask: 私密标题的可见字符数
+    mask_hint: 列表中标题的其余部分会被遮盖。
+    lock_modes: 可用的保护级别
+    auth_mode: 登录模式
+    auth_mode_hint: 在这台电脑上打开 Cardfile 的方式。
+    auth_one_user: 切换到单账户模式前，请先移除其他用户账户。
+    auth_needs_password: 请先在下方设置密码。
+    auth_changed: 登录模式已更改，将在下次启动 Cardfile 时生效。
+    change_password: 更改密码
+    lock_password: 锁定密码
+    password_hint: 此密码用于解锁私密卡片和加密卡片。更改密码时，加密卡片会重新加密。
+    current_password: 当前密码
+    new_password: 新密码
+    save_password: 保存密码
+    password_saved: 密码已更改。
+  users:
+    admin: 管理员
+    add: 添加用户
+    create: 创建
+    delete: 删除用户
+    delete_body: 该账户将被移除。其卡片仍保留在数据库中。
+    invalid: 请输入用户名和至少 4 个字符的密码。
+  data:
+    location: 数据文件夹
+    portable: 便携模式已启用。
+    standard: 标准模式。
+    export: 导出
+    export_hint: 导出所有非私密、非加密的卡片。

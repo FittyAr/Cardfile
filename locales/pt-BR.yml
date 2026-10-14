@@ -1,0 +1,389 @@
+_version: 1
+
+app:
+  name: Cardfile
+test:
+  greeting: "Olá, %{name}!"
+
+editor:
+  placeholder: "Comece a escrever…"
+  link:
+    title: Inserir link
+    text_placeholder: Texto a exibir
+  toolbar:
+    undo: Desfazer
+    redo: Refazer
+    bold: Negrito
+    italic: Itálico
+    underline: Sublinhado
+    strikethrough: Tachado
+    code: Código em linha
+    clear_formatting: Limpar formatação
+    text_color: Cor do texto
+    highlight: Destaque
+    default_color: Padrão
+    no_highlight: Nenhum
+    block_type: Estilo de parágrafo
+    paragraph: Texto normal
+    heading1: Título 1
+    heading2: Título 2
+    heading3: Título 3
+    quote: Citação
+    code_block: Bloco de código
+    bullet_list: Lista com marcadores
+    numbered_list: Lista numerada
+    check_list: Lista de tarefas
+    align: Alinhamento
+    align_left: Alinhar à esquerda
+    align_center: Centralizar
+    align_right: Alinhar à direita
+    align_justify: Justificar
+    size: Tamanho do texto
+    size_small: Pequeno
+    size_normal: Normal
+    size_large: Grande
+    size_huge: Enorme
+    indent: Aumentar recuo
+    outdent: Diminuir recuo
+    link: Link
+    remove_link: Remover link
+    insert: Inserir
+    image: Imagem…
+    attachment: Anexo…
+    table: Tabela
+    divider: Divisor
+  table:
+    row_above: Inserir linha acima
+    row_below: Inserir linha abaixo
+    col_left: Inserir coluna à esquerda
+    col_right: Inserir coluna à direita
+    delete_row: Excluir linha
+    delete_col: Excluir coluna
+    toggle_header: Linha de cabeçalho
+    delete: Excluir tabela
+  image:
+    smaller: Menor
+    larger: Maior
+    fit: Ajustar à largura
+  menu:
+    cut: Recortar
+    copy: Copiar
+    paste: Colar
+    paste_plain: Colar como texto simples
+    select_all: Selecionar tudo
+    open_link: Abrir link
+    add_to_dictionary: Adicionar ao dicionário
+    no_suggestions: Sem sugestões
+  attachment:
+    open_hint: Clique duas vezes para abrir
+  read_only: Este cartão é somente leitura. Desbloqueie-o para editar.
+  find:
+    placeholder: Localizar no cartão
+    replace_placeholder: Substituir por
+    no_results: Nenhum resultado
+    count: "%{i} de %{n}"
+    case: Diferenciar maiúsculas
+    previous: Ocorrência anterior (Shift+F3)
+    next: Próxima ocorrência (F3)
+    replace: Substituir
+    replace_one: Substituir
+    replace_all: Substituir tudo
+
+common:
+  back: Voltar
+  next: Avançar
+  ok: OK
+  cancel: Cancelar
+
+time:
+  just_now: agora mesmo
+  minutes_ago: "há %{n} min"
+  hours_ago: "há %{n} h"
+  days_ago: "há %{n} d"
+
+lock:
+  none: Sem proteção
+  read_only: Somente leitura
+  read_only_desc: Visível, mas editar exige um clique para desbloquear. Evita alterações acidentais.
+  private: Privado
+  private_desc: Título mascarado e conteúdo oculto até você digitar sua senha.
+  encrypted: Criptografado
+  encrypted_desc: Conteúdo criptografado no disco com a sua senha. Uma senha esquecida não pode ser recuperada.
+
+wizard:
+  step:
+    welcome: Boas-vindas
+    storage: Armazenamento
+    security: Login
+    protection: Proteção dos cartões
+    appearance: Aparência
+    finish: Pronto
+  welcome:
+    title: Boas-vindas ao Cardfile
+    body: "Seu fichário digital para notas, ideias e tudo o que você quiser guardar. Vamos configurá-lo em poucos passos."
+  storage:
+    standard: Padrão
+    standard_desc: "Os dados são armazenados no seu perfil de usuário:"
+    portable: Portátil
+    portable_desc: Os dados são armazenados em uma pasta «data» ao lado do Cardfile, para que você possa levá-los em um pen drive.
+    portable_unavailable: O modo portátil não está disponível porque a pasta do programa não permite gravação.
+  security:
+    none: Sem senha
+    none_desc: O Cardfile abre diretamente. Ideal para um computador pessoal.
+    single: Senha
+    single_desc: Uma conta protegida por senha.
+    multi: Vários usuários
+    multi_desc: Cada pessoa entra com nome de usuário e senha e tem seus próprios cartões.
+    username: Nome de usuário
+    display_name: Nome de exibição
+    password: Senha
+    confirm: Confirmar senha
+    lock_password: Senha de bloqueio (opcional)
+    lock_password_hint: Usada para desbloquear cartões privados e criptografados. Você pode defini-la depois em Configurações.
+    allow_registration: Permitir que novos usuários criem uma conta na tela de login
+  protection:
+    intro: Escolha quais níveis de proteção podem ser usados nos cartões.
+    default: Proteção para novos cartões
+    needs_password: Cartões privados e criptografados exigem uma senha de bloqueio. Volte para definir uma ou faça isso depois em Configurações.
+  appearance:
+    intro: Escolha um tema. Você pode alterá-lo quando quiser em Configurações.
+  finish:
+    intro: "Tudo pronto:"
+    later: Tudo isso pode ser alterado depois em Configurações.
+    start: Começar a usar o Cardfile
+  error:
+    username: Informe um nome de usuário.
+    password_short: A senha deve ter pelo menos 4 caracteres.
+    password_mismatch: As senhas não coincidem.
+    portable: Não foi possível ativar o modo portátil
+
+login:
+  title: Entrar
+  register_title: Criar conta
+  locked_title: "O Cardfile está bloqueado, %{name}"
+  username: Nome de usuário
+  display_name: Nome de exibição
+  password: Senha
+  confirm: Confirmar senha
+  sign_in: Entrar
+  unlock: Desbloquear
+  create: Criar conta
+  need_account: Criar uma conta
+  have_account: Já tenho uma conta
+  error:
+    invalid: Nome de usuário ou senha incorretos.
+    taken: Esse nome de usuário já está em uso.
+
+welcome:
+  title: Boas-vindas ao Cardfile
+  body: |
+    ## Primeiros passos
+
+    O Cardfile guarda suas notas como **cartões**. Crie um com o botão **+** ou **Ctrl+N**.
+
+    - Formate o texto com a barra de ferramentas ou atalhos: **Ctrl+B** negrito, *Ctrl+I* itálico, Ctrl+U sublinhado.
+    - Digite `# ` para um título, `- ` para uma lista ou `[] ` para uma lista de tarefas.
+    - Cole ou arraste imagens e arquivos para um cartão.
+    - Use **Ctrl+F** para pesquisar em todos os seus cartões e **Ctrl+Shift+P** para ver todos os comandos.
+
+    ## Proteja seus cartões
+
+    Use o botão de cadeado no topo de um cartão para torná-lo *somente leitura*, *privado* ou *criptografado*.
+
+    - [ ] Crie seu primeiro cartão
+    - [ ] Experimente uma etiqueta para organizar os cartões
+
+search:
+  placeholder: Pesquisar cartões
+  focus: Pesquisar cartões
+
+nav:
+  all: Todos os cartões
+  favorites: Favoritos
+  recycle_bin: Lixeira
+  tags: ETIQUETAS
+
+list:
+  count: "%{n} cartões"
+  empty: Ainda não há cartões aqui.
+  no_results: Nenhum cartão corresponde à sua pesquisa.
+
+sort:
+  title: Ordenar
+  manual: Manual (arraste para reordenar)
+  updated: Última modificação
+  created: Data de criação
+  title_asc: Título
+
+card:
+  new: Novo cartão
+  untitled: Sem título
+  delete: Mover para a lixeira
+  delete_body: "Mover «%{title}» para a lixeira? Você poderá restaurá-lo depois."
+  restore: Restaurar
+  pin: Fixar no topo
+  unpin: Desafixar
+  favorite: Adicionar aos favoritos
+  unfavorite: Remover dos favoritos
+  tags: Etiquetas
+  history: Histórico de versões
+  none_selected: Nenhum cartão selecionado
+  none_hint: Selecione um cartão ou pressione Ctrl+N para criar um.
+  read_only_banner: Este cartão é somente leitura.
+  unlock_edit: Editar
+  deleted_banner: Este cartão está na lixeira.
+  saving: Salvando…
+  updated: "Salvo %{date}"
+  words: "%{n} palavras"
+  unlock:
+    private: Este cartão é privado
+    encrypted: Este cartão está criptografado
+    placeholder: Senha
+    button: Desbloquear
+    hint: O cartão é bloqueado novamente após um período de inatividade.
+    wrong: Senha incorreta.
+    no_password: Nenhuma senha de bloqueio definida. Defina uma em Configurações → Segurança.
+  protect:
+    tooltip: Proteção do cartão
+    unlock_first: Desbloqueie o cartão primeiro.
+    needs_password: Defina primeiro uma senha de bloqueio em Configurações → Segurança.
+    encrypt_title: Criptografar cartão
+    encrypt_body: Digite sua senha para criptografar este cartão. Sem ela, o cartão não poderá ser aberto.
+    failed: "Não foi possível alterar a proteção: %{error}"
+  purge:
+    title: Excluir permanentemente
+    body: Este cartão será excluído para sempre. Isso não pode ser desfeito.
+    confirm: Excluir permanentemente
+
+tags:
+  new: Nova etiqueta…
+  edit: Editar etiqueta
+  delete: Excluir etiqueta
+  delete_body: "Excluir a etiqueta «%{name}»? Os cartões mantêm seu conteúdo."
+  name: Nome da etiqueta
+  exists: Já existe uma etiqueta com esse nome.
+
+history:
+  title: Histórico de versões
+  restore: Restaurar esta versão
+  empty: Ainda não há versões anteriores.
+
+recycle:
+  empty: Esvaziar lixeira
+  empty_title: Esvaziar lixeira
+  empty_body: Todos os cartões da lixeira serão excluídos para sempre.
+
+export:
+  markdown: Exportar como Markdown
+  html: Exportar como HTML
+  pdf: Exportar como PDF
+  json: Exportar como JSON
+  choose_folder: Escolha uma pasta para a exportação
+  done: "Exportado para %{path}"
+  failed: "Falha na exportação: %{error}"
+  skipped: "%{n} cartões privados ou criptografados não foram exportados."
+
+backup:
+  done: "Backup salvo em %{path}"
+
+menu:
+  settings: Configurações
+  command_palette: Paleta de comandos
+  keymap: Editar atalhos de teclado
+  export_all: Exportar todos os cartões
+  backup: Fazer backup agora
+  open_data_folder: Abrir pasta de dados
+  check_updates: Verificar atualizações
+  about: Sobre o Cardfile
+  lock: Bloquear
+  sign_out: Sair
+  quit: Fechar
+
+palette:
+  placeholder: Digite um comando…
+
+updates:
+  title: Atualização disponível
+  available: "O Cardfile %{version} está disponível. Clique para baixar."
+  latest: Você tem a versão mais recente.
+  failed: "Não foi possível verificar atualizações: %{error}"
+  managed: As atualizações desta instalação são gerenciadas pela sua loja de aplicativos ou gerenciador de pacotes.
+
+about:
+  version: "Versão %{version}"
+  description: Um fichário digital moderno para suas notas.
+  license: Software livre sob a licença MIT ou Apache 2.0.
+  website: Site
+  third_party: Licenças de terceiros
+
+settings:
+  title: Configurações
+  open: Abrir
+  never: Nunca
+  "off": "Desativado"
+  seconds: "%{n} segundos"
+  minutes: "%{n} minutos"
+  tab:
+    general: Geral
+    editor: Editor
+    security: Segurança
+    users: Usuários
+    data: Dados
+  general:
+    theme: Tema
+    language: Idioma
+    language_hint: Mais idiomas em breve.
+    font_size: Tamanho do texto do editor
+    confirm_delete: Perguntar antes de excluir cartões
+    check_updates: Verificar atualizações ao iniciar
+    check_updates_hint: Apenas consulta o GitHub por uma versão mais recente. Nenhum dado é enviado.
+    keymap: Atalhos de teclado
+    keymap_hint: Edite keymap.json para alterar qualquer atalho. Reinicie para aplicar.
+  editor:
+    markdown_shortcuts: Atalhos de Markdown
+    markdown_shortcuts_hint: "Digitar # , - , [] , **negrito** e similares formata o texto automaticamente."
+    spellcheck: Verificar ortografia
+    spellcheck_hint: Palavras com erro são sublinhadas. Clique com o botão direito para ver sugestões.
+    no_dictionaries: Nenhum dicionário instalado.
+    spell_language: Dicionário
+    search_scope: Pesquisar em
+    scope_title: Somente títulos
+    scope_content: Títulos e conteúdo
+    scope_all: Títulos, conteúdo e etiquetas
+    default_lock: Proteção para novos cartões
+    default_lock_hint: Aplicada quando um cartão é criado.
+    history: Versões mantidas por cartão
+    history_hint: Uma versão é salva no máximo a cada 5 minutos durante a edição.
+  security:
+    auto_lock: Bloquear após inatividade
+    auto_lock_hint: Pede sua senha novamente após este tempo sem atividade.
+    relock: Ocultar cartões privados desbloqueados após
+    relock_hint: Cartões privados e criptografados são bloqueados novamente após este tempo sem edição.
+    mask: Caracteres visíveis dos títulos privados
+    mask_hint: O restante do título é mascarado na lista.
+    lock_modes: Níveis de proteção disponíveis
+    auth_mode: Modo de login
+    auth_mode_hint: Como as pessoas abrem o Cardfile neste computador.
+    auth_one_user: Remova as outras contas de usuário antes de mudar para um modo de conta única.
+    auth_needs_password: Defina primeiro uma senha abaixo.
+    auth_changed: Modo de login alterado. Será aplicado na próxima vez que o Cardfile iniciar.
+    change_password: Alterar senha
+    lock_password: Senha de bloqueio
+    password_hint: Esta senha desbloqueia cartões privados e criptografados. Os cartões criptografados são recriptografados quando você a altera.
+    current_password: Senha atual
+    new_password: Nova senha
+    save_password: Salvar senha
+    password_saved: Senha alterada.
+  users:
+    admin: administrador
+    add: Adicionar usuário
+    create: Criar
+    delete: Excluir usuário
+    delete_body: A conta é removida. Seus cartões permanecem no banco de dados.
+    invalid: Informe um nome de usuário e uma senha com pelo menos 4 caracteres.
+  data:
+    location: Pasta de dados
+    portable: O modo portátil está ativo.
+    standard: Modo padrão.
+    export: Exportar
+    export_hint: Exporta todos os cartões que não são privados nem criptografados.

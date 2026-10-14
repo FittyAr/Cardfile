@@ -1,0 +1,389 @@
+_version: 1
+
+app:
+  name: Cardfile
+test:
+  greeting: "こんにちは、%{name}さん！"
+
+editor:
+  placeholder: "書き始めましょう…"
+  link:
+    title: リンクを挿入
+    text_placeholder: 表示するテキスト
+  toolbar:
+    undo: 元に戻す
+    redo: やり直し
+    bold: 太字
+    italic: 斜体
+    underline: 下線
+    strikethrough: 取り消し線
+    code: インラインコード
+    clear_formatting: 書式をクリア
+    text_color: 文字色
+    highlight: ハイライト
+    default_color: 既定
+    no_highlight: なし
+    block_type: 段落スタイル
+    paragraph: 標準テキスト
+    heading1: 見出し 1
+    heading2: 見出し 2
+    heading3: 見出し 3
+    quote: 引用
+    code_block: コードブロック
+    bullet_list: 箇条書き
+    numbered_list: 番号付きリスト
+    check_list: チェックリスト
+    align: 配置
+    align_left: 左揃え
+    align_center: 中央揃え
+    align_right: 右揃え
+    align_justify: 両端揃え
+    size: 文字サイズ
+    size_small: 小
+    size_normal: 標準
+    size_large: 大
+    size_huge: 特大
+    indent: インデントを増やす
+    outdent: インデントを減らす
+    link: リンク
+    remove_link: リンクを削除
+    insert: 挿入
+    image: 画像…
+    attachment: 添付ファイル…
+    table: 表
+    divider: 区切り線
+  table:
+    row_above: 上に行を挿入
+    row_below: 下に行を挿入
+    col_left: 左に列を挿入
+    col_right: 右に列を挿入
+    delete_row: 行を削除
+    delete_col: 列を削除
+    toggle_header: 見出し行
+    delete: 表を削除
+  image:
+    smaller: 小さく
+    larger: 大きく
+    fit: 幅に合わせる
+  menu:
+    cut: 切り取り
+    copy: コピー
+    paste: 貼り付け
+    paste_plain: テキストのみ貼り付け
+    select_all: すべて選択
+    open_link: リンクを開く
+    add_to_dictionary: 辞書に追加
+    no_suggestions: 候補なし
+  attachment:
+    open_hint: ダブルクリックで開く
+  read_only: このカードは読み取り専用です。編集するにはロックを解除してください。
+  find:
+    placeholder: カード内を検索
+    replace_placeholder: 置換後の文字列
+    no_results: 見つかりません
+    count: "%{n} 件中 %{i} 件目"
+    case: 大文字と小文字を区別
+    previous: 前の一致 (Shift+F3)
+    next: 次の一致 (F3)
+    replace: 置換
+    replace_one: 置換
+    replace_all: すべて置換
+
+common:
+  back: 戻る
+  next: 次へ
+  ok: OK
+  cancel: キャンセル
+
+time:
+  just_now: たった今
+  minutes_ago: "%{n} 分前"
+  hours_ago: "%{n} 時間前"
+  days_ago: "%{n} 日前"
+
+lock:
+  none: 保護なし
+  read_only: 読み取り専用
+  read_only_desc: 表示されますが、編集にはワンクリックでのロック解除が必要です。誤った変更を防ぎます。
+  private: プライベート
+  private_desc: パスワードを入力するまで、タイトルは伏せられ内容は非表示になります。
+  encrypted: 暗号化
+  encrypted_desc: 内容はパスワードでディスク上に暗号化されます。忘れたパスワードは復元できません。
+
+wizard:
+  step:
+    welcome: ようこそ
+    storage: 保存場所
+    security: サインイン
+    protection: カードの保護
+    appearance: 外観
+    finish: 完了
+  welcome:
+    title: Cardfile へようこそ
+    body: "メモやアイデア、残しておきたいことをまとめるデジタルカードファイルです。数ステップで設定しましょう。"
+  storage:
+    standard: 標準
+    standard_desc: "データはユーザープロファイルに保存されます:"
+    portable: ポータブル
+    portable_desc: データは Cardfile の隣の「data」フォルダーに保存されるので、USB メモリーで持ち運べます。
+    portable_unavailable: プログラムのフォルダーに書き込めないため、ポータブルモードは利用できません。
+  security:
+    none: パスワードなし
+    none_desc: Cardfile がそのまま開きます。個人用のパソコンに最適です。
+    single: パスワード
+    single_desc: パスワードで保護された 1 つのアカウント。
+    multi: 複数ユーザー
+    multi_desc: ユーザー名とパスワードでサインインし、各自のカードを持ちます。
+    username: ユーザー名
+    display_name: 表示名
+    password: パスワード
+    confirm: パスワードの確認
+    lock_password: ロック用パスワード（任意）
+    lock_password_hint: プライベートカードと暗号化カードのロック解除に使います。後から設定でも指定できます。
+    allow_registration: サインイン画面から新しいユーザーがアカウントを作成できるようにする
+  protection:
+    intro: カードに使用できる保護レベルを選んでください。
+    default: 新しいカードの保護
+    needs_password: プライベートカードと暗号化カードにはロック用パスワードが必要です。戻って設定するか、後から設定で指定してください。
+  appearance:
+    intro: テーマを選んでください。設定でいつでも変更できます。
+  finish:
+    intro: "準備が整いました:"
+    later: これらはすべて後から設定で変更できます。
+    start: Cardfile を使い始める
+  error:
+    username: ユーザー名を入力してください。
+    password_short: パスワードは 4 文字以上にしてください。
+    password_mismatch: パスワードが一致しません。
+    portable: ポータブルモードを有効にできませんでした
+
+login:
+  title: サインイン
+  register_title: アカウントを作成
+  locked_title: "Cardfile はロックされています、%{name}さん"
+  username: ユーザー名
+  display_name: 表示名
+  password: パスワード
+  confirm: パスワードの確認
+  sign_in: サインイン
+  unlock: ロック解除
+  create: アカウントを作成
+  need_account: アカウントを作成する
+  have_account: アカウントをお持ちの方
+  error:
+    invalid: ユーザー名またはパスワードが正しくありません。
+    taken: そのユーザー名はすでに使われています。
+
+welcome:
+  title: Cardfile へようこそ
+  body: |
+    ## はじめに
+
+    Cardfile はメモを**カード**として保存します。**+** ボタンまたは **Ctrl+N** で作成できます。
+
+    - ツールバーやショートカットで書式を設定できます: **Ctrl+B** 太字、*Ctrl+I* 斜体、Ctrl+U 下線。
+    - `# ` で見出し、`- ` で箇条書き、`[] ` でチェックリストになります。
+    - 画像やファイルはカードに貼り付けるかドラッグして追加できます。
+    - **Ctrl+F** ですべてのカードを検索、**Ctrl+Shift+P** ですべてのコマンドを表示します。
+
+    ## カードを保護する
+
+    カード上部のロックボタンで、*読み取り専用*、*プライベート*、*暗号化*のいずれかにできます。
+
+    - [ ] 最初のカードを作成する
+    - [ ] タグを使ってカードを整理してみる
+
+search:
+  placeholder: カードを検索
+  focus: カードを検索
+
+nav:
+  all: すべてのカード
+  favorites: お気に入り
+  recycle_bin: ごみ箱
+  tags: タグ
+
+list:
+  count: "%{n} 枚のカード"
+  empty: ここにはまだカードがありません。
+  no_results: 検索に一致するカードがありません。
+
+sort:
+  title: 並べ替え
+  manual: 手動（ドラッグで並べ替え）
+  updated: 更新日時
+  created: 作成日
+  title_asc: タイトル
+
+card:
+  new: 新しいカード
+  untitled: 無題
+  delete: ごみ箱に移動
+  delete_body: "「%{title}」をごみ箱に移動しますか？後で元に戻せます。"
+  restore: 元に戻す
+  pin: 先頭に固定
+  unpin: 固定を解除
+  favorite: お気に入りに追加
+  unfavorite: お気に入りから削除
+  tags: タグ
+  history: バージョン履歴
+  none_selected: カードが選択されていません
+  none_hint: カードを選択するか、Ctrl+N で新しく作成してください。
+  read_only_banner: このカードは読み取り専用です。
+  unlock_edit: 編集
+  deleted_banner: このカードはごみ箱にあります。
+  saving: 保存中…
+  updated: "%{date} に保存"
+  words: "%{n} 語"
+  unlock:
+    private: このカードはプライベートです
+    encrypted: このカードは暗号化されています
+    placeholder: パスワード
+    button: ロック解除
+    hint: 一定時間操作がないと、カードは再びロックされます。
+    wrong: パスワードが正しくありません。
+    no_password: ロック用パスワードが設定されていません。設定 → セキュリティ で設定してください。
+  protect:
+    tooltip: カードの保護
+    unlock_first: 先にカードのロックを解除してください。
+    needs_password: 先に 設定 → セキュリティ でロック用パスワードを設定してください。
+    encrypt_title: カードを暗号化
+    encrypt_body: このカードを暗号化するにはパスワードを入力してください。パスワードがないとカードを開けなくなります。
+    failed: "保護を変更できませんでした: %{error}"
+  purge:
+    title: 完全に削除
+    body: このカードは完全に削除されます。この操作は元に戻せません。
+    confirm: 完全に削除
+
+tags:
+  new: 新しいタグ…
+  edit: タグを編集
+  delete: タグを削除
+  delete_body: "タグ「%{name}」を削除しますか？カードの内容は残ります。"
+  name: タグ名
+  exists: その名前のタグはすでに存在します。
+
+history:
+  title: バージョン履歴
+  restore: このバージョンを復元
+  empty: 以前のバージョンはまだありません。
+
+recycle:
+  empty: ごみ箱を空にする
+  empty_title: ごみ箱を空にする
+  empty_body: ごみ箱内のすべてのカードが完全に削除されます。
+
+export:
+  markdown: Markdown としてエクスポート
+  html: HTML としてエクスポート
+  pdf: PDF としてエクスポート
+  json: JSON としてエクスポート
+  choose_folder: エクスポート先のフォルダーを選択
+  done: "%{path} にエクスポートしました"
+  failed: "エクスポートに失敗しました: %{error}"
+  skipped: "プライベートまたは暗号化された %{n} 枚のカードはエクスポートされませんでした。"
+
+backup:
+  done: "バックアップを %{path} に保存しました"
+
+menu:
+  settings: 設定
+  command_palette: コマンドパレット
+  keymap: キーボードショートカットを編集
+  export_all: すべてのカードをエクスポート
+  backup: 今すぐバックアップ
+  open_data_folder: データフォルダーを開く
+  check_updates: 更新を確認
+  about: Cardfile について
+  lock: ロック
+  sign_out: サインアウト
+  quit: 終了
+
+palette:
+  placeholder: コマンドを入力…
+
+updates:
+  title: 更新があります
+  available: "Cardfile %{version} が利用可能です。クリックしてダウンロードしてください。"
+  latest: 最新バージョンをお使いです。
+  failed: "更新を確認できませんでした: %{error}"
+  managed: このインストールの更新は、お使いのアプリストアまたはパッケージマネージャーが管理しています。
+
+about:
+  version: "バージョン %{version}"
+  description: メモのためのモダンなデジタルカードファイル。
+  license: MIT または Apache 2.0 ライセンスのフリーソフトウェアです。
+  website: ウェブサイト
+  third_party: サードパーティのライセンス
+
+settings:
+  title: 設定
+  open: 開く
+  never: しない
+  "off": "オフ"
+  seconds: "%{n} 秒"
+  minutes: "%{n} 分"
+  tab:
+    general: 一般
+    editor: エディター
+    security: セキュリティ
+    users: ユーザー
+    data: データ
+  general:
+    theme: テーマ
+    language: 言語
+    language_hint: 今後、対応言語が増えます。
+    font_size: エディターの文字サイズ
+    confirm_delete: カードを削除する前に確認する
+    check_updates: 起動時に更新を確認する
+    check_updates_hint: GitHub に新しいバージョンがあるか確認するだけです。データは送信されません。
+    keymap: キーボードショートカット
+    keymap_hint: keymap.json を編集するとショートカットを変更できます。反映には再起動が必要です。
+  editor:
+    markdown_shortcuts: Markdown ショートカット
+    markdown_shortcuts_hint: "# 、- 、[] 、**太字** などを入力すると、自動的に書式が設定されます。"
+    spellcheck: スペルチェック
+    spellcheck_hint: つづりの誤った単語に下線が表示されます。右クリックで候補が表示されます。
+    no_dictionaries: 辞書がインストールされていません。
+    spell_language: 辞書
+    search_scope: 検索対象
+    scope_title: タイトルのみ
+    scope_content: タイトルと内容
+    scope_all: タイトル、内容、タグ
+    default_lock: 新しいカードの保護
+    default_lock_hint: カードの作成時に適用されます。
+    history: カードごとに保持するバージョン数
+    history_hint: 編集中は、バージョンは最大 5 分に 1 回保存されます。
+  security:
+    auto_lock: 操作がない場合にロックする
+    auto_lock_hint: この時間操作がないと、再びパスワードを求めます。
+    relock: ロック解除したプライベートカードを非表示にするまでの時間
+    relock_hint: プライベートカードと暗号化カードは、この時間編集がないと再びロックされます。
+    mask: プライベートなタイトルの表示文字数
+    mask_hint: タイトルの残りの部分は一覧で伏せられます。
+    lock_modes: 利用できる保護レベル
+    auth_mode: サインインモード
+    auth_mode_hint: このコンピューターで Cardfile を開く方法です。
+    auth_one_user: 単一アカウントのモードに切り替える前に、ほかのユーザーアカウントを削除してください。
+    auth_needs_password: 先に下でパスワードを設定してください。
+    auth_changed: サインインモードを変更しました。次回 Cardfile を起動したときに適用されます。
+    change_password: パスワードを変更
+    lock_password: ロック用パスワード
+    password_hint: このパスワードでプライベートカードと暗号化カードのロックを解除します。変更すると、暗号化カードは再暗号化されます。
+    current_password: 現在のパスワード
+    new_password: 新しいパスワード
+    save_password: パスワードを保存
+    password_saved: パスワードを変更しました。
+  users:
+    admin: 管理者
+    add: ユーザーを追加
+    create: 作成
+    delete: ユーザーを削除
+    delete_body: アカウントは削除されます。カードはデータベースに残ります。
+    invalid: ユーザー名と 4 文字以上のパスワードを入力してください。
+  data:
+    location: データフォルダー
+    portable: ポータブルモードが有効です。
+    standard: 標準モードです。
+    export: エクスポート
+    export_hint: プライベートまたは暗号化されていないすべてのカードをエクスポートします。
