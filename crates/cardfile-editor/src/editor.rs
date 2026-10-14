@@ -108,6 +108,11 @@ actions!(
         ImageFit,
         OpenLinkAtCaret,
         AddWordToDictionary,
+        Find,
+        FindReplace,
+        FindNext,
+        FindPrevious,
+        Cancel,
     ]
 );
 
@@ -226,6 +231,11 @@ pub fn default_key_bindings() -> Vec<KeyBinding> {
         KeyBinding::new("ctrl-[", Outdent, c),
         KeyBinding::new("ctrl-enter", ToggleCheck, c),
         KeyBinding::new("alt-enter", OpenLinkAtCaret, c),
+        KeyBinding::new("ctrl-f", Find, c),
+        KeyBinding::new("ctrl-h", FindReplace, c),
+        KeyBinding::new("f3", FindNext, c),
+        KeyBinding::new("shift-f3", FindPrevious, c),
+        KeyBinding::new("escape", Cancel, c),
     ]
 }
 
@@ -257,6 +267,8 @@ pub struct RichEditor {
     pub(crate) base_font_size: Pixels,
     pub(crate) placeholder: Option<String>,
     revision: u64,
+    pub(crate) find: Option<crate::find::FindBar>,
+    pub(crate) slash: Option<crate::slash::SlashMenu>,
 }
 
 impl EventEmitter<EditorEvent> for RichEditor {}
@@ -290,6 +302,8 @@ impl RichEditor {
             base_font_size: px(15.),
             placeholder: None,
             revision: 0,
+            find: None,
+            slash: None,
         }
     }
 
@@ -310,7 +324,9 @@ impl RichEditor {
         self.history.clear();
         self.layouts.clear();
         self.marked = None;
+        self.slash = None;
         self.scroll.set_offset(point(px(0.), px(0.)));
+        self.refresh_matches(false, cx);
         cx.notify();
     }
 
@@ -378,6 +394,11 @@ impl RichEditor {
             .blocks
             .get(self.model.caret().slot.block)
             .map_or(Align::Left, |b| b.align)
+    }
+
+    /// The selected text as plain text.
+    pub fn selected_text(&self) -> String {
+        self.model.selected_text()
     }
 
     pub fn in_table(&self) -> bool {
@@ -556,8 +577,24 @@ impl RichEditor {
             self.history.record(&before, sel, kind);
             self.revision += 1;
             cx.emit(EditorEvent::Changed);
+            if self.find.is_some() {
+                self.refresh_matches(false, cx);
+            }
         }
+        self.validate_slash();
         self.after_move(cx);
+    }
+
+    pub(crate) fn edit_with(&mut self, cx: &mut Context<Self>, f: impl FnOnce(&mut Model)) {
+        self.edit(EditKind::Other, cx, f);
+    }
+
+    pub(crate) fn request_autoscroll(&mut self) {
+        self.autoscroll = true;
+    }
+
+    pub(crate) fn pick_files_public(&mut self, images: bool, cx: &mut Context<Self>) {
+        self.pick_files(images, cx);
     }
 
     fn after_move(&mut self, cx: &mut Context<Self>) {
@@ -576,6 +613,7 @@ impl RichEditor {
         }
         self.history.seal();
         self.marked = None;
+        self.validate_slash();
         self.after_move(cx);
     }
 
@@ -741,9 +779,15 @@ impl RichEditor {
         self.horizontal(false, false, false, cx);
     }
     fn move_up(&mut self, _: &MoveUp, _: &mut Window, cx: &mut Context<Self>) {
+        if self.slash_key(crate::slash::SlashKey::Up, cx) {
+            return;
+        }
         self.vertical(false, false, false, cx);
     }
     fn move_down(&mut self, _: &MoveDown, _: &mut Window, cx: &mut Context<Self>) {
+        if self.slash_key(crate::slash::SlashKey::Down, cx) {
+            return;
+        }
         self.vertical(true, false, false, cx);
     }
     fn move_word_left(&mut self, _: &MoveWordLeft, _: &mut Window, cx: &mut Context<Self>) {
@@ -830,6 +874,9 @@ impl RichEditor {
         self.edit(EditKind::Other, cx, Model::delete_forward);
     }
     fn enter(&mut self, _: &Enter, _: &mut Window, cx: &mut Context<Self>) {
+        if self.slash_key(crate::slash::SlashKey::Enter, cx) {
+            return;
+        }
         self.marked = None;
         self.edit(EditKind::Other, cx, Model::enter);
     }
@@ -837,6 +884,9 @@ impl RichEditor {
         self.edit(EditKind::Other, cx, Model::soft_break);
     }
     fn tab(&mut self, _: &Tab, _: &mut Window, cx: &mut Context<Self>) {
+        if self.slash_key(crate::slash::SlashKey::Enter, cx) {
+            return;
+        }
         if self.model.in_table() {
             self.model.table_next_cell(false);
             // Adding a row at the end of a table is an edit.
@@ -1442,6 +1492,37 @@ impl RichEditor {
         Some(image)
     }
 
+    fn find_action(&mut self, _: &Find, window: &mut Window, cx: &mut Context<Self>) {
+        self.open_find(false, window, cx);
+    }
+    fn find_replace(&mut self, _: &FindReplace, window: &mut Window, cx: &mut Context<Self>) {
+        let replace = !self.read_only;
+        self.open_find(replace, window, cx);
+    }
+    fn find_next(&mut self, _: &FindNext, window: &mut Window, cx: &mut Context<Self>) {
+        if self.find.is_none() {
+            self.open_find(false, window, cx);
+        }
+        self.find_step(true, window, cx);
+    }
+    fn find_previous(&mut self, _: &FindPrevious, window: &mut Window, cx: &mut Context<Self>) {
+        if self.find.is_none() {
+            self.open_find(false, window, cx);
+        }
+        self.find_step(false, window, cx);
+    }
+    fn cancel(&mut self, _: &Cancel, window: &mut Window, cx: &mut Context<Self>) {
+        if self.slash_key(crate::slash::SlashKey::Escape, cx) {
+            return;
+        }
+        if self.find.is_some() {
+            self.close_find(window, cx);
+        } else if !self.model.sel.is_empty() {
+            let head = self.model.sel.head;
+            self.move_caret(head, false, cx);
+        }
+    }
+
     /// Register action handlers on the editor root element.
     pub(crate) fn bind_actions(
         div: gpui_kit::Stateful<gpui_kit::Div>,
@@ -1533,6 +1614,11 @@ impl RichEditor {
             .on_action(cx.listener(Self::image_fit))
             .on_action(cx.listener(Self::replace_word))
             .on_action(cx.listener(Self::add_word_to_dictionary))
+            .on_action(cx.listener(Self::find_action))
+            .on_action(cx.listener(Self::find_replace))
+            .on_action(cx.listener(Self::find_next))
+            .on_action(cx.listener(Self::find_previous))
+            .on_action(cx.listener(Self::cancel))
     }
 }
 
@@ -1658,6 +1744,7 @@ impl EntityInputHandler for RichEditor {
             m.pending_style = pending;
             m.insert_text(text);
         });
+        self.maybe_open_slash(text);
     }
 
     fn replace_and_mark_text_in_range(

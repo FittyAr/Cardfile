@@ -6,11 +6,13 @@
 mod dialogs;
 pub mod editor;
 mod element;
+mod find;
 pub mod history;
 mod layout;
 pub mod model;
 pub mod pos;
 mod render;
+mod slash;
 pub mod toolbar;
 pub mod util;
 

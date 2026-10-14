@@ -596,6 +596,25 @@ impl CardPane {
             self.purge(window, cx);
             return;
         }
+        if AppState::user_settings(cx).confirm_delete {
+            let pane = cx.entity();
+            crate::dialogs::confirm(
+                t("card.delete"),
+                t_args("card.delete_body", &[("title", &card.title)]),
+                t("card.delete"),
+                window,
+                cx,
+                move |window, cx| pane.update(cx, |p, cx| p.delete_now(window, cx)),
+            );
+            return;
+        }
+        self.delete_now(window, cx);
+    }
+
+    fn delete_now(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let Some(card) = self.card.clone() else {
+            return;
+        };
         self.flush_save(cx);
         let db = AppState::db(cx);
         let id = card.id;

@@ -1005,6 +1005,76 @@ impl Model {
     }
 }
 
+impl Model {
+    /// Every occurrence of `query`, in document order.
+    pub fn find_matches(
+        &self,
+        query: &str,
+        case_sensitive: bool,
+    ) -> Vec<(Slot, std::ops::Range<usize>)> {
+        let mut out = Vec::new();
+        if query.is_empty() {
+            return out;
+        }
+        let needle = if case_sensitive {
+            query.to_owned()
+        } else {
+            query.to_lowercase()
+        };
+        let mut slot = Some(self.doc.first_slot(0));
+        while let Some(s) = slot {
+            if let Some(text) = self.doc.slot_text(s) {
+                let hay = &text.text;
+                let lowered;
+                // Lower-casing can change byte lengths (e.g. 'İ'); fall back to exact search then.
+                let (h, n): (&str, &str) = if case_sensitive {
+                    (hay, query)
+                } else {
+                    lowered = hay.to_lowercase();
+                    if lowered.len() == hay.len() {
+                        (&lowered, &needle)
+                    } else {
+                        (hay, query)
+                    }
+                };
+                for (i, m) in h.match_indices(n) {
+                    if hay.is_char_boundary(i) && hay.is_char_boundary(i + m.len()) {
+                        out.push((s, i..i + m.len()));
+                    }
+                }
+            }
+            slot = self.doc.next_slot(s);
+        }
+        out
+    }
+
+    /// Replace every match; returns how many were replaced.
+    pub fn replace_all(&mut self, query: &str, replacement: &str, case_sensitive: bool) -> usize {
+        let matches = self.find_matches(query, case_sensitive);
+        let rules = self.input_rules;
+        self.input_rules = false;
+        for (slot, range) in matches.iter().rev() {
+            self.sel = Selection {
+                anchor: Pos::new(*slot, range.start),
+                head: Pos::new(*slot, range.end),
+            };
+            if replacement.is_empty() {
+                self.delete_selection();
+            } else {
+                // Keep the style of the replaced text.
+                self.pending_style = self
+                    .doc
+                    .slot_text(*slot)
+                    .map(|t| t.style_at(range.start + 1));
+                self.insert_text(replacement);
+            }
+        }
+        self.input_rules = rules;
+        self.pending_style = None;
+        matches.len()
+    }
+}
+
 /// Byte range of the link touching `offset` (contiguous runs sharing one URL).
 pub fn link_extent(text: &RichText, offset: usize) -> Option<std::ops::Range<usize>> {
     let spans: Vec<_> = text.spans().map(|(r, s)| (r, s.link.clone())).collect();
@@ -1250,6 +1320,18 @@ mod tests {
         k.insert_fragment(&Document::from_plain_text("x"));
         assert_eq!(texts(&k), ["AxB"]);
         assert_eq!(k.caret(), at(0, 2));
+    }
+
+    #[test]
+    fn find_and_replace() {
+        let mut m = model(&["Hello world", "hello again"]);
+        assert_eq!(m.find_matches("hello", false).len(), 2);
+        assert_eq!(m.find_matches("hello", true).len(), 1);
+        m.doc.blocks[0].text.toggle_mark(0..5, Mark::Bold);
+        assert_eq!(m.replace_all("hello", "Hi", false), 2);
+        assert_eq!(texts(&m), ["Hi world", "Hi again"]);
+        assert!(m.doc.blocks[0].text.has_mark(0..2, Mark::Bold));
+        assert_eq!(m.replace_all("missing", "x", false), 0);
     }
 
     #[test]

@@ -77,6 +77,17 @@ editor:
   attachment:
     open_hint: Double-click to open
   read_only: This card is read-only. Unlock it to edit.
+  find:
+    placeholder: Find in card
+    replace_placeholder: Replace with
+    no_results: No results
+    count: "%{i} of %{n}"
+    case: Match case
+    previous: Previous match (Shift+F3)
+    next: Next match (F3)
+    replace: Replace
+    replace_one: Replace
+    replace_all: Replace all
 
 common:
   back: Back
@@ -208,6 +219,7 @@ card:
   new: New card
   untitled: Untitled
   delete: Move to recycle bin
+  delete_body: "Move \"%{title}\" to the recycle bin? You can restore it later."
   restore: Restore
   pin: Pin to top
   unpin: Unpin
@@ -349,6 +361,11 @@ settings:
     mask: Visible characters of private titles
     mask_hint: The rest of the title is masked in the list.
     lock_modes: Available protection levels
+    auth_mode: Sign-in mode
+    auth_mode_hint: How people open Cardfile on this computer.
+    auth_one_user: Remove the other user accounts before switching to a single-account mode.
+    auth_needs_password: Set a password below first.
+    auth_changed: Sign-in mode changed. It applies the next time Cardfile starts.
     change_password: Change password
     lock_password: Lock password
     password_hint: This password unlocks private and encrypted cards. Encrypted cards are re-encrypted when you change it.

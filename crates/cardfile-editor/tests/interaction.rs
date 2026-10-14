@@ -90,3 +90,37 @@ fn copy_paste_keeps_formatting(cx: &mut TestAppContext) {
         assert!(e.document().blocks[0].text.has_mark(0..4, Mark::Bold))
     });
 }
+
+#[gpui_kit::test]
+fn slash_menu_inserts_heading(cx: &mut TestAppContext) {
+    let (editor, cx) = setup(cx, Document::default());
+    cx.simulate_input("/");
+    cx.simulate_input("h");
+    cx.simulate_input("2");
+    cx.simulate_keystrokes("enter");
+    cx.simulate_input("Title");
+    editor.read_with(cx, |e, _| {
+        assert_eq!(e.document().blocks[0].kind, BlockKind::Heading(2));
+        assert_eq!(e.document().blocks[0].text.text, "Title");
+    });
+}
+
+#[gpui_kit::test]
+fn slash_menu_escape_keeps_text(cx: &mut TestAppContext) {
+    let (editor, cx) = setup(cx, Document::default());
+    cx.simulate_input("/");
+    cx.simulate_keystrokes("escape enter");
+    assert_eq!(texts(&editor, cx), ["/", ""]);
+}
+
+#[gpui_kit::test]
+fn find_selects_matches(cx: &mut TestAppContext) {
+    let (editor, cx) = setup(cx, Document::from_plain_text("one two one"));
+    cx.simulate_keystrokes("ctrl-home ctrl-f");
+    cx.simulate_input("one");
+    cx.simulate_keystrokes("escape");
+    // Escape closes the bar and returns to the editor with the first match selected.
+    editor.read_with(cx, |e, _| assert_eq!(e.selected_text(), "one"));
+    cx.simulate_input("ONE");
+    assert_eq!(texts(&editor, cx), ["ONE two one"]);
+}

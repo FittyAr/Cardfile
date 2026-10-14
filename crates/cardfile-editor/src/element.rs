@@ -28,6 +28,8 @@ pub struct SlotStyle {
     pub selection: Hsla,
     pub caret: Hsla,
     pub misspelled: Hsla,
+    pub found: Hsla,
+    pub found_current: Hsla,
     pub bold: bool,
     pub italic: bool,
     pub mono: bool,
@@ -60,6 +62,7 @@ pub(crate) fn build_runs(
     st: &SlotStyle,
     marked: Option<Range<usize>>,
     misspelled: &[Range<usize>],
+    found: &[(Range<usize>, Hsla)],
 ) -> Vec<TextRun> {
     // Collect every boundary where any attribute may change.
     let mut cuts: Vec<usize> = vec![0, text.len()];
@@ -67,7 +70,11 @@ pub(crate) fn build_runs(
         cuts.push(r.start);
         cuts.push(r.end);
     }
-    for r in marked.iter().chain(misspelled) {
+    for r in marked
+        .iter()
+        .chain(misspelled)
+        .chain(found.iter().map(|(r, _)| r))
+    {
         cuts.push(r.start.min(text.len()));
         cuts.push(r.end.min(text.len()));
     }
@@ -108,6 +115,12 @@ pub(crate) fn build_runs(
             .and_then(parse_hex)
             .map(|c| c.opacity(0.45))
             .or_else(|| (style.code && !st.mono).then_some(st.code_bg));
+        let background_color = found
+            .iter()
+            .rev()
+            .find(|(r, _)| r.start <= s && s < r.end)
+            .map(|(_, c)| *c)
+            .or(background_color);
         let mut underline = (style.underline || link).then(|| UnderlineStyle {
             thickness: px(1.),
             color: Some(color),
@@ -218,7 +231,7 @@ impl Element for SlotElement {
                 AvailableSpace::Definite(w) => Some(w),
                 _ => None,
             });
-            let runs = build_runs(&text, &st, None, &[]);
+            let runs = build_runs(&text, &st, None, &[], &[]);
             let lines = shape(window, &text.text, &runs, st.font_size, wrap);
             let rows: usize = lines.iter().map(|l| l.wrap_boundaries().len() + 1).sum();
             let width = wrap.unwrap_or_else(|| {
@@ -245,7 +258,13 @@ impl Element for SlotElement {
         let editor = self.editor.read(cx);
         let marked = editor.marked_range_in(self.slot);
         let misspelled = editor.misspelled_in(self.slot, &self.text.text);
-        let runs = build_runs(&self.text, &self.style, marked, &misspelled);
+        let (found, current) = editor.find_highlights(self.slot);
+        let mut found: Vec<(Range<usize>, Hsla)> =
+            found.into_iter().map(|r| (r, self.style.found)).collect();
+        if let Some(c) = current {
+            found.push((c, self.style.found_current));
+        }
+        let runs = build_runs(&self.text, &self.style, marked, &misspelled, &found);
         let lines = shape(
             window,
             &self.text.text,
