@@ -101,9 +101,13 @@ jobs:
           cp "$DIR/THIRD_PARTY_LICENSES.html" packaging/out/ 2>/dev/null || echo "<p>See docs/CREDITS.md</p>" > packaging/out/THIRD_PARTY_LICENSES.html
           echo "VERSION=$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)" >> "$GITHUB_ENV"
       - name: Debian package
-        run: cargo deb -p cardfile --no-build --no-strip --target-dir target -o packaging/out/
+        # dpkg-shlibdeps resolves `depends = "$auto"` against installed libraries.
+        run: |
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends libxkbcommon0 libxkbcommon-x11-0
+          cargo deb -p cardfile --no-build --no-strip -o packaging/out/
       - name: RPM package
-        run: cargo generate-rpm -p crates/cardfile -o packaging/out/
+        # RPM versions cannot contain '-'; '~' sorts a pre-release before the final release.
+        run: cargo generate-rpm -p crates/cardfile -o packaging/out/ -s "version = \"${VERSION//-/\~}\""
       - name: AppImage
         run: |
           sudo apt-get update && sudo apt-get install -y --no-install-recommends file libfuse2 || true
