@@ -15,4 +15,11 @@ workspace = true
 
 [dependencies]
 cardfile-ui.workspace = true
-anyhow.workspace = true
+tracing.workspace = true
+tracing-appender.workspace = true
+tracing-subscriber.workspace = true
+
+[features]
+default = ["update-check"]
+# Notify about new GitHub releases. Disable for Store / package-manager builds.
+update-check = ["cardfile-ui/update-check"]

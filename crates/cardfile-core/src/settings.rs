@@ -69,6 +69,11 @@ pub struct UserSettings {
     pub check_for_updates: bool,
     pub confirm_delete: bool,
     pub language: String,
+    /// Argon2 hash of the password protecting private and encrypted cards when the
+    /// account itself has no password (password-free mode).
+    pub lock_password_hash: Option<String>,
+    /// Width of the card list column in logical pixels.
+    pub list_width: f32,
 }
 
 impl Default for UserSettings {
@@ -90,6 +95,8 @@ impl Default for UserSettings {
             check_for_updates: true,
             confirm_delete: true,
             language: "en".into(),
+            lock_password_hash: None,
+            list_width: 300.0,
         }
     }
 }
