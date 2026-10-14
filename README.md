@@ -1,103 +1,83 @@
+<p align="center"><img src="assets/logo_trasparente.png" alt="Cardfile" width="160"></p>
+
 # Cardfile
 
-Cardfile is my cross‑platform card/file manager inspired by the classic Windows 3.1 aesthetic, built with Flet 1.0 Beta. I combine a fast CRUD workflow with Markdown editing, authentication, and multi‑language support.
+A modern digital card file for your notes, inspired by the classic Windows 3.1 Cardfile.
+Native, fast and private: written in Rust with [GPUI](https://gpui.rs), the UI framework behind
+the [Zed](https://zed.dev) editor.
 
-## Highlights
+> **Status:** Cardfile 2 is a full rewrite and is in **alpha**. Español: [README.es.md](README.es.md)
 
-- Authentication with password hashing
-- Full card lifecycle (create, edit, delete, restore)
-- Markdown editor with live preview
-- Recycle bin for recovery
-- Multi‑language UI (Spanish, English, Portuguese BR, French, German, Russian, Chinese)
-- Desktop and web runtime support
+## Features
 
-## Requirements
+- Word-like editor: headings, lists, checklists, tables, code blocks, colors, images and
+  attachments. No Markdown syntax to learn, and every card exports to Markdown.
+- Full-text search across titles and contents.
+- Tags, favorites, pinned cards, manual ordering and version history.
+- Card protection levels: **read-only** (no accidental edits), **private** (password to view)
+  and **encrypted** (encrypted at rest).
+- Multi-user, single-password or password-free mode, chosen on first run.
+- Recycle bin, themes, configurable keyboard shortcuts and a command palette.
+- Export to Markdown, HTML, PDF and JSON.
+- Portable mode, so you can carry your cards on a USB drive.
+- No telemetry.
 
-- Python 3.10+
-- Docker (optional, for containerized runs)
+## Install
 
-## Getting Started
+**Windows (PowerShell)**
 
-### Local Run
+```powershell
+irm https://github.com/FittyAr/Cardfile/releases/latest/download/cardfile-installer.ps1 | iex
+```
 
-1. Create a virtual environment:
+**Windows (winget)**
+
+```powershell
+winget install FittyAr.Cardfile
+```
+
+**Linux**
+
 ```bash
-python -m venv venv
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/FittyAr/Cardfile/releases/latest/download/cardfile-installer.sh | sh
 ```
 
-2. Activate it:
-   - Windows (CMD): `.\venv\Scripts\Activate.bat`
-   - Windows (PowerShell): `.\venv\Scripts\Activate.ps1`
-   - Linux/Mac: `source venv/bin/activate`
+`.deb`, `.rpm`, AppImage and the Inno Setup installer are attached to every
+[release](https://github.com/FittyAr/Cardfile/releases). Microsoft Store and Linux repositories
+are coming.
 
-3. Install dependencies:
+### Verifying downloads
+
+Release files are signed with [minisign](https://jedisct1.github.io/minisign/):
+
 ```bash
-pip install --upgrade pip
-pip install -r requirements.txt
+minisign -Vm <file> -P <public key from docs/SIGNING.md>
 ```
 
-4. Run the app:
+The Windows executables are not Authenticode-signed (only the Microsoft Store package is), so
+SmartScreen may warn on first run.
+
+## Build from source
+
+Requires the latest stable [Rust](https://rustup.rs).
+
 ```bash
-python main.py
+git clone https://github.com/FittyAr/Cardfile
+cd Cardfile
+cargo run --release
 ```
 
-The app opens at `http://localhost:8550`.
-
-### Docker Run
-
-1. Build and run:
-```bash
-cd docker
-docker-compose up --build
-```
-
-2. Open:
-`http://localhost:8550`
-
-Stop the container:
-```bash
-docker-compose down
-```
-
-## Configuration
-
-Edit `config.json` to customize database settings, default language, and runtime mode.
-
-## Project Structure
-
-```
-Cardfile-py/
-├── src/cardfile/     # Application package
-├── lang/             # Translations
-├── assets/           # Icons and assets
-├── docker/           # Docker setup
-├── main.py           # Entry point
-└── requirements.txt  # Python dependencies
-```
-
-## Security Notice
-
-I do not sign the Windows executable yet, so Windows SmartScreen may warn or block it. If you do not trust the binary, please compile the project yourself using the build guide in docs/compilacion_y_release.md.
-
-## Documentation
-
-- DeepWiki index: https://deepwiki.com/FittyAr/Cardfile
-- Additional docs are in `docs/`, including build and release notes.
-
-## Readmes in Other Languages
-
-- Español: `docs/README.es.md`
-- Português (BR): `docs/README.pt-BR.md`
-- Français: `docs/README.fr.md`
+Linux needs the system packages listed in [AGENTS.md](AGENTS.md#commands).
 
 ## Contributing
 
-Contributions are welcome. If you want to help:
-
-- Open issues with clear repro steps or feature proposals
-- Send PRs with focused, well‑scoped changes
-- Add translations or improve existing ones
+See [CONTRIBUTING.md](CONTRIBUTING.md). The roadmap and architecture are in
+[docs/PLAN.md](docs/PLAN.md).
 
 ## License
 
-See [LICENSE](LICENSE) for details.
+Licensed under either of [Apache License, Version 2.0](LICENSE-APACHE) or
+[MIT license](LICENSE-MIT), at your option.
+
+Third-party software and credits: [docs/CREDITS.md](docs/CREDITS.md). Every release ships
+`THIRD_PARTY_LICENSES.html`.

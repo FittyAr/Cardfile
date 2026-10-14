@@ -1,0 +1,25 @@
+name: Bug report
+description: Something does not work as expected
+labels: [bug]
+body:
+  - type: textarea
+    attributes:
+      label: What happened?
+      description: Steps to reproduce, expected and actual behavior.
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Cardfile version
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Operating system
+      options: [Windows, Linux]
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Logs
+      description: Attach the latest file from the `logs` folder (Settings → About → Open logs folder).

@@ -1,0 +1,13 @@
+name: Feature request
+description: Suggest an idea
+labels: [enhancement]
+body:
+  - type: textarea
+    attributes:
+      label: What would you like?
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Why?
+      description: The problem this solves.
