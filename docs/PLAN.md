@@ -393,9 +393,16 @@ Cada fase termina con PR(s) mergeados, CI verde y criterios de aceptación cumpl
 | 8 — Empaquetado y distribución | ✅ configurado; se valida con el primer tag | #3 |
 | 9 — Pulido y estable | 🔶 en curso | — |
 
+Revisión de los PR #1–#4 (incluida en #4): imágenes y adjuntos de tarjetas cifradas sellados con
+una clave por blob guardada dentro del documento cifrado (`sealed:<id>:<clave>`); el updater solo
+anuncia releases con `SHA256SUMS` firmado por la clave minisign incrustada; `cards_fts` enlazado
+por `card_id`; búsqueda sin mayúsculas con plegado Unicode; Argon2, diccionarios y lecturas del
+login fuera del hilo de UI.
+
 Pendiente:
 
-- Primer release `v2.0.0-alpha.1`: configurar secretos (`docs/RELEASING.md`), crear el tag y revisar
+- Primer release `v2.0.0-alpha.1`: secreto y variable minisign ya configurados; falta `WINGET_TOKEN`
+  (`docs/RELEASING.md`), crear el tag y revisar
   los artefactos generados por el pipeline.
 - Primera publicación manual en winget (`wingetcreate new`) y en Microsoft Store (Partner Center).
 - Traducciones: `locales/en.yml` está completo; copiar a `locales/<lang>.yml` para cada idioma.
@@ -404,13 +411,3 @@ Pendiente:
   pega texto plano o Markdown.
 - Rendimiento con decenas de miles de tarjetas: contadores con `COUNT(*)` en vez de listar.
 - macOS cuando exista cuenta Apple Developer.
-- Revisión de los PR #1–#4 (pendiente tras los arreglos incluidos en #4):
-  - `cardfile-updater` solo avisa de nuevas versiones; la verificación minisign se implementa
-    junto con cualquier descarga automática.
-  - Imágenes y adjuntos de tarjetas cifradas se guardan sin cifrar en `blobs` (solo el documento
-    va cifrado). Cifrarlos por tarjeta y sin deduplicar entre usuarios.
-  - `cards_fts` se une a `cards` por el `rowid` implícito, que `VACUUM` puede renumerar: agregar
-    una columna `card_id UNINDEXED` o un `INTEGER PRIMARY KEY` explícito.
-  - Buscar sin distinguir mayúsculas falla en textos cuyo `to_lowercase` cambia de longitud
-    (`İ`, `ẞ`, `K`).
-  - Carga del diccionario Hunspell y algunas lecturas de DB del login todavía en el hilo de UI.

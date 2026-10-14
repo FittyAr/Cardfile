@@ -115,48 +115,53 @@ impl LoginView {
         self.busy = true;
         self.error = None;
         cx.notify();
+        let settings_db = db.clone();
         let task = cx.background_spawn(async move {
-            let user = match (mode, locked) {
-                (_, Some(user)) => Some(user),
-                (Mode::Register, None) => {
-                    if db.user_by_username(&username)?.is_some() {
-                        return Err(anyhow::anyhow!(t("login.error.taken")));
+            let authenticate = move || -> anyhow::Result<Option<User>> {
+                let user = match (mode, locked) {
+                    (_, Some(user)) => Some(user),
+                    (Mode::Register, None) => {
+                        if db.user_by_username(&username)?.is_some() {
+                            return Err(anyhow::anyhow!(t("login.error.taken")));
+                        }
+                        let hash = cardfile_crypto::hash_password(&password)?;
+                        let display = if display.is_empty() {
+                            username.clone()
+                        } else {
+                            display
+                        };
+                        return Ok(Some(db.create_user(
+                            &username,
+                            &display,
+                            Some(&hash),
+                            false,
+                        )?));
                     }
-                    let hash = cardfile_crypto::hash_password(&password)?;
-                    let display = if display.is_empty() {
-                        username.clone()
-                    } else {
-                        display
-                    };
-                    return Ok(Some(db.create_user(
-                        &username,
-                        &display,
-                        Some(&hash),
-                        false,
-                    )?));
-                }
-                (Mode::SignIn, None) if auth == AuthMode::MultiUser => {
-                    db.user_by_username(&username)?
-                }
-                // Single-user: the only account.
-                (Mode::SignIn, None) => db.list_users()?.into_iter().next(),
+                    (Mode::SignIn, None) if auth == AuthMode::MultiUser => {
+                        db.user_by_username(&username)?
+                    }
+                    // Single-user: the only account.
+                    (Mode::SignIn, None) => db.list_users()?.into_iter().next(),
+                };
+                let ok = user.as_ref().is_some_and(|u| match &u.password_hash {
+                    Some(hash) => cardfile_crypto::verify_password(hash, &password),
+                    None => true,
+                });
+                Ok(if ok { user } else { None })
             };
-            let ok = user.as_ref().is_some_and(|u| match &u.password_hash {
-                Some(hash) => cardfile_crypto::verify_password(hash, &password),
-                None => true,
-            });
-            Ok(if ok { user } else { None })
+            // Settings are read here too, so the UI thread never touches the database.
+            let Some(user) = authenticate()? else {
+                return anyhow::Ok(None);
+            };
+            let settings = settings_db.user_settings(user.id).unwrap_or_default();
+            Ok(Some(Session { user, settings }))
         });
         cx.spawn(async move |this, cx| {
             let result = task.await;
             let _ = this.update(cx, |this, cx| {
                 this.busy = false;
                 match result {
-                    Ok(Some(user)) => {
-                        let db = AppState::db(cx);
-                        let settings = db.user_settings(user.id).unwrap_or_default();
-                        cx.emit(LoginEvent::SignedIn(Session { user, settings }));
-                    }
+                    Ok(Some(session)) => cx.emit(LoginEvent::SignedIn(session)),
                     Ok(None) => this.error = Some(t("login.error.invalid").into()),
                     Err(e) => this.error = Some(e.to_string().into()),
                 }

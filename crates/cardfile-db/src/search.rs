@@ -67,7 +67,7 @@ impl Database {
             if fts.is_some() {
                 sql.push_str(
                     "snippet(cards_fts, -1, char(1), char(2), '…', 12) AS snippet \
-                     FROM cards c JOIN cards_fts ON cards_fts.rowid = c.rowid ",
+                     FROM cards c JOIN cards_fts ON cards_fts.card_id = c.id ",
                 );
             } else {
                 sql.push_str("NULL AS snippet FROM cards c ");
@@ -227,5 +227,33 @@ mod tests {
         card(&db, user.id, "Diary", "secret", LockMode::Private);
         let list = db.list_cards(user.id, &CardFilter::default()).unwrap();
         assert_eq!(list[0].preview, "");
+    }
+
+    #[test]
+    fn search_survives_vacuum() {
+        let (db, user) = db_with_user();
+        let titled = |t: &str| NewCard {
+            title: t.into(),
+            ..Default::default()
+        };
+        let a = db.create_card(user.id, titled("alpha")).unwrap();
+        let b = db.create_card(user.id, titled("bravo")).unwrap();
+        let c = db.create_card(user.id, titled("charlie")).unwrap();
+        // Leave a hole in the rowids, then let VACUUM renumber them.
+        db.delete_card(a.id).unwrap();
+        db.purge_card(a.id).unwrap();
+        db.with(|conn| {
+            diesel::connection::SimpleConnection::batch_execute(conn, "VACUUM;")?;
+            Ok(())
+        })
+        .unwrap();
+        for (q, id) in [("bravo", b.id), ("charlie", c.id)] {
+            let filter = CardFilter {
+                query: q.into(),
+                ..Default::default()
+            };
+            let hits = db.list_cards(user.id, &filter).unwrap();
+            assert_eq!(hits.iter().map(|h| h.id).collect::<Vec<_>>(), [id], "{q}");
+        }
     }
 }

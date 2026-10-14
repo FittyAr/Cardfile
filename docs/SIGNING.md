@@ -6,13 +6,16 @@ Every file attached to a [release](https://github.com/FittyAr/Cardfile/releases)
 ## Public key
 
 ```
-(will be published with the first signed release)
+RWSEWpMd7tkiGAaQwVFXiSYyfV6ODYRttbEFQ/WBOTzrbMB1diAfrG+w
 ```
+
+The same key is built into Cardfile (`cardfile-updater`): the app only announces a new version
+when that release's `SHA256SUMS` is signed with it.
 
 ## Verify a file
 
 ```bash
-minisign -Vm Cardfile-2.0.0-setup-x64.exe -P <public key>
+minisign -Vm Cardfile-2.0.0-setup-x64.exe -P RWSEWpMd7tkiGAaQwVFXiSYyfV6ODYRttbEFQ/WBOTzrbMB1diAfrG+w
 ```
 
 Or check the checksum:

@@ -29,6 +29,7 @@ jobs:
       - name: Checksums and minisign signatures
         env:
           MINISIGN_SECRET_KEY: ${{ secrets.MINISIGN_SECRET_KEY }}
+          MINISIGN_PUBLIC_KEY: ${{ vars.MINISIGN_PUBLIC_KEY }}
         run: |
           mkdir -p out
           cd all
@@ -40,9 +41,16 @@ jobs:
             sudo apt-get update && sudo apt-get install -y minisign
             echo "$MINISIGN_SECRET_KEY" > /tmp/minisign.key
             for f in $FILES SHA256SUMS; do
-              minisign -S -s /tmp/minisign.key -m "$f" -x "../out/$f.minisig" -t "Cardfile release file: $f"
+              # The app checks this exact comment (cardfile-updater `trusted_comment`).
+              minisign -S -s /tmp/minisign.key -m "$f" -x "../out/$f.minisig" -t "Cardfile $TAG release file: $f"
             done
             rm -f /tmp/minisign.key
+            # The app trusts only this public key (cardfile-updater PUBLIC_KEY).
+            if [ -n "$MINISIGN_PUBLIC_KEY" ]; then
+              for f in $FILES SHA256SUMS; do
+                minisign -V -P "$MINISIGN_PUBLIC_KEY" -m "$f" -x "../out/$f.minisig" -q
+              done
+            fi
           else
             echo "::warning::MINISIGN_SECRET_KEY is not set; release files are not signed"
           fi

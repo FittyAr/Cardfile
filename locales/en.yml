@@ -249,6 +249,7 @@ card:
     needs_password: Set a lock password in Settings → Security first.
     encrypt_title: Encrypt card
     encrypt_body: Enter your password to encrypt this card. Without it the card cannot be opened.
+    failed: "Could not change the protection: %{error}"
   purge:
     title: Delete permanently
     body: This card will be deleted forever. This cannot be undone.

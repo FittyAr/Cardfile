@@ -1029,27 +1029,23 @@ impl Model {
         let needle = if case_sensitive {
             query.to_owned()
         } else {
-            query.to_lowercase()
+            fold_case(query).0
         };
         let mut slot = Some(self.doc.first_slot(0));
         while let Some(s) = slot {
             if let Some(text) = self.doc.slot_text(s) {
                 let hay = &text.text;
-                let lowered;
-                // Lower-casing can change byte lengths (e.g. 'İ'); fall back to exact search then.
-                let (h, n): (&str, &str) = if case_sensitive {
-                    (hay, query)
+                if case_sensitive {
+                    out.extend(hay.match_indices(query).map(|(i, m)| (s, i..i + m.len())));
                 } else {
-                    lowered = hay.to_lowercase();
-                    if lowered.len() == hay.len() {
-                        (&lowered, &needle)
-                    } else {
-                        (hay, query)
-                    }
-                };
-                for (i, m) in h.match_indices(n) {
-                    if hay.is_char_boundary(i) && hay.is_char_boundary(i + m.len()) {
-                        out.push((s, i..i + m.len()));
+                    // Lower-casing can change byte lengths ('İ' → "i̇"), so map offsets
+                    // in the folded text back to the original.
+                    let (folded, orig) = fold_case(hay);
+                    for (i, m) in folded.match_indices(&needle) {
+                        let (start, end) = (orig[i], orig[i + m.len()]);
+                        if start != usize::MAX && end != usize::MAX {
+                            out.push((s, start..end));
+                        }
                     }
                 }
             }
@@ -1107,6 +1103,21 @@ pub fn link_extent(text: &RichText, offset: usize) -> Option<std::ops::Range<usi
         end = r.end;
     }
     Some(start..end)
+}
+
+/// Lower-case `text` one char at a time. Returns the folded text and, for every byte
+/// offset in it, the matching offset in `text` (`usize::MAX` inside a folded char).
+fn fold_case(text: &str) -> (String, Vec<usize>) {
+    let mut folded = String::with_capacity(text.len());
+    let mut orig = Vec::with_capacity(text.len() + 1);
+    for (i, ch) in text.char_indices() {
+        let start = folded.len();
+        folded.extend(ch.to_lowercase());
+        orig.push(i);
+        orig.resize(orig.len() + folded.len() - start - 1, usize::MAX);
+    }
+    orig.push(text.len());
+    (folded, orig)
 }
 
 #[cfg(test)]
@@ -1330,6 +1341,29 @@ mod tests {
         k.insert_fragment(&Document::from_plain_text("x"));
         assert_eq!(texts(&k), ["AxB"]);
         assert_eq!(k.caret(), at(0, 2));
+    }
+
+    #[test]
+    fn case_insensitive_find_across_length_changing_folds() {
+        // 'İ' lower-cases to two chars (3 bytes) and the Kelvin sign 'K' to 'k'.
+        let m = model(&["İstanbul \u{212A}elvin KELVIN"]);
+        let found: Vec<_> = m
+            .find_matches("kelvin", false)
+            .into_iter()
+            .map(|(_, r)| r)
+            .collect();
+        let text = &m.doc.blocks[0].text.text;
+        assert_eq!(found.len(), 2);
+        assert!(
+            found
+                .iter()
+                .all(|r| text[r.clone()].to_lowercase() == "kelvin")
+        );
+        let ist = m.find_matches("i̇stanbul", false);
+        assert_eq!(ist.len(), 1);
+        assert_eq!(&text[ist[0].1.clone()], "İstanbul");
+        // A match ending inside a folded char is rejected.
+        assert!(m.find_matches("i", false).iter().all(|(_, r)| r.start != 0));
     }
 
     #[test]

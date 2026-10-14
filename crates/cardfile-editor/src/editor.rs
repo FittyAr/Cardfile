@@ -8,9 +8,9 @@ use std::time::Duration;
 use cardfile_doc::{Align, Attachment, Block, BlockKind, Document, Image, Mark, TextSize};
 use gpui_kit::{
     Action, App, Bounds, ClipboardEntry, ClipboardItem, Context, EntityInputHandler, EventEmitter,
-    FocusHandle, Focusable, KeyBinding, MouseButton, MouseDownEvent, MouseMoveEvent, MouseUpEvent,
-    PathPromptOptions, Pixels, Point, ScrollHandle, Task, UTF16Selection, Window, actions, point,
-    px,
+    FocusHandle, Focusable, Global, KeyBinding, MouseButton, MouseDownEvent, MouseMoveEvent,
+    MouseUpEvent, PathPromptOptions, Pixels, Point, ScrollHandle, Task, UTF16Selection, Window,
+    actions, point, px,
 };
 
 use crate::history::{EditKind, History};
@@ -137,7 +137,20 @@ pub trait BlobStore: Send + Sync + 'static {
     fn put(&self, data: &[u8], mime: &str, file_name: Option<&str>) -> Option<String>;
     /// Load `(mime, bytes)`.
     fn get(&self, id: &str) -> Option<(String, Vec<u8>)>;
+    /// Whether the reference carries a secret (e.g. the key of an encrypted card's
+    /// image) and so must not be put on the system clipboard.
+    fn is_private(&self, _id: &str) -> bool {
+        false
+    }
 }
+
+/// The last fragment copied in this process, with every blob reference intact. The
+/// system clipboard gets a copy without private blobs; pasting the same text back
+/// inside Cardfile uses this one.
+#[derive(Default)]
+struct InternalClipboard(Option<(String, Document)>);
+
+impl Global for InternalClipboard {}
 
 /// Spell checking backend.
 pub trait SpellChecker: Send + Sync + 'static {
@@ -951,7 +964,38 @@ impl RichEditor {
     fn copy(&mut self, _: &Copy, _: &mut Window, cx: &mut Context<Self>) {
         if let Some(frag) = self.model.selected_fragment() {
             let text = cardfile_doc::to_plain_text(&frag);
-            cx.write_to_clipboard(ClipboardItem::new_string_with_json_metadata(text, frag));
+            let mut public = frag.clone();
+            if let Some(store) = &self.blobs {
+                public.blocks.retain(|b| match &b.kind {
+                    BlockKind::Image(img) => !store.is_private(&img.blob),
+                    BlockKind::Attachment(att) => !store.is_private(&att.blob),
+                    _ => true,
+                });
+                public.normalize();
+            }
+            cx.set_global(InternalClipboard(Some((text.clone(), frag))));
+            cx.write_to_clipboard(ClipboardItem::new_string_with_json_metadata(text, public));
+        }
+    }
+
+    /// Store a pasted fragment's images and attachments again through this editor's
+    /// store, so they follow the target card's protection (sealed in an encrypted
+    /// card, plain elsewhere) instead of keeping the source card's references.
+    fn adopt_fragment_blobs(&self, frag: &mut Document) {
+        let Some(store) = &self.blobs else { return };
+        for block in &mut frag.blocks {
+            let (blob, mime, file_name) = match &mut block.kind {
+                BlockKind::Image(img) => (&mut img.blob, img.mime.clone(), None),
+                BlockKind::Attachment(att) => {
+                    (&mut att.blob, att.mime.clone(), Some(att.file_name.clone()))
+                }
+                _ => continue,
+            };
+            if let Some((_, data)) = store.get(blob)
+                && let Some(new) = store.put(&data, &mime, file_name.as_deref())
+            {
+                *blob = new;
+            }
         }
     }
     fn cut(&mut self, a: &Cut, window: &mut Window, cx: &mut Context<Self>) {
@@ -980,8 +1024,16 @@ impl RichEditor {
             match entry {
                 ClipboardEntry::String(s) => {
                     if !plain && let Some(mut frag) = s.metadata_json::<Document>() {
+                        if let Some((text, internal)) = cx
+                            .try_global::<InternalClipboard>()
+                            .and_then(|c| c.0.clone())
+                            && text == *s.text()
+                        {
+                            frag = internal;
+                        }
                         // Clipboard JSON comes from outside; restore the model's invariants.
                         frag.normalize();
+                        self.adopt_fragment_blobs(&mut frag);
                         self.edit(EditKind::Other, cx, |m| m.insert_fragment(&frag));
                         return;
                     }

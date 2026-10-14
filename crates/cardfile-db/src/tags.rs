@@ -128,7 +128,7 @@ fn refresh_fts_tags(conn: &mut SqliteConnection, card_id: &str) -> DbResult<()> 
              SELECT group_concat(t.name, ' ') FROM card_tags ct
              JOIN tags t ON t.id = ct.tag_id AND t.deleted_at IS NULL
              WHERE ct.card_id = ?1), '')
-         WHERE rowid = (SELECT rowid FROM cards WHERE id = ?1)",
+         WHERE card_id = ?1",
     )
     .bind::<diesel::sql_types::Text, _>(card_id)
     .execute(conn)?;

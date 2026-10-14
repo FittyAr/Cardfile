@@ -65,6 +65,7 @@ open = "5.4.4"
 rfd = "0.17.2"
 rust-i18n = "4.2.4"
 ureq = "3.4.2"
+minisign-verify = "0.3.0"
 
 # Observability
 tracing = "0.1.44"

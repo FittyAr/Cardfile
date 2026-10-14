@@ -130,7 +130,7 @@ pub fn to_markdown(
             BlockKind::Divider => out.push_str("---\n\n"),
             BlockKind::Image(img) => {
                 let src = if opts.image_links_relative {
-                    format!("blobs/{}", img.blob)
+                    format!("blobs/{}", blob_file_name(&img.blob))
                 } else {
                     data_uri(blobs, &img.blob, &img.mime)
                 };
@@ -141,7 +141,7 @@ pub fn to_markdown(
                     out,
                     "[📎 {}](blobs/{})\n",
                     escape_md(&att.file_name),
-                    att.blob
+                    blob_file_name(&att.blob)
                 );
             }
             BlockKind::Table(table) => {
@@ -258,15 +258,21 @@ fn sanitize_color(c: &str) -> &str {
     if ok { c } else { "inherit" }
 }
 
+/// File name of a blob in an export folder: its storage id, never a sealed blob's key.
+pub fn blob_file_name(blob_ref: &str) -> &str {
+    cardfile_core::BlobRef::parse(blob_ref).id
+}
+
 fn data_uri(blobs: &dyn BlobResolver, id: &str, mime: &str) -> String {
     use base64::Engine as _;
     match blobs.resolve(id) {
+        // The document's MIME type wins: sealed blobs are stored as octet-stream.
         Some((m, bytes)) => format!(
             "data:{};base64,{}",
-            if m.is_empty() { mime } else { &m },
+            if mime.is_empty() { &m } else { mime },
             base64::engine::general_purpose::STANDARD.encode(bytes)
         ),
-        None => format!("blobs/{id}"),
+        None => format!("blobs/{}", blob_file_name(id)),
     }
 }
 

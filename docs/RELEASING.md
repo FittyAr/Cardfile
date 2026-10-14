@@ -25,7 +25,11 @@ minisign -G -W -p minisign.pub -s minisign.key
 
 - `-W` creates a key without a password. The key is protected by GitHub's secret storage instead.
 - Add the **contents** of `minisign.key` as the repository secret `MINISIGN_SECRET_KEY`.
-- Put the public key (the second line of `minisign.pub`) in [SIGNING.md](SIGNING.md).
+- Add the public key (the second line of `minisign.pub`) as the repository **variable**
+  `MINISIGN_PUBLIC_KEY` (CI checks every signature against it), in [SIGNING.md](SIGNING.md) and as
+  `PUBLIC_KEY` in `crates/cardfile-updater/src/lib.rs` (the app trusts only that key).
+- Current key: `RWSEWpMd7tkiGAaQwVFXiSYyfV6ODYRttbEFQ/WBOTzrbMB1diAfrG+w` (ID `1822D9EE1D935A84`),
+  kept outside the repository by the maintainer.
 - Keep `minisign.key` offline and never commit it (`*.key` is ignored by git).
 
 ### 2. winget
