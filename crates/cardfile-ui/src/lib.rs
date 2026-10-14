@@ -25,6 +25,13 @@ use gpui_kit::{AppContext as _, Bounds, TitlebarOptions, WindowBounds, WindowOpt
 
 pub use paths::DataPaths;
 
+fn window_icon() -> Option<std::sync::Arc<image::RgbaImage>> {
+    let bytes = include_bytes!("../../../packaging/linux/icons/256x256/ar.fittyar.Cardfile.png");
+    image::load_from_memory(bytes)
+        .ok()
+        .map(|i| std::sync::Arc::new(i.to_rgba8()))
+}
+
 /// Start the application with the resolved data location. Blocks until quit.
 pub fn run(paths: DataPaths) {
     gpui_kit::application()
@@ -73,6 +80,8 @@ pub fn run(paths: DataPaths) {
                 }),
                 app_id: Some("ar.fittyar.Cardfile".into()),
                 window_min_size: Some(size(px(760.), px(480.))),
+                // Used by X11; Windows takes the icon from the executable's resources.
+                icon: window_icon(),
                 ..Default::default()
             };
             if let Err(e) = gpui_kit::open_window(options, cx, |window, cx| {

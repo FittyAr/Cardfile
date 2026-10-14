@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>ar.fittyar.Cardfile</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT OR Apache-2.0</project_license>
+  <name>Cardfile</name>
+  <summary>A modern digital card file for your notes</summary>
+  <developer id="ar.fittyar">
+    <name>FittyAr</name>
+  </developer>
+  <description>
+    <p>
+      Cardfile keeps your notes as cards, inspired by the classic Windows 3.1 Cardfile.
+      It is native, fast and private.
+    </p>
+    <ul>
+      <li>Word-like editor with headings, lists, checklists, tables, images and attachments</li>
+      <li>Full-text search, tags, favorites and version history</li>
+      <li>Read-only, private and encrypted cards</li>
+      <li>Export to Markdown, HTML, PDF and JSON</li>
+      <li>No telemetry</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">ar.fittyar.Cardfile.desktop</launchable>
+  <url type="homepage">https://github.com/FittyAr/Cardfile</url>
+  <url type="bugtracker">https://github.com/FittyAr/Cardfile/issues</url>
+  <content_rating type="oars-1.1" />
+  <releases>
+    <release version="2.0.0-alpha.1" date="2026-10-14" type="development" />
+  </releases>
+</component>

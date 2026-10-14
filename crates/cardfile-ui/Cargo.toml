@@ -35,6 +35,7 @@ spellbook.workspace = true
 tracing.workspace = true
 zeroize.workspace = true
 open.workspace = true
+image.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true

@@ -1,0 +1,29 @@
+[workspace]
+members = ["cargo:."]
+
+# Config for 'dist' (https://github.com/axodotdev/cargo-dist)
+[dist]
+cargo-dist-version = "0.32.0"
+ci = "github"
+installers = ["shell", "powershell"]
+targets = [
+    "x86_64-pc-windows-msvc",
+    "aarch64-pc-windows-msvc",
+    "x86_64-unknown-linux-gnu",
+    "aarch64-unknown-linux-gnu",
+]
+install-path = "~/.cardfile/bin"
+install-updater = false
+pr-run-mode = "plan"
+# Files added to every archive next to the executable.
+include = ["packaging/dictionaries", "packaging/out/THIRD_PARTY_LICENSES.html"]
+# Install Linux GUI build dependencies and fetch dictionaries/licenses before building.
+github-build-setup = "../build-setup.yml"
+# Native installers (Inno Setup, MSIX, .deb, .rpm, AppImage) and minisign signatures.
+global-artifacts-jobs = ["./package"]
+
+[dist.github-custom-runners]
+global = "ubuntu-latest"
+aarch64-unknown-linux-gnu = "ubuntu-24.04-arm"
+aarch64-pc-windows-msvc = "windows-11-arm"
+x86_64-unknown-linux-gnu = "ubuntu-22.04"

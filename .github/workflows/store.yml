@@ -1,0 +1,36 @@
+# Submit the MSIX packages of a release to the Microsoft Store (Partner Center).
+# Configure these secrets from Partner Center > Account settings > User management >
+# Azure AD applications: PARTNER_CENTER_TENANT_ID, PARTNER_CENTER_CLIENT_ID,
+# PARTNER_CENTER_CLIENT_SECRET, PARTNER_CENTER_SELLER_ID; and the variable
+# STORE_PRODUCT_ID (the app's Store ID). The Store signs the package.
+name: Microsoft Store
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag whose MSIX packages to submit (e.g. v2.0.0)
+        required: true
+
+jobs:
+  submit:
+    runs-on: windows-latest
+    steps:
+      - name: Download MSIX packages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download "${{ inputs.tag }}" --repo "${{ github.repository }}" --pattern "*.msix" --dir msix
+      - uses: microsoft/setup-msstore-cli@v1
+      - name: Configure Partner Center credentials
+        run: >
+          msstore reconfigure
+          --tenantId ${{ secrets.PARTNER_CENTER_TENANT_ID }}
+          --sellerId ${{ secrets.PARTNER_CENTER_SELLER_ID }}
+          --clientId ${{ secrets.PARTNER_CENTER_CLIENT_ID }}
+          --clientSecret ${{ secrets.PARTNER_CENTER_CLIENT_SECRET }}
+      - name: Submit
+        shell: pwsh
+        run: |
+          Get-ChildItem msix -Filter *.msix | ForEach-Object {
+            msstore publish $_.FullName --appId ${{ vars.STORE_PRODUCT_ID }}
+          }

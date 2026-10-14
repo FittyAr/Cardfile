@@ -9,7 +9,20 @@ use gpui_kit::{App, AppContext as _, Window};
 use crate::state::AppState;
 
 pub fn enabled() -> bool {
-    cfg!(feature = "update-check")
+    cfg!(feature = "update-check") && !managed_install()
+}
+
+/// Installed by the Microsoft Store (MSIX) or a Linux package manager, which update
+/// the app themselves.
+fn managed_install() -> bool {
+    let Ok(exe) = std::env::current_exe() else {
+        return false;
+    };
+    let path = exe.to_string_lossy().to_string();
+    path.contains(r"\WindowsApps\")
+        || path.starts_with("/usr/")
+        || std::env::var_os("FLATPAK_ID").is_some()
+        || std::env::var_os("SNAP").is_some()
 }
 
 fn current() -> semver::Version {

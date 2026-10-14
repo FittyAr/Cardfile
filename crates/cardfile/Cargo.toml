@@ -9,6 +9,9 @@ authors.workspace = true
 repository.workspace = true
 homepage.workspace = true
 publish.workspace = true
+readme = "../../README.md"
+keywords = ["notes", "cardfile", "editor", "gpui"]
+categories = ["text-editors"]
 
 [lints]
 workspace = true
@@ -18,6 +21,49 @@ cardfile-ui.workspace = true
 tracing.workspace = true
 tracing-appender.workspace = true
 tracing-subscriber.workspace = true
+
+[package.metadata.dist]
+dist = true
+
+[package.metadata.deb]
+name = "cardfile"
+maintainer = "FittyAr"
+copyright = "2026, FittyAr"
+license-file = ["../../LICENSE-MIT", "0"]
+extended-description = "A modern digital card file for your notes with a Word-like editor, full-text search, tags, version history and encrypted cards."
+section = "editors"
+priority = "optional"
+depends = "$auto"
+assets = [
+    ["target/release/cardfile", "usr/bin/", "755"],
+    ["../../packaging/linux/ar.fittyar.Cardfile.desktop", "usr/share/applications/", "644"],
+    ["../../packaging/linux/ar.fittyar.Cardfile.metainfo.xml", "usr/share/metainfo/", "644"],
+    ["../../packaging/linux/icons/256x256/ar.fittyar.Cardfile.png", "usr/share/icons/hicolor/256x256/apps/", "644"],
+    ["../../packaging/linux/icons/128x128/ar.fittyar.Cardfile.png", "usr/share/icons/hicolor/128x128/apps/", "644"],
+    ["../../packaging/linux/icons/64x64/ar.fittyar.Cardfile.png", "usr/share/icons/hicolor/64x64/apps/", "644"],
+    ["../../packaging/linux/icons/48x48/ar.fittyar.Cardfile.png", "usr/share/icons/hicolor/48x48/apps/", "644"],
+    ["../../packaging/linux/icons/32x32/ar.fittyar.Cardfile.png", "usr/share/icons/hicolor/32x32/apps/", "644"],
+    ["../../packaging/dictionaries/*", "usr/share/cardfile/dictionaries/", "644"],
+    ["../../packaging/out/THIRD_PARTY_LICENSES.html", "usr/share/doc/cardfile/", "644"],
+]
+
+[package.metadata.generate-rpm]
+name = "cardfile"
+license = "MIT OR Apache-2.0"
+summary = "A modern digital card file for your notes"
+assets = [
+    { source = "target/release/cardfile", dest = "/usr/bin/cardfile", mode = "755" },
+    { source = "../../packaging/linux/ar.fittyar.Cardfile.desktop", dest = "/usr/share/applications/ar.fittyar.Cardfile.desktop", mode = "644" },
+    { source = "../../packaging/linux/ar.fittyar.Cardfile.metainfo.xml", dest = "/usr/share/metainfo/ar.fittyar.Cardfile.metainfo.xml", mode = "644" },
+    { source = "../../packaging/linux/icons/256x256/ar.fittyar.Cardfile.png", dest = "/usr/share/icons/hicolor/256x256/apps/ar.fittyar.Cardfile.png", mode = "644" },
+    { source = "../../packaging/linux/icons/128x128/ar.fittyar.Cardfile.png", dest = "/usr/share/icons/hicolor/128x128/apps/ar.fittyar.Cardfile.png", mode = "644" },
+    { source = "../../packaging/linux/icons/64x64/ar.fittyar.Cardfile.png", dest = "/usr/share/icons/hicolor/64x64/apps/ar.fittyar.Cardfile.png", mode = "644" },
+    { source = "../../packaging/dictionaries/*", dest = "/usr/share/cardfile/dictionaries/", mode = "644" },
+    { source = "../../packaging/out/THIRD_PARTY_LICENSES.html", dest = "/usr/share/doc/cardfile/THIRD_PARTY_LICENSES.html", mode = "644" },
+]
+
+[target.'cfg(windows)'.build-dependencies]
+winresource = "0.1.34"
 
 [features]
 default = ["update-check"]

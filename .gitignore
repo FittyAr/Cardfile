@@ -36,3 +36,6 @@ desktop.ini
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Fetched by scripts/fetch-dictionaries.sh in CI
+/packaging/dictionaries/

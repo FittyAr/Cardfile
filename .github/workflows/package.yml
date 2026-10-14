@@ -1,0 +1,162 @@
+# Native installers built from the `dist` archives, plus checksums and minisign
+# signatures. Called by release.yml (dist `global-artifacts-jobs`); everything
+# uploaded as `artifacts-*` is attached to the GitHub release.
+name: Package
+
+on:
+  workflow_call:
+    inputs:
+      plan:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, arm64]
+    runs-on: windows-latest
+    env:
+      MSIX_IDENTITY_NAME: ${{ vars.MSIX_IDENTITY_NAME }}
+      MSIX_PUBLISHER: ${{ vars.MSIX_PUBLISHER }}
+      MSIX_PUBLISHER_DISPLAY_NAME: ${{ vars.MSIX_PUBLISHER_DISPLAY_NAME }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Download build
+        uses: actions/download-artifact@v8
+        with:
+          pattern: artifacts-build-local-*
+          path: dist
+          merge-multiple: true
+      - name: Unpack
+        shell: pwsh
+        run: |
+          $target = if ('${{ matrix.arch }}' -eq 'arm64') { 'aarch64-pc-windows-msvc' } else { 'x86_64-pc-windows-msvc' }
+          $zip = Get-ChildItem dist -Filter "cardfile-$target.zip" | Select-Object -First 1
+          if (-not $zip) { throw "archive for $target not found" }
+          Expand-Archive $zip.FullName -DestinationPath unpacked
+          # dist archives may contain a top-level folder.
+          $exe = Get-ChildItem unpacked -Recurse -Filter cardfile.exe | Select-Object -First 1
+          "SRC=$($exe.DirectoryName)" >> $env:GITHUB_ENV
+      - name: Version
+        shell: bash
+        run: echo "VERSION=$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)" >> "$GITHUB_ENV"
+      - name: Inno Setup installer
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress; }
+          & $iscc /DAppVersion=$env:VERSION /DArch=${{ matrix.arch }} "/DSourceDir=$env:SRC" packaging\windows\installer.iss
+          if ($LASTEXITCODE -ne 0) { throw "iscc failed" }
+      - name: MSIX (Microsoft Store)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force packaging\out | Out-Null
+          ./packaging/windows/msix/build-msix.ps1 -SourceDir $env:SRC -Version $env:VERSION -Arch ${{ matrix.arch }} -Out "packaging\out\Cardfile-$env:VERSION-${{ matrix.arch }}.msix"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: artifacts-package-windows-${{ matrix.arch }}
+          path: |
+            packaging/out/*.exe
+            packaging/out/*.msix
+
+  linux:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            runner: ubuntu-22.04
+            appimage_arch: x86_64
+          - target: aarch64-unknown-linux-gnu
+            runner: ubuntu-24.04-arm
+            appimage_arch: aarch64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-deb,cargo-generate-rpm
+      - name: Download build
+        uses: actions/download-artifact@v8
+        with:
+          pattern: artifacts-build-local-*
+          path: dist
+          merge-multiple: true
+      - name: Unpack into target/release
+        run: |
+          mkdir -p unpacked target/release packaging/out
+          tar -xf "dist/cardfile-${{ matrix.target }}.tar.xz" -C unpacked
+          BIN="$(find unpacked -type f -name cardfile | head -1)"
+          DIR="$(dirname "$BIN")"
+          cp "$BIN" target/release/cardfile
+          mkdir -p packaging/dictionaries
+          cp -r "$DIR"/dictionaries/* packaging/dictionaries/ 2>/dev/null || ./scripts/fetch-dictionaries.sh
+          cp "$DIR/THIRD_PARTY_LICENSES.html" packaging/out/ 2>/dev/null || echo "<p>See docs/CREDITS.md</p>" > packaging/out/THIRD_PARTY_LICENSES.html
+          echo "VERSION=$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)" >> "$GITHUB_ENV"
+      - name: Debian package
+        run: cargo deb -p cardfile --no-build --no-strip --target-dir target -o packaging/out/
+      - name: RPM package
+        run: cargo generate-rpm -p crates/cardfile -o packaging/out/
+      - name: AppImage
+        run: |
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends file libfuse2 || true
+          APP=AppDir
+          install -Dm755 target/release/cardfile "$APP/usr/bin/cardfile"
+          install -Dm644 packaging/linux/ar.fittyar.Cardfile.desktop "$APP/usr/share/applications/ar.fittyar.Cardfile.desktop"
+          install -Dm644 packaging/linux/ar.fittyar.Cardfile.metainfo.xml "$APP/usr/share/metainfo/ar.fittyar.Cardfile.appdata.xml"
+          install -Dm644 packaging/linux/icons/256x256/ar.fittyar.Cardfile.png "$APP/usr/share/icons/hicolor/256x256/apps/ar.fittyar.Cardfile.png"
+          mkdir -p "$APP/usr/share/cardfile/dictionaries" && cp packaging/dictionaries/* "$APP/usr/share/cardfile/dictionaries/"
+          ARCH=${{ matrix.appimage_arch }}
+          curl -fsSL -o linuxdeploy "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-$ARCH.AppImage"
+          chmod +x linuxdeploy
+          export APPIMAGE_EXTRACT_AND_RUN=1 LDAI_OUTPUT="packaging/out/Cardfile-$VERSION-$ARCH.AppImage"
+          ./linuxdeploy --appdir "$APP" --desktop-file "$APP/usr/share/applications/ar.fittyar.Cardfile.desktop" \
+            --icon-file "$APP/usr/share/icons/hicolor/256x256/apps/ar.fittyar.Cardfile.png" --output appimage
+      - uses: actions/upload-artifact@v7
+        with:
+          name: artifacts-package-linux-${{ matrix.target }}
+          path: |
+            packaging/out/*.deb
+            packaging/out/*.rpm
+            packaging/out/*.AppImage
+
+  sign:
+    needs: [windows, linux]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download everything
+        uses: actions/download-artifact@v8
+        with:
+          pattern: artifacts-*
+          path: all
+          merge-multiple: true
+      - name: Checksums and minisign signatures
+        env:
+          MINISIGN_SECRET_KEY: ${{ secrets.MINISIGN_SECRET_KEY }}
+        run: |
+          mkdir -p out
+          cd all
+          rm -f *.json *.sha256
+          FILES=$(ls | grep -E '\.(zip|tar\.xz|exe|msix|deb|rpm|AppImage|ps1|sh)$')
+          sha256sum $FILES > ../out/SHA256SUMS
+          cp ../out/SHA256SUMS .
+          if [ -n "$MINISIGN_SECRET_KEY" ]; then
+            sudo apt-get update && sudo apt-get install -y minisign
+            echo "$MINISIGN_SECRET_KEY" > /tmp/minisign.key
+            for f in $FILES SHA256SUMS; do
+              minisign -S -s /tmp/minisign.key -m "$f" -x "../out/$f.minisig" -t "Cardfile release file: $f"
+            done
+            rm -f /tmp/minisign.key
+          else
+            echo "::warning::MINISIGN_SECRET_KEY is not set; release files are not signed"
+          fi
+      - uses: actions/upload-artifact@v7
+        with:
+          name: artifacts-signatures
+          path: out/*

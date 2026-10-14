@@ -96,3 +96,7 @@ lto = "thin"
 codegen-units = 1
 strip = true
 panic = "abort"
+
+# The profile that 'dist' builds with
+[profile.dist]
+inherits = "release"
