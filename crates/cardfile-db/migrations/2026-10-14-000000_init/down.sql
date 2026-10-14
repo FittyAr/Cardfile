@@ -1,0 +1,12 @@
+DROP TRIGGER IF EXISTS cards_fts_delete;
+DROP TRIGGER IF EXISTS cards_fts_update;
+DROP TRIGGER IF EXISTS cards_fts_insert;
+DROP TABLE IF EXISTS cards_fts;
+DROP TABLE IF EXISTS card_blobs;
+DROP TABLE IF EXISTS blobs;
+DROP TABLE IF EXISTS card_tags;
+DROP TABLE IF EXISTS tags;
+DROP TABLE IF EXISTS card_revisions;
+DROP TABLE IF EXISTS cards;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS app_settings;
