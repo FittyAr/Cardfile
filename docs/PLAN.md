@@ -375,3 +375,32 @@ Cada fase termina con PR(s) mergeados, CI verde y criterios de aceptación cumpl
 1. No hay importación ni restauración de ningún tipo.
 2. Se acepta la excepción MPL-2.0 para `spellbook`.
 3. macOS queda fuera hasta contar con cuenta Apple Developer.
+
+---
+
+## 9. Estado (2026-10-14)
+
+| Fase | Estado | PR |
+|------|--------|----|
+| 0 — Limpieza y andamiaje | ✅ | #1 |
+| 1 — Spike del editor | ✅ (validado con tests de interacción GPUI) | #2 |
+| 2 — Núcleo de datos | ✅ | #2 |
+| 3 — Shell de la aplicación | ✅ | #3 |
+| 4 — Seguridad | ✅ | #3, #4 |
+| 5 — Editor completo | ✅ (buscar/reemplazar y menú `/` en #4) | #2, #4 |
+| 6 — Organización y exportación | ✅ | #3 |
+| 7 — Corrector ortográfico | ✅ (diccionarios descargados en CI) | #3 |
+| 8 — Empaquetado y distribución | ✅ configurado; se valida con el primer tag | #3 |
+| 9 — Pulido y estable | 🔶 en curso | — |
+
+Pendiente:
+
+- Primer release `v2.0.0-alpha.1`: configurar secretos (`docs/RELEASING.md`), crear el tag y revisar
+  los artefactos generados por el pipeline.
+- Primera publicación manual en winget (`wingetcreate new`) y en Microsoft Store (Partner Center).
+- Traducciones: `locales/en.yml` está completo; copiar a `locales/<lang>.yml` para cada idioma.
+- Flathub y AUR.
+- Pegado de HTML enriquecido: GPUI expone el portapapeles solo como texto, imagen o rutas; hoy se
+  pega texto plano o Markdown.
+- Rendimiento con decenas de miles de tarjetas: contadores con `COUNT(*)` en vez de listar.
+- macOS cuando exista cuenta Apple Developer.
