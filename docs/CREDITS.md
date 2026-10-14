@@ -18,7 +18,15 @@ its license ships with each release as `THIRD_PARTY_LICENSES.html` (`cargo about
 | [krilla](https://github.com/LaurenzV/krilla) | PDF export | MIT OR Apache-2.0 |
 | [HarfRust](https://github.com/harfbuzz/harfrust) | Text measuring for PDF layout | MIT |
 | [ureq](https://github.com/algesten/ureq) | Update check (GitHub releases API) | MIT OR Apache-2.0 |
+| [tiny-http](https://github.com/tiny-http/tiny-http) | HTTP server for the embedded MCP endpoint | MIT OR Apache-2.0 |
 | [spellbook](https://github.com/helix-editor/spellbook) | Spell checking (Hunspell-compatible) | MPL-2.0 (unmodified) |
+| [Symphonia](https://github.com/pdeljanov/Symphonia) | Audio demuxing and decoding (MP3, WAV, OGG/Vorbis, FLAC, AAC/M4A) | MPL-2.0 (unmodified) |
+| [rodio](https://github.com/RustAudio/rodio) and [cpal](https://github.com/RustAudio/cpal) | Audio output | MIT OR Apache-2.0 / Apache-2.0 |
+| [re_mp4](https://github.com/rerun-io/re_mp4) by Rerun | MP4 demuxing for inline video | MIT |
+| [OpenH264](https://github.com/cisco/openh264) by Cisco, via [openh264-rs](https://github.com/ralfbiedert/openh264-rs) | H.264 video decoding (built from source) | BSD-2-Clause |
+| [x25519-dalek](https://github.com/dalek-cryptography/curve25519-dalek) | Key pairs for sharing encrypted cards | BSD-3-Clause |
+| [unicode-bidi](https://github.com/servo/unicode-bidi) | Right-to-left text ordering | MIT OR Apache-2.0 |
+| [ar-reshaper](https://github.com/YouKnow-sys/ar-reshaper) | Arabic letter shaping for plain labels | MIT |
 | [rust-i18n](https://github.com/longbridge/rust-i18n) | Localization | MIT |
 | [dist (cargo-dist)](https://github.com/axodotdev/cargo-dist) | Release pipeline and installers | MIT OR Apache-2.0 |
 | [Inno Setup](https://jrsoftware.org/isinfo.php) | Windows installer | Inno Setup License (permissive) |

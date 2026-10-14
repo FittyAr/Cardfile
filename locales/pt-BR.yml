@@ -88,12 +88,21 @@ editor:
     replace: Substituir
     replace_one: Substituir
     replace_all: Substituir tudo
+  media:
+    open_external: "Abrir no player do sistema"
 
 common:
   back: Voltar
   next: Avançar
   ok: OK
   cancel: Cancelar
+  apply: "Aplicar"
+  copied: "Copiado para a área de transferência"
+  copy: "Copiar"
+  done: "Concluído"
+  edit: "Editar"
+  remove: "Remover"
+  save: "Salvar"
 
 time:
   just_now: agora mesmo
@@ -202,6 +211,7 @@ nav:
   favorites: Favoritos
   recycle_bin: Lixeira
   tags: ETIQUETAS
+  shared: "Compartilhados comigo"
 
 list:
   count: "%{n} cartões"
@@ -243,6 +253,7 @@ card:
     hint: O cartão é bloqueado novamente após um período de inatividade.
     wrong: Senha incorreta.
     no_password: Nenhuma senha de bloqueio definida. Defina uma em Configurações → Segurança.
+    no_key: "Este cartão não foi compartilhado com a sua chave. Peça ao proprietário para compartilhá-lo novamente."
   protect:
     tooltip: Proteção do cartão
     unlock_first: Desbloqueie o cartão primeiro.
@@ -254,6 +265,7 @@ card:
     title: Excluir permanentemente
     body: Este cartão será excluído para sempre. Isso não pode ser desfeito.
     confirm: Excluir permanentemente
+  updated_by: "Editado %{date} por %{name}"
 
 tags:
   new: Nova etiqueta…
@@ -267,6 +279,7 @@ history:
   title: Histórico de versões
   restore: Restaurar esta versão
   empty: Ainda não há versões anteriores.
+  by: "por %{name}"
 
 recycle:
   empty: Esvaziar lixeira
@@ -329,6 +342,7 @@ settings:
     security: Segurança
     users: Usuários
     data: Dados
+    ai: "IA"
   general:
     theme: Tema
     language: Idioma
@@ -374,6 +388,12 @@ settings:
     new_password: Nova senha
     save_password: Salvar senha
     password_saved: Senha alterada.
+    current_lock_password: "Senha de bloqueio atual"
+    new_lock_password: "Nova senha de bloqueio"
+    save_lock_password: "Salvar senha de bloqueio"
+    lock_hint_same: "Cartões privados e criptografados são desbloqueados com a sua senha de login. Defina uma senha diferente aqui para usar uma senha de bloqueio separada; digitar novamente a sua senha de login volta a usar uma única senha."
+    lock_hint_separate: "Você usa uma senha de bloqueio separada para cartões privados e criptografados. Digite a sua senha de login como nova senha de bloqueio para usar uma única senha para ambos."
+    lock_hint_nopw: "Esta senha protege seus cartões privados e criptografados. Cada usuário tem a sua."
   users:
     admin: administrador
     add: Adicionar usuário
@@ -387,3 +407,124 @@ settings:
     standard: Modo padrão.
     export: Exportar
     export_hint: Exporta todos os cartões que não são privados nem criptografados.
+
+share:
+  button: "Compartilhar…"
+  title: "Compartilhar «%{title}»"
+  none: "Sem acesso"
+  view: "Pode ver"
+  edit: "Pode editar"
+  no_users: "Ainda não há outros usuários. Adicione-os em Configurações → Usuários."
+  no_keys: "%{name} ainda não configurou suas chaves. É preciso entrar (ou desbloquear um cartão protegido) uma vez."
+  unlock_encrypted: "Desbloqueie este cartão criptografado primeiro para compartilhá-lo."
+  shared_by: "%{name} · %{permission}"
+  view_only: "Este cartão foi compartilhado com você somente para visualização."
+  owner_only: "Apenas o proprietário do cartão pode fazer isso."
+
+drag:
+  moved: "Movido para «%{title}»"
+  copied: "Copiado para «%{title}»"
+  cannot_edit: "Você não pode editar esse cartão."
+  protected: "Desbloqueie esse cartão antes de soltar arquivos nele."
+
+activity:
+  create: "Criado"
+  edit: "Editado"
+  delete: "Movido para a lixeira"
+  restore: "Restaurado"
+  pin: "Fixado"
+  unpin: "Desafixado"
+  favorite: "Marcado como favorito"
+  unfavorite: "Removido dos favoritos"
+  move: "Reordenado"
+  tag: "Etiquetas alteradas"
+  share: "Compartilhado"
+  unshare: "Compartilhamento encerrado"
+  none: "Proteção removida"
+  read_only: "Tornado somente leitura"
+  private: "Tornado privado"
+  encrypted: "Criptografado"
+
+ai:
+  providers: "Serviços de IA"
+  providers_hint: "Conecte uma IA na nuvem ou local para ter o assistente. Os botões dele só aparecem quando um serviço está configurado."
+  local: "local"
+  cloud: "nuvem"
+  provider:
+    add: "Adicionar serviço de IA"
+    name: "Nome"
+    url: "URL base"
+    model: "Modelo"
+    key: "Chave de API"
+    key_optional: "Chave de API (opcional)"
+    kind: "Formato da API"
+    api_version: "Versão da API"
+    pick_model: "Escolher um modelo"
+    get_key: "Obter uma chave de API"
+    test: "Testar conexão"
+    test_ok: "Conectado. O serviço respondeu."
+    incomplete: "Preencha o nome, a URL e o modelo."
+    not_ready: "Configurações ausentes (chave de API, URL ou modelo)"
+    active: "Em uso"
+    use: "Usar"
+  chat:
+    title: "Assistente"
+    allow_private: "Permitir que o assistente leia e edite cartões privados"
+    encrypted_note: "Cartões criptografados nunca ficam disponíveis para nenhuma IA."
+  mcp:
+    title: "Servidor MCP para clientes de IA"
+    hint: "Permite que apps de IA como Claude, Cursor ou VS Code usem o Cardfile enquanto ele está aberto, somente neste computador (127.0.0.1). Cada cliente precisa de uma chave de API; as alterações feitas por ele são registradas como feitas pelo Cardfile AI em seu nome."
+    enable: "Executar o servidor MCP"
+    port: "Porta"
+    bad_port: "Use um número de porta entre 1024 e 65535."
+    running: "Em execução em %{url}"
+    failed: "Não foi possível iniciar: %{error}"
+    stopped: "Parado"
+  keys:
+    title: "Chaves de API"
+    hint: "Uma chave permite que um cliente de IA veja e altere o mesmo que você, como Cardfile AI. Revogue-a a qualquer momento."
+    name_placeholder: "Nome da chave, ex.: Claude Desktop"
+    default_name: "Cliente de IA"
+    create: "Criar chave"
+    read_only_option: "Somente leitura"
+    private_option: "Permitir cartões privados"
+    read_only: "somente leitura"
+    private: "cartões privados"
+    used: "usada %{when}"
+    never_used: "nunca usada"
+    revoke: "Revogar"
+    revoke_body: "Os clientes de IA que usam «%{name}» perderão o acesso imediatamente."
+    copy_now: "Copie a chave agora; ela não será exibida novamente. Depois, adicione-a ao seu cliente de IA:"
+  activity:
+    title: "Atividade recente da IA"
+    empty: "A IA ainda não alterou nada."
+
+chat:
+  title: "Assistente"
+  toggle: "Assistente"
+  placeholder: "Pergunte ao assistente…"
+  send: "Enviar"
+  stop: "Parar"
+  clear: "Limpar conversa"
+  close: "Ocultar assistente"
+  thinking: "Trabalhando…"
+  no_provider: "Configure primeiro um serviço de IA em Configurações → IA."
+  empty: "Peça o que quiser sobre seus cartões. Por exemplo:"
+  example1: "«Encontre minhas notas sobre a viagem e marque-as com a etiqueta Viagem.»"
+  example2: "«Transforme o cartão de notas da reunião em uma lista de tarefas organizada.»"
+  example3: "«Ordene meus cartões de receitas em ordem alfabética.»"
+  tool:
+    search_cards: "Pesquisou"
+    get_card: "Leu cartão"
+    list_tags: "Listou etiquetas"
+    recent_activity: "Verificou atividade recente"
+    create_card: "Criou cartão"
+    update_card: "Reescreveu cartão"
+    edit_card_text: "Editou texto"
+    append_to_card: "Adicionou ao cartão"
+    tag_card: "Etiquetou"
+    create_tag: "Criou etiqueta"
+    set_card_flags: "Alterou marcadores"
+    reorder_cards: "Reordenou cartões"
+    delete_card: "Moveu para a lixeira"
+    restore_card: "Restaurou cartão"

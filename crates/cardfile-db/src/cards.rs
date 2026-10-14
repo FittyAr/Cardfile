@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use cardfile_core::{
-    Card, CardId, CardRevision, EncryptedPayload, LockMode, NewCard, RevisionId, TagId, UserId,
-    now_millis, order,
+    Actor, Card, CardId, CardRevision, EncryptedPayload, LockMode, NewCard, RevisionId, TagId,
+    UserId, now_millis, order,
 };
 use diesel::prelude::*;
 
@@ -23,9 +23,36 @@ pub struct ContentUpdate {
     pub blob_ids: Vec<String>,
 }
 
+/// Fail unless `actor` may edit `card` (owner, or shared with edit permission).
+pub(crate) fn ensure_can_edit(
+    conn: &mut SqliteConnection,
+    actor: &Actor,
+    card: &str,
+) -> DbResult<()> {
+    match crate::shares::access_of(conn, card, &actor.principal().to_string())? {
+        Some(a) if a.can_edit() => Ok(()),
+        Some(_) => Err(DbError::Domain(cardfile_core::Error::PermissionDenied)),
+        None => Err(DbError::Query(diesel::result::Error::NotFound)),
+    }
+}
+
+/// Fail unless `actor` owns `card`.
+pub(crate) fn ensure_owner(conn: &mut SqliteConnection, actor: &Actor, card: &str) -> DbResult<()> {
+    match crate::shares::access_of(conn, card, &actor.principal().to_string())? {
+        Some(a) if a.is_owner() => Ok(()),
+        Some(_) => Err(DbError::Domain(cardfile_core::Error::PermissionDenied)),
+        None => Err(DbError::Query(diesel::result::Error::NotFound)),
+    }
+}
+
+fn title_of(conn: &mut SqliteConnection, card: &str) -> DbResult<String> {
+    Ok(cards::table.find(card).select(cards::title).first(conn)?)
+}
+
 impl Database {
-    /// Create a card at the top of the owner's manual order.
-    pub fn create_card(&self, owner: UserId, new: NewCard) -> DbResult<Card> {
+    /// Create a card for `actor`'s principal, at the top of their manual order.
+    pub fn create_card(&self, actor: &Actor, new: NewCard) -> DbResult<Card> {
+        let owner = actor.principal();
         self.tx(|conn| {
             // New cards go on top: generate a key before the current minimum.
             let first: Option<String> = cards::table
@@ -49,11 +76,13 @@ impl Database {
                 updated_at: now,
                 deleted_at: None,
                 rev: 1,
+                updated_by: Some(actor.user.to_string()),
             };
             let row: CardRow = diesel::insert_into(cards::table)
                 .values(&row)
                 .returning(CardRow::as_returning())
                 .get_result(conn)?;
+            crate::activity::log(conn, actor, Some(&row.id), "create", &row.title)?;
             row.into_card(Vec::new())
         })
     }
@@ -68,12 +97,14 @@ impl Database {
     /// `snapshot_every_ms`, so continuous typing does not flood the history.
     pub fn update_card_content(
         &self,
+        actor: &Actor,
         id: CardId,
         update: ContentUpdate,
         keep_revisions: u32,
         snapshot_every_ms: i64,
     ) -> DbResult<Card> {
         self.tx(|conn| {
+            ensure_can_edit(conn, actor, &id.to_string())?;
             let old: CardRow = cards::table
                 .find(id.to_string())
                 .select(CardRow::as_select())
@@ -99,24 +130,30 @@ impl Database {
                     cards::plain_text.eq(&update.plain_text),
                     cards::encrypted.eq(payload_json(update.encrypted.as_ref())),
                     cards::updated_at.eq(now),
+                    cards::updated_by.eq(actor.user.to_string()),
                     cards::rev.eq(cards::rev + 1),
                 ))
                 .execute(conn)?;
             add_card_blobs(conn, id, &update.blob_ids)?;
+            crate::activity::log(conn, actor, Some(&id.to_string()), "edit", &update.title)?;
             load_card(conn, id)
         })
     }
 
-    /// Change the protection level. For [`LockMode::Encrypted`] pass the ciphertext and
-    /// an empty `content`; when leaving encryption pass the decrypted content.
-    /// `blob_ids` are the blob references of the new content.
+    /// Change the protection level. For [`LockMode::Encrypted`] pass the ciphertext,
+    /// an empty `content` and the card key wrapped for the owner and every user it is
+    /// shared with (`card_keys`); when leaving encryption pass the decrypted content.
+    /// `blob_ids` are the blob references of the new content. Owner only.
+    #[allow(clippy::too_many_arguments)]
     pub fn set_card_lock(
         &self,
+        actor: &Actor,
         id: CardId,
         mode: LockMode,
         content: &str,
         plain_text: &str,
         encrypted: Option<&EncryptedPayload>,
+        card_keys: &[(UserId, String)],
         blob_ids: &[String],
     ) -> DbResult<Card> {
         if (mode == LockMode::Encrypted) != encrypted.is_some() {
@@ -126,6 +163,7 @@ impl Database {
             .into());
         }
         self.tx(|conn| {
+            ensure_owner(conn, actor, &id.to_string())?;
             diesel::update(cards::table.find(id.to_string()))
                 .set((
                     cards::lock_mode.eq(mode.as_str()),
@@ -133,9 +171,16 @@ impl Database {
                     cards::plain_text.eq(plain_text),
                     cards::encrypted.eq(payload_json(encrypted)),
                     cards::updated_at.eq(now_millis()),
+                    cards::updated_by.eq(actor.user.to_string()),
                     cards::rev.eq(cards::rev + 1),
                 ))
                 .execute(conn)?;
+            let keys = if mode == LockMode::Encrypted {
+                card_keys
+            } else {
+                &[]
+            };
+            crate::shares::replace_card_keys(conn, &id.to_string(), keys)?;
             // Old plaintext revisions and images must not survive encryption.
             if mode == LockMode::Encrypted {
                 diesel::delete(
@@ -149,20 +194,24 @@ impl Database {
                 crate::blobs::unlink_card_blobs(conn, &id.to_string(), &keep)?;
             }
             add_card_blobs(conn, id, blob_ids)?;
+            let title = title_of(conn, &id.to_string())?;
+            crate::activity::log(conn, actor, Some(&id.to_string()), mode.as_str(), &title)?;
             load_card(conn, id)
         })
     }
 
-    pub fn set_card_pinned(&self, id: CardId, pinned: bool) -> DbResult<()> {
-        self.touch(id, |conn, id| {
+    pub fn set_card_pinned(&self, actor: &Actor, id: CardId, pinned: bool) -> DbResult<()> {
+        let action = if pinned { "pin" } else { "unpin" };
+        self.touch(actor, id, action, true, |conn, id| {
             diesel::update(cards::table.find(id))
                 .set(cards::is_pinned.eq(pinned))
                 .execute(conn)
         })
     }
 
-    pub fn set_card_favorite(&self, id: CardId, favorite: bool) -> DbResult<()> {
-        self.touch(id, |conn, id| {
+    pub fn set_card_favorite(&self, actor: &Actor, id: CardId, favorite: bool) -> DbResult<()> {
+        let action = if favorite { "favorite" } else { "unfavorite" };
+        self.touch(actor, id, action, true, |conn, id| {
             diesel::update(cards::table.find(id))
                 .set(cards::is_favorite.eq(favorite))
                 .execute(conn)
@@ -172,11 +221,13 @@ impl Database {
     /// Move a card between two neighbours in the manual order (`None` = list edge).
     pub fn move_card(
         &self,
+        actor: &Actor,
         id: CardId,
         before: Option<CardId>,
         after: Option<CardId>,
     ) -> DbResult<()> {
         self.tx(|conn| {
+            ensure_owner(conn, actor, &id.to_string())?;
             let key_of =
                 |conn: &mut SqliteConnection, c: Option<CardId>| -> DbResult<Option<String>> {
                     c.map(|c| {
@@ -196,25 +247,28 @@ impl Database {
                 .set((
                     cards::sort_key.eq(key),
                     cards::updated_at.eq(now_millis()),
+                    cards::updated_by.eq(actor.user.to_string()),
                     cards::rev.eq(cards::rev + 1),
                 ))
                 .execute(conn)?;
+            let title = title_of(conn, &id.to_string())?;
+            crate::activity::log(conn, actor, Some(&id.to_string()), "move", &title)?;
             Ok(())
         })
     }
 
-    /// Move a card to the recycle bin.
-    pub fn delete_card(&self, id: CardId) -> DbResult<()> {
+    /// Move a card to the recycle bin. Owner only.
+    pub fn delete_card(&self, actor: &Actor, id: CardId) -> DbResult<()> {
         let now = now_millis();
-        self.touch(id, |conn, id| {
+        self.touch(actor, id, "delete", true, |conn, id| {
             diesel::update(cards::table.find(id))
                 .set(cards::deleted_at.eq(now))
                 .execute(conn)
         })
     }
 
-    pub fn restore_card(&self, id: CardId) -> DbResult<()> {
-        self.touch(id, |conn, id| {
+    pub fn restore_card(&self, actor: &Actor, id: CardId) -> DbResult<()> {
+        self.touch(actor, id, "restore", true, |conn, id| {
             diesel::update(cards::table.find(id))
                 .set(cards::deleted_at.eq(None::<i64>))
                 .execute(conn)
@@ -283,13 +337,21 @@ impl Database {
         })
     }
 
-    /// Bump `updated_at`/`rev` around a small update.
+    /// Bump `updated_at`/`rev` around a small update, check permissions and log it.
     fn touch(
         &self,
+        actor: &Actor,
         id: CardId,
+        action: &str,
+        owner_only: bool,
         f: impl FnOnce(&mut SqliteConnection, String) -> QueryResult<usize>,
     ) -> DbResult<()> {
         self.tx(|conn| {
+            if owner_only {
+                ensure_owner(conn, actor, &id.to_string())?;
+            } else {
+                ensure_can_edit(conn, actor, &id.to_string())?;
+            }
             let n = f(conn, id.to_string())?;
             if n == 0 {
                 return Err(DbError::Query(diesel::result::Error::NotFound));
@@ -297,10 +359,12 @@ impl Database {
             diesel::update(cards::table.find(id.to_string()))
                 .set((
                     cards::updated_at.eq(now_millis()),
+                    cards::updated_by.eq(actor.user.to_string()),
                     cards::rev.eq(cards::rev + 1),
                 ))
                 .execute(conn)?;
-            Ok(())
+            let title = title_of(conn, &id.to_string())?;
+            crate::activity::log(conn, actor, Some(&id.to_string()), action, &title)
         })
     }
 }
@@ -342,6 +406,7 @@ fn insert_revision(conn: &mut SqliteConnection, old: &CardRow, now: i64) -> DbRe
         content: old.content.clone(),
         encrypted: old.encrypted.clone(),
         created_at: now,
+        author_id: old.updated_by.clone(),
     };
     diesel::insert_into(card_revisions::table)
         .values(&row)
@@ -408,7 +473,9 @@ mod tests {
     #[test]
     fn create_update_and_history() {
         let (db, user) = db_with_user();
-        let card = db.create_card(user.id, new_card("First")).unwrap();
+        let card = db
+            .create_card(&Actor::user(user.id), new_card("First"))
+            .unwrap();
         assert_eq!(card.rev, 1);
         let upd = |t: &str| ContentUpdate {
             title: t.into(),
@@ -416,18 +483,18 @@ mod tests {
             ..Default::default()
         };
         let card = db
-            .update_card_content(card.id, upd("Second"), 3, 0)
+            .update_card_content(&Actor::user(user.id), card.id, upd("Second"), 3, 0)
             .unwrap();
         assert_eq!(card.title, "Second");
         assert_eq!(card.rev, 2);
         for i in 0..5 {
-            db.update_card_content(card.id, upd(&format!("v{i}")), 3, 0)
+            db.update_card_content(&Actor::user(user.id), card.id, upd(&format!("v{i}")), 3, 0)
                 .unwrap();
         }
         let revs = db.card_revisions(card.id).unwrap();
         assert_eq!(revs.len(), 3);
         // Throttled snapshots: a huge interval adds nothing new.
-        db.update_card_content(card.id, upd("again"), 3, i64::MAX)
+        db.update_card_content(&Actor::user(user.id), card.id, upd("again"), 3, i64::MAX)
             .unwrap();
         assert_eq!(db.card_revisions(card.id).unwrap().len(), 3);
         let rev = db.card_revision(revs[0].id).unwrap();
@@ -437,9 +504,15 @@ mod tests {
     #[test]
     fn newest_cards_first_and_manual_move() {
         let (db, user) = db_with_user();
-        let a = db.create_card(user.id, new_card("a")).unwrap();
-        let b = db.create_card(user.id, new_card("b")).unwrap();
-        let c = db.create_card(user.id, new_card("c")).unwrap();
+        let a = db
+            .create_card(&Actor::user(user.id), new_card("a"))
+            .unwrap();
+        let b = db
+            .create_card(&Actor::user(user.id), new_card("b"))
+            .unwrap();
+        let c = db
+            .create_card(&Actor::user(user.id), new_card("c"))
+            .unwrap();
         let titles = |db: &Database| -> Vec<String> {
             db.list_cards(user.id, &CardFilter::default())
                 .unwrap()
@@ -449,25 +522,31 @@ mod tests {
         };
         assert_eq!(titles(&db), ["c", "b", "a"]);
         // Move `a` between `c` and `b`.
-        db.move_card(a.id, Some(c.id), Some(b.id)).unwrap();
+        db.move_card(&Actor::user(user.id), a.id, Some(c.id), Some(b.id))
+            .unwrap();
         assert_eq!(titles(&db), ["c", "a", "b"]);
-        db.move_card(c.id, Some(b.id), None).unwrap();
+        db.move_card(&Actor::user(user.id), c.id, Some(b.id), None)
+            .unwrap();
         assert_eq!(titles(&db), ["a", "b", "c"]);
     }
 
     #[test]
     fn recycle_bin() {
         let (db, user) = db_with_user();
-        let a = db.create_card(user.id, new_card("a")).unwrap();
-        let b = db.create_card(user.id, new_card("b")).unwrap();
-        db.delete_card(a.id).unwrap();
-        db.delete_card(b.id).unwrap();
+        let a = db
+            .create_card(&Actor::user(user.id), new_card("a"))
+            .unwrap();
+        let b = db
+            .create_card(&Actor::user(user.id), new_card("b"))
+            .unwrap();
+        db.delete_card(&Actor::user(user.id), a.id).unwrap();
+        db.delete_card(&Actor::user(user.id), b.id).unwrap();
         let bin = CardFilter {
             deleted: true,
             ..Default::default()
         };
         assert_eq!(db.list_cards(user.id, &bin).unwrap().len(), 2);
-        db.restore_card(a.id).unwrap();
+        db.restore_card(&Actor::user(user.id), a.id).unwrap();
         assert_eq!(
             db.list_cards(user.id, &CardFilter::default())
                 .unwrap()
@@ -484,8 +563,11 @@ mod tests {
     #[test]
     fn encryption_drops_plain_revisions() {
         let (db, user) = db_with_user();
-        let card = db.create_card(user.id, new_card("secret")).unwrap();
+        let card = db
+            .create_card(&Actor::user(user.id), new_card("secret"))
+            .unwrap();
         db.update_card_content(
+            &Actor::user(user.id),
             card.id,
             ContentUpdate {
                 title: "s2".into(),
@@ -507,11 +589,29 @@ mod tests {
             ciphertext: "c".into(),
         };
         assert!(
-            db.set_card_lock(card.id, LockMode::Encrypted, "", "", None, &[])
-                .is_err()
+            db.set_card_lock(
+                &Actor::user(user.id),
+                card.id,
+                LockMode::Encrypted,
+                "",
+                "",
+                None,
+                &[],
+                &[]
+            )
+            .is_err()
         );
         let card = db
-            .set_card_lock(card.id, LockMode::Encrypted, "", "", Some(&payload), &[])
+            .set_card_lock(
+                &Actor::user(user.id),
+                card.id,
+                LockMode::Encrypted,
+                "",
+                "",
+                Some(&payload),
+                &[],
+                &[],
+            )
             .unwrap();
         assert_eq!(card.lock_mode, LockMode::Encrypted);
         assert_eq!(card.encrypted, Some(payload));
@@ -521,14 +621,18 @@ mod tests {
     #[test]
     fn pin_and_favorite() {
         let (db, user) = db_with_user();
-        let a = db.create_card(user.id, new_card("a")).unwrap();
-        db.set_card_pinned(a.id, true).unwrap();
-        db.set_card_favorite(a.id, true).unwrap();
+        let a = db
+            .create_card(&Actor::user(user.id), new_card("a"))
+            .unwrap();
+        db.set_card_pinned(&Actor::user(user.id), a.id, true)
+            .unwrap();
+        db.set_card_favorite(&Actor::user(user.id), a.id, true)
+            .unwrap();
         let a = db.card(a.id).unwrap();
         assert!(a.is_pinned && a.is_favorite);
         assert_eq!(a.rev, 3);
         assert!(
-            db.set_card_pinned(CardId::new(), true)
+            db.set_card_pinned(&Actor::user(user.id), CardId::new(), true)
                 .unwrap_err()
                 .is_not_found()
         );
@@ -537,32 +641,38 @@ mod tests {
     #[test]
     fn blobs_dropped_from_content_survive_for_history() {
         let (db, user) = db_with_user();
-        let keep = db.create_card(user.id, new_card("keep")).unwrap();
-        let gone = db.create_card(user.id, new_card("gone")).unwrap();
+        let keep = db
+            .create_card(&Actor::user(user.id), new_card("keep"))
+            .unwrap();
+        let gone = db
+            .create_card(&Actor::user(user.id), new_card("gone"))
+            .unwrap();
         let blob = db.put_blob(b"img", "image/png", None).unwrap();
         let with_blob = ContentUpdate {
             title: "keep".into(),
             blob_ids: vec![blob.id.0.clone()],
             ..Default::default()
         };
-        db.update_card_content(keep.id, with_blob, 10, 0).unwrap();
+        db.update_card_content(&Actor::user(user.id), keep.id, with_blob, 10, 0)
+            .unwrap();
         // The image is removed again; the previous revision still shows it.
         let without = ContentUpdate {
             title: "keep 2".into(),
             ..Default::default()
         };
-        db.update_card_content(keep.id, without, 10, 0).unwrap();
+        db.update_card_content(&Actor::user(user.id), keep.id, without, 10, 0)
+            .unwrap();
         // Age the blob past the grace period, then purge an unrelated card (runs GC).
         db.with(|conn| {
             diesel::sql_query("UPDATE blobs SET created_at = 0").execute(conn)?;
             Ok(())
         })
         .unwrap();
-        db.delete_card(gone.id).unwrap();
+        db.delete_card(&Actor::user(user.id), gone.id).unwrap();
         db.purge_card(gone.id).unwrap();
         assert!(db.blob(&blob.id.0).unwrap().is_some());
         // Once the card itself is purged the blob goes too.
-        db.delete_card(keep.id).unwrap();
+        db.delete_card(&Actor::user(user.id), keep.id).unwrap();
         db.purge_card(keep.id).unwrap();
         assert!(db.blob(&blob.id.0).unwrap().is_none());
     }
@@ -570,14 +680,19 @@ mod tests {
     #[test]
     fn move_card_bumps_updated_at() {
         let (db, user) = db_with_user();
-        let a = db.create_card(user.id, new_card("a")).unwrap();
-        let b = db.create_card(user.id, new_card("b")).unwrap();
+        let a = db
+            .create_card(&Actor::user(user.id), new_card("a"))
+            .unwrap();
+        let b = db
+            .create_card(&Actor::user(user.id), new_card("b"))
+            .unwrap();
         db.with(|conn| {
             diesel::sql_query("UPDATE cards SET updated_at = 0").execute(conn)?;
             Ok(())
         })
         .unwrap();
-        db.move_card(a.id, Some(b.id), None).unwrap();
+        db.move_card(&Actor::user(user.id), a.id, Some(b.id), None)
+            .unwrap();
         let a = db.card(a.id).unwrap();
         assert!(a.updated_at > 0);
         assert_eq!(a.rev, 2);
@@ -586,8 +701,12 @@ mod tests {
     #[test]
     fn encrypting_a_card_drops_its_plaintext_blobs() {
         let (db, user) = db_with_user();
-        let card = db.create_card(user.id, new_card("secret")).unwrap();
-        let other = db.create_card(user.id, new_card("other")).unwrap();
+        let card = db
+            .create_card(&Actor::user(user.id), new_card("secret"))
+            .unwrap();
+        let other = db
+            .create_card(&Actor::user(user.id), new_card("other"))
+            .unwrap();
         let mine = db.put_blob(b"mine", "image/png", None).unwrap().id.0;
         let shared = db.put_blob(b"shared", "image/png", None).unwrap().id.0;
         let link = |id, blobs: Vec<String>| {
@@ -596,7 +715,8 @@ mod tests {
                 blob_ids: blobs,
                 ..Default::default()
             };
-            db.update_card_content(id, upd, 10, 0).unwrap();
+            db.update_card_content(&Actor::user(user.id), id, upd, 10, 0)
+                .unwrap();
         };
         link(card.id, vec![mine.clone(), shared.clone()]);
         link(other.id, vec![shared.clone()]);
@@ -612,11 +732,13 @@ mod tests {
             ciphertext: "c".into(),
         };
         db.set_card_lock(
+            &Actor::user(user.id),
             card.id,
             LockMode::Encrypted,
             "",
             "",
             Some(&payload),
+            &[],
             &[sealed],
         )
         .unwrap();
@@ -637,20 +759,24 @@ mod tests {
         // Decrypt and encrypt again: the sealed blob is still in use and must stay.
         let sealed = cardfile_core::BlobRef::sealed("s1", "key");
         db.set_card_lock(
+            &Actor::user(user.id),
             card.id,
             LockMode::None,
             "{}",
             "",
             None,
+            &[],
             std::slice::from_ref(&sealed),
         )
         .unwrap();
         db.set_card_lock(
+            &Actor::user(user.id),
             card.id,
             LockMode::Encrypted,
             "",
             "",
             Some(&payload),
+            &[],
             &[sealed],
         )
         .unwrap();

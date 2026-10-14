@@ -20,6 +20,10 @@ diesel::table! {
         updated_at -> BigInt,
         deleted_at -> Nullable<BigInt>,
         rev -> BigInt,
+        kind -> Text,
+        lock_hash -> Nullable<Text>,
+        public_key -> Nullable<Text>,
+        secret_key -> Nullable<Text>,
     }
 }
 
@@ -39,6 +43,7 @@ diesel::table! {
         updated_at -> BigInt,
         deleted_at -> Nullable<BigInt>,
         rev -> BigInt,
+        updated_by -> Nullable<Text>,
     }
 }
 
@@ -49,6 +54,53 @@ diesel::table! {
         title -> Text,
         content -> Text,
         encrypted -> Nullable<Text>,
+        created_at -> BigInt,
+        author_id -> Nullable<Text>,
+    }
+}
+
+diesel::table! {
+    card_shares (card_id, user_id) {
+        card_id -> Text,
+        user_id -> Text,
+        permission -> Text,
+        created_at -> BigInt,
+    }
+}
+
+diesel::table! {
+    card_keys (card_id, user_id) {
+        card_id -> Text,
+        user_id -> Text,
+        wrapped -> Text,
+        created_at -> BigInt,
+    }
+}
+
+diesel::table! {
+    api_keys (id) {
+        id -> Text,
+        user_id -> Text,
+        name -> Text,
+        prefix -> Text,
+        key_hash -> Text,
+        allow_private -> Bool,
+        read_only -> Bool,
+        created_at -> BigInt,
+        last_used_at -> Nullable<BigInt>,
+        revoked_at -> Nullable<BigInt>,
+    }
+}
+
+diesel::table! {
+    activity (id) {
+        id -> Text,
+        card_id -> Nullable<Text>,
+        actor_id -> Text,
+        on_behalf_of -> Nullable<Text>,
+        via -> Nullable<Text>,
+        action -> Text,
+        summary -> Text,
         created_at -> BigInt,
     }
 }
@@ -98,6 +150,9 @@ diesel::joinable!(card_tags -> tags (tag_id));
 diesel::joinable!(card_blobs -> cards (card_id));
 diesel::joinable!(card_blobs -> blobs (blob_id));
 diesel::joinable!(tags -> users (owner_id));
+diesel::joinable!(card_shares -> cards (card_id));
+diesel::joinable!(card_keys -> cards (card_id));
+diesel::joinable!(api_keys -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     app_settings,
@@ -108,4 +163,8 @@ diesel::allow_tables_to_appear_in_same_query!(
     card_tags,
     blobs,
     card_blobs,
+    card_shares,
+    card_keys,
+    api_keys,
+    activity,
 );

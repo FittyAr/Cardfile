@@ -1,4 +1,4 @@
-use cardfile_core::{CardId, Tag, TagId, UserId, now_millis};
+use cardfile_core::{Actor, CardId, Tag, TagId, UserId, now_millis};
 use diesel::prelude::*;
 
 use crate::rows::TagRow;
@@ -90,10 +90,11 @@ impl Database {
         })
     }
 
-    /// Replace the tags of a card.
-    pub fn set_card_tags(&self, card: CardId, tag_ids: &[TagId]) -> DbResult<()> {
+    /// Replace the tags of a card. Tags belong to the card's owner, so only they may.
+    pub fn set_card_tags(&self, actor: &Actor, card: CardId, tag_ids: &[TagId]) -> DbResult<()> {
         let card_id = card.to_string();
         self.tx(|conn| {
+            crate::cards::ensure_owner(conn, actor, &card_id)?;
             diesel::delete(card_tags::table.filter(card_tags::card_id.eq(&card_id)))
                 .execute(conn)?;
             let rows: Vec<_> = tag_ids
@@ -113,10 +114,16 @@ impl Database {
             diesel::update(cards::table.find(&card_id))
                 .set((
                     cards::updated_at.eq(now_millis()),
+                    cards::updated_by.eq(actor.user.to_string()),
                     cards::rev.eq(cards::rev + 1),
                 ))
                 .execute(conn)?;
-            refresh_fts_tags(conn, &card_id)
+            refresh_fts_tags(conn, &card_id)?;
+            let title: String = cards::table
+                .find(&card_id)
+                .select(cards::title)
+                .first(conn)?;
+            crate::activity::log(conn, actor, Some(&card_id), "tag", &title)
         })
     }
 }
@@ -137,6 +144,7 @@ fn refresh_fts_tags(conn: &mut SqliteConnection, card_id: &str) -> DbResult<()> 
 
 #[cfg(test)]
 mod tests {
+    use cardfile_core::Actor;
     use cardfile_core::{CardFilter, NewCard, SearchScope};
 
     use crate::test_util::*;
@@ -153,7 +161,7 @@ mod tests {
         );
         let a = db
             .create_card(
-                user.id,
+                &Actor::user(user.id),
                 NewCard {
                     title: "a".into(),
                     ..Default::default()
@@ -162,15 +170,17 @@ mod tests {
             .unwrap();
         let b = db
             .create_card(
-                user.id,
+                &Actor::user(user.id),
                 NewCard {
                     title: "b".into(),
                     ..Default::default()
                 },
             )
             .unwrap();
-        db.set_card_tags(a.id, &[work.id, home.id]).unwrap();
-        db.set_card_tags(b.id, &[home.id]).unwrap();
+        db.set_card_tags(&Actor::user(user.id), a.id, &[work.id, home.id])
+            .unwrap();
+        db.set_card_tags(&Actor::user(user.id), b.id, &[home.id])
+            .unwrap();
         assert_eq!(db.card(a.id).unwrap().tags.len(), 2);
 
         let by_tag = CardFilter {

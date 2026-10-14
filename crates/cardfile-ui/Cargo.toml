@@ -18,12 +18,16 @@ update-check = []
 [dependencies]
 gpui-kit.workspace = true
 anyhow.workspace = true
+cardfile-agent.workspace = true
+cardfile-ai.workspace = true
 cardfile-core.workspace = true
 cardfile-crypto.workspace = true
 cardfile-db.workspace = true
 cardfile-doc.workspace = true
 cardfile-editor.workspace = true
 cardfile-i18n.workspace = true
+cardfile-mcp.workspace = true
+cardfile-media.workspace = true
 cardfile-updater.workspace = true
 directories.workspace = true
 jiff.workspace = true
@@ -38,4 +42,5 @@ open.workspace = true
 image.workspace = true
 
 [dev-dependencies]
+ureq.workspace = true
 tempfile.workspace = true

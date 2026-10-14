@@ -88,12 +88,21 @@ editor:
     replace: Ersetzen
     replace_one: Ersetzen
     replace_all: Alle ersetzen
+  media:
+    open_external: "Im Systemplayer öffnen"
 
 common:
   back: Zurück
   next: Weiter
   ok: OK
   cancel: Abbrechen
+  apply: "Anwenden"
+  copied: "In die Zwischenablage kopiert"
+  copy: "Kopieren"
+  done: "Fertig"
+  edit: "Bearbeiten"
+  remove: "Entfernen"
+  save: "Speichern"
 
 time:
   just_now: gerade eben
@@ -202,6 +211,7 @@ nav:
   favorites: Favoriten
   recycle_bin: Papierkorb
   tags: SCHLAGWÖRTER
+  shared: "Mit mir geteilt"
 
 list:
   count: "%{n} Karten"
@@ -243,6 +253,7 @@ card:
     hint: Die Karte wird nach einer Zeit der Inaktivität wieder gesperrt.
     wrong: Falsches Passwort.
     no_password: Es ist kein Sperrpasswort festgelegt. Legen Sie eines unter Einstellungen → Sicherheit fest.
+    no_key: "Diese Karte wurde nicht mit Ihrem Schlüssel geteilt. Bitten Sie die Person, der sie gehört, sie erneut zu teilen."
   protect:
     tooltip: Kartenschutz
     unlock_first: Entsperren Sie zuerst die Karte.
@@ -254,6 +265,7 @@ card:
     title: Endgültig löschen
     body: Diese Karte wird für immer gelöscht. Dies kann nicht rückgängig gemacht werden.
     confirm: Endgültig löschen
+  updated_by: "Bearbeitet %{date} von %{name}"
 
 tags:
   new: Neues Schlagwort…
@@ -267,6 +279,7 @@ history:
   title: Versionsverlauf
   restore: Diese Version wiederherstellen
   empty: Noch keine früheren Versionen.
+  by: "von %{name}"
 
 recycle:
   empty: Papierkorb leeren
@@ -329,6 +342,7 @@ settings:
     security: Sicherheit
     users: Benutzer
     data: Daten
+    ai: "KI"
   general:
     theme: Design
     language: Sprache
@@ -374,6 +388,12 @@ settings:
     new_password: Neues Passwort
     save_password: Passwort speichern
     password_saved: Passwort geändert.
+    current_lock_password: "Aktuelles Sperrpasswort"
+    new_lock_password: "Neues Sperrpasswort"
+    save_lock_password: "Sperrpasswort speichern"
+    lock_hint_same: "Private und verschlüsselte Karten werden mit Ihrem Anmeldepasswort entsperrt. Legen Sie hier ein anderes Passwort fest, um ein separates Sperrpasswort zu verwenden; wenn Sie Ihr Anmeldepasswort erneut eingeben, gilt wieder ein einziges Passwort."
+    lock_hint_separate: "Sie verwenden ein separates Sperrpasswort für private und verschlüsselte Karten. Geben Sie Ihr Anmeldepasswort als neues Sperrpasswort ein, um für beides ein Passwort zu verwenden."
+    lock_hint_nopw: "Dieses Passwort schützt Ihre privaten und verschlüsselten Karten. Jeder Benutzer hat ein eigenes."
   users:
     admin: Administrator
     add: Benutzer hinzufügen
@@ -387,3 +407,124 @@ settings:
     standard: Standardmodus.
     export: Exportieren
     export_hint: Exportiert alle Karten, die weder privat noch verschlüsselt sind.
+
+share:
+  button: "Teilen…"
+  title: "„%{title}“ teilen"
+  none: "Kein Zugriff"
+  view: "Kann ansehen"
+  edit: "Kann bearbeiten"
+  no_users: "Es gibt noch keine anderen Benutzer. Fügen Sie sie unter Einstellungen → Benutzer hinzu."
+  no_keys: "%{name} hat die eigenen Schlüssel noch nicht eingerichtet. Dazu muss sich die Person einmal anmelden (oder eine geschützte Karte entsperren)."
+  unlock_encrypted: "Entsperren Sie diese verschlüsselte Karte zuerst, um sie zu teilen."
+  shared_by: "%{name} · %{permission}"
+  view_only: "Diese Karte wurde nur zum Ansehen mit Ihnen geteilt."
+  owner_only: "Das kann nur die Person, der die Karte gehört."
+
+drag:
+  moved: "Nach „%{title}“ verschoben"
+  copied: "Nach „%{title}“ kopiert"
+  cannot_edit: "Sie können diese Karte nicht bearbeiten."
+  protected: "Entsperren Sie diese Karte, bevor Sie Dateien darauf ablegen."
+
+activity:
+  create: "Erstellt"
+  edit: "Bearbeitet"
+  delete: "In den Papierkorb verschoben"
+  restore: "Wiederhergestellt"
+  pin: "Angeheftet"
+  unpin: "Gelöst"
+  favorite: "Als Favorit markiert"
+  unfavorite: "Aus Favoriten entfernt"
+  move: "Neu angeordnet"
+  tag: "Schlagwörter geändert"
+  share: "Geteilt"
+  unshare: "Teilen beendet"
+  none: "Schutz entfernt"
+  read_only: "Schreibgeschützt gemacht"
+  private: "Privat gemacht"
+  encrypted: "Verschlüsselt"
+
+ai:
+  providers: "KI-Dienste"
+  providers_hint: "Verbinden Sie eine Cloud- oder lokale KI, um den Assistenten zu nutzen. Seine Schaltflächen erscheinen erst, wenn ein Dienst eingerichtet ist."
+  local: "lokal"
+  cloud: "Cloud"
+  provider:
+    add: "KI-Dienst hinzufügen"
+    name: "Name"
+    url: "Basis-URL"
+    model: "Modell"
+    key: "API-Schlüssel"
+    key_optional: "API-Schlüssel (optional)"
+    kind: "API-Format"
+    api_version: "API-Version"
+    pick_model: "Modell auswählen"
+    get_key: "API-Schlüssel erhalten"
+    test: "Verbindung testen"
+    test_ok: "Verbunden. Der Dienst hat geantwortet."
+    incomplete: "Geben Sie Name, URL und Modell ein."
+    not_ready: "Fehlende Einstellungen (API-Schlüssel, URL oder Modell)"
+    active: "In Verwendung"
+    use: "Verwenden"
+  chat:
+    title: "Assistent"
+    allow_private: "Assistent darf private Karten lesen und bearbeiten"
+    encrypted_note: "Verschlüsselte Karten sind für keine KI jemals zugänglich."
+  mcp:
+    title: "MCP-Server für KI-Clients"
+    hint: "Erlaubt KI-Apps wie Claude, Cursor oder VS Code, Cardfile zu nutzen, solange es geöffnet ist – nur auf diesem Computer (127.0.0.1). Jeder Client braucht einen API-Schlüssel; seine Änderungen werden als von Cardfile AI in Ihrem Namen vorgenommen protokolliert."
+    enable: "MCP-Server ausführen"
+    port: "Port"
+    bad_port: "Verwenden Sie eine Portnummer zwischen 1024 und 65535."
+    running: "Läuft unter %{url}"
+    failed: "Start fehlgeschlagen: %{error}"
+    stopped: "Gestoppt"
+  keys:
+    title: "API-Schlüssel"
+    hint: "Mit einem Schlüssel kann ein KI-Client als Cardfile AI alles sehen und ändern, was Sie können. Sie können ihn jederzeit widerrufen."
+    name_placeholder: "Schlüsselname, z. B. Claude Desktop"
+    default_name: "KI-Client"
+    create: "Schlüssel erstellen"
+    read_only_option: "Nur lesen"
+    private_option: "Private Karten erlauben"
+    read_only: "nur lesen"
+    private: "private Karten"
+    used: "verwendet %{when}"
+    never_used: "nie verwendet"
+    revoke: "Widerrufen"
+    revoke_body: "KI-Clients, die „%{name}“ verwenden, verlieren sofort den Zugriff."
+    copy_now: "Kopieren Sie den Schlüssel jetzt; er wird nicht noch einmal angezeigt. Fügen Sie ihn dann Ihrem KI-Client hinzu:"
+  activity:
+    title: "Letzte KI-Aktivität"
+    empty: "Die KI hat noch nichts geändert."
+
+chat:
+  title: "Assistent"
+  toggle: "Assistent"
+  placeholder: "Fragen Sie den Assistenten…"
+  send: "Senden"
+  stop: "Stoppen"
+  clear: "Unterhaltung löschen"
+  close: "Assistent ausblenden"
+  thinking: "Wird bearbeitet…"
+  no_provider: "Richten Sie zuerst unter Einstellungen → KI einen KI-Dienst ein."
+  empty: "Fragen Sie alles zu Ihren Karten. Zum Beispiel:"
+  example1: "„Finde meine Notizen zur Reise und versieh sie mit dem Schlagwort Reisen.“"
+  example2: "„Mach aus der Karte mit den Besprechungsnotizen eine übersichtliche Checkliste.“"
+  example3: "„Sortiere meine Rezeptkarten alphabetisch.“"
+  tool:
+    search_cards: "Gesucht"
+    get_card: "Karte gelesen"
+    list_tags: "Schlagwörter aufgelistet"
+    recent_activity: "Letzte Aktivität geprüft"
+    create_card: "Karte erstellt"
+    update_card: "Karte neu geschrieben"
+    edit_card_text: "Text bearbeitet"
+    append_to_card: "Zur Karte hinzugefügt"
+    tag_card: "Verschlagwortet"
+    create_tag: "Schlagwort erstellt"
+    set_card_flags: "Markierungen geändert"
+    reorder_cards: "Karten neu angeordnet"
+    delete_card: "In den Papierkorb verschoben"
+    restore_card: "Karte wiederhergestellt"

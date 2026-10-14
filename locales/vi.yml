@@ -88,12 +88,21 @@ editor:
     replace: Thay thế
     replace_one: Thay thế
     replace_all: Thay thế tất cả
+  media:
+    open_external: "Mở bằng trình phát của hệ thống"
 
 common:
   back: Quay lại
   next: Tiếp theo
   ok: OK
   cancel: Hủy
+  apply: "Áp dụng"
+  copied: "Đã sao chép vào bộ nhớ tạm"
+  copy: "Sao chép"
+  done: "Xong"
+  edit: "Sửa"
+  remove: "Gỡ bỏ"
+  save: "Lưu"
 
 time:
   just_now: vừa xong
@@ -202,6 +211,7 @@ nav:
   favorites: Yêu thích
   recycle_bin: Thùng rác
   tags: NHÃN
+  shared: "Được chia sẻ với tôi"
 
 list:
   count: "%{n} thẻ"
@@ -243,6 +253,7 @@ card:
     hint: Thẻ sẽ khóa lại sau một thời gian không hoạt động.
     wrong: Mật khẩu không đúng.
     no_password: Chưa đặt mật khẩu khóa. Hãy đặt trong Cài đặt → Bảo mật.
+    no_key: "Thẻ này chưa được chia sẻ với khóa của bạn. Hãy nhờ chủ sở hữu chia sẻ lại."
   protect:
     tooltip: Bảo vệ thẻ
     unlock_first: Hãy mở khóa thẻ trước.
@@ -254,6 +265,7 @@ card:
     title: Xóa vĩnh viễn
     body: Thẻ này sẽ bị xóa vĩnh viễn. Không thể hoàn tác.
     confirm: Xóa vĩnh viễn
+  updated_by: "%{name} đã sửa lúc %{date}"
 
 tags:
   new: Nhãn mới…
@@ -267,6 +279,7 @@ history:
   title: Lịch sử phiên bản
   restore: Khôi phục phiên bản này
   empty: Chưa có phiên bản trước nào.
+  by: "bởi %{name}"
 
 recycle:
   empty: Dọn sạch thùng rác
@@ -329,6 +342,7 @@ settings:
     security: Bảo mật
     users: Người dùng
     data: Dữ liệu
+    ai: "AI"
   general:
     theme: Giao diện
     language: Ngôn ngữ
@@ -374,6 +388,12 @@ settings:
     new_password: Mật khẩu mới
     save_password: Lưu mật khẩu
     password_saved: Đã đổi mật khẩu.
+    current_lock_password: "Mật khẩu khóa hiện tại"
+    new_lock_password: "Mật khẩu khóa mới"
+    save_lock_password: "Lưu mật khẩu khóa"
+    lock_hint_same: "Thẻ riêng tư và thẻ đã mã hóa được mở khóa bằng mật khẩu đăng nhập của bạn. Đặt một mật khẩu khác ở đây để dùng mật khẩu khóa riêng; nhập lại mật khẩu đăng nhập sẽ quay về dùng một mật khẩu."
+    lock_hint_separate: "Bạn đang dùng mật khẩu khóa riêng cho thẻ riêng tư và thẻ đã mã hóa. Nhập mật khẩu đăng nhập làm mật khẩu khóa mới để dùng một mật khẩu cho cả hai."
+    lock_hint_nopw: "Mật khẩu này bảo vệ các thẻ riêng tư và thẻ đã mã hóa của bạn. Mỗi người dùng có mật khẩu riêng."
   users:
     admin: quản trị viên
     add: Thêm người dùng
@@ -387,3 +407,124 @@ settings:
     standard: Chế độ tiêu chuẩn.
     export: Xuất
     export_hint: Xuất tất cả thẻ không phải thẻ riêng tư hoặc đã mã hóa.
+
+share:
+  button: "Chia sẻ…"
+  title: "Chia sẻ “%{title}”"
+  none: "Không có quyền truy cập"
+  view: "Có thể xem"
+  edit: "Có thể sửa"
+  no_users: "Chưa có người dùng nào khác. Hãy thêm trong Cài đặt → Người dùng."
+  no_keys: "%{name} chưa thiết lập khóa. Người đó cần đăng nhập (hoặc mở khóa một thẻ được bảo vệ) một lần."
+  unlock_encrypted: "Hãy mở khóa thẻ đã mã hóa này trước khi chia sẻ."
+  shared_by: "%{name} · %{permission}"
+  view_only: "Thẻ này được chia sẻ với bạn ở chế độ chỉ xem."
+  owner_only: "Chỉ chủ sở hữu thẻ mới có thể làm điều đó."
+
+drag:
+  moved: "Đã chuyển đến “%{title}”"
+  copied: "Đã sao chép đến “%{title}”"
+  cannot_edit: "Bạn không thể sửa thẻ đó."
+  protected: "Hãy mở khóa thẻ đó trước khi thả tệp vào."
+
+activity:
+  create: "Đã tạo"
+  edit: "Đã sửa"
+  delete: "Đã chuyển vào thùng rác"
+  restore: "Đã khôi phục"
+  pin: "Đã ghim"
+  unpin: "Đã bỏ ghim"
+  favorite: "Đã đánh dấu yêu thích"
+  unfavorite: "Đã xóa khỏi yêu thích"
+  move: "Đã sắp xếp lại"
+  tag: "Đã đổi nhãn"
+  share: "Đã chia sẻ"
+  unshare: "Đã ngừng chia sẻ"
+  none: "Đã gỡ bảo vệ"
+  read_only: "Đã đặt chỉ đọc"
+  private: "Đã đặt riêng tư"
+  encrypted: "Đã mã hóa"
+
+ai:
+  providers: "Dịch vụ AI"
+  providers_hint: "Kết nối AI trên đám mây hoặc cục bộ để dùng trợ lý. Các nút của trợ lý chỉ xuất hiện khi đã cấu hình dịch vụ."
+  local: "cục bộ"
+  cloud: "đám mây"
+  provider:
+    add: "Thêm dịch vụ AI"
+    name: "Tên"
+    url: "URL gốc"
+    model: "Mô hình"
+    key: "Khóa API"
+    key_optional: "Khóa API (tùy chọn)"
+    kind: "Định dạng API"
+    api_version: "Phiên bản API"
+    pick_model: "Chọn mô hình"
+    get_key: "Lấy khóa API"
+    test: "Kiểm tra kết nối"
+    test_ok: "Đã kết nối. Dịch vụ đã phản hồi."
+    incomplete: "Hãy điền tên, URL và mô hình."
+    not_ready: "Thiếu cài đặt (khóa API, URL hoặc mô hình)"
+    active: "Đang dùng"
+    use: "Dùng"
+  chat:
+    title: "Trợ lý"
+    allow_private: "Cho phép trợ lý đọc và sửa thẻ riêng tư"
+    encrypted_note: "Thẻ đã mã hóa không bao giờ được cung cấp cho bất kỳ AI nào."
+  mcp:
+    title: "Máy chủ MCP cho ứng dụng AI"
+    hint: "Cho phép các ứng dụng AI như Claude, Cursor hoặc VS Code dùng Cardfile khi ứng dụng đang mở, chỉ trên máy tính này (127.0.0.1). Mỗi ứng dụng cần một khóa API; các thay đổi nó thực hiện được ghi lại là do Cardfile AI thực hiện thay bạn."
+    enable: "Chạy máy chủ MCP"
+    port: "Cổng"
+    bad_port: "Hãy dùng số cổng từ 1024 đến 65535."
+    running: "Đang chạy tại %{url}"
+    failed: "Không thể khởi động: %{error}"
+    stopped: "Đã dừng"
+  keys:
+    title: "Khóa API"
+    hint: "Khóa cho phép ứng dụng AI xem và thay đổi những gì bạn có quyền, với danh nghĩa Cardfile AI. Có thể thu hồi bất cứ lúc nào."
+    name_placeholder: "Tên khóa, ví dụ Claude Desktop"
+    default_name: "Ứng dụng AI"
+    create: "Tạo khóa"
+    read_only_option: "Chỉ đọc"
+    private_option: "Cho phép thẻ riêng tư"
+    read_only: "chỉ đọc"
+    private: "thẻ riêng tư"
+    used: "dùng lần cuối %{when}"
+    never_used: "chưa từng dùng"
+    revoke: "Thu hồi"
+    revoke_body: "Các ứng dụng AI dùng “%{name}” sẽ mất quyền truy cập ngay lập tức."
+    copy_now: "Hãy sao chép khóa ngay; khóa sẽ không được hiển thị lại. Sau đó thêm vào ứng dụng AI của bạn:"
+  activity:
+    title: "Hoạt động AI gần đây"
+    empty: "AI chưa thay đổi gì."
+
+chat:
+  title: "Trợ lý"
+  toggle: "Trợ lý"
+  placeholder: "Hỏi trợ lý…"
+  send: "Gửi"
+  stop: "Dừng"
+  clear: "Xóa cuộc trò chuyện"
+  close: "Ẩn trợ lý"
+  thinking: "Đang xử lý…"
+  no_provider: "Hãy cấu hình dịch vụ AI trong Cài đặt → AI trước."
+  empty: "Hỏi bất cứ điều gì về thẻ của bạn. Ví dụ:"
+  example1: "“Tìm các ghi chú về chuyến đi và gắn nhãn Du lịch.”"
+  example2: "“Biến thẻ ghi chú cuộc họp thành danh sách kiểm tra gọn gàng.”"
+  example3: "“Sắp xếp các thẻ công thức nấu ăn theo thứ tự chữ cái.”"
+  tool:
+    search_cards: "Đã tìm kiếm"
+    get_card: "Đã đọc thẻ"
+    list_tags: "Đã liệt kê nhãn"
+    recent_activity: "Đã xem hoạt động gần đây"
+    create_card: "Đã tạo thẻ"
+    update_card: "Đã viết lại thẻ"
+    edit_card_text: "Đã sửa văn bản"
+    append_to_card: "Đã thêm vào thẻ"
+    tag_card: "Đã gắn nhãn"
+    create_tag: "Đã tạo nhãn"
+    set_card_flags: "Đã đổi cờ"
+    reorder_cards: "Đã sắp xếp lại thẻ"
+    delete_card: "Đã chuyển vào thùng rác"
+    restore_card: "Đã khôi phục thẻ"

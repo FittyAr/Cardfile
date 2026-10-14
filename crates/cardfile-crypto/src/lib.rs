@@ -15,6 +15,12 @@ use chacha20poly1305::{XChaCha20Poly1305, XNonce};
 use thiserror::Error;
 use zeroize::Zeroizing;
 
+mod keys;
+pub use keys::{
+    CardKey, KEYED_PAYLOAD_VERSION, UserSecret, decrypt_with_key, encrypt_with_key,
+    generate_user_keys, open_user_secret, seal_user_secret, unwrap_card_key, wrap_card_key,
+};
+
 /// Envelope format version written to [`EncryptedPayload::v`].
 pub const PAYLOAD_VERSION: u32 = 1;
 
@@ -22,9 +28,9 @@ pub const PAYLOAD_VERSION: u32 = 1;
 const M_COST: u32 = 64 * 1024;
 const T_COST: u32 = 3;
 const P_COST: u32 = 1;
-const KEY_LEN: usize = 32;
+pub(crate) const KEY_LEN: usize = 32;
 const SALT_LEN: usize = 16;
-const NONCE_LEN: usize = 24;
+pub(crate) const NONCE_LEN: usize = 24;
 
 #[derive(Debug, Error)]
 pub enum CryptoError {
@@ -64,7 +70,7 @@ pub fn verify_password(phc: &str, password: &str) -> bool {
         .is_ok()
 }
 
-fn random<const N: usize>() -> CryptoResult<[u8; N]> {
+pub(crate) fn random<const N: usize>() -> CryptoResult<[u8; N]> {
     let mut buf = [0u8; N];
     getrandom::fill(&mut buf).map_err(|_| CryptoError::Random)?;
     Ok(buf)
@@ -207,6 +213,23 @@ pub fn open_blob(key: &str, sealed: &[u8], aad: &[u8]) -> CryptoResult<Zeroizing
         .map_err(|_| CryptoError::Decrypt)
 }
 
+/// A new API key for AI clients: the secret (shown to the user once), a short prefix
+/// to recognise it in lists, and the hash stored in the database.
+///
+/// Keys are 256 random bits, so a fast hash (BLAKE3) is enough to store them.
+pub fn new_api_key() -> CryptoResult<(Zeroizing<String>, String, String)> {
+    let bytes = Zeroizing::new(random::<32>()?);
+    let secret = Zeroizing::new(format!("cf_{}", B64URL.encode(bytes.as_ref())));
+    let prefix: String = secret.chars().take(10).collect();
+    let hash = hash_api_key(&secret);
+    Ok((secret, prefix, hash))
+}
+
+/// The stored form of an API key secret.
+pub fn hash_api_key(secret: &str) -> String {
+    blake3::hash(secret.trim().as_bytes()).to_hex().to_string()
+}
+
 /// Rough password strength from 0 (empty) to 4 (strong), for UI hints only.
 pub fn password_strength(password: &str) -> u8 {
     let len = password.chars().count();
@@ -308,6 +331,14 @@ mod tests {
         assert_ne!(a.salt, b.salt);
         assert_ne!(a.nonce, b.nonce);
         assert_ne!(a.ciphertext, b.ciphertext);
+    }
+
+    #[test]
+    fn api_keys() {
+        let (secret, prefix, hash) = new_api_key().unwrap();
+        assert!(secret.starts_with("cf_") && secret.starts_with(&prefix));
+        assert_eq!(hash_api_key(&secret), hash);
+        assert_ne!(new_api_key().unwrap().2, hash);
     }
 
     #[test]

@@ -6,13 +6,16 @@ use gpui_kit::component::menu::{ContextMenuExt as _, PopupMenu};
 use gpui_kit::component::{ActiveTheme as _, h_flex, v_flex};
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::{
-    AnyElement, App, Context, CursorStyle, Entity, ExternalPaths, Hsla, ImageSource,
-    InteractiveElement, IntoElement, MouseButton, ObjectFit, ParentElement, Render, SharedString,
-    StatefulInteractiveElement, Styled, StyledImage, TextAlign, Window, canvas, div, img, px,
+    AnyElement, App, AppContext as _, Context, CursorStyle, Entity, ExternalPaths, Hsla,
+    ImageSource, InteractiveElement, IntoElement, MouseButton, ObjectFit, ParentElement, Render,
+    SharedString, StatefulInteractiveElement, Styled, StyledImage, TextAlign, Window, canvas, div,
+    img, px,
 };
 
+use crate::drag::{DragPreview, DraggedBlock};
 use crate::editor::*;
 use crate::element::{SlotElement, SlotStyle};
+use crate::media::MediaColors;
 use crate::pos::Slot;
 
 /// Theme colors and fonts resolved once per frame.
@@ -101,7 +104,13 @@ impl RichEditor {
             italic: matches!(block.kind, BlockKind::Quote),
             mono: matches!(block.kind, BlockKind::Code { .. }),
             strike: checked,
-            align: text_align(block.align),
+            // Right-to-left paragraphs read from the right unless aligned explicitly.
+            align: if block.align == Align::Left && crate::bidi::is_rtl_paragraph(&block.text.text)
+            {
+                TextAlign::Right
+            } else {
+                text_align(block.align)
+            },
             placeholder: None,
         }
     }
@@ -246,6 +255,7 @@ impl RichEditor {
             }
             BlockKind::Image(image) => {
                 let ent = entity.clone();
+                let dragged = DraggedBlock::new(entity.entity_id(), ix, block);
                 let loaded = self.image_for(image);
                 let width = image.width;
                 let body: AnyElement = match loaded {
@@ -275,6 +285,7 @@ impl RichEditor {
                     })
                     .child(
                         div()
+                            .id(("image-drag", ix))
                             .border_2()
                             .rounded(px(4.))
                             .border_color(if selected {
@@ -282,15 +293,50 @@ impl RichEditor {
                             } else {
                                 gpui_kit::transparent_black()
                             })
+                            .when_some(dragged, |d, dragged| {
+                                d.on_drag(dragged, |d: &DraggedBlock, _, _, cx| {
+                                    cx.new(|_| DragPreview(d.label.clone()))
+                                })
+                            })
                             .child(body),
                     )
                     .into_any_element()
             }
             BlockKind::Attachment(att) => {
+                let dragged = DraggedBlock::new(entity.entity_id(), ix, block);
+                if let Some(kind) = crate::media::playable(att) {
+                    let colors = MediaColors {
+                        fg: pal.fg,
+                        muted: pal.muted_fg,
+                        primary: pal.primary,
+                        border: pal.border,
+                        track: pal.code_bg,
+                    };
+                    let player = self.render_media(ix, att, kind, selected, colors, entity);
+                    let ent = entity.clone();
+                    return div()
+                        .id(("media", ix))
+                        .on_mouse_down(MouseButton::Left, move |_, window, cx| {
+                            cx.stop_propagation();
+                            ent.update(cx, |e, cx| e.select_atom(ix, window, cx));
+                        })
+                        .when_some(dragged, |d, dragged| {
+                            d.on_drag(dragged, |d: &DraggedBlock, _, _, cx| {
+                                cx.new(|_| DragPreview(d.label.clone()))
+                            })
+                        })
+                        .child(player)
+                        .into_any_element();
+                }
                 let ent = entity.clone();
                 let ent2 = entity.clone();
                 h_flex()
                     .id(("attachment", ix))
+                    .when_some(dragged, |d, dragged| {
+                        d.on_drag(dragged, |d: &DraggedBlock, _, _, cx| {
+                            cx.new(|_| DragPreview(d.label.clone()))
+                        })
+                    })
                     .gap(px(8.))
                     .px(px(10.))
                     .py(px(6.))
@@ -347,6 +393,20 @@ impl RichEditor {
                 div().ml(indent).py(px(4.)).child(rows).into_any_element()
             }
         }
+    }
+
+    /// Wrap a block so images and attachments can be dropped before it.
+    fn drop_zone(ix: usize, el: AnyElement, color: Hsla, cx: &mut Context<Self>) -> AnyElement {
+        div()
+            .border_t_2()
+            .border_color(gpui_kit::transparent_black())
+            .drag_over::<DraggedBlock>(move |s, _, _, _| s.border_color(color))
+            .on_drop(cx.listener(move |this, d: &DraggedBlock, window, cx| {
+                let copy = window.modifiers().control || window.modifiers().alt;
+                this.drop_block(d, ix, copy, cx);
+            }))
+            .child(el)
+            .into_any_element()
     }
 
     fn context_menu(editor: &Entity<RichEditor>, menu: PopupMenu, cx: &App) -> PopupMenu {
@@ -431,7 +491,8 @@ impl Render for RichEditor {
                 }
                 None
             };
-            children.push(self.render_block(ix, block, number, &pal, &entity, cx));
+            let el = self.render_block(ix, block, number, &pal, &entity, cx);
+            children.push(Self::drop_zone(ix, el, pal.primary, cx));
         }
 
         let focus = self.focus_handle.clone();
@@ -464,7 +525,12 @@ impl Render for RichEditor {
                     .py(px(20.))
                     .gap(px(6.))
                     .children(children)
-                    .child(div().h(px(80.))),
+                    .child(Self::drop_zone(
+                        blocks.len(),
+                        div().h(px(80.)).into_any_element(),
+                        pal.primary,
+                        cx,
+                    )),
             );
 
         let root = div()

@@ -3,6 +3,7 @@
 //! Cards are stored as a [`Document`] serialized to JSON. Markdown, HTML, PDF and
 //! JSON are export formats only; users never edit Markdown directly.
 
+pub mod bidi;
 mod export;
 mod markdown_in;
 mod model;

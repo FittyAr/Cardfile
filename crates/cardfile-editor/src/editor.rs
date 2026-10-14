@@ -282,6 +282,7 @@ pub struct RichEditor {
     revision: u64,
     pub(crate) find: Option<crate::find::FindBar>,
     pub(crate) slash: Option<crate::slash::SlashMenu>,
+    pub(crate) media: crate::media::MediaState,
 }
 
 impl EventEmitter<EditorEvent> for RichEditor {}
@@ -317,6 +318,7 @@ impl RichEditor {
             revision: 0,
             find: None,
             slash: None,
+            media: Default::default(),
         }
     }
 
@@ -338,6 +340,7 @@ impl RichEditor {
         self.layouts.clear();
         self.marked = None;
         self.slash = None;
+        self.media.clear();
         self.scroll.set_offset(point(px(0.), px(0.)));
         self.refresh_matches(false, cx);
         cx.notify();
@@ -578,7 +581,12 @@ impl RichEditor {
     // Edit plumbing
     // ---------------------------------------------------------------------
 
-    fn edit(&mut self, kind: EditKind, cx: &mut Context<Self>, f: impl FnOnce(&mut Model)) {
+    pub(crate) fn edit(
+        &mut self,
+        kind: EditKind,
+        cx: &mut Context<Self>,
+        f: impl FnOnce(&mut Model),
+    ) {
         if self.read_only {
             cx.emit(EditorEvent::EditBlocked);
             return;
@@ -1360,7 +1368,15 @@ impl RichEditor {
             cx.emit(EditorEvent::EditBlocked);
             return;
         }
-        crate::dialogs::open_link_dialog(cx.entity(), window, cx);
+        let current = self.link_at_caret();
+        let needs_text = self.selection_is_empty() && current.is_none();
+        crate::dialogs::open_link_dialog(
+            cx.entity(),
+            current.unwrap_or_default(),
+            needs_text,
+            window,
+            cx,
+        );
     }
     fn remove_link(&mut self, _: &RemoveLink, _: &mut Window, cx: &mut Context<Self>) {
         self.edit(EditKind::Other, cx, |m| m.set_link(None, None));

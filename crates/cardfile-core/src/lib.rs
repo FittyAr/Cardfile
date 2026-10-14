@@ -13,12 +13,13 @@ mod time;
 
 pub use blob_ref::BlobRef;
 pub use error::{Error, Result};
-pub use ids::{BlobId, CardId, RevisionId, TagId, UserId};
+pub use ids::{ActivityId, ApiKeyId, BlobId, CardId, RevisionId, TagId, UserId};
 pub use model::{
-    Blob, BlobMeta, Card, CardFilter, CardRevision, CardSummary, EncryptedPayload, LockMode,
-    NewCard, SearchScope, SortOrder, Tag, User,
+    ActivityEntry, Actor, ApiKey, Blob, BlobMeta, Card, CardAccess, CardFilter, CardRevision,
+    CardShare, CardSummary, EncryptedPayload, LockMode, NewCard, SearchScope, SharePermission,
+    SortOrder, Tag, User, UserKind,
 };
-pub use settings::{AppSettings, AuthMode, UserSettings};
+pub use settings::{AppSettings, AuthMode, DEFAULT_MCP_PORT, UserSettings};
 pub use time::{Millis, now_millis};
 
 /// Mask a title for display when a card is private and still locked.

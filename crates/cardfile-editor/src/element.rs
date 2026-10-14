@@ -187,7 +187,11 @@ fn shape(
             wrap,
             None,
         )
-        .map(|lines| lines.into_iter().collect())
+        .map(|lines| {
+            let mut lines: Vec<WrappedLine> = lines.into_iter().collect();
+            crate::bidi::fix_lines(&mut lines);
+            lines
+        })
         .unwrap_or_default()
 }
 

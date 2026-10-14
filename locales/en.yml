@@ -88,12 +88,21 @@ editor:
     replace: Replace
     replace_one: Replace
     replace_all: Replace all
+  media:
+    open_external: "Open in the system player"
 
 common:
   back: Back
   next: Next
   ok: OK
   cancel: Cancel
+  apply: "Apply"
+  copied: "Copied to the clipboard"
+  copy: "Copy"
+  done: "Done"
+  edit: "Edit"
+  remove: "Remove"
+  save: "Save"
 
 time:
   just_now: just now
@@ -202,6 +211,7 @@ nav:
   favorites: Favorites
   recycle_bin: Recycle bin
   tags: TAGS
+  shared: "Shared with me"
 
 list:
   count: "%{n} cards"
@@ -243,6 +253,7 @@ card:
     hint: The card locks again after a period of inactivity.
     wrong: Wrong password.
     no_password: No lock password is set. Set one in Settings → Security.
+    no_key: "This card was not shared with your key. Ask its owner to share it again."
   protect:
     tooltip: Card protection
     unlock_first: Unlock the card first.
@@ -254,6 +265,7 @@ card:
     title: Delete permanently
     body: This card will be deleted forever. This cannot be undone.
     confirm: Delete permanently
+  updated_by: "Edited %{date} by %{name}"
 
 tags:
   new: New tag…
@@ -267,6 +279,7 @@ history:
   title: Version history
   restore: Restore this version
   empty: No earlier versions yet.
+  by: "by %{name}"
 
 recycle:
   empty: Empty recycle bin
@@ -329,6 +342,7 @@ settings:
     security: Security
     users: Users
     data: Data
+    ai: "AI"
   general:
     theme: Theme
     language: Language
@@ -374,6 +388,12 @@ settings:
     new_password: New password
     save_password: Save password
     password_saved: Password changed.
+    current_lock_password: "Current lock password"
+    new_lock_password: "New lock password"
+    save_lock_password: "Save lock password"
+    lock_hint_same: "Private and encrypted cards are unlocked with your sign-in password. Set a different password here to use a separate lock password; typing your sign-in password again goes back to one password."
+    lock_hint_separate: "You use a separate lock password for private and encrypted cards. Enter your sign-in password as the new lock password to use one password for both."
+    lock_hint_nopw: "This password protects your private and encrypted cards. Every user has their own."
   users:
     admin: administrator
     add: Add user
@@ -387,3 +407,124 @@ settings:
     standard: Standard mode.
     export: Export
     export_hint: Export all cards that are not private or encrypted.
+
+share:
+  button: "Share…"
+  title: "Share “%{title}”"
+  none: "No access"
+  view: "Can view"
+  edit: "Can edit"
+  no_users: "There are no other users yet. Add them in Settings → Users."
+  no_keys: "%{name} has not set up their keys yet. They need to sign in (or unlock a protected card) once."
+  unlock_encrypted: "Unlock this encrypted card first to share it."
+  shared_by: "%{name} · %{permission}"
+  view_only: "This card is shared with you as view-only."
+  owner_only: "Only the card's owner can do that."
+
+drag:
+  moved: "Moved to “%{title}”"
+  copied: "Copied to “%{title}”"
+  cannot_edit: "You cannot edit that card."
+  protected: "Unlock that card before dropping files into it."
+
+activity:
+  create: "Created"
+  edit: "Edited"
+  delete: "Moved to the recycle bin"
+  restore: "Restored"
+  pin: "Pinned"
+  unpin: "Unpinned"
+  favorite: "Marked as favorite"
+  unfavorite: "Removed from favorites"
+  move: "Reordered"
+  tag: "Tags changed"
+  share: "Shared"
+  unshare: "Stopped sharing"
+  none: "Protection removed"
+  read_only: "Made read-only"
+  private: "Made private"
+  encrypted: "Encrypted"
+
+ai:
+  providers: "AI services"
+  providers_hint: "Connect a cloud or local AI to get the assistant. Its buttons appear only once a service is configured."
+  local: "local"
+  cloud: "cloud"
+  provider:
+    add: "Add AI service"
+    name: "Name"
+    url: "Base URL"
+    model: "Model"
+    key: "API key"
+    key_optional: "API key (optional)"
+    kind: "API format"
+    api_version: "API version"
+    pick_model: "Choose a model"
+    get_key: "Get an API key"
+    test: "Test connection"
+    test_ok: "Connected. The service answered."
+    incomplete: "Fill in the name, URL and model."
+    not_ready: "Missing settings (API key, URL or model)"
+    active: "In use"
+    use: "Use"
+  chat:
+    title: "Assistant"
+    allow_private: "Let the assistant read and edit private cards"
+    encrypted_note: "Encrypted cards are never available to any AI."
+  mcp:
+    title: "MCP server for AI clients"
+    hint: "Lets AI apps such as Claude, Cursor or VS Code use Cardfile while it is open, on this computer only (127.0.0.1). Each client needs an API key; changes it makes are recorded as made by Cardfile AI on your behalf."
+    enable: "Run the MCP server"
+    port: "Port"
+    bad_port: "Use a port number between 1024 and 65535."
+    running: "Running at %{url}"
+    failed: "Could not start: %{error}"
+    stopped: "Stopped"
+  keys:
+    title: "API keys"
+    hint: "A key lets an AI client see and change what you can, as Cardfile AI. Revoke it at any time."
+    name_placeholder: "Key name, e.g. Claude Desktop"
+    default_name: "AI client"
+    create: "Create key"
+    read_only_option: "Read only"
+    private_option: "Allow private cards"
+    read_only: "read only"
+    private: "private cards"
+    used: "used %{when}"
+    never_used: "never used"
+    revoke: "Revoke"
+    revoke_body: "AI clients using “%{name}” will lose access immediately."
+    copy_now: "Copy the key now; it will not be shown again. Then add it to your AI client:"
+  activity:
+    title: "Recent AI activity"
+    empty: "The AI has not changed anything yet."
+
+chat:
+  title: "Assistant"
+  toggle: "Assistant"
+  placeholder: "Ask the assistant…"
+  send: "Send"
+  stop: "Stop"
+  clear: "Clear conversation"
+  close: "Hide assistant"
+  thinking: "Working…"
+  no_provider: "Configure an AI service in Settings → AI first."
+  empty: "Ask for anything about your cards. For example:"
+  example1: "“Find my notes about the trip and tag them Travel.”"
+  example2: "“Turn the meeting notes card into a tidy checklist.”"
+  example3: "“Sort my recipe cards alphabetically.”"
+  tool:
+    search_cards: "Searched"
+    get_card: "Read card"
+    list_tags: "Listed tags"
+    recent_activity: "Checked recent activity"
+    create_card: "Created card"
+    update_card: "Rewrote card"
+    edit_card_text: "Edited text"
+    append_to_card: "Added to card"
+    tag_card: "Tagged"
+    create_tag: "Created tag"
+    set_card_flags: "Changed flags"
+    reorder_cards: "Reordered cards"
+    delete_card: "Moved to the recycle bin"
+    restore_card: "Restored card"

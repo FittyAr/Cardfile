@@ -11,7 +11,7 @@ use gpui_kit::{
 
 use crate::keymap::*;
 
-fn commands() -> Vec<(String, Box<dyn Action>)> {
+fn commands(cx: &App) -> Vec<(String, Box<dyn Action>)> {
     use cardfile_editor::editor as ed;
     let mut v: Vec<(String, Box<dyn Action>)> = vec![
         (t("card.new"), Box::new(NewCard)),
@@ -35,7 +35,12 @@ fn commands() -> Vec<(String, Box<dyn Action>)> {
         (t("menu.lock"), Box::new(LockApp)),
         (t("menu.sign_out"), Box::new(SignOut)),
         (t("menu.quit"), Box::new(Quit)),
+        (t("nav.shared"), Box::new(ShowShared)),
+        (t("share.button"), Box::new(ShareCard)),
     ];
+    if crate::ai_settings::active_provider(cx).is_some() {
+        v.push((t("chat.toggle"), Box::new(ToggleAssistant)));
+    }
     let editor: Vec<(&str, Box<dyn Action>)> = vec![
         ("editor.toolbar.heading1", Box::new(ed::Heading1)),
         ("editor.toolbar.heading2", Box::new(ed::Heading2)),
@@ -84,7 +89,7 @@ pub fn open(window: &mut Window, cx: &mut App) {
             if let InputEvent::PressEnter { .. } = ev {
                 let q = state.read(cx).value().to_lowercase();
                 let ix = *selected.read(cx);
-                if let Some((_, a)) = commands()
+                if let Some((_, a)) = commands(cx)
                     .into_iter()
                     .filter(|(n, _)| n.to_lowercase().contains(&q))
                     .nth(ix)
@@ -107,7 +112,7 @@ pub fn open(window: &mut Window, cx: &mut App) {
         let sel = *selected.read(cx);
         let th = cx.theme();
         let mut list = v_flex().gap(px(1.)).max_h(px(360.)).overflow_hidden();
-        for (i, (name, action)) in commands()
+        for (i, (name, action)) in commands(cx)
             .into_iter()
             .filter(|(n, _)| n.to_lowercase().contains(&q))
             .take(14)

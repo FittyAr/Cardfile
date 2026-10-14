@@ -24,6 +24,8 @@ pub struct Row {
 pub struct Para {
     /// The paragraph's layout before wrapping.
     pub unwrapped: Arc<LineLayout>,
+    /// The paragraph's text (for right-to-left aware hit testing).
+    pub text: gpui_kit::SharedString,
     /// Byte offset of this paragraph in the slot text.
     pub start: usize,
     pub rows: Vec<Row>,
@@ -67,8 +69,11 @@ impl SlotLayout {
             let mut rows = Vec::with_capacity(cuts.len() - 1);
             for w in cuts.windows(2) {
                 let (s, e) = (w[0], w[1].max(w[0]));
-                let x0 = layout.x_for_index(s);
-                let row_width = layout.x_for_index(e) - x0;
+                let x0 = crate::bidi::x_for_index(&line.text, layout, s)
+                    .min(crate::bidi::x_for_index(&line.text, layout, e));
+                let row_width = (crate::bidi::x_for_index(&line.text, layout, e)
+                    - crate::bidi::x_for_index(&line.text, layout, s))
+                .abs();
                 let free = (width - row_width).max(px(0.));
                 let dx = match align {
                     TextAlign::Center => free / 2.,
@@ -86,6 +91,7 @@ impl SlotLayout {
             }
             paras.push(Para {
                 unwrapped: line.unwrapped_layout.clone(),
+                text: line.text.clone(),
                 start,
                 rows,
             });
@@ -133,7 +139,7 @@ impl SlotLayout {
         match self.row_for(offset) {
             Some((p, r)) => {
                 let local = offset.clamp(r.start, r.end) - p.start;
-                let x = p.unwrapped.x_for_index(local) - r.x0 + r.dx;
+                let x = crate::bidi::x_for_index(&p.text, &p.unwrapped, local) - r.x0 + r.dx;
                 point(origin.x + x, origin.y + r.y)
             }
             None => origin,
@@ -153,7 +159,7 @@ impl SlotLayout {
         }
         let Some((p, r)) = best else { return 0 };
         let x = local_x - r.dx + r.x0;
-        let ix = p.unwrapped.closest_index_for_x(x) + p.start;
+        let ix = crate::bidi::index_for_x(&p.text, &p.unwrapped, x) + p.start;
         ix.clamp(r.start, r.end)
     }
 
@@ -176,8 +182,9 @@ impl SlotLayout {
                 continue;
             }
             let layout = &p.unwrapped;
-            let x1 = layout.x_for_index(rs - p.start) - r.x0 + r.dx;
-            let mut x2 = layout.x_for_index(re - p.start) - r.x0 + r.dx;
+            let a = crate::bidi::x_for_index(&p.text, layout, rs - p.start) - r.x0 + r.dx;
+            let b = crate::bidi::x_for_index(&p.text, layout, re - p.start) - r.x0 + r.dx;
+            let (x1, mut x2) = (a.min(b), a.max(b));
             if covers_newline {
                 x2 += px(6.); // show that the line break is selected
             }

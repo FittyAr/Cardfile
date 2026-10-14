@@ -1,0 +1,27 @@
+[package]
+name = "cardfile-media"
+description = "Inline audio and video playback engine for Cardfile attachments"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+openh264.workspace = true
+parking_lot.workspace = true
+re_mp4.workspace = true
+rodio.workspace = true
+symphonia.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+bytes.workspace = true
+hound.workspace = true
+mp4.workspace = true

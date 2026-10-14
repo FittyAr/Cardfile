@@ -68,6 +68,12 @@ Type `/` in an empty line to open a menu of blocks: headings, lists, table, imag
   - `Tab` moves to the next cell; in the last cell it adds a row.
   - Right-click a table to add or remove rows and columns.
 - Right-click an image to make it smaller, larger, or fit the width.
+- **Drag an image or attachment** to move it inside the card. Drop it on another card in the list to move it there; hold `Ctrl` (or `Alt`) while dropping to copy it instead.
+- **Audio and video play inside the card.** MP3, WAV, OGG, FLAC and AAC/M4A audio and MP4 (H.264) video get a player with play/pause, a seek bar and mute. Other formats open in your system player.
+
+### Other languages and scripts
+
+Chinese, Japanese and Korean text works everywhere, including PDF export (Cardfile uses a CJK font installed on your system). Right-to-left text (Hebrew, Arabic, Persian) is shown in the right order and right-to-left paragraphs are aligned to the right. Known limit: one-line text boxes (such as the card title while you edit it) still show right-to-left text left to right.
 
 ### Spelling
 
@@ -94,7 +100,33 @@ Private and encrypted cards lock again after a while without activity (Settings 
 
 In *No password* mode, set a **lock password** in Settings → Security before using private or encrypted cards.
 
+**Every user has their own lock password.** By default it is your sign-in password; in Settings → Security you can set a different one (type your sign-in password as the new lock password to go back to one password). Changing it does not re-encrypt your cards: each encrypted card has its own random key, locked separately for every person who can open it.
+
 With a password or several users, Cardfile can also **lock itself** after a period of inactivity. Lock it now with `Ctrl+Shift+L`.
+
+## Sharing cards
+
+With several users (multi-user mode), open a card's **⋯** menu → *Share…* (or the people button) and choose, for each user, **No access**, **Can view** or **Can edit**. Shared cards appear under **Shared with me** in the sidebar. Only the owner can delete, protect, tag or share a card. People who can edit see who made the last change in the status bar and in the version history.
+
+To share an **encrypted** card, unlock it first. The other person opens it with *their own* lock password; they need to have signed in (or unlocked a protected card) once so that Cardfile created their keys.
+
+## AI assistant
+
+Cardfile can work with an AI, in the cloud or on your computer. Nothing AI-related appears until you set it up.
+
+1. Open **Settings → AI → Add AI service** and pick a preset: OpenAI, Anthropic (Claude), Google Gemini, Mistral, Groq, DeepSeek, xAI, OpenRouter, Together AI, Perplexity, Azure OpenAI, **Ollama** or **LM Studio** (local), or *Custom* for any compatible service.
+2. Enter your API key (local services don't need one), choose a model and press **Test connection**.
+3. The **assistant button** (robot icon above the card list, or `Ctrl+Shift+A`) opens the chat panel.
+
+Ask in your own words: find cards, rewrite or format a card, turn notes into a checklist, add tags, mark favorites, reorder cards, move cards to the recycle bin… Every change is recorded as made by **Cardfile AI** on your behalf, the previous version is kept in the history, and deleted cards go to the recycle bin, so you can always undo. The assistant never sees encrypted cards; private cards only if you allow it in Settings → AI.
+
+## Using Cardfile from other AI apps (MCP)
+
+Cardfile includes an MCP server so AI apps such as Claude Desktop, Claude Code, Cursor or VS Code can use your cards while Cardfile is open.
+
+1. In **Settings → AI**, turn on **Run the MCP server** (it listens on `127.0.0.1` only; default port 7337).
+2. Under **API keys**, create a key. Choose *Read only* or *Allow private cards* if you want. Copy the key: it is shown only once, together with ready-to-paste settings for each AI app.
+3. The AI app sees exactly what you see. Its changes are recorded as made by Cardfile AI, through that key. **Revoke** a key to cut its access immediately. The list shows when each key was last used, and *Recent AI activity* shows what the AI changed.
 
 ## Export and backup
 

@@ -4,11 +4,12 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use anyhow::Result;
-use cardfile_core::{AppSettings, AuthMode, BlobRef, User, UserSettings};
+use cardfile_core::{
+    Actor, AppSettings, BlobRef, Card, CardAccess, CardId, User, UserId, UserSettings,
+};
 use cardfile_db::Database;
 use cardfile_editor::BlobStore;
 use gpui_kit::{App, AppContext as _, Global, Task};
-use zeroize::Zeroizing;
 
 use crate::paths::DataPaths;
 
@@ -24,9 +25,6 @@ pub struct AppState {
     pub db: Option<Database>,
     pub app: AppSettings,
     pub session: Option<Session>,
-    /// Password used to unlock private/encrypted cards in this session, kept only
-    /// while a protected card is open.
-    pub card_password: Option<Zeroizing<String>>,
 }
 
 impl Global for AppState {}
@@ -58,12 +56,25 @@ impl AppState {
             .unwrap_or_default()
     }
 
-    /// Hash of the password that protects private and encrypted cards.
+    /// Hash of the password that protects the user's private and encrypted cards.
     pub fn lock_password_hash(cx: &App) -> Option<String> {
-        let s = Self::session(cx)?;
-        match Self::get(cx).app.auth_mode {
-            AuthMode::NoPassword => s.settings.lock_password_hash.clone(),
-            _ => s.user.password_hash.clone(),
+        Self::session(cx)?
+            .user
+            .effective_lock_hash()
+            .map(str::to_owned)
+    }
+
+    /// The signed-in person, as the author of changes.
+    pub fn actor(cx: &App) -> Option<Actor> {
+        Self::session(cx).map(|s| Actor::user(s.user.id))
+    }
+
+    /// Replace the session's user record (e.g. after a key pair was created).
+    pub fn refresh_user(cx: &mut App, user: User) {
+        if let Some(s) = Self::get_mut(cx).session.as_mut()
+            && s.user.id == user.id
+        {
+            s.user = user;
         }
     }
 
@@ -77,6 +88,21 @@ impl AppState {
         let db = Self::db(cx);
         run_db(cx, move |_| db.save_user_settings(id, &settings)).detach_and_log_err(cx);
     }
+}
+
+/// Load a card together with what `user` may do with it. Cards the user cannot see
+/// are reported as not found.
+pub fn load_card(
+    db: &Database,
+    id: CardId,
+    user: UserId,
+) -> cardfile_db::DbResult<(Card, CardAccess)> {
+    let access = db
+        .card_access(id, user)?
+        .ok_or(cardfile_db::DbError::Domain(
+            cardfile_core::Error::NotFound(id.to_string()),
+        ))?;
+    Ok((db.card(id)?, access))
 }
 
 /// Run blocking database work on the background executor.

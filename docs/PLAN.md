@@ -42,6 +42,15 @@ alcance debe reflejarse aquí primero.
 | 30 | Linux | Primero `.deb`, `.rpm`, AppImage; luego Flathub y AUR. |
 | 31 | Actualizaciones | Aviso in-app de nueva versión (sin auto-instalar). Deshabilitado en builds de Store/winget/repos. |
 | 32 | Telemetría | Ninguna. |
+| 33 | Bloqueo por usuario | Cada usuario tiene su **contraseña de bloqueo** (por defecto, la de inicio de sesión; puede ser distinta) y un par de claves X25519. Cada tarjeta cifrada tiene una **clave aleatoria propia**, envuelta para cada usuario con acceso (formato v2). Cambiar la contraseña solo re-sella la clave secreta del usuario. Las tarjetas v1 se migran al desbloquearlas o al cambiar la contraseña. |
+| 34 | Compartir | El dueño comparte una tarjeta con otros usuarios como **ver** o **editar** (modo multiusuario). Sección "Compartidas conmigo". Solo el dueño borra, protege, etiqueta o vuelve a compartir. Las cifradas se comparten envolviendo su clave para el destinatario. |
+| 35 | Usuario IA y auditoría | Existe una cuenta `cardfile-ai` (tipo `ai`, sin login). Todo cambio guarda `updated_by`, el autor de cada revisión y una entrada en `activity` (actor, en nombre de quién, vía qué API key o "chat"). La IA ve exactamente lo que ve el usuario que le dio acceso. |
+| 36 | MCP | Servidor MCP **HTTP (Streamable HTTP) dentro de la app**, solo en `127.0.0.1`, activable en Settings → IA, puerto configurable (7337). Autenticación con **API keys** por usuario (hash BLAKE3), con opciones *solo lectura* y *permitir privadas*; nunca cifradas. |
+| 37 | Asistente IA | Presets para OpenAI, Anthropic, Gemini, Mistral, Groq, DeepSeek, xAI, OpenRouter, Together, Perplexity, Azure OpenAI, Ollama, LM Studio y personalizados. Panel de chat con herramientas (buscar, leer, crear, reescribir, editar texto, etiquetar, favoritos/fijadas, reordenar, papelera). Aplica cambios directo: revisión previa en el historial y borrados a la papelera. Toda la UI de IA se oculta hasta configurar un servicio. |
+| 38 | Multimedia | Reproducción inline de audio (MP3, WAV, OGG, FLAC, AAC) y video MP4/H.264 (OpenH264 desde fuente). Otros formatos: reproductor del sistema. |
+| 39 | Adjuntos | Imágenes y adjuntos se arrastran dentro de la tarjeta (mover; Ctrl/Alt copia) o sobre otra tarjeta de la lista (mover; Ctrl/Alt copia). |
+| 40 | Escrituras | CJK en UI y PDF (fuente de respaldo del sistema). RTL: el editor reordena los glifos según el algoritmo bidi Unicode y alinea a la derecha los párrafos RTL; etiquetas de UI en orden visual (con formas de presentación árabes); HTML con `dir="rtl"`. Límite: los inputs de una línea de gpui-component siguen mostrando RTL de izquierda a derecha. |
+| 41 | Traducciones | 21 idiomas, todos salvo el inglés hechos con IA; los README lo indican y piden reportes. |
 
 ### 1.1 ¿Por qué no un fork de Zed?
 
@@ -81,6 +90,8 @@ registran en `Cargo.lock`. Valores verificados al 2026-10-14:
 | Resaltado de código | `syntect` + `two-face` (vía gpui-component) | última | MIT |
 | Imágenes | `image` | última | MIT OR Apache-2.0 |
 | Corrector | `spellbook` (Hunspell-compatible) + diccionario en_US de `wooorm/dictionaries` | última | MPL-2.0* / MIT-like |
+| Audio (adjuntos) | `rodio` (salida vía `cpal`, sin decoders propios) + `symphonia` (MP3, WAV, OGG/Vorbis, FLAC, AAC/M4A) | 0.23.0 / 0.6.1 | MIT OR Apache-2.0 / MPL-2.0* |
+| Video (adjuntos) | `re_mp4` (demux MP4) + `openh264` (H.264, compilado desde fuente; sin descarga en runtime) | 0.5.1 / 0.9.8 | MIT / BSD-2-Clause |
 | i18n | `rust-i18n` | última | MIT |
 | Directorios | `directories` | última | MIT OR Apache-2.0 |
 | Config | `serde` + TOML (`toml`) | última | MIT OR Apache-2.0 |
@@ -94,13 +105,19 @@ registran en `Cargo.lock`. Valores verificados al 2026-10-14:
 \* **MPL-2.0** es copyleft débil a nivel de archivo: compatible con distribuir Cardfile bajo
 MIT/Apache siempre que no modifiquemos los archivos de `spellbook`. Se aprueba como excepción
 explícita en `deny.toml`; si se prefiere evitarlo, alternativa: implementación propia sobre
-listas de palabras (más pobre).
+listas de palabras (más pobre). Lo mismo aplica a los crates de `symphonia` (decodificación de
+audio en `cardfile-media`), usados sin modificar. Formatos de video distintos de MP4/H.264 quedan
+fuera de alcance: la UI los abre con el reproductor del sistema. Nunca ffmpeg, GStreamer ni libvlc.
 
 ### 2.1 Política de licencias
 
 - `deny.toml` con allowlist: `MIT`, `Apache-2.0`, `Apache-2.0 WITH LLVM-exception`, `BSD-2-Clause`,
   `BSD-3-Clause`, `ISC`, `Zlib`, `Unicode-3.0`, `CC0-1.0`, `MPL-2.0` (solo crates listados y sin modificar:
-  `spellbook`, y transitivas `cbindgen` [build], `dwrote` [GPUI], `option-ext` [`directories`]).
+  `spellbook`; `symphonia`, `symphonia-core`, `symphonia-common`, `symphonia-metadata`,
+  `symphonia-bundle-flac`, `symphonia-bundle-mp3`, `symphonia-codec-aac`, `symphonia-codec-pcm`,
+  `symphonia-codec-vorbis`, `symphonia-format-isomp4`, `symphonia-format-ogg`,
+  `symphonia-format-riff` [decodificación de audio, `cardfile-media`]; y transitivas `cbindgen`
+  [build], `dwrote` [GPUI], `option-ext` [`directories`]).
   **GPL/AGPL/LGPL prohibidas.** `cargo deny check` corre en CI y bloquea el merge.
 - `cargo about generate` produce `THIRD_PARTY_LICENSES.html` en cada release y se incluye en los
   paquetes y en la pantalla "About → Licenses" de la app.
@@ -126,6 +143,10 @@ Cardfile/
 │  ├─ cardfile-editor/        # widget GPUI del editor WYSIWYG
 │  ├─ cardfile-ui/            # vistas GPUI: shell, lista, wizard, settings, diálogos
 │  ├─ cardfile-i18n/          # carga de locales (en.yml) + macro t!()
+│  ├─ cardfile-media/         # reproducción inline de audio/video (sin GPUI)
+│  ├─ cardfile-ai/            # cliente LLM bloqueante: presets, formatos de API, tool calling
+│  ├─ cardfile-mcp/           # servidor MCP Streamable HTTP (tiny_http), herramientas vía trait
+│  ├─ cardfile-agent/         # herramientas de la IA sobre la DB (compartidas por MCP y chat)
 │  └─ cardfile-updater/       # chequeo de versión + verificación minisign
 ├─ assets/                    # iconos, logos, temas JSON, keymaps, fuentes, diccionarios
 ├─ locales/en.yml
@@ -178,6 +199,9 @@ Preparada para sincronización futura: PK `UUIDv7` (texto/blob), `created_at`, `
 - Acceso a DB en hilo de fondo (`cx.background_executor()`), nunca en el hilo de UI.
 - Pragmas: `journal_mode=WAL`, `foreign_keys=ON`, `busy_timeout`.
 - Las tarjetas cifradas no se indexan en FTS (solo título si no es privada).
+- Migración `2026-10-15-000000_ai_sharing`: `users.kind/lock_hash/public_key/secret_key`,
+  `cards.updated_by`, `card_revisions.author_id`, tablas `card_shares`, `card_keys`, `api_keys`
+  y `activity`.
 
 ### 3.4 Autenticación y bloqueo
 
@@ -191,8 +215,10 @@ Preparada para sincronización futura: PK `UUIDv7` (texto/blob), `created_at`, `
 - **Niveles de bloqueo por tarjeta**:
   - *Solo lectura*: el editor queda inmutable; un clic en el candado (o atajo) desbloquea.
   - *Privada*: título enmascarado, contenido oculto hasta ingresar contraseña; re-bloqueo temporal.
-  - *Cifrada*: clave derivada con Argon2id (contraseña de tarjeta o maestra), XChaCha20-Poly1305,
-    claves en memoria con `zeroize`. Advertencia clara: contraseña perdida = datos perdidos.
+  - *Cifrada*: contenido con XChaCha20-Poly1305 bajo una clave aleatoria por tarjeta, envuelta
+    (X25519 + BLAKE3 + XChaCha20) para cada usuario con acceso; la clave secreta del usuario se
+    sella con Argon2id bajo su contraseña de bloqueo. Claves en memoria con `zeroize`.
+    Advertencia clara: contraseña perdida = datos perdidos.
 - Settings permite habilitar/deshabilitar cada nivel y elegir el nivel por defecto.
 
 ### 3.5 Editor WYSIWYG (`cardfile-editor`) — módulo de mayor riesgo
@@ -392,6 +418,12 @@ Cada fase termina con PR(s) mergeados, CI verde y criterios de aceptación cumpl
 | 7 — Corrector ortográfico | ✅ (diccionarios descargados en CI) | #3 |
 | 8 — Empaquetado y distribución | ✅ configurado; se valida con el primer tag | #3 |
 | 9 — Pulido y estable | 🔶 en curso | — |
+| 10 — IA, compartir y multimedia (`2.0.0-alpha.2`) | ✅ | — |
+
+Fase 10 (decisiones 33–41): bloqueo por usuario con claves por tarjeta, compartir tarjetas,
+usuario IA con auditoría, servidor MCP con API keys, asistente IA con presets, reproducción de
+audio/video, arrastre de adjuntos, CJK/RTL y 20 traducciones. Corregido el cierre inesperado al
+insertar un link (doble préstamo de la entidad del editor).
 
 Revisión de los PR #1–#4 (incluida en #4): imágenes y adjuntos de tarjetas cifradas sellados con
 una clave por blob guardada dentro del documento cifrado (`sealed:<id>:<clave>`); el updater solo

@@ -2,6 +2,7 @@
 
 use cardfile_core::{
     Card, CardId, CardRevision, EncryptedPayload, LockMode, RevisionId, Tag, TagId, User, UserId,
+    UserKind,
 };
 use diesel::prelude::*;
 
@@ -36,6 +37,10 @@ pub(crate) struct UserRow {
     pub updated_at: i64,
     pub deleted_at: Option<i64>,
     pub rev: i64,
+    pub kind: String,
+    pub lock_hash: Option<String>,
+    pub public_key: Option<String>,
+    pub secret_key: Option<String>,
 }
 
 impl TryFrom<UserRow> for User {
@@ -47,6 +52,10 @@ impl TryFrom<UserRow> for User {
             display_name: r.display_name,
             password_hash: r.password_hash,
             is_admin: r.is_admin,
+            kind: UserKind::parse(&r.kind),
+            lock_hash: r.lock_hash,
+            public_key: r.public_key,
+            secret_key: parse_payload(r.secret_key.as_deref())?,
             created_at: r.created_at,
             updated_at: r.updated_at,
         })
@@ -71,6 +80,7 @@ pub(crate) struct CardRow {
     pub updated_at: i64,
     pub deleted_at: Option<i64>,
     pub rev: i64,
+    pub updated_by: Option<String>,
 }
 
 impl CardRow {
@@ -91,6 +101,7 @@ impl CardRow {
             deleted_at: self.deleted_at,
             rev: self.rev,
             tags,
+            updated_by: self.updated_by.as_deref().and_then(|s| s.parse().ok()),
         })
     }
 }
@@ -105,6 +116,7 @@ pub(crate) struct RevisionRow {
     pub content: String,
     pub encrypted: Option<String>,
     pub created_at: i64,
+    pub author_id: Option<String>,
 }
 
 impl TryFrom<RevisionRow> for CardRevision {
@@ -117,6 +129,7 @@ impl TryFrom<RevisionRow> for CardRevision {
             content: r.content,
             encrypted: parse_payload(r.encrypted.as_deref())?,
             created_at: r.created_at,
+            author_id: r.author_id.as_deref().and_then(|s| s.parse().ok()),
         })
     }
 }

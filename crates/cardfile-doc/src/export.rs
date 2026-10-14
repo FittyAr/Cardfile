@@ -364,10 +364,16 @@ fn block_attrs(block: &Block) -> String {
     if block.indent > 0 && !block.kind.is_list() {
         let _ = write!(css, "margin-left:{}em;", block.indent as f32 * 1.5);
     }
-    if css.is_empty() {
-        String::new()
+    // Let the browser pick each paragraph's direction (Hebrew, Arabic, …).
+    let dir = if block.kind.is_textual() && crate::bidi::is_rtl_paragraph(&block.text.text) {
+        " dir=\"rtl\""
     } else {
-        format!(" style=\"{css}\"")
+        ""
+    };
+    if css.is_empty() {
+        dir.to_owned()
+    } else {
+        format!("{dir} style=\"{css}\"")
     }
 }
 

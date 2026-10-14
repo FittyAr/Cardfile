@@ -17,6 +17,9 @@ use gpui_kit::{
     div, img, px,
 };
 
+use cardfile_db::CredentialUpdate;
+use zeroize::Zeroizing;
+
 use crate::keymap::*;
 use crate::state::{AppState, TaskExt as _, run_db};
 use crate::widgets::{error, field, hint, section};
@@ -105,7 +108,15 @@ enum Tab_ {
     Editor,
     Security,
     Users,
+    Ai,
     Data,
+}
+
+/// Which password a change applies to.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Secret {
+    Login,
+    Lock,
 }
 
 pub struct SettingsView {
@@ -116,6 +127,11 @@ pub struct SettingsView {
     confirm_pw: Entity<InputState>,
     pw_error: Option<SharedString>,
     pw_busy: bool,
+    lock_current: Entity<InputState>,
+    lock_new: Entity<InputState>,
+    lock_confirm: Entity<InputState>,
+    lock_error: Option<SharedString>,
+    ai: Entity<crate::ai_settings::AiSettings>,
     users: Vec<User>,
     new_user: Entity<InputState>,
     new_user_pw: Entity<InputState>,
@@ -140,6 +156,11 @@ impl SettingsView {
             confirm_pw: masked(t("wizard.security.confirm"), window, cx),
             pw_error: None,
             pw_busy: false,
+            lock_current: masked(t("settings.security.current_lock_password"), window, cx),
+            lock_new: masked(t("settings.security.new_lock_password"), window, cx),
+            lock_confirm: masked(t("wizard.security.confirm"), window, cx),
+            lock_error: None,
+            ai: cx.new(|cx| crate::ai_settings::AiSettings::new(window, cx)),
             users: Vec::new(),
             new_user: cx.new(|cx| InputState::new(window, cx).placeholder(t("login.username"))),
             new_user_pw: masked(t("login.password"), window, cx),
@@ -503,12 +524,8 @@ impl SettingsView {
         let admin = Self::is_admin(cx);
         let view = cx.entity();
         let (v1, v2, v3) = (view.clone(), view.clone(), view.clone());
-        let has_password = AppState::lock_password_hash(cx).is_some();
-        let pw_title = if app.auth_mode == AuthMode::NoPassword {
-            t("settings.security.lock_password")
-        } else {
-            t("settings.security.change_password")
-        };
+        let has_lock = AppState::lock_password_hash(cx).is_some();
+        let separate_lock = AppState::session(cx).is_some_and(|s| s.user.lock_hash.is_some());
         let mut col = v_flex();
         if app.auth_mode != AuthMode::NoPassword {
             col = col.child(Self::row(
@@ -613,46 +630,92 @@ impl SettingsView {
                 );
             }
         }
+        if app.auth_mode != AuthMode::NoPassword {
+            col = col
+                .child(section(t("settings.security.change_password"), cx))
+                .child(hint(t("settings.security.password_hint"), cx))
+                .child(
+                    h_flex()
+                        .gap(px(8.))
+                        .pt(px(6.))
+                        .child(div().flex_1().child(Input::new(&self.current_pw)))
+                        .child(div().flex_1().child(Input::new(&self.new_pw)))
+                        .child(div().flex_1().child(Input::new(&self.confirm_pw))),
+                )
+                .child(error(self.pw_error.as_ref(), cx))
+                .child(
+                    h_flex().justify_end().child(
+                        Button::new("change-pw")
+                            .small()
+                            .primary()
+                            .loading(self.pw_busy)
+                            .label(t("settings.security.save_password"))
+                            .on_click(cx.listener(|v, _, window, cx| {
+                                v.change_secret(Secret::Login, window, cx)
+                            })),
+                    ),
+                );
+        }
+        let lock_hint = if app.auth_mode == AuthMode::NoPassword {
+            t("settings.security.lock_hint_nopw")
+        } else if separate_lock {
+            t("settings.security.lock_hint_separate")
+        } else {
+            t("settings.security.lock_hint_same")
+        };
         col = col
-            .child(section(pw_title, cx))
-            .child(hint(t("settings.security.password_hint"), cx))
+            .child(section(t("settings.security.lock_password"), cx))
+            .child(hint(lock_hint, cx))
             .child(
                 h_flex()
                     .gap(px(8.))
                     .pt(px(6.))
-                    .when(has_password, |d| {
-                        d.child(div().flex_1().child(Input::new(&self.current_pw)))
+                    .when(has_lock, |d| {
+                        d.child(div().flex_1().child(Input::new(&self.lock_current)))
                     })
-                    .child(div().flex_1().child(Input::new(&self.new_pw)))
-                    .child(div().flex_1().child(Input::new(&self.confirm_pw))),
+                    .child(div().flex_1().child(Input::new(&self.lock_new)))
+                    .child(div().flex_1().child(Input::new(&self.lock_confirm))),
             )
-            .child(error(self.pw_error.as_ref(), cx))
+            .child(error(self.lock_error.as_ref(), cx))
             .child(
                 h_flex().justify_end().child(
-                    Button::new("change-pw")
+                    Button::new("change-lock-pw")
                         .small()
                         .primary()
                         .loading(self.pw_busy)
-                        .label(t("settings.security.save_password"))
-                        .on_click(cx.listener(|v, _, window, cx| v.change_password(window, cx))),
+                        .label(t("settings.security.save_lock_password"))
+                        .on_click(cx.listener(|v, _, window, cx| {
+                            v.change_secret(Secret::Lock, window, cx)
+                        })),
                 ),
             );
         col.into_any_element()
     }
 
-    /// Change the account (or lock) password and re-encrypt the user's encrypted cards.
-    fn change_password(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        let current = self.current_pw.read(cx).value().to_string();
-        let new = self.new_pw.read(cx).value().to_string();
-        let confirm = self.confirm_pw.read(cx).value().to_string();
-        let old_hash = AppState::lock_password_hash(cx);
+    /// Change the sign-in password (`Secret::Login`) or the lock password that
+    /// protects private and encrypted cards (`Secret::Lock`).
+    ///
+    /// Only the user's secret key is re-sealed: card keys stay as they are, so cards
+    /// shared with others keep working. Legacy encrypted cards are upgraded on the way.
+    fn change_secret(&mut self, which: Secret, window: &mut Window, cx: &mut Context<Self>) {
+        let [cur, new, confirm] = match which {
+            Secret::Login => [&self.current_pw, &self.new_pw, &self.confirm_pw],
+            Secret::Lock => [&self.lock_current, &self.lock_new, &self.lock_confirm],
+        };
+        let current = Zeroizing::new(cur.read(cx).value().to_string());
+        let new = Zeroizing::new(new.read(cx).value().to_string());
+        let confirm = Zeroizing::new(confirm.read(cx).value().to_string());
+        let set_error = |this: &mut Self, msg: String| match which {
+            Secret::Login => this.pw_error = Some(msg.into()),
+            Secret::Lock => this.lock_error = Some(msg.into()),
+        };
         if new.chars().count() < 4 {
-            self.pw_error = Some(t("wizard.error.password_short").into());
+            set_error(self, t("wizard.error.password_short"));
             cx.notify();
             return;
         }
-        if new != confirm {
-            self.pw_error = Some(t("wizard.error.password_mismatch").into());
+        if *new != *confirm {
+            set_error(self, t("wizard.error.password_mismatch"));
             cx.notify();
             return;
         }
@@ -663,71 +726,68 @@ impl SettingsView {
         let db = AppState::db(cx);
         self.pw_busy = true;
         self.pw_error = None;
+        self.lock_error = None;
         cx.notify();
         let task = cx.background_spawn(async move {
-            // Argon2 is slow by design: verify here, off the UI thread.
-            if let Some(h) = &old_hash
-                && !cardfile_crypto::verify_password(h, &current)
-            {
-                return Err(anyhow::anyhow!(t("card.unlock.wrong")));
-            }
-            let hash = cardfile_crypto::hash_password(&new)?;
-            // Re-encrypt everything first; nothing is written unless all of it succeeds.
-            let mut rekey = cardfile_db::Rekey::default();
-            if old_hash.is_some() {
-                let filter = cardfile_core::CardFilter::default();
-                let mut all = db.list_cards(session.user.id, &filter)?;
-                all.extend(db.list_cards(
-                    session.user.id,
-                    &cardfile_core::CardFilter {
-                        deleted: true,
-                        ..filter
-                    },
-                )?);
-                for summary in all
-                    .into_iter()
-                    .filter(|c| c.lock_mode == LockMode::Encrypted)
-                {
-                    let card = db.card(summary.id)?;
-                    let Some(payload) = &card.encrypted else {
-                        continue;
-                    };
-                    let aad = card.id.to_string();
-                    let json = cardfile_crypto::decrypt(payload, &current, aad.as_bytes())?;
-                    let fresh = cardfile_crypto::encrypt(&json, &new, aad.as_bytes())?;
-                    rekey.cards.push((card.id, fresh));
-                    for rev in db.card_revisions(card.id)? {
-                        let Some(payload) = &rev.encrypted else {
-                            continue;
-                        };
-                        let json = cardfile_crypto::decrypt(payload, &current, aad.as_bytes())?;
-                        let fresh = cardfile_crypto::encrypt(&json, &new, aad.as_bytes())?;
-                        rekey.revisions.push((rev.id, fresh));
+            let user = db.user(session.user.id)?;
+            let new_hash = cardfile_crypto::hash_password(&new)?;
+            let mut update = match which {
+                Secret::Login => {
+                    // Argon2 is slow by design: verify here, off the UI thread.
+                    if let Some(h) = &user.password_hash
+                        && !cardfile_crypto::verify_password(h, &current)
+                    {
+                        return Err(anyhow::anyhow!(t("card.unlock.wrong")));
                     }
+                    // Locks follow the sign-in password unless a separate one is set.
+                    let mut update = if user.lock_hash.is_none() && user.password_hash.is_some() {
+                        crate::locks::relock_user(&db, &user, &current, &new)?
+                    } else {
+                        CredentialUpdate::default()
+                    };
+                    update.password_hash = Some(Some(new_hash));
+                    update
                 }
-            }
-            let slot = if auth == AuthMode::NoPassword {
-                cardfile_db::PasswordSlot::LockSetting
-            } else {
-                cardfile_db::PasswordSlot::Account
+                Secret::Lock => {
+                    let mut update = if user.effective_lock_hash().is_some() {
+                        crate::locks::relock_user(&db, &user, &current, &new)?
+                    } else {
+                        let (public, sealed, _) =
+                            cardfile_crypto::generate_user_keys(&new, &user.id.to_string())?;
+                        CredentialUpdate {
+                            keys: Some((public, sealed)),
+                            ..Default::default()
+                        }
+                    };
+                    // Typing the sign-in password as the lock password goes back to
+                    // one password for both.
+                    let same_as_login = auth != AuthMode::NoPassword
+                        && user
+                            .password_hash
+                            .as_deref()
+                            .is_some_and(|h| cardfile_crypto::verify_password(h, &new));
+                    update.lock_hash = Some((!same_as_login).then_some(new_hash));
+                    update
+                }
             };
-            db.change_password(session.user.id, slot, &hash, &rekey)?;
-            anyhow::Ok(hash)
+            update.rekey.card_keys.sort_by_key(|(c, _, _)| *c);
+            db.update_credentials(user.id, &update)?;
+            anyhow::Ok(db.user(user.id)?)
         });
         cx.spawn_in(window, async move |this, cx| {
             let result = task.await;
             let _ = this.update_in(cx, |this, window, cx| {
                 this.pw_busy = false;
                 match result {
-                    Ok(hash) => {
-                        if let Some(s) = AppState::get_mut(cx).session.as_mut() {
-                            if auth == AuthMode::NoPassword {
-                                s.settings.lock_password_hash = Some(hash);
-                            } else {
-                                s.user.password_hash = Some(hash);
+                    Ok(user) => {
+                        AppState::refresh_user(cx, user);
+                        let inputs = match which {
+                            Secret::Login => [&this.current_pw, &this.new_pw, &this.confirm_pw],
+                            Secret::Lock => {
+                                [&this.lock_current, &this.lock_new, &this.lock_confirm]
                             }
-                        }
-                        for input in [&this.current_pw, &this.new_pw, &this.confirm_pw] {
+                        };
+                        for input in inputs {
                             input.update(cx, |s, cx| s.set_value("", window, cx));
                         }
                         window.push_notification(
@@ -735,7 +795,10 @@ impl SettingsView {
                             cx,
                         );
                     }
-                    Err(e) => this.pw_error = Some(e.to_string().into()),
+                    Err(e) => match which {
+                        Secret::Login => this.pw_error = Some(e.to_string().into()),
+                        Secret::Lock => this.lock_error = Some(e.to_string().into()),
+                    },
                 }
                 cx.notify();
             });
@@ -759,8 +822,8 @@ impl SettingsView {
         let Some(session) = AppState::session(cx).cloned() else {
             return;
         };
-        // The lock password and the account password are the same secret, so moving
-        // between "no password" and password modes only moves the hash.
+        // Moving between "no password" and password modes moves the lock password
+        // into (or out of) the sign-in password; the secret key stays sealed under it.
         let hash = AppState::lock_password_hash(cx);
         if mode != AuthMode::NoPassword && hash.is_none() {
             self.auth_error = Some(t("settings.security.auth_needs_password").into());
@@ -771,7 +834,6 @@ impl SettingsView {
         let user_id = session.user.id;
         let to_none = mode == AuthMode::NoPassword;
         let from_none = current == AuthMode::NoPassword;
-        let hash2 = hash.clone();
         let multi_only = mode != AuthMode::MultiUser;
         let task = cx.background_spawn(async move {
             // `self.users` loads asynchronously and may still be empty: count accounts
@@ -780,28 +842,20 @@ impl SettingsView {
                 return Err(anyhow::anyhow!(t("settings.security.auth_one_user")));
             }
             if to_none {
-                let mut s = db.user_settings(user_id)?;
-                s.lock_password_hash = hash2.clone();
-                db.save_user_settings(user_id, &s)?;
+                db.set_lock_hash(user_id, hash.as_deref())?;
                 db.set_password_hash(user_id, None)?;
             } else if from_none {
-                db.set_password_hash(user_id, hash2.as_deref())?;
+                db.set_password_hash(user_id, hash.as_deref())?;
+                db.set_lock_hash(user_id, None)?;
             }
-            anyhow::Ok(())
+            anyhow::Ok(db.user(user_id)?)
         });
         cx.spawn_in(window, async move |this, cx| {
             let result = task.await;
             let _ = this.update_in(cx, |this, window, cx| {
                 match result {
-                    Ok(()) => {
-                        if let Some(s) = AppState::get_mut(cx).session.as_mut() {
-                            if to_none {
-                                s.settings.lock_password_hash = hash.clone();
-                                s.user.password_hash = None;
-                            } else if from_none {
-                                s.user.password_hash = hash.clone();
-                            }
-                        }
+                    Ok(user) => {
+                        AppState::refresh_user(cx, user);
                         this.set_app(cx, |a| a.auth_mode = mode);
                         window.push_notification(
                             Notification::success(t("settings.security.auth_changed")),
@@ -1083,6 +1137,7 @@ impl Render for SettingsView {
         if multi_admin {
             tabs.push((Tab_::Users, t("settings.tab.users")));
         }
+        tabs.push((Tab_::Ai, t("settings.tab.ai")));
         tabs.push((Tab_::Data, t("settings.tab.data")));
         let selected = tabs
             .iter()
@@ -1105,6 +1160,7 @@ impl Render for SettingsView {
             Tab_::Editor => self.editor(cx),
             Tab_::Security => self.security(cx),
             Tab_::Users => self.users(cx),
+            Tab_::Ai => self.ai.clone().into_any_element(),
             Tab_::Data => self.data(cx),
         };
         v_flex().gap(px(12.)).h(px(460.)).child(bar).child(

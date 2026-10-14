@@ -39,3 +39,4 @@ desktop.ini
 
 # Fetched by scripts/fetch-dictionaries.sh in CI
 /packaging/dictionaries/
+.claude/worktrees/

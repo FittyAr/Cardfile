@@ -42,6 +42,8 @@ enum Face {
     Italic,
     BoldItalic,
     Mono,
+    /// Covers scripts the main fonts lack (Chinese, Japanese, Korean, …).
+    Fallback,
 }
 
 struct LoadedFont {
@@ -69,6 +71,11 @@ fn candidates(face: Face) -> Vec<PathBuf> {
         "/usr/share/fonts/liberation",
         "/usr/share/fonts/truetype/noto",
         "/usr/share/fonts/noto",
+        "/usr/share/fonts/opentype/noto",
+        "/usr/share/fonts/noto-cjk",
+        "/usr/share/fonts/google-noto-cjk",
+        "/usr/share/fonts/truetype/wqy",
+        "/usr/share/fonts/wenquanyi/wqy-microhei",
         "/System/Library/Fonts/Supplemental",
     ] {
         dirs.push(PathBuf::from(d));
@@ -114,6 +121,17 @@ fn candidates(face: Face) -> Vec<PathBuf> {
             "NotoSansMono-Regular.ttf",
             "Courier New.ttf",
         ],
+        Face::Fallback => &[
+            "msyh.ttc",
+            "YuGothR.ttc",
+            "msgothic.ttc",
+            "malgun.ttf",
+            "NotoSansCJK-Regular.ttc",
+            "NotoSansCJKsc-Regular.otf",
+            "NotoSansSC-Regular.otf",
+            "wqy-microhei.ttc",
+            "DroidSansFallbackFull.ttf",
+        ],
     };
     names
         .iter()
@@ -150,7 +168,13 @@ impl Fonts {
     fn load() -> Result<Self, PdfError> {
         let regular = load(Face::Regular).ok_or(PdfError::NoFont)?;
         let mut faces = Vec::new();
-        for face in [Face::Bold, Face::Italic, Face::BoldItalic, Face::Mono] {
+        for face in [
+            Face::Bold,
+            Face::Italic,
+            Face::BoldItalic,
+            Face::Mono,
+            Face::Fallback,
+        ] {
             if let Some(f) = load(face) {
                 faces.push((face, f));
             }
@@ -170,6 +194,41 @@ impl Fonts {
             .or_else(|| self.faces.iter().find(|(f, _)| *f == fallback))
             .map(|(_, l)| l)
             .unwrap_or(&self.faces[0].1)
+    }
+
+    /// Whether `face` has a glyph for `ch` (shaping it does not give `.notdef`).
+    fn covers(&self, face: Face, ch: char) -> bool {
+        if ch.is_whitespace() || ch.is_control() {
+            return true;
+        }
+        let f = self.get(face);
+        let shaper = harfrust::ShaperFont::new(&f.shaper);
+        let mut buf = harfrust::Buffer::new();
+        let mut tmp = [0u8; 4];
+        buf.push_str(ch.encode_utf8(&mut tmp));
+        buf.guess_segment_properties();
+        harfrust::shape(&shaper, &mut buf, harfrust::ShapeOptions::new()).is_ok()
+            && buf.glyph_infos().iter().all(|g| g.glyph_id != 0)
+    }
+
+    /// Split `text` into runs drawn with `face`, or with the fallback font where
+    /// `face` has no glyphs.
+    fn runs(&self, face: Face, text: &str) -> Vec<(Face, String)> {
+        let has_fallback = self.faces.iter().any(|(f, _)| *f == Face::Fallback);
+        let mut out: Vec<(Face, String)> = Vec::new();
+        for ch in text.chars() {
+            let use_face =
+                if has_fallback && !self.covers(face, ch) && self.covers(Face::Fallback, ch) {
+                    Face::Fallback
+                } else {
+                    face
+                };
+            match out.last_mut() {
+                Some((f, s)) if *f == use_face => s.push(ch),
+                _ => out.push((use_face, ch.to_string())),
+            }
+        }
+        out
     }
 
     fn width(&self, face: Face, text: &str, size: f32) -> f32 {
@@ -292,35 +351,50 @@ fn layout_text(fonts: &Fonts, text: &RichText, bs: &BlockStyle, max: f32) -> Vec
                 words.push(&hard_line[start..]);
             }
             for word in words {
-                let w = fonts.width(face, word, bs.size);
+                let runs = fonts.runs(face, word);
+                let w: f32 = runs.iter().map(|(f, s)| fonts.width(*f, s, bs.size)).sum();
                 let line = lines.last_mut().unwrap_or_else(|| unreachable!());
                 if line.width + w > max && line.width > 0. && !word.trim().is_empty() {
                     lines.push(Line::default());
                 }
-                // A single word longer than the line is broken by characters.
+                // A single word longer than the line (or a run of CJK text, which has
+                // no spaces) is broken by characters.
                 if w > max {
-                    for ch in word.chars() {
-                        let s = ch.to_string();
-                        let cw = fonts.width(face, &s, bs.size);
-                        let line = lines.last_mut().unwrap_or_else(|| unreachable!());
-                        if line.width + cw > max && line.width > 0. {
-                            lines.push(Line::default());
+                    for (run_face, run) in &runs {
+                        let piece_base = Piece {
+                            face: *run_face,
+                            ..base.clone()
+                        };
+                        for ch in run.chars() {
+                            let s = ch.to_string();
+                            let cw = fonts.width(*run_face, &s, bs.size);
+                            let line = lines.last_mut().unwrap_or_else(|| unreachable!());
+                            if line.width + cw > max && line.width > 0. {
+                                lines.push(Line::default());
+                            }
+                            push_piece(
+                                lines.last_mut().unwrap_or_else(|| unreachable!()),
+                                &piece_base,
+                                &s,
+                                cw,
+                            );
                         }
-                        push_piece(
-                            lines.last_mut().unwrap_or_else(|| unreachable!()),
-                            &base,
-                            &s,
-                            cw,
-                        );
                     }
                     continue;
                 }
-                push_piece(
-                    lines.last_mut().unwrap_or_else(|| unreachable!()),
-                    &base,
-                    word,
-                    w,
-                );
+                for (run_face, run) in runs {
+                    let rw = fonts.width(run_face, &run, bs.size);
+                    let piece_base = Piece {
+                        face: run_face,
+                        ..base.clone()
+                    };
+                    push_piece(
+                        lines.last_mut().unwrap_or_else(|| unreachable!()),
+                        &piece_base,
+                        &run,
+                        rw,
+                    );
+                }
             }
         }
     }
@@ -455,6 +529,20 @@ impl<'a> Writer<'a> {
     fn lines(&mut self, lines: &[Line], x: f32, width: f32, align: Align, line_height: f32) {
         for line in lines {
             self.ensure(line_height);
+            // Right-to-left lines start at the right and run their pieces backwards;
+            // each piece is shaped right to left by the text renderer.
+            let text: String = line.pieces.iter().map(|p| p.text.as_str()).collect();
+            let rtl = crate::bidi::is_rtl_paragraph(&text);
+            let align = if rtl && align == Align::Left {
+                Align::Right
+            } else {
+                align
+            };
+            let pieces: Vec<&Piece> = if rtl {
+                line.pieces.iter().rev().collect()
+            } else {
+                line.pieces.iter().collect()
+            };
             let free = (width - line.width).max(0.);
             let mut cx = x + match align {
                 Align::Center => free / 2.,
@@ -464,7 +552,7 @@ impl<'a> Writer<'a> {
             let size = line.pieces.first().map_or(BODY, |p| p.size);
             let ascent = self.fonts.get(Face::Regular).ascent * size;
             let baseline = self.y + (line_height - size * 1.2) / 2. + ascent;
-            for piece in &line.pieces {
+            for piece in pieces {
                 if let Some(bg) = piece.background
                     && let Some(r) = Rect::from_xywh(cx, self.y + 1., piece.width, line_height - 2.)
                 {
@@ -878,6 +966,23 @@ mod tests {
     use super::*;
     use crate::export::NoBlobs;
     use crate::model::Table;
+
+    #[test]
+    fn renders_cjk_and_rtl_text() {
+        if Fonts::load().is_err() {
+            return;
+        }
+        let doc = Document {
+            version: crate::DOC_VERSION,
+            blocks: vec![
+                Block::paragraph("中文 日本語 한국어"),
+                Block::paragraph("שלום עולם"),
+                Block::paragraph("مرحبا بالعالم"),
+            ],
+        };
+        let pdf = to_pdf(&doc, "多语言", &crate::NoBlobs).unwrap();
+        assert!(pdf.starts_with(b"%PDF"));
+    }
 
     #[test]
     fn renders_a_pdf_when_fonts_exist() {

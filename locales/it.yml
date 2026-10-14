@@ -88,12 +88,21 @@ editor:
     replace: Sostituisci
     replace_one: Sostituisci
     replace_all: Sostituisci tutto
+  media:
+    open_external: "Apri nel lettore di sistema"
 
 common:
   back: Indietro
   next: Avanti
   ok: OK
   cancel: Annulla
+  apply: "Applica"
+  copied: "Copiato negli appunti"
+  copy: "Copia"
+  done: "Fatto"
+  edit: "Modifica"
+  remove: "Rimuovi"
+  save: "Salva"
 
 time:
   just_now: adesso
@@ -202,6 +211,7 @@ nav:
   favorites: Preferite
   recycle_bin: Cestino
   tags: ETICHETTE
+  shared: "Condivise con me"
 
 list:
   count: "%{n} schede"
@@ -243,6 +253,7 @@ card:
     hint: La scheda si blocca di nuovo dopo un periodo di inattività.
     wrong: Password errata.
     no_password: Nessuna password di blocco impostata. Impostane una in Impostazioni → Sicurezza.
+    no_key: "Questa scheda non è stata condivisa con la tua chiave. Chiedi al proprietario di condividerla di nuovo."
   protect:
     tooltip: Protezione della scheda
     unlock_first: Sblocca prima la scheda.
@@ -254,6 +265,7 @@ card:
     title: Elimina definitivamente
     body: Questa scheda verrà eliminata per sempre. L'operazione non può essere annullata.
     confirm: Elimina definitivamente
+  updated_by: "Modificata %{date} da %{name}"
 
 tags:
   new: Nuova etichetta…
@@ -267,6 +279,7 @@ history:
   title: Cronologia delle versioni
   restore: Ripristina questa versione
   empty: Ancora nessuna versione precedente.
+  by: "da %{name}"
 
 recycle:
   empty: Svuota cestino
@@ -329,6 +342,7 @@ settings:
     security: Sicurezza
     users: Utenti
     data: Dati
+    ai: "IA"
   general:
     theme: Tema
     language: Lingua
@@ -374,6 +388,12 @@ settings:
     new_password: Nuova password
     save_password: Salva password
     password_saved: Password modificata.
+    current_lock_password: "Password di blocco attuale"
+    new_lock_password: "Nuova password di blocco"
+    save_lock_password: "Salva password di blocco"
+    lock_hint_same: "Le schede private e crittografate si sbloccano con la tua password di accesso. Imposta qui una password diversa per usare una password di blocco separata; digitando di nuovo la password di accesso torni a una sola password."
+    lock_hint_separate: "Usi una password di blocco separata per le schede private e crittografate. Inserisci la tua password di accesso come nuova password di blocco per usarne una sola per entrambe."
+    lock_hint_nopw: "Questa password protegge le tue schede private e crittografate. Ogni utente ha la propria."
   users:
     admin: amministratore
     add: Aggiungi utente
@@ -387,3 +407,124 @@ settings:
     standard: Modalità standard.
     export: Esporta
     export_hint: Esporta tutte le schede che non sono private né crittografate.
+
+share:
+  button: "Condividi…"
+  title: "Condividi «%{title}»"
+  none: "Nessun accesso"
+  view: "Può visualizzare"
+  edit: "Può modificare"
+  no_users: "Non ci sono ancora altri utenti. Aggiungili in Impostazioni → Utenti."
+  no_keys: "%{name} non ha ancora configurato le proprie chiavi. Deve accedere (o sbloccare una scheda protetta) una volta."
+  unlock_encrypted: "Sblocca prima questa scheda crittografata per condividerla."
+  shared_by: "%{name} · %{permission}"
+  view_only: "Questa scheda è condivisa con te in sola visualizzazione."
+  owner_only: "Solo il proprietario della scheda può farlo."
+
+drag:
+  moved: "Spostato in «%{title}»"
+  copied: "Copiato in «%{title}»"
+  cannot_edit: "Non puoi modificare quella scheda."
+  protected: "Sblocca quella scheda prima di trascinarci dei file."
+
+activity:
+  create: "Creata"
+  edit: "Modificata"
+  delete: "Spostata nel cestino"
+  restore: "Ripristinata"
+  pin: "Fissata"
+  unpin: "Non più fissata"
+  favorite: "Aggiunta ai preferiti"
+  unfavorite: "Rimossa dai preferiti"
+  move: "Riordinata"
+  tag: "Etichette cambiate"
+  share: "Condivisa"
+  unshare: "Condivisione interrotta"
+  none: "Protezione rimossa"
+  read_only: "Resa di sola lettura"
+  private: "Resa privata"
+  encrypted: "Crittografata"
+
+ai:
+  providers: "Servizi di IA"
+  providers_hint: "Collega un'IA cloud o locale per avere l'assistente. I suoi pulsanti compaiono solo quando un servizio è configurato."
+  local: "locale"
+  cloud: "cloud"
+  provider:
+    add: "Aggiungi servizio di IA"
+    name: "Nome"
+    url: "URL di base"
+    model: "Modello"
+    key: "Chiave API"
+    key_optional: "Chiave API (facoltativa)"
+    kind: "Formato API"
+    api_version: "Versione API"
+    pick_model: "Scegli un modello"
+    get_key: "Ottieni una chiave API"
+    test: "Prova connessione"
+    test_ok: "Connesso. Il servizio ha risposto."
+    incomplete: "Compila nome, URL e modello."
+    not_ready: "Impostazioni mancanti (chiave API, URL o modello)"
+    active: "In uso"
+    use: "Usa"
+  chat:
+    title: "Assistente"
+    allow_private: "Consenti all'assistente di leggere e modificare le schede private"
+    encrypted_note: "Le schede crittografate non sono mai disponibili per nessuna IA."
+  mcp:
+    title: "Server MCP per client di IA"
+    hint: "Consente ad app di IA come Claude, Cursor o VS Code di usare Cardfile mentre è aperto, solo su questo computer (127.0.0.1). Ogni client richiede una chiave API; le modifiche che apporta vengono registrate come fatte da Cardfile AI per conto tuo."
+    enable: "Esegui il server MCP"
+    port: "Porta"
+    bad_port: "Usa un numero di porta compreso tra 1024 e 65535."
+    running: "In esecuzione su %{url}"
+    failed: "Impossibile avviare: %{error}"
+    stopped: "Arrestato"
+  keys:
+    title: "Chiavi API"
+    hint: "Una chiave consente a un client di IA di vedere e modificare ciò che puoi tu, come Cardfile AI. Puoi revocarla in qualsiasi momento."
+    name_placeholder: "Nome della chiave, ad es. Claude Desktop"
+    default_name: "Client di IA"
+    create: "Crea chiave"
+    read_only_option: "Sola lettura"
+    private_option: "Consenti schede private"
+    read_only: "sola lettura"
+    private: "schede private"
+    used: "usata %{when}"
+    never_used: "mai usata"
+    revoke: "Revoca"
+    revoke_body: "I client di IA che usano «%{name}» perderanno subito l'accesso."
+    copy_now: "Copia la chiave ora: non verrà più mostrata. Poi aggiungila al tuo client di IA:"
+  activity:
+    title: "Attività recente dell'IA"
+    empty: "L'IA non ha ancora modificato nulla."
+
+chat:
+  title: "Assistente"
+  toggle: "Assistente"
+  placeholder: "Chiedi all'assistente…"
+  send: "Invia"
+  stop: "Interrompi"
+  clear: "Cancella conversazione"
+  close: "Nascondi assistente"
+  thinking: "Al lavoro…"
+  no_provider: "Configura prima un servizio di IA in Impostazioni → IA."
+  empty: "Chiedi qualsiasi cosa sulle tue schede. Per esempio:"
+  example1: "«Trova i miei appunti sul viaggio e aggiungi l'etichetta Viaggi.»"
+  example2: "«Trasforma la scheda con gli appunti della riunione in una checklist ordinata.»"
+  example3: "«Ordina alfabeticamente le mie schede di ricette.»"
+  tool:
+    search_cards: "Ricerca eseguita"
+    get_card: "Scheda letta"
+    list_tags: "Etichette elencate"
+    recent_activity: "Attività recente controllata"
+    create_card: "Scheda creata"
+    update_card: "Scheda riscritta"
+    edit_card_text: "Testo modificato"
+    append_to_card: "Aggiunto alla scheda"
+    tag_card: "Etichettata"
+    create_tag: "Etichetta creata"
+    set_card_flags: "Indicatori cambiati"
+    reorder_cards: "Schede riordinate"
+    delete_card: "Spostata nel cestino"
+    restore_card: "Scheda ripristinata"

@@ -7,14 +7,17 @@ use gpui_kit::{AppContext as _, Entity, ParentElement as _, Styled as _, Window,
 use crate::editor::RichEditor;
 
 /// Ask for a link URL (and its text when nothing is selected).
-pub fn open_link_dialog(editor: Entity<RichEditor>, window: &mut Window, cx: &mut gpui_kit::App) {
-    let (current, needs_text) = {
-        let e = editor.read(cx);
-        (
-            e.link_at_caret().unwrap_or_default(),
-            e.selection_is_empty() && e.link_at_caret().is_none(),
-        )
-    };
+///
+/// `current` is the link under the caret and `needs_text` whether a display text must
+/// be asked for. The caller passes them in because it is usually an editor action
+/// handler, and reading the editor entity while it is being updated panics.
+pub fn open_link_dialog(
+    editor: Entity<RichEditor>,
+    current: String,
+    needs_text: bool,
+    window: &mut Window,
+    cx: &mut gpui_kit::App,
+) {
     let url = cx.new(|cx| {
         InputState::new(window, cx)
             .placeholder("https://…")

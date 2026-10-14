@@ -41,6 +41,9 @@ actions!(
         CheckForUpdates,
         About,
         EmptyRecycleBin,
+        ToggleAssistant,
+        ShareCard,
+        ShowShared,
     ]
 );
 
@@ -60,6 +63,7 @@ pub fn default_bindings() -> Vec<KeyBinding> {
         KeyBinding::new("ctrl-shift-h", ShowHistory, Some(WORKSPACE)),
         KeyBinding::new("ctrl-shift-s", ToggleFavorite, Some(WORKSPACE)),
         KeyBinding::new("ctrl-shift-t", TogglePin, Some(WORKSPACE)),
+        KeyBinding::new("ctrl-shift-a", ToggleAssistant, Some(WORKSPACE)),
     ]
 }
 

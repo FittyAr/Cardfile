@@ -1,7 +1,7 @@
 //! Create a demo database: `cargo run -p cardfile-db --example seed -- <data-dir>`.
 //! Then start Cardfile with `--data-dir <data-dir>`.
 
-use cardfile_core::{AppSettings, AuthMode, LockMode, NewCard, UserSettings};
+use cardfile_core::{Actor, AppSettings, AuthMode, LockMode, NewCard, UserSettings};
 use cardfile_db::Database;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -17,6 +17,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ..Default::default()
     })?;
     let user = db.create_user("demo", "Demo User", None, true)?;
+    let actor = Actor::user(user.id);
     let settings = UserSettings {
         theme: "Midnight".into(),
         ..Default::default()
@@ -51,6 +52,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             LockMode::None,
         ),
         (
+            "Languages · 语言 · 言語 · שפות · لغات",
+            "中文：你好，世界。
+
+日本語：こんにちは、世界。
+
+한국어: 안녕하세요
+
+עברית: שלום עולם 123
+
+العربية: مرحبا بالعالم 123",
+            &[ideas.id],
+            LockMode::None,
+        ),
+        (
             "Bank details",
             "Account numbers live here.",
             &[],
@@ -60,7 +75,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for (title, md, tags, lock) in cards {
         let doc = cardfile_doc::from_markdown(md);
         let card = db.create_card(
-            user.id,
+            &actor,
             NewCard {
                 title: (*title).into(),
                 content: doc.to_json(),
@@ -68,10 +83,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 lock_mode: *lock,
             },
         )?;
-        db.set_card_tags(card.id, tags)?;
+        db.set_card_tags(&actor, card.id, tags)?;
         if *title == "Quarterly plan" {
-            db.set_card_pinned(card.id, true)?;
-            db.set_card_favorite(card.id, true)?;
+            db.set_card_pinned(&actor, card.id, true)?;
+            db.set_card_favorite(&actor, card.id, true)?;
         }
     }
     println!("seeded {}", path.display());

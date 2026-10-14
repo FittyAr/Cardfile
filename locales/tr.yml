@@ -88,12 +88,21 @@ editor:
     replace: Değiştir
     replace_one: Değiştir
     replace_all: Tümünü değiştir
+  media:
+    open_external: "Sistem oynatıcısında aç"
 
 common:
   back: Geri
   next: İleri
   ok: Tamam
   cancel: İptal
+  apply: "Uygula"
+  copied: "Panoya kopyalandı"
+  copy: "Kopyala"
+  done: "Tamam"
+  edit: "Düzenle"
+  remove: "Kaldır"
+  save: "Kaydet"
 
 time:
   just_now: az önce
@@ -202,6 +211,7 @@ nav:
   favorites: Sık kullanılanlar
   recycle_bin: Geri dönüşüm kutusu
   tags: ETİKETLER
+  shared: "Benimle paylaşılanlar"
 
 list:
   count: "%{n} kart"
@@ -243,6 +253,7 @@ card:
     hint: Kart, bir süre işlem yapılmazsa yeniden kilitlenir.
     wrong: Parola hatalı.
     no_password: Kilit parolası belirlenmedi. Ayarlar → Güvenlik bölümünden belirleyin.
+    no_key: "Bu kart anahtarınızla paylaşılmadı. Sahibinden kartı yeniden paylaşmasını isteyin."
   protect:
     tooltip: Kart koruması
     unlock_first: Önce kartın kilidini açın.
@@ -254,6 +265,7 @@ card:
     title: Kalıcı olarak sil
     body: Bu kart sonsuza dek silinecek. Bu işlem geri alınamaz.
     confirm: Kalıcı olarak sil
+  updated_by: "%{date} tarihinde %{name} tarafından düzenlendi"
 
 tags:
   new: Yeni etiket…
@@ -267,6 +279,7 @@ history:
   title: Sürüm geçmişi
   restore: Bu sürümü geri yükle
   empty: Henüz önceki sürüm yok.
+  by: "%{name} tarafından"
 
 recycle:
   empty: Geri dönüşüm kutusunu boşalt
@@ -329,6 +342,7 @@ settings:
     security: Güvenlik
     users: Kullanıcılar
     data: Veriler
+    ai: "Yapay zekâ"
   general:
     theme: Tema
     language: Dil
@@ -374,6 +388,12 @@ settings:
     new_password: Yeni parola
     save_password: Parolayı kaydet
     password_saved: Parola değiştirildi.
+    current_lock_password: "Geçerli kilit parolası"
+    new_lock_password: "Yeni kilit parolası"
+    save_lock_password: "Kilit parolasını kaydet"
+    lock_hint_same: "Özel ve şifreli kartların kilidi oturum açma parolanızla açılır. Ayrı bir kilit parolası kullanmak için burada farklı bir parola belirleyin; oturum açma parolanızı yeniden girerseniz tek parolaya dönersiniz."
+    lock_hint_separate: "Özel ve şifreli kartlar için ayrı bir kilit parolası kullanıyorsunuz. Her ikisi için tek parola kullanmak istiyorsanız yeni kilit parolası olarak oturum açma parolanızı girin."
+    lock_hint_nopw: "Bu parola özel ve şifreli kartlarınızı korur. Her kullanıcının kendi parolası vardır."
   users:
     admin: yönetici
     add: Kullanıcı ekle
@@ -387,3 +407,124 @@ settings:
     standard: Standart mod.
     export: Dışa aktar
     export_hint: Özel veya şifreli olmayan tüm kartları dışa aktarır.
+
+share:
+  button: "Paylaş…"
+  title: "“%{title}” kartını paylaş"
+  none: "Erişim yok"
+  view: "Görüntüleyebilir"
+  edit: "Düzenleyebilir"
+  no_users: "Henüz başka kullanıcı yok. Ayarlar → Kullanıcılar bölümünden ekleyin."
+  no_keys: "%{name} henüz anahtarlarını ayarlamadı. Bir kez oturum açması (veya korumalı bir kartın kilidini açması) gerekiyor."
+  unlock_encrypted: "Paylaşmak için önce bu şifreli kartın kilidini açın."
+  shared_by: "%{name} · %{permission}"
+  view_only: "Bu kart sizinle yalnızca görüntüleme için paylaşıldı."
+  owner_only: "Bunu yalnızca kartın sahibi yapabilir."
+
+drag:
+  moved: "“%{title}” kartına taşındı"
+  copied: "“%{title}” kartına kopyalandı"
+  cannot_edit: "O kartı düzenleyemezsiniz."
+  protected: "Dosya bırakmadan önce o kartın kilidini açın."
+
+activity:
+  create: "Oluşturuldu"
+  edit: "Düzenlendi"
+  delete: "Geri dönüşüm kutusuna taşındı"
+  restore: "Geri yüklendi"
+  pin: "Sabitlendi"
+  unpin: "Sabitleme kaldırıldı"
+  favorite: "Sık kullanılanlara eklendi"
+  unfavorite: "Sık kullanılanlardan kaldırıldı"
+  move: "Yeniden sıralandı"
+  tag: "Etiketler değiştirildi"
+  share: "Paylaşıldı"
+  unshare: "Paylaşım durduruldu"
+  none: "Koruma kaldırıldı"
+  read_only: "Salt okunur yapıldı"
+  private: "Özel yapıldı"
+  encrypted: "Şifrelendi"
+
+ai:
+  providers: "Yapay zekâ hizmetleri"
+  providers_hint: "Asistanı kullanmak için bulut veya yerel bir yapay zekâ bağlayın. Düğmeleri yalnızca bir hizmet yapılandırıldığında görünür."
+  local: "yerel"
+  cloud: "bulut"
+  provider:
+    add: "Yapay zekâ hizmeti ekle"
+    name: "Ad"
+    url: "Temel URL"
+    model: "Model"
+    key: "API anahtarı"
+    key_optional: "API anahtarı (isteğe bağlı)"
+    kind: "API biçimi"
+    api_version: "API sürümü"
+    pick_model: "Bir model seçin"
+    get_key: "API anahtarı al"
+    test: "Bağlantıyı test et"
+    test_ok: "Bağlandı. Hizmet yanıt verdi."
+    incomplete: "Adı, URL'yi ve modeli doldurun."
+    not_ready: "Eksik ayarlar (API anahtarı, URL veya model)"
+    active: "Kullanımda"
+    use: "Kullan"
+  chat:
+    title: "Asistan"
+    allow_private: "Asistanın özel kartları okumasına ve düzenlemesine izin ver"
+    encrypted_note: "Şifreli kartlar hiçbir yapay zekâya açık değildir."
+  mcp:
+    title: "Yapay zekâ istemcileri için MCP sunucusu"
+    hint: "Claude, Cursor veya VS Code gibi yapay zekâ uygulamalarının, Cardfile açıkken yalnızca bu bilgisayarda (127.0.0.1) onu kullanmasını sağlar. Her istemcinin bir API anahtarı olmalıdır; yaptığı değişiklikler sizin adınıza Cardfile AI tarafından yapılmış olarak kaydedilir."
+    enable: "MCP sunucusunu çalıştır"
+    port: "Bağlantı noktası"
+    bad_port: "1024 ile 65535 arasında bir bağlantı noktası numarası kullanın."
+    running: "%{url} adresinde çalışıyor"
+    failed: "Başlatılamadı: %{error}"
+    stopped: "Durduruldu"
+  keys:
+    title: "API anahtarları"
+    hint: "Bir anahtar, yapay zekâ istemcisinin sizin görebildiğiniz ve değiştirebildiğiniz şeyleri Cardfile AI olarak görmesini ve değiştirmesini sağlar. İstediğiniz zaman iptal edebilirsiniz."
+    name_placeholder: "Anahtar adı, ör. Claude Desktop"
+    default_name: "Yapay zekâ istemcisi"
+    create: "Anahtar oluştur"
+    read_only_option: "Salt okunur"
+    private_option: "Özel kartlara izin ver"
+    read_only: "salt okunur"
+    private: "özel kartlar"
+    used: "%{when} kullanıldı"
+    never_used: "hiç kullanılmadı"
+    revoke: "İptal et"
+    revoke_body: "“%{name}” anahtarını kullanan yapay zekâ istemcileri erişimi hemen kaybedecek."
+    copy_now: "Anahtarı şimdi kopyalayın; bir daha gösterilmeyecek. Ardından yapay zekâ istemcinize ekleyin:"
+  activity:
+    title: "Son yapay zekâ etkinliği"
+    empty: "Yapay zekâ henüz hiçbir şeyi değiştirmedi."
+
+chat:
+  title: "Asistan"
+  toggle: "Asistan"
+  placeholder: "Asistana sorun…"
+  send: "Gönder"
+  stop: "Durdur"
+  clear: "Konuşmayı temizle"
+  close: "Asistanı gizle"
+  thinking: "Çalışıyor…"
+  no_provider: "Önce Ayarlar → Yapay zekâ bölümünden bir yapay zekâ hizmeti yapılandırın."
+  empty: "Kartlarınızla ilgili her şeyi sorabilirsiniz. Örneğin:"
+  example1: "“Gezi notlarımı bul ve onları Seyahat olarak etiketle.”"
+  example2: "“Toplantı notları kartını düzenli bir yapılacaklar listesine dönüştür.”"
+  example3: "“Tarif kartlarımı alfabetik olarak sırala.”"
+  tool:
+    search_cards: "Arandı"
+    get_card: "Kart okundu"
+    list_tags: "Etiketler listelendi"
+    recent_activity: "Son etkinlik kontrol edildi"
+    create_card: "Kart oluşturuldu"
+    update_card: "Kart yeniden yazıldı"
+    edit_card_text: "Metin düzenlendi"
+    append_to_card: "Karta eklendi"
+    tag_card: "Etiketlendi"
+    create_tag: "Etiket oluşturuldu"
+    set_card_flags: "İşaretler değiştirildi"
+    reorder_cards: "Kartlar yeniden sıralandı"
+    delete_card: "Geri dönüşüm kutusuna taşındı"
+    restore_card: "Kart geri yüklendi"

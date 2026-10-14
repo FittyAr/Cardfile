@@ -88,12 +88,21 @@ editor:
     replace: 置換
     replace_one: 置換
     replace_all: すべて置換
+  media:
+    open_external: "システムのプレーヤーで開く"
 
 common:
   back: 戻る
   next: 次へ
   ok: OK
   cancel: キャンセル
+  apply: "適用"
+  copied: "クリップボードにコピーしました"
+  copy: "コピー"
+  done: "完了"
+  edit: "編集"
+  remove: "削除"
+  save: "保存"
 
 time:
   just_now: たった今
@@ -202,6 +211,7 @@ nav:
   favorites: お気に入り
   recycle_bin: ごみ箱
   tags: タグ
+  shared: "共有アイテム"
 
 list:
   count: "%{n} 枚のカード"
@@ -243,6 +253,7 @@ card:
     hint: 一定時間操作がないと、カードは再びロックされます。
     wrong: パスワードが正しくありません。
     no_password: ロック用パスワードが設定されていません。設定 → セキュリティ で設定してください。
+    no_key: "このカードはあなたのキーで共有されていません。所有者に再度共有を依頼してください。"
   protect:
     tooltip: カードの保護
     unlock_first: 先にカードのロックを解除してください。
@@ -254,6 +265,7 @@ card:
     title: 完全に削除
     body: このカードは完全に削除されます。この操作は元に戻せません。
     confirm: 完全に削除
+  updated_by: "%{date} に %{name} さんが編集"
 
 tags:
   new: 新しいタグ…
@@ -267,6 +279,7 @@ history:
   title: バージョン履歴
   restore: このバージョンを復元
   empty: 以前のバージョンはまだありません。
+  by: "%{name} さん"
 
 recycle:
   empty: ごみ箱を空にする
@@ -329,6 +342,7 @@ settings:
     security: セキュリティ
     users: ユーザー
     data: データ
+    ai: "AI"
   general:
     theme: テーマ
     language: 言語
@@ -374,6 +388,12 @@ settings:
     new_password: 新しいパスワード
     save_password: パスワードを保存
     password_saved: パスワードを変更しました。
+    current_lock_password: "現在のロック用パスワード"
+    new_lock_password: "新しいロック用パスワード"
+    save_lock_password: "ロック用パスワードを保存"
+    lock_hint_same: "プライベートカードと暗号化カードはサインインパスワードでロック解除されます。ここで別のパスワードを設定すると、専用のロック用パスワードを使えます。サインインパスワードを再入力すると、1 つのパスワードに戻ります。"
+    lock_hint_separate: "プライベートカードと暗号化カードには専用のロック用パスワードを使っています。新しいロック用パスワードとしてサインインパスワードを入力すると、両方を 1 つのパスワードにできます。"
+    lock_hint_nopw: "このパスワードはプライベートカードと暗号化カードを保護します。ユーザーごとに個別のパスワードがあります。"
   users:
     admin: 管理者
     add: ユーザーを追加
@@ -387,3 +407,124 @@ settings:
     standard: 標準モードです。
     export: エクスポート
     export_hint: プライベートまたは暗号化されていないすべてのカードをエクスポートします。
+
+share:
+  button: "共有…"
+  title: "「%{title}」を共有"
+  none: "アクセス権なし"
+  view: "閲覧可"
+  edit: "編集可"
+  no_users: "他のユーザーはまだいません。「設定 → ユーザー」で追加してください。"
+  no_keys: "%{name} さんはまだキーを設定していません。一度サインイン（または保護されたカードのロックを解除）する必要があります。"
+  unlock_encrypted: "共有するには、まずこの暗号化カードのロックを解除してください。"
+  shared_by: "%{name} · %{permission}"
+  view_only: "このカードは閲覧のみで共有されています。"
+  owner_only: "この操作はカードの所有者のみが行えます。"
+
+drag:
+  moved: "「%{title}」に移動しました"
+  copied: "「%{title}」にコピーしました"
+  cannot_edit: "そのカードは編集できません。"
+  protected: "ファイルをドロップする前に、そのカードのロックを解除してください。"
+
+activity:
+  create: "作成"
+  edit: "編集"
+  delete: "ごみ箱に移動"
+  restore: "復元"
+  pin: "固定"
+  unpin: "固定を解除"
+  favorite: "お気に入りに追加"
+  unfavorite: "お気に入りから削除"
+  move: "並べ替え"
+  tag: "タグを変更"
+  share: "共有"
+  unshare: "共有を停止"
+  none: "保護を解除"
+  read_only: "読み取り専用に設定"
+  private: "プライベートに設定"
+  encrypted: "暗号化"
+
+ai:
+  providers: "AI サービス"
+  providers_hint: "クラウドまたはローカルの AI を接続するとアシスタントを使えます。ボタンはサービスを設定した後にのみ表示されます。"
+  local: "ローカル"
+  cloud: "クラウド"
+  provider:
+    add: "AI サービスを追加"
+    name: "名前"
+    url: "ベース URL"
+    model: "モデル"
+    key: "API キー"
+    key_optional: "API キー（任意）"
+    kind: "API 形式"
+    api_version: "API バージョン"
+    pick_model: "モデルを選択"
+    get_key: "API キーを取得"
+    test: "接続をテスト"
+    test_ok: "接続しました。サービスが応答しました。"
+    incomplete: "名前、URL、モデルを入力してください。"
+    not_ready: "設定が不足しています（API キー、URL、またはモデル）"
+    active: "使用中"
+    use: "使用"
+  chat:
+    title: "アシスタント"
+    allow_private: "アシスタントにプライベートカードの閲覧と編集を許可"
+    encrypted_note: "暗号化カードはどの AI にも提供されません。"
+  mcp:
+    title: "AI クライアント用 MCP サーバー"
+    hint: "Claude、Cursor、VS Code などの AI アプリが、Cardfile を開いている間このコンピューター上でのみ（127.0.0.1）Cardfile を利用できるようにします。クライアントごとに API キーが必要です。行われた変更は、あなたに代わって Cardfile AI が行ったものとして記録されます。"
+    enable: "MCP サーバーを実行"
+    port: "ポート"
+    bad_port: "1024 から 65535 までのポート番号を使用してください。"
+    running: "%{url} で実行中"
+    failed: "起動できませんでした: %{error}"
+    stopped: "停止中"
+  keys:
+    title: "API キー"
+    hint: "キーを使うと、AI クライアントが Cardfile AI として、あなたがアクセスできる内容を閲覧・変更できます。いつでも取り消せます。"
+    name_placeholder: "キー名（例: Claude Desktop）"
+    default_name: "AI クライアント"
+    create: "キーを作成"
+    read_only_option: "読み取り専用"
+    private_option: "プライベートカードを許可"
+    read_only: "読み取り専用"
+    private: "プライベートカード"
+    used: "%{when}に使用"
+    never_used: "未使用"
+    revoke: "取り消す"
+    revoke_body: "「%{name}」を使用している AI クライアントは直ちにアクセスできなくなります。"
+    copy_now: "今すぐキーをコピーしてください。再表示はされません。その後、AI クライアントに追加します:"
+  activity:
+    title: "最近の AI アクティビティ"
+    empty: "AI はまだ何も変更していません。"
+
+chat:
+  title: "アシスタント"
+  toggle: "アシスタント"
+  placeholder: "アシスタントに質問…"
+  send: "送信"
+  stop: "停止"
+  clear: "会話を消去"
+  close: "アシスタントを隠す"
+  thinking: "処理中…"
+  no_provider: "まず「設定 → AI」で AI サービスを設定してください。"
+  empty: "カードについて何でも聞いてください。例:"
+  example1: "「旅行に関するメモを探して、『旅行』タグを付けて。」"
+  example2: "「会議メモのカードを見やすいチェックリストにして。」"
+  example3: "「レシピのカードを五十音順に並べ替えて。」"
+  tool:
+    search_cards: "検索しました"
+    get_card: "カードを読み込みました"
+    list_tags: "タグを一覧表示しました"
+    recent_activity: "最近のアクティビティを確認しました"
+    create_card: "カードを作成しました"
+    update_card: "カードを書き直しました"
+    edit_card_text: "テキストを編集しました"
+    append_to_card: "カードに追記しました"
+    tag_card: "タグを付けました"
+    create_tag: "タグを作成しました"
+    set_card_flags: "フラグを変更しました"
+    reorder_cards: "カードを並べ替えました"
+    delete_card: "ごみ箱に移動しました"
+    restore_card: "カードを復元しました"

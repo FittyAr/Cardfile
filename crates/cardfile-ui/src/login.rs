@@ -11,6 +11,8 @@ use gpui_kit::{
     ParentElement as _, Render, SharedString, Styled as _, Subscription, Window, div, img, px,
 };
 
+use zeroize::Zeroizing;
+
 use crate::state::{AppState, Session};
 use crate::widgets::{error, field};
 
@@ -116,6 +118,7 @@ impl LoginView {
         self.error = None;
         cx.notify();
         let settings_db = db.clone();
+        let lock_password = Zeroizing::new(password.clone());
         let task = cx.background_spawn(async move {
             let authenticate = move || -> anyhow::Result<Option<User>> {
                 let user = match (mode, locked) {
@@ -150,9 +153,18 @@ impl LoginView {
                 Ok(if ok { user } else { None })
             };
             // Settings are read here too, so the UI thread never touches the database.
-            let Some(user) = authenticate()? else {
+            let Some(mut user) = authenticate()? else {
                 return anyhow::Ok(None);
             };
+            // When locks use the sign-in password, this is the moment to give users
+            // from older versions a key pair (needed to receive shared encrypted cards).
+            if user.lock_hash.is_none()
+                && user.password_hash.is_some()
+                && let Ok(Some(updated)) =
+                    crate::locks::ensure_keys(&settings_db, &user, &lock_password)
+            {
+                user = updated;
+            }
             let settings = settings_db.user_settings(user.id).unwrap_or_default();
             Ok(Some(Session { user, settings }))
         });

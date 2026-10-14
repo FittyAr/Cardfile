@@ -90,7 +90,6 @@ impl CardfileApp {
     }
 
     fn show_login(&mut self, locked: Option<User>, window: &mut Window, cx: &mut Context<Self>) {
-        AppState::get_mut(cx).card_password = None;
         let login = cx.new(|cx| LoginView::new(locked, window, cx));
         self._screen_sub = Some(cx.subscribe_in(
             &login,
@@ -107,6 +106,8 @@ impl CardfileApp {
         crate::themes::apply(&session.settings.theme, cx);
         cardfile_i18n::set_locale(&session.settings.language);
         AppState::get_mut(cx).session = Some(session);
+        // The MCP server is installation-wide; start it once the database is open.
+        crate::mcp_host::McpServer::sync(cx);
         let ws = cx.new(|cx| Workspace::new(window, cx));
         self._screen_sub = Some(cx.subscribe_in(
             &ws,

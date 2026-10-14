@@ -1,0 +1,10 @@
+DROP TABLE IF EXISTS activity;
+DROP TABLE IF EXISTS api_keys;
+DROP TABLE IF EXISTS card_keys;
+DROP TABLE IF EXISTS card_shares;
+ALTER TABLE card_revisions DROP COLUMN author_id;
+ALTER TABLE cards DROP COLUMN updated_by;
+ALTER TABLE users DROP COLUMN secret_key;
+ALTER TABLE users DROP COLUMN public_key;
+ALTER TABLE users DROP COLUMN lock_hash;
+ALTER TABLE users DROP COLUMN kind;

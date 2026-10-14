@@ -71,6 +71,12 @@ Escribí `/` en una línea vacía para abrir un menú de bloques: títulos, list
   - `Tab` pasa a la celda siguiente; en la última celda agrega una fila.
   - Con clic derecho sobre la tabla podés agregar o quitar filas y columnas.
 - Con clic derecho sobre una imagen podés achicarla, agrandarla o ajustarla al ancho.
+- **Arrastrá una imagen o un adjunto** para moverlo dentro de la tarjeta. Soltalo sobre otra tarjeta de la lista para moverlo ahí; mantené `Ctrl` (o `Alt`) al soltar para copiarlo.
+- **El audio y el video se reproducen en la tarjeta.** El audio MP3, WAV, OGG, FLAC y AAC/M4A y el video MP4 (H.264) tienen un reproductor con play/pausa, barra de avance y silencio. Los demás formatos se abren con el reproductor del sistema.
+
+### Otros idiomas y escrituras
+
+El chino, el japonés y el coreano funcionan en todos lados, también al exportar a PDF (Cardfile usa una fuente CJK instalada en el sistema). El texto de derecha a izquierda (hebreo, árabe, persa) se muestra en el orden correcto y esos párrafos se alinean a la derecha. Límite conocido: los cuadros de texto de una línea (como el título de la tarjeta mientras lo editás) todavía muestran ese texto de izquierda a derecha.
 
 ### Ortografía
 
@@ -97,7 +103,33 @@ Las tarjetas privadas y cifradas se vuelven a bloquear después de un rato sin a
 
 En el modo *Sin contraseña*, configurá una **contraseña de bloqueo** en Configuración → Seguridad antes de usar tarjetas privadas o cifradas.
 
+**Cada usuario tiene su propia contraseña de bloqueo.** Por defecto es tu contraseña de inicio de sesión; en Configuración → Seguridad podés poner otra distinta (si escribís tu contraseña de inicio como nueva contraseña de bloqueo, volvés a usar una sola). Cambiarla no vuelve a cifrar tus tarjetas: cada tarjeta cifrada tiene su propia clave aleatoria, protegida por separado para cada persona que puede abrirla.
+
 Con contraseña o con varios usuarios, Cardfile también puede **bloquearse solo** después de un tiempo de inactividad. Para bloquearlo en el momento, usá `Ctrl+Shift+L`.
+
+## Compartir tarjetas
+
+Con varios usuarios (modo multiusuario), abrí el menú **⋯** de una tarjeta → *Compartir…* (o el botón de personas) y elegí para cada usuario **Sin acceso**, **Puede ver** o **Puede editar**. Las tarjetas compartidas aparecen en **Compartidas conmigo** en la barra lateral. Solo el dueño puede borrar, proteger, etiquetar o compartir una tarjeta. Quienes pueden editar ven en la barra de estado y en el historial quién hizo el último cambio.
+
+Para compartir una tarjeta **cifrada**, desbloqueala primero. La otra persona la abre con *su propia* contraseña de bloqueo; necesita haber iniciado sesión (o desbloqueado una tarjeta protegida) al menos una vez para que Cardfile cree sus claves.
+
+## Asistente de IA
+
+Cardfile puede trabajar con una IA en la nube o en tu computadora. No aparece nada relacionado con IA hasta que la configures.
+
+1. Abrí **Configuración → IA → Agregar servicio de IA** y elegí un preset: OpenAI, Anthropic (Claude), Google Gemini, Mistral, Groq, DeepSeek, xAI, OpenRouter, Together AI, Perplexity, Azure OpenAI, **Ollama** o **LM Studio** (locales), o *Personalizado* para cualquier servicio compatible.
+2. Ingresá tu API key (los servicios locales no la necesitan), elegí un modelo y tocá **Probar conexión**.
+3. El **botón del asistente** (ícono de robot arriba de la lista, o `Ctrl+Shift+A`) abre el panel de chat.
+
+Pedile cosas con tus palabras: buscar tarjetas, reescribir o dar formato a una tarjeta, convertir notas en una lista de tareas, poner etiquetas, marcar favoritas, reordenar, mandar tarjetas a la papelera… Cada cambio queda registrado como hecho por **Cardfile AI** en tu nombre, la versión anterior queda en el historial y lo borrado va a la papelera, así que siempre podés deshacer. El asistente nunca ve tarjetas cifradas; las privadas solo si lo permitís en Configuración → IA.
+
+## Usar Cardfile desde otras apps de IA (MCP)
+
+Cardfile incluye un servidor MCP para que apps como Claude Desktop, Claude Code, Cursor o VS Code usen tus tarjetas mientras Cardfile está abierto.
+
+1. En **Configuración → IA**, activá **Ejecutar el servidor MCP** (escucha solo en `127.0.0.1`; puerto por defecto 7337).
+2. En **API keys**, creá una clave. Elegí *Solo lectura* o *Permitir tarjetas privadas* si querés. Copiala: se muestra una sola vez, junto con la configuración lista para pegar en cada app.
+3. La app de IA ve exactamente lo que ves vos. Sus cambios quedan registrados como hechos por Cardfile AI a través de esa clave. **Revocá** una clave para cortar el acceso al instante. La lista muestra cuándo se usó cada clave por última vez y *Actividad reciente de la IA* muestra qué cambió.
 
 ## Exportar y respaldar
 

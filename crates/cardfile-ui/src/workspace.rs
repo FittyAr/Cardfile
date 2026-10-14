@@ -3,7 +3,8 @@
 use std::time::Duration;
 
 use cardfile_core::{
-    AuthMode, CardFilter, CardId, CardSummary, LockMode, SortOrder, Tag, TagId, mask_title,
+    AuthMode, CardAccess, CardFilter, CardId, CardSummary, LockMode, SortOrder, Tag, TagId,
+    mask_title,
 };
 use cardfile_i18n::{t, t_args};
 use gpui_kit::assets::IconName;
@@ -20,6 +21,7 @@ use gpui_kit::{
 };
 
 use crate::card_pane::{CardPane, CardPaneEvent};
+use crate::chat::{ChatEvent, ChatPanel};
 use crate::keymap::*;
 use crate::state::{AppState, TaskExt as _, run_db};
 use crate::widgets::relative_time;
@@ -34,6 +36,8 @@ pub enum View {
     All,
     Favorites,
     Tag(TagId),
+    /// Cards other users share with me.
+    Shared,
     RecycleBin,
 }
 
@@ -71,7 +75,13 @@ pub struct Workspace {
     list_scroll: UniformListScrollHandle,
     load_task: Option<Task<()>>,
     search_task: Option<Task<()>>,
-    counts: (usize, usize, usize),
+    /// All, favorites, recycle bin, shared with me.
+    counts: (usize, usize, usize, usize),
+    /// The assistant panel, created the first time it is shown.
+    chat: Option<Entity<ChatPanel>>,
+    /// Last [`crate::mcp_host::DATA_VERSION`] seen, to notice changes made by AI clients.
+    data_version: u64,
+    _watch: Option<Task<()>>,
     _subs: Vec<Subscription>,
 }
 
@@ -133,11 +143,89 @@ impl Workspace {
             list_scroll: UniformListScrollHandle::new(),
             load_task: None,
             search_task: None,
-            counts: (0, 0, 0),
+            counts: (0, 0, 0, 0),
+            chat: None,
+            data_version: crate::mcp_host::DATA_VERSION.load(std::sync::atomic::Ordering::Relaxed),
+            _watch: None,
             _subs: subs,
         };
+        ws._watch = Some(cx.spawn_in(window, async move |this, cx| {
+            loop {
+                cx.background_executor()
+                    .timer(Duration::from_millis(1500))
+                    .await;
+                let now = crate::mcp_host::DATA_VERSION.load(std::sync::atomic::Ordering::Relaxed);
+                let alive = this.update_in(cx, |this, window, cx| {
+                    if this.data_version != now {
+                        this.data_version = now;
+                        this.data_changed(window, cx);
+                    }
+                });
+                if alive.is_err() {
+                    break;
+                }
+            }
+        }));
         ws.reload(window, cx);
         ws
+    }
+
+    fn ensure_chat(&mut self, window: &mut Window, cx: &mut Context<Self>) -> Entity<ChatPanel> {
+        if let Some(chat) = &self.chat {
+            return chat.clone();
+        }
+        let chat = cx.new(|cx| ChatPanel::new(window, cx));
+        self._subs.push(
+            cx.subscribe_in(
+                &chat,
+                window,
+                |this, _, ev: &ChatEvent, window, cx| match ev {
+                    ChatEvent::BeforeRun => this.pane.update(cx, |p, cx| p.flush_save(cx)),
+                    ChatEvent::DataChanged(card) => {
+                        this.data_changed(window, cx);
+                        let open = this.pane.read(cx).card_id();
+                        if let Some(id) = *card
+                            && open != Some(id)
+                            && !this.pane.read(cx).has_unsaved_changes(cx)
+                        {
+                            this.reveal(id, window, cx);
+                        }
+                    }
+                    ChatEvent::Close => {
+                        AppState::update_user_settings(cx, |s| s.ai_panel_open = false);
+                        cx.notify();
+                    }
+                },
+            ),
+        );
+        self.chat = Some(chat.clone());
+        chat
+    }
+
+    fn toggle_assistant(
+        &mut self,
+        _: &ToggleAssistant,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if crate::ai_settings::active_provider(cx).is_none() {
+            return;
+        }
+        let open = !AppState::user_settings(cx).ai_panel_open || self.chat.is_none();
+        AppState::update_user_settings(cx, |s| s.ai_panel_open = open);
+        if open {
+            let chat = self.ensure_chat(window, cx);
+            chat.update(cx, |c, cx| c.focus(window, cx));
+        }
+        cx.notify();
+    }
+
+    fn share_card(&mut self, _: &ShareCard, window: &mut Window, cx: &mut Context<Self>) {
+        self.pane.update(cx, |p, cx| p.share(window, cx));
+    }
+
+    fn show_shared(&mut self, _: &ShowShared, window: &mut Window, cx: &mut Context<Self>) {
+        self.set_view(View::Shared, window, cx);
     }
 
     fn owner(cx: &App) -> Option<cardfile_core::UserId> {
@@ -155,6 +243,7 @@ impl Workspace {
             },
             favorites_only: self.view == View::Favorites,
             deleted: self.view == View::RecycleBin,
+            shared_with_me: self.view == View::Shared,
             sort: s.sort,
         }
     }
@@ -178,7 +267,16 @@ impl Workspace {
                     },
                 )?
                 .len();
-            Ok((cards, tags, (all.len(), favorites, deleted)))
+            let shared = db
+                .list_cards(
+                    owner,
+                    &CardFilter {
+                        shared_with_me: true,
+                        ..Default::default()
+                    },
+                )?
+                .len();
+            Ok((cards, tags, (all.len(), favorites, deleted, shared)))
         });
         self.load_task = Some(cx.spawn_in(window, async move |this, cx| {
             let Ok((cards, tags, counts)) = task.await else {
@@ -202,13 +300,15 @@ impl Workspace {
         if let Some(ix) = self.cards.iter().position(|c| c.id == id) {
             self.list_scroll.scroll_to_item(ix, ScrollStrategy::Center);
         }
+        let Some(me) = Self::owner(cx) else { return };
         let db = AppState::db(cx);
-        let task = run_db(cx, move |_| db.card(id));
+        let task = run_db(cx, move |_| crate::state::load_card(&db, id, me));
         cx.spawn_in(window, async move |this, cx| {
-            if let Ok(card) = task.await {
+            if let Ok((card, access)) = task.await {
                 let _ = this.update_in(cx, |this, window, cx| {
                     if this.selected == Some(card.id) {
-                        this.pane.update(cx, |p, cx| p.open(Some(card), window, cx));
+                        this.pane
+                            .update(cx, |p, cx| p.open(Some(card), access, window, cx));
                     }
                 });
             }
@@ -217,14 +317,57 @@ impl Workspace {
         cx.notify();
     }
 
+    /// Something changed the data outside this view (the AI assistant, the MCP
+    /// server): reload the list and refresh the open card if nobody is editing it.
+    pub fn data_changed(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.reload(window, cx);
+        let Some(me) = Self::owner(cx) else { return };
+        let Some(id) = self.pane.read(cx).card_id() else {
+            return;
+        };
+        let db = AppState::db(cx);
+        let task = run_db(cx, move |_| crate::state::load_card(&db, id, me));
+        cx.spawn_in(window, async move |this, cx| match task.await {
+            Ok((card, access)) => {
+                let _ = this.update_in(cx, |this, window, cx| {
+                    let deleted_elsewhere = card.is_deleted()
+                        && !this.pane.read(cx).card().is_some_and(|c| c.is_deleted());
+                    this.pane.update(cx, |p, cx| {
+                        if deleted_elsewhere {
+                            p.open(None, CardAccess::Owner, window, cx);
+                        } else {
+                            p.refresh_from(card, access, window, cx);
+                        }
+                    });
+                });
+            }
+            Err(_) => {
+                // Purged or unshared meanwhile.
+                let _ = this.update_in(cx, |this, window, cx| {
+                    this.pane
+                        .update(cx, |p, cx| p.open(None, CardAccess::Owner, window, cx));
+                });
+            }
+        })
+        .detach();
+    }
+
+    /// Open a card by id (used by the assistant to show what it changed).
+    pub fn reveal(&mut self, id: CardId, window: &mut Window, cx: &mut Context<Self>) {
+        self.selected = None;
+        self.select(id, window, cx);
+    }
+
     fn set_view(&mut self, view: View, window: &mut Window, cx: &mut Context<Self>) {
         self.view = view;
         self.reload(window, cx);
     }
 
     fn new_card(&mut self, _: &NewCard, window: &mut Window, cx: &mut Context<Self>) {
-        let Some(owner) = Self::owner(cx) else { return };
-        if self.view == View::RecycleBin {
+        let Some(actor) = AppState::actor(cx) else {
+            return;
+        };
+        if matches!(self.view, View::RecycleBin | View::Shared) {
             self.view = View::All;
         }
         let settings = AppState::user_settings(cx);
@@ -243,7 +386,7 @@ impl Workspace {
         let db = AppState::db(cx);
         let task = run_db(cx, move |_| {
             let card = db.create_card(
-                owner,
+                &actor,
                 cardfile_core::NewCard {
                     title: String::new(),
                     lock_mode: lock,
@@ -251,10 +394,10 @@ impl Workspace {
                 },
             )?;
             if let Some(tag) = tag {
-                db.set_card_tags(card.id, &[tag])?;
+                db.set_card_tags(&actor, card.id, &[tag])?;
             }
             if favorite {
-                db.set_card_favorite(card.id, true)?;
+                db.set_card_favorite(&actor, card.id, true)?;
             }
             db.card(card.id)
         });
@@ -263,13 +406,109 @@ impl Workspace {
                 let _ = this.update_in(cx, |this, window, cx| {
                     this.selected = Some(card.id);
                     this.pane.update(cx, |p, cx| {
-                        p.open(Some(card), window, cx);
+                        p.open(Some(card), CardAccess::Owner, window, cx);
                     });
                     // A brand-new card is open for editing even if read-only by default.
                     this.reload(window, cx);
                     window.focus_next(cx);
                 });
             }
+        })
+        .detach();
+    }
+
+    /// An image or attachment dragged from the open card was dropped on another card:
+    /// add it there, and remove it from the open card unless Ctrl/Alt was held.
+    fn drop_block_on_card(
+        &mut self,
+        dragged: &cardfile_editor::DraggedBlock,
+        target: CardId,
+        copy: bool,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let pane = self.pane.read(cx);
+        if pane.card_id() == Some(target) || pane.editor().entity_id() != dragged.source {
+            return;
+        }
+        let Some(actor) = AppState::actor(cx) else {
+            return;
+        };
+        self.pane.update(cx, |p, cx| p.flush_save(cx));
+        let db = AppState::db(cx);
+        let blobs = crate::state::blob_store(cx);
+        let keep = AppState::user_settings(cx).max_revisions;
+        let block = dragged.block.clone();
+        let task = cx.background_spawn(async move {
+            let (card, access) = crate::state::load_card(&db, target, actor.user)?;
+            if !access.can_edit() || card.is_deleted() {
+                return Err(anyhow::anyhow!(t("drag.cannot_edit")));
+            }
+            if card.lock_mode.hides_content() {
+                return Err(anyhow::anyhow!(t("drag.protected")));
+            }
+            // Sealed blobs belong to an encrypted card; store a plain copy for this one.
+            let mut block = block;
+            let mut doc = cardfile_doc::Document {
+                version: cardfile_doc::DOC_VERSION,
+                blocks: vec![block.clone()],
+            };
+            doc.map_blob_refs(|r| {
+                if cardfile_core::BlobRef::parse(r).key.is_none() {
+                    return anyhow::Ok(None);
+                }
+                let Some((mime, data)) = blobs.read(r)? else {
+                    return Ok(None);
+                };
+                let name = cardfile_doc::blob_file_name(r).to_owned();
+                Ok(Some(db.put_blob(&data, &mime, Some(&name))?.id.0))
+            })?;
+            if let Some(b) = doc.blocks.pop() {
+                block = b;
+            }
+            let mut target_doc = cardfile_doc::Document::from_json(&card.content)?;
+            if target_doc.blocks.len() == 1
+                && target_doc.blocks[0].kind.is_textual()
+                && target_doc.blocks[0].text.is_empty()
+            {
+                target_doc.blocks.clear();
+            }
+            target_doc.blocks.push(block);
+            target_doc.normalize();
+            let update = cardfile_db::ContentUpdate {
+                title: card.title.clone(),
+                content: target_doc.to_json(),
+                plain_text: cardfile_doc::to_plain_text(&target_doc),
+                encrypted: None,
+                blob_ids: target_doc.blob_ids(),
+            };
+            db.update_card_content(&actor, target, update, keep, 0)?;
+            anyhow::Ok(card.title)
+        });
+        let (index, original) = (dragged.index, dragged.block.clone());
+        cx.spawn_in(window, async move |this, cx| {
+            let result = task.await;
+            let _ = this.update_in(cx, |this, window, cx| match result {
+                Ok(title) => {
+                    if !copy {
+                        let editor = this.pane.read(cx).editor().clone();
+                        editor.update(cx, |e, cx| e.take_block(index, &original, cx));
+                    }
+                    let key = if copy { "drag.copied" } else { "drag.moved" };
+                    window.push_notification(
+                        gpui_kit::component::notification::Notification::success(t_args(
+                            key,
+                            &[("title", &title)],
+                        )),
+                        cx,
+                    );
+                    this.reload(window, cx);
+                }
+                Err(e) => window.push_notification(
+                    gpui_kit::component::notification::Notification::error(e.to_string()),
+                    cx,
+                ),
+            });
         })
         .detach();
     }
@@ -297,8 +536,11 @@ impl Workspace {
         let card = self.cards.remove(from);
         self.cards.insert(at, card);
         cx.notify();
+        let Some(actor) = AppState::actor(cx) else {
+            return;
+        };
         let db = AppState::db(cx);
-        let task = run_db(cx, move |_| db.move_card(dragged, before, after));
+        let task = run_db(cx, move |_| db.move_card(&actor, dragged, before, after));
         cx.spawn_in(window, async move |this, cx| {
             let _ = task.await;
             let _ = this.update_in(cx, |this, window, cx| this.reload(window, cx));
@@ -382,7 +624,7 @@ impl Workspace {
                         let _ = ws.update_in(cx, |ws, window, cx| {
                             ws.pane.update(cx, |p, cx| {
                                 if p.card().is_some_and(|c| c.is_deleted()) {
-                                    p.open(None, window, cx);
+                                    p.open(None, CardAccess::Owner, window, cx);
                                 }
                             });
                             ws.reload(window, cx);
@@ -448,7 +690,8 @@ impl Workspace {
     fn render_sidebar(&self, cx: &mut Context<Self>) -> AnyElement {
         let session = AppState::session(cx).cloned();
         let multi = AppState::get(cx).app.auth_mode != AuthMode::NoPassword;
-        let (all, favs, deleted) = self.counts;
+        let multi_user = AppState::get(cx).app.auth_mode == AuthMode::MultiUser;
+        let (all, favs, deleted, shared) = self.counts;
         let mut tags = v_flex().gap(px(1.));
         for tag in &self.tags {
             let id = tag.id;
@@ -471,7 +714,7 @@ impl Workspace {
                         this.set_view(View::Tag(id), window, cx)
                     }))
                     .child(div().size(px(9.)).rounded_full().bg(color))
-                    .child(tag.name.clone())
+                    .child(cardfile_editor::bidi::display(&tag.name))
                     .context_menu(move |menu, _, _| {
                         let edit = tag_clone.clone();
                         let del = tag_clone.clone();
@@ -575,6 +818,16 @@ impl Workspace {
                         View::Favorites,
                         cx,
                     ))
+                    .when(multi_user || shared > 0, |d| {
+                        d.child(self.nav_item(
+                            "nav-shared",
+                            IconName::Users,
+                            t("nav.shared"),
+                            Some(shared),
+                            View::Shared,
+                            cx,
+                        ))
+                    })
                     .child(self.nav_item(
                         "nav-bin",
                         IconName::Delete,
@@ -638,11 +891,12 @@ impl Workspace {
         let settings = AppState::user_settings(cx);
         let manual = settings.sort == SortOrder::Manual
             && self.search.read(cx).value().is_empty()
-            && self.view != View::RecycleBin;
+            && !matches!(self.view, View::RecycleBin | View::Shared);
         let count = self.cards.len();
         let title = match self.view {
             View::All => t("nav.all"),
             View::Favorites => t("nav.favorites"),
+            View::Shared => t("nav.shared"),
             View::RecycleBin => t("nav.recycle_bin"),
             View::Tag(id) => self
                 .tags
@@ -693,6 +947,18 @@ impl Workspace {
             .child(
                 h_flex()
                     .gap(px(2.))
+                    .when(crate::ai_settings::active_provider(cx).is_some(), |d| {
+                        d.child(
+                            Button::new("assistant")
+                                .ghost()
+                                .xsmall()
+                                .icon(IconName::Bot)
+                                .tooltip(t("chat.toggle"))
+                                .on_click(|_, window, cx| {
+                                    window.dispatch_action(Box::new(ToggleAssistant), cx)
+                                }),
+                        )
+                    })
                     .child(sort_menu)
                     .when(self.view == View::RecycleBin && count > 0, |d| {
                         d.child(
@@ -706,7 +972,7 @@ impl Workspace {
                                 }),
                         )
                     })
-                    .when(self.view != View::RecycleBin, |d| {
+                    .when(!matches!(self.view, View::RecycleBin | View::Shared), |d| {
                         d.child(
                             Button::new("new-card")
                                 .primary()
@@ -774,12 +1040,14 @@ impl Workspace {
         };
         let th = cx.theme();
         let selected = self.selected == Some(card.id);
+        // List labels are laid out left to right only; show right-to-left text in
+        // visual order (`t` already does that for UI strings).
         let title = if card.title.trim().is_empty() {
             t("card.untitled")
         } else if card.lock_mode == LockMode::Private {
-            mask_title(&card.title, mask_chars)
+            cardfile_editor::bidi::display(&mask_title(&card.title, mask_chars))
         } else {
-            card.title.clone()
+            cardfile_editor::bidi::display(&card.title)
         };
         let secondary: AnyElement = match &card.snippet {
             Some(snippet) => {
@@ -813,7 +1081,7 @@ impl Workspace {
             None if card.lock_mode.hides_content() => {
                 t(&format!("lock.{}", card.lock_mode.as_str())).into_any_element()
             }
-            None => card.preview.clone().into_any_element(),
+            None => cardfile_editor::bidi::display(&card.preview).into_any_element(),
         };
         let id = card.id;
         let dragged = DraggedCard {
@@ -838,6 +1106,13 @@ impl Workspace {
         if card.lock_mode != LockMode::None {
             flags = flags.child(
                 gpui_kit::component::Icon::new(IconName::Lock)
+                    .size_3()
+                    .text_color(th.muted_foreground),
+            );
+        }
+        if card.is_shared || !card.access.is_owner() {
+            flags = flags.child(
+                gpui_kit::component::Icon::new(IconName::Users)
                     .size_3()
                     .text_color(th.muted_foreground),
             );
@@ -907,6 +1182,19 @@ impl Workspace {
                     .child(relative_time(card.deleted_at.unwrap_or(card.updated_at)))
                     .child(tag_dots),
             );
+        if !matches!(self.view, View::RecycleBin) {
+            let accent = th.primary;
+            item = item
+                .drag_over::<cardfile_editor::DraggedBlock>(move |s, _, _, _| {
+                    s.bg(accent.opacity(0.15))
+                })
+                .on_drop(cx.listener(
+                    move |this, d: &cardfile_editor::DraggedBlock, window, cx| {
+                        let copy = window.modifiers().control || window.modifiers().alt;
+                        this.drop_block_on_card(d, id, copy, window, cx);
+                    },
+                ));
+        }
         if manual {
             let primary = th.primary;
             item = item
@@ -923,9 +1211,15 @@ impl Workspace {
 }
 
 impl Render for Workspace {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let sidebar = self.render_sidebar(cx);
         let list = self.render_list(cx);
+        let settings = AppState::user_settings(cx);
+        // The assistant exists only when an AI service is configured.
+        let chat = (settings.ai_panel_open && crate::ai_settings::active_provider(cx).is_some())
+            .then(|| self.ensure_chat(window, cx));
+        let chat_width = settings.ai_panel_width.clamp(280., 640.);
+        let border = cx.theme().border;
         h_flex()
             .id("workspace")
             .key_context(WORKSPACE)
@@ -945,9 +1239,21 @@ impl Render for Workspace {
             .on_action(cx.listener(Self::lock_app))
             .on_action(cx.listener(Self::sign_out))
             .on_action(cx.listener(Self::empty_recycle_bin))
+            .on_action(cx.listener(Self::toggle_assistant))
+            .on_action(cx.listener(Self::share_card))
+            .on_action(cx.listener(Self::show_shared))
             .child(sidebar)
             .child(list)
             .child(div().flex_1().min_w_0().h_full().child(self.pane.clone()))
+            .children(chat.map(|chat| {
+                div()
+                    .w(px(chat_width))
+                    .flex_shrink_0()
+                    .h_full()
+                    .border_l_1()
+                    .border_color(border)
+                    .child(chat)
+            }))
     }
 }
 

@@ -36,6 +36,19 @@ exceptions = [
     { allow = ["MPL-2.0"], crate = "cbindgen" },    # build-time only (via GPUI)
     { allow = ["MPL-2.0"], crate = "dwrote" },      # DirectWrite bindings (via GPUI)
     { allow = ["MPL-2.0"], crate = "option-ext" },  # via `directories`
+    # Symphonia (cardfile-media): unmodified, audio decoding
+    { allow = ["MPL-2.0"], crate = "symphonia" },
+    { allow = ["MPL-2.0"], crate = "symphonia-bundle-flac" },
+    { allow = ["MPL-2.0"], crate = "symphonia-bundle-mp3" },
+    { allow = ["MPL-2.0"], crate = "symphonia-codec-aac" },
+    { allow = ["MPL-2.0"], crate = "symphonia-codec-pcm" },
+    { allow = ["MPL-2.0"], crate = "symphonia-codec-vorbis" },
+    { allow = ["MPL-2.0"], crate = "symphonia-common" },
+    { allow = ["MPL-2.0"], crate = "symphonia-core" },
+    { allow = ["MPL-2.0"], crate = "symphonia-format-isomp4" },
+    { allow = ["MPL-2.0"], crate = "symphonia-format-ogg" },
+    { allow = ["MPL-2.0"], crate = "symphonia-format-riff" },
+    { allow = ["MPL-2.0"], crate = "symphonia-metadata" },
 ]
 
 [licenses.private]

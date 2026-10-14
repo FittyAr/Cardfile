@@ -3,6 +3,30 @@
 All notable changes to this project are documented here. Generated with
 [git-cliff](https://git-cliff.org) from Conventional Commits (`cliff.toml`).
 
+## [2.0.0-alpha.2] - 2026-10-14
+
+### Features
+
+- AI assistant: connect a cloud or local AI (OpenAI, Anthropic, Gemini, Mistral, Groq, DeepSeek,
+  xAI, OpenRouter, Together, Perplexity, Azure OpenAI, Ollama, LM Studio or a custom service) and
+  chat to search, rewrite, format, tag, pin and reorder cards. Hidden until configured.
+- Built-in MCP server (Streamable HTTP on 127.0.0.1) with per-user API keys (read-only and
+  private-card options) so AI apps such as Claude, Cursor or VS Code can use Cardfile.
+- Built-in "Cardfile AI" account: every change records who made it (and through which key),
+  shown in the status bar, the version history and the AI activity list.
+- Share cards with other users as view or edit; "Shared with me" view.
+- Per-user lock passwords and keys: each encrypted card has its own key, wrapped for every user
+  with access, so shared encrypted cards open with each person's own password.
+- Inline playback of audio (MP3, WAV, OGG, FLAC, AAC) and MP4/H.264 video attachments.
+- Drag images and attachments within a card or onto another card (Ctrl/Alt copies).
+- Chinese/Japanese/Korean fallback fonts in PDF export; right-to-left text (Hebrew, Arabic,
+  Persian) in the editor, labels, HTML and PDF.
+- 20 new interface languages (AI-translated).
+
+### Bug fixes
+
+- Inserting a link (Ctrl+K) no longer crashes the app.
+
 ## [2.0.0-alpha.1] - Unreleased
 
 Cardfile 2 is a complete rewrite in Rust with a GPUI interface, replacing the

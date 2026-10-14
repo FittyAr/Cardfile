@@ -1,6 +1,8 @@
 //! Card listing and full-text search (SQLite FTS5).
 
-use cardfile_core::{CardFilter, CardSummary, LockMode, SearchScope, SortOrder, UserId};
+use cardfile_core::{
+    CardAccess, CardFilter, CardSummary, LockMode, SearchScope, SharePermission, SortOrder, UserId,
+};
 use diesel::prelude::*;
 use diesel::sql_types::{BigInt, Bool, Nullable, Text};
 
@@ -51,18 +53,31 @@ struct SummaryRow {
     deleted_at: Option<i64>,
     #[diesel(sql_type = Nullable<Text>)]
     snippet: Option<String>,
+    #[diesel(sql_type = Text)]
+    owner_id: String,
+    /// The viewer's share permission; NULL when they own the card.
+    #[diesel(sql_type = Nullable<Text>)]
+    permission: Option<String>,
+    #[diesel(sql_type = Bool)]
+    is_shared: bool,
 }
 
 const PREVIEW_CHARS: usize = 140;
 
 impl Database {
-    /// List the owner's cards matching `filter`. Pinned cards come first.
-    pub fn list_cards(&self, owner: UserId, filter: &CardFilter) -> DbResult<Vec<CardSummary>> {
+    /// List `user`'s cards matching `filter` (or, with `filter.shared_with_me`, the
+    /// cards others share with them). Pinned cards come first.
+    pub fn list_cards(&self, user: UserId, filter: &CardFilter) -> DbResult<Vec<CardSummary>> {
         let fts = fts_query(&filter.query, filter.scope);
+        let shared = filter.shared_with_me;
         self.with(|conn| {
+            // `?1` is the viewer, `?2` the FTS query and `?3` the tag.
             let mut sql = String::from(
                 "SELECT c.id, c.title, c.plain_text, c.lock_mode, c.is_pinned, c.is_favorite, \
-                 c.sort_key, c.updated_at, c.deleted_at, ",
+                 c.sort_key, c.updated_at, c.deleted_at, c.owner_id, \
+                 (SELECT s.permission FROM card_shares s WHERE s.card_id = c.id AND s.user_id = ?1) \
+                 AS permission, \
+                 EXISTS (SELECT 1 FROM card_shares s WHERE s.card_id = c.id) AS is_shared, ",
             );
             if fts.is_some() {
                 sql.push_str(
@@ -72,25 +87,34 @@ impl Database {
             } else {
                 sql.push_str("NULL AS snippet FROM cards c ");
             }
-            sql.push_str("WHERE c.owner_id = ? ");
-            sql.push_str(if filter.deleted {
+            if shared {
+                sql.push_str(
+                    "WHERE c.owner_id <> ?1 AND EXISTS \
+                     (SELECT 1 FROM card_shares s WHERE s.card_id = c.id AND s.user_id = ?1) ",
+                );
+            } else {
+                sql.push_str("WHERE c.owner_id = ?1 ");
+            }
+            // Mention every parameter so binding all three is always valid.
+            sql.push_str("AND coalesce(?2, ?3) IS NOT NULL ");
+            sql.push_str(if filter.deleted && !shared {
                 "AND c.deleted_at IS NOT NULL "
             } else {
                 "AND c.deleted_at IS NULL "
             });
             if fts.is_some() {
-                sql.push_str("AND cards_fts MATCH ? ");
+                sql.push_str("AND cards_fts MATCH ?2 ");
             }
             if filter.favorites_only {
                 sql.push_str("AND c.is_favorite = 1 ");
             }
             if filter.tag.is_some() {
                 sql.push_str(
-                    "AND EXISTS (SELECT 1 FROM card_tags t WHERE t.card_id = c.id AND t.tag_id = ?) ",
+                    "AND EXISTS (SELECT 1 FROM card_tags t WHERE t.card_id = c.id AND t.tag_id = ?3) ",
                 );
             }
             sql.push_str("ORDER BY ");
-            if filter.deleted {
+            if filter.deleted && !shared {
                 sql.push_str("c.deleted_at DESC");
             } else {
                 sql.push_str("c.is_pinned DESC, ");
@@ -105,14 +129,13 @@ impl Database {
                 });
             }
 
-            let mut query = diesel::sql_query(sql).into_boxed().bind::<Text, _>(owner.to_string());
-            if let Some(fts) = &fts {
-                query = query.bind::<Text, _>(fts.clone());
-            }
-            if let Some(tag) = filter.tag {
-                query = query.bind::<Text, _>(tag.to_string());
-            }
-            let rows: Vec<SummaryRow> = query.load(conn)?;
+            // Numbered parameters are bound by position, so every slot gets a value.
+            let rows: Vec<SummaryRow> = diesel::sql_query(sql)
+                .bind::<Text, _>(user.to_string())
+                .bind::<Text, _>(fts.clone().unwrap_or_default())
+                .bind::<Text, _>(filter.tag.map(|t| t.to_string()).unwrap_or_default())
+                .load(conn)?;
+            let me = user.to_string();
 
             let ids: Vec<String> = rows.iter().map(|r| r.id.clone()).collect();
             let mut tags = crate::cards::tags_of(conn, &ids)?;
@@ -136,6 +159,14 @@ impl Database {
                         updated_at: r.updated_at,
                         deleted_at: r.deleted_at,
                         snippet: r.snippet.filter(|s| s.contains('\u{1}')),
+                        access: match r.permission.as_deref() {
+                            Some(p) if r.owner_id != me => {
+                                CardAccess::Shared(SharePermission::parse(p))
+                            }
+                            _ => CardAccess::Owner,
+                        },
+                        owner_id: parse_id(&r.owner_id)?,
+                        is_shared: r.is_shared,
                     })
                 })
                 .collect()
@@ -145,6 +176,7 @@ impl Database {
 
 #[cfg(test)]
 mod tests {
+    use cardfile_core::Actor;
     use cardfile_core::NewCard;
 
     use super::*;
@@ -166,7 +198,7 @@ mod tests {
 
     fn card(db: &Database, user: UserId, title: &str, body: &str, lock: LockMode) {
         db.create_card(
-            user,
+            &Actor::user(user),
             NewCard {
                 title: title.into(),
                 plain_text: body.into(),
@@ -236,11 +268,17 @@ mod tests {
             title: t.into(),
             ..Default::default()
         };
-        let a = db.create_card(user.id, titled("alpha")).unwrap();
-        let b = db.create_card(user.id, titled("bravo")).unwrap();
-        let c = db.create_card(user.id, titled("charlie")).unwrap();
+        let a = db
+            .create_card(&Actor::user(user.id), titled("alpha"))
+            .unwrap();
+        let b = db
+            .create_card(&Actor::user(user.id), titled("bravo"))
+            .unwrap();
+        let c = db
+            .create_card(&Actor::user(user.id), titled("charlie"))
+            .unwrap();
         // Leave a hole in the rowids, then let VACUUM renumber them.
-        db.delete_card(a.id).unwrap();
+        db.delete_card(&Actor::user(user.id), a.id).unwrap();
         db.purge_card(a.id).unwrap();
         db.with(|conn| {
             diesel::connection::SimpleConnection::batch_execute(conn, "VACUUM;")?;

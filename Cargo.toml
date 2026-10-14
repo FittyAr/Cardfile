@@ -4,7 +4,7 @@ members = ["crates/*"]
 default-members = ["crates/cardfile"]
 
 [workspace.package]
-version = "2.0.0-alpha.1"
+version = "2.0.0-alpha.2"
 edition = "2024"
 rust-version = "1.99"
 license = "MIT OR Apache-2.0"
@@ -15,12 +15,16 @@ publish = false
 
 [workspace.dependencies]
 # Internal crates
+cardfile-agent = { path = "crates/cardfile-agent" }
+cardfile-ai = { path = "crates/cardfile-ai" }
 cardfile-core = { path = "crates/cardfile-core" }
 cardfile-crypto = { path = "crates/cardfile-crypto" }
 cardfile-db = { path = "crates/cardfile-db" }
 cardfile-doc = { path = "crates/cardfile-doc" }
 cardfile-editor = { path = "crates/cardfile-editor" }
 cardfile-i18n = { path = "crates/cardfile-i18n" }
+cardfile-media = { path = "crates/cardfile-media" }
+cardfile-mcp = { path = "crates/cardfile-mcp" }
 cardfile-ui = { path = "crates/cardfile-ui" }
 cardfile-updater = { path = "crates/cardfile-updater" }
 
@@ -44,6 +48,8 @@ serde_json = "1.0.154"
 thiserror = "2.0.21"
 toml = "1.1.8"
 unicode-segmentation = "1.13.3"
+unicode-bidi = "0.3.18"
+ar-reshaper = "1.5.0"
 uuid = { version = "1.28.0", features = ["v7", "serde"] }
 
 # Crypto
@@ -51,6 +57,7 @@ argon2 = "0.6.0"
 blake3 = "1.8.7"
 chacha20poly1305 = "0.11.0"
 getrandom = "0.4.3"
+x25519-dalek = { version = "3.0.0", features = ["static_secrets"] }
 zeroize = { version = "1.9.1", features = ["derive"] }
 
 # Documents / export
@@ -60,10 +67,19 @@ harfrust = "0.14.0"
 pulldown-cmark = "0.13.4"
 spellbook = "0.4.2"
 
+# Media (inline audio/video playback in cards)
+# Output only: decoding is done with symphonia directly, so rodio's own decoders stay off.
+rodio = { version = "0.23.0", default-features = false, features = ["playback", "tracing"] }
+symphonia = { version = "0.6.1", default-features = false, features = ["aac", "flac", "isomp4", "mp3", "ogg", "pcm", "vorbis", "wav", "id3v2"] }
+re_mp4 = "0.5.1"
+# `source` builds Cisco's OpenH264 from the bundled C/C++ sources: no runtime download.
+openh264 = { version = "0.9.8", default-features = false, features = ["source"] }
+
 # Platform
 open = "5.4.4"
 rfd = "0.17.2"
 rust-i18n = "4.2.4"
+tiny_http = "0.12.0"
 ureq = "3.4.2"
 minisign-verify = "0.3.0"
 
@@ -73,6 +89,9 @@ tracing-appender = "0.2.5"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 
 # Dev
+bytes = "1.12.1"
+hound = "3.5.1"
+mp4 = "0.14.0"
 pretty_assertions = "1.4.1"
 tempfile = "3.27.0"
 
@@ -90,6 +109,9 @@ todo = "warn"
 [profile.dev]
 # GPUI is heavy; optimize dependencies even in debug builds for a usable UI.
 [profile.dev.package."*"]
+opt-level = 2
+# Per-pixel frame conversion and the audio callback must keep up in real time.
+[profile.dev.package.cardfile-media]
 opt-level = 2
 
 [profile.release]

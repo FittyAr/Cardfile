@@ -1,8 +1,33 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{BlobId, CardId, Millis, RevisionId, TagId, UserId};
+use crate::{ActivityId, ApiKeyId, BlobId, CardId, Millis, RevisionId, TagId, UserId};
 
-/// A user account. In single-user and password-free modes there is exactly one.
+/// Whether an account belongs to a person or to the built-in AI assistant.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum UserKind {
+    #[default]
+    Human,
+    /// The single assistant account. It cannot sign in; AI clients act through it on
+    /// behalf of the person whose API key (or chat) they use, so every change they
+    /// make is attributed to it.
+    Ai,
+}
+
+impl UserKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Human => "human",
+            Self::Ai => "ai",
+        }
+    }
+
+    pub fn parse(s: &str) -> Self {
+        if s == "ai" { Self::Ai } else { Self::Human }
+    }
+}
+
+/// A user account. In single-user and password-free modes there is exactly one person.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct User {
     pub id: UserId,
@@ -11,8 +36,63 @@ pub struct User {
     /// Argon2id PHC string, `None` when the account has no password.
     pub password_hash: Option<String>,
     pub is_admin: bool,
+    pub kind: UserKind,
+    /// Argon2id PHC string of a lock password separate from the sign-in password.
+    /// `None` means private and encrypted cards are unlocked with the sign-in password.
+    pub lock_hash: Option<String>,
+    /// The user's X25519 public key (base64), used to share encrypted cards with them.
+    pub public_key: Option<String>,
+    /// The matching secret key, encrypted under the lock password.
+    pub secret_key: Option<EncryptedPayload>,
     pub created_at: Millis,
     pub updated_at: Millis,
+}
+
+impl User {
+    /// Hash of the password that unlocks this user's private and encrypted cards.
+    pub fn effective_lock_hash(&self) -> Option<&str> {
+        self.lock_hash.as_deref().or(self.password_hash.as_deref())
+    }
+
+    /// Whether the user can receive shared encrypted cards.
+    pub fn has_keys(&self) -> bool {
+        self.public_key.is_some() && self.secret_key.is_some()
+    }
+}
+
+/// Who performs a change. People act as themselves; the AI account acts on behalf of
+/// the person who allowed it (through an API key or the in-app chat).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Actor {
+    pub user: UserId,
+    pub on_behalf_of: Option<UserId>,
+    /// How the AI got access: the API key name, or `chat`.
+    pub via: Option<String>,
+}
+
+impl Actor {
+    /// A person acting directly.
+    pub fn user(id: UserId) -> Self {
+        Self {
+            user: id,
+            on_behalf_of: None,
+            via: None,
+        }
+    }
+
+    /// The AI account acting for `principal`.
+    pub fn ai(ai: UserId, principal: UserId, via: impl Into<String>) -> Self {
+        Self {
+            user: ai,
+            on_behalf_of: Some(principal),
+            via: Some(via.into()),
+        }
+    }
+
+    /// The person whose data is being touched.
+    pub fn principal(&self) -> UserId {
+        self.on_behalf_of.unwrap_or(self.user)
+    }
 }
 
 /// How a card is protected.
@@ -53,17 +133,25 @@ impl LockMode {
 }
 
 /// Ciphertext of an encrypted card plus the parameters needed to decrypt it.
+///
+/// Version 1 derives the key from a password (salt and Argon2 costs set). Version 2
+/// uses a random per-card key wrapped for each user with access (see
+/// `cardfile_crypto`); salt and costs are then empty.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EncryptedPayload {
     /// Format version of the envelope.
     pub v: u32,
-    /// Argon2id salt (base64).
+    /// Argon2id salt (base64). Empty for version 2.
+    #[serde(default)]
     pub salt: String,
     /// XChaCha20-Poly1305 nonce (base64).
     pub nonce: String,
-    /// Argon2 parameters.
+    /// Argon2 parameters (0 for version 2).
+    #[serde(default)]
     pub m_cost: u32,
+    #[serde(default)]
     pub t_cost: u32,
+    #[serde(default)]
     pub p_cost: u32,
     /// Ciphertext (base64) of the serialized document JSON.
     pub ciphertext: String,
@@ -90,12 +178,97 @@ pub struct Card {
     pub deleted_at: Option<Millis>,
     pub rev: i64,
     pub tags: Vec<TagId>,
+    /// Who made the last change (`None` for cards older than attribution).
+    pub updated_by: Option<UserId>,
 }
 
 impl Card {
     pub fn is_deleted(&self) -> bool {
         self.deleted_at.is_some()
     }
+}
+
+/// What a user may do with a card shared with them.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SharePermission {
+    #[default]
+    View,
+    Edit,
+}
+
+impl SharePermission {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::View => "view",
+            Self::Edit => "edit",
+        }
+    }
+
+    pub fn parse(s: &str) -> Self {
+        if s == "edit" { Self::Edit } else { Self::View }
+    }
+}
+
+/// A user's relation to a card.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum CardAccess {
+    Owner,
+    Shared(SharePermission),
+}
+
+impl CardAccess {
+    pub fn can_edit(self) -> bool {
+        matches!(self, Self::Owner | Self::Shared(SharePermission::Edit))
+    }
+
+    pub fn is_owner(self) -> bool {
+        self == Self::Owner
+    }
+}
+
+/// One user a card is shared with.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CardShare {
+    pub card_id: CardId,
+    pub user_id: UserId,
+    pub permission: SharePermission,
+    pub created_at: Millis,
+}
+
+/// An API key that lets an AI client act on behalf of its owner. Only a hash of the
+/// secret is stored; the secret is shown once when the key is created.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ApiKey {
+    pub id: ApiKeyId,
+    /// The person the AI acts for: it sees exactly what they see.
+    pub user_id: UserId,
+    pub name: String,
+    /// First characters of the secret, to recognise the key in lists.
+    pub prefix: String,
+    /// Whether the AI may read and edit private cards. Encrypted cards are never
+    /// available to it.
+    pub allow_private: bool,
+    /// Whether the AI may only read.
+    pub read_only: bool,
+    pub created_at: Millis,
+    pub last_used_at: Option<Millis>,
+    pub revoked_at: Option<Millis>,
+}
+
+/// A recorded change, used to show who (or which AI session) did what.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ActivityEntry {
+    pub id: ActivityId,
+    pub card_id: Option<CardId>,
+    pub actor_id: UserId,
+    pub on_behalf_of: Option<UserId>,
+    pub via: Option<String>,
+    /// Short machine-readable verb (`create`, `edit`, `delete`, `tag`, …).
+    pub action: String,
+    /// Human-readable detail, e.g. the card title.
+    pub summary: String,
+    pub created_at: Millis,
 }
 
 /// Lightweight card data for list views.
@@ -112,6 +285,11 @@ pub struct CardSummary {
     pub updated_at: Millis,
     pub deleted_at: Option<Millis>,
     pub tags: Vec<TagId>,
+    pub owner_id: UserId,
+    /// `Shared(..)` when the card belongs to someone else.
+    pub access: CardAccess,
+    /// Whether the owner shares the card with anyone.
+    pub is_shared: bool,
     /// Search snippet with matches wrapped in `\u{1}` … `\u{2}` markers.
     pub snippet: Option<String>,
 }
@@ -144,6 +322,8 @@ pub struct CardRevision {
     pub content: String,
     pub encrypted: Option<EncryptedPayload>,
     pub created_at: Millis,
+    /// Who wrote the snapshotted version (`None` for revisions older than attribution).
+    pub author_id: Option<UserId>,
 }
 
 /// Image or attachment bytes, content-addressed and deduplicated.
@@ -192,5 +372,7 @@ pub struct CardFilter {
     pub favorites_only: bool,
     /// List the recycle bin instead of live cards.
     pub deleted: bool,
+    /// List cards other users share with this user instead of their own.
+    pub shared_with_me: bool,
     pub sort: SortOrder,
 }

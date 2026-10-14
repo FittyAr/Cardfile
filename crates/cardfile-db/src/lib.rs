@@ -3,6 +3,8 @@
 //! [`Database`] wraps one connection behind a mutex. All methods are blocking and
 //! must be called from a background thread, never the UI thread.
 
+mod activity;
+mod api_keys;
 mod blobs;
 mod cards;
 mod error;
@@ -10,6 +12,7 @@ mod rows;
 mod schema;
 mod search;
 mod settings;
+mod shares;
 mod tags;
 mod users;
 
@@ -25,7 +28,7 @@ use parking_lot::Mutex;
 pub use cards::ContentUpdate;
 pub use error::{DbError, DbResult};
 pub use search::fts_query;
-pub use users::{PasswordSlot, Rekey};
+pub use users::{CredentialUpdate, Rekey};
 
 const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
 

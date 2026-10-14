@@ -88,12 +88,21 @@ editor:
     replace: 替换
     replace_one: 替换
     replace_all: 全部替换
+  media:
+    open_external: "在系统播放器中打开"
 
 common:
   back: 返回
   next: 下一步
   ok: 确定
   cancel: 取消
+  apply: "应用"
+  copied: "已复制到剪贴板"
+  copy: "复制"
+  done: "完成"
+  edit: "编辑"
+  remove: "移除"
+  save: "保存"
 
 time:
   just_now: 刚刚
@@ -202,6 +211,7 @@ nav:
   favorites: 收藏
   recycle_bin: 回收站
   tags: 标签
+  shared: "与我共享"
 
 list:
   count: "%{n} 张卡片"
@@ -243,6 +253,7 @@ card:
     hint: 一段时间无操作后，卡片会再次锁定。
     wrong: 密码错误。
     no_password: 尚未设置锁定密码。请在 设置 → 安全 中设置。
+    no_key: "此卡片未与您的密钥共享。请让卡片所有者重新共享。"
   protect:
     tooltip: 卡片保护
     unlock_first: 请先解锁卡片。
@@ -254,6 +265,7 @@ card:
     title: 永久删除
     body: 此卡片将被永久删除，且无法撤销。
     confirm: 永久删除
+  updated_by: "%{name} 于 %{date} 编辑"
 
 tags:
   new: 新建标签…
@@ -267,6 +279,7 @@ history:
   title: 版本历史
   restore: 恢复此版本
   empty: 暂无更早的版本。
+  by: "由 %{name}"
 
 recycle:
   empty: 清空回收站
@@ -329,6 +342,7 @@ settings:
     security: 安全
     users: 用户
     data: 数据
+    ai: "AI"
   general:
     theme: 主题
     language: 语言
@@ -374,6 +388,12 @@ settings:
     new_password: 新密码
     save_password: 保存密码
     password_saved: 密码已更改。
+    current_lock_password: "当前锁定密码"
+    new_lock_password: "新锁定密码"
+    save_lock_password: "保存锁定密码"
+    lock_hint_same: "私密卡片和加密卡片使用您的登录密码解锁。在此设置不同的密码即可使用单独的锁定密码；再次输入登录密码则恢复为同一个密码。"
+    lock_hint_separate: "您为私密卡片和加密卡片使用了单独的锁定密码。将登录密码输入为新锁定密码，即可两者共用一个密码。"
+    lock_hint_nopw: "此密码用于保护您的私密卡片和加密卡片。每位用户都有自己的密码。"
   users:
     admin: 管理员
     add: 添加用户
@@ -387,3 +407,124 @@ settings:
     standard: 标准模式。
     export: 导出
     export_hint: 导出所有非私密、非加密的卡片。
+
+share:
+  button: "共享…"
+  title: "共享“%{title}”"
+  none: "无权限"
+  view: "可查看"
+  edit: "可编辑"
+  no_users: "还没有其他用户。请在“设置 → 用户”中添加。"
+  no_keys: "%{name} 尚未设置密钥。对方需要登录一次（或解锁一张受保护的卡片）。"
+  unlock_encrypted: "请先解锁此加密卡片再共享。"
+  shared_by: "%{name} · %{permission}"
+  view_only: "此卡片以仅查看方式与您共享。"
+  owner_only: "只有卡片所有者才能执行此操作。"
+
+drag:
+  moved: "已移到“%{title}”"
+  copied: "已复制到“%{title}”"
+  cannot_edit: "您无法编辑该卡片。"
+  protected: "请先解锁该卡片，再将文件拖入。"
+
+activity:
+  create: "已创建"
+  edit: "已编辑"
+  delete: "已移到回收站"
+  restore: "已恢复"
+  pin: "已置顶"
+  unpin: "已取消置顶"
+  favorite: "已添加到收藏"
+  unfavorite: "已从收藏中移除"
+  move: "已调整顺序"
+  tag: "标签已更改"
+  share: "已共享"
+  unshare: "已停止共享"
+  none: "已移除保护"
+  read_only: "已设为只读"
+  private: "已设为私密"
+  encrypted: "已加密"
+
+ai:
+  providers: "AI 服务"
+  providers_hint: "连接云端或本地 AI 即可使用助手。只有配置好服务后，相关按钮才会出现。"
+  local: "本地"
+  cloud: "云端"
+  provider:
+    add: "添加 AI 服务"
+    name: "名称"
+    url: "基础 URL"
+    model: "模型"
+    key: "API 密钥"
+    key_optional: "API 密钥（可选）"
+    kind: "API 格式"
+    api_version: "API 版本"
+    pick_model: "选择模型"
+    get_key: "获取 API 密钥"
+    test: "测试连接"
+    test_ok: "已连接，服务已响应。"
+    incomplete: "请填写名称、URL 和模型。"
+    not_ready: "缺少设置（API 密钥、URL 或模型）"
+    active: "使用中"
+    use: "使用"
+  chat:
+    title: "助手"
+    allow_private: "允许助手读取和编辑私密卡片"
+    encrypted_note: "加密卡片永远不会提供给任何 AI。"
+  mcp:
+    title: "面向 AI 客户端的 MCP 服务器"
+    hint: "让 Claude、Cursor 或 VS Code 等 AI 应用在 Cardfile 打开期间使用它，仅限本机（127.0.0.1）。每个客户端都需要一个 API 密钥；其所做的更改将记录为由 Cardfile AI 代表您完成。"
+    enable: "运行 MCP 服务器"
+    port: "端口"
+    bad_port: "请使用 1024 到 65535 之间的端口号。"
+    running: "正在运行：%{url}"
+    failed: "无法启动：%{error}"
+    stopped: "已停止"
+  keys:
+    title: "API 密钥"
+    hint: "密钥让 AI 客户端以 Cardfile AI 的身份查看和更改您有权访问的内容。您可以随时撤销。"
+    name_placeholder: "密钥名称，例如 Claude Desktop"
+    default_name: "AI 客户端"
+    create: "创建密钥"
+    read_only_option: "只读"
+    private_option: "允许访问私密卡片"
+    read_only: "只读"
+    private: "私密卡片"
+    used: "%{when}使用过"
+    never_used: "从未使用"
+    revoke: "撤销"
+    revoke_body: "使用“%{name}”的 AI 客户端将立即失去访问权限。"
+    copy_now: "请立即复制此密钥，它不会再次显示。然后将其添加到您的 AI 客户端："
+  activity:
+    title: "最近的 AI 活动"
+    empty: "AI 尚未进行任何更改。"
+
+chat:
+  title: "助手"
+  toggle: "助手"
+  placeholder: "向助手提问…"
+  send: "发送"
+  stop: "停止"
+  clear: "清除对话"
+  close: "隐藏助手"
+  thinking: "处理中…"
+  no_provider: "请先在“设置 → AI”中配置 AI 服务。"
+  empty: "关于您的卡片，尽管提问。例如："
+  example1: "“找到我关于旅行的笔记，并给它们加上‘旅行’标签。”"
+  example2: "“把会议记录卡片整理成清晰的清单。”"
+  example3: "“将我的食谱卡片按字母顺序排序。”"
+  tool:
+    search_cards: "已搜索"
+    get_card: "已读取卡片"
+    list_tags: "已列出标签"
+    recent_activity: "已查看最近活动"
+    create_card: "已创建卡片"
+    update_card: "已重写卡片"
+    edit_card_text: "已编辑文本"
+    append_to_card: "已添加到卡片"
+    tag_card: "已添加标签"
+    create_tag: "已创建标签"
+    set_card_flags: "已更改标记"
+    reorder_cards: "已调整卡片顺序"
+    delete_card: "已移到回收站"
+    restore_card: "已恢复卡片"

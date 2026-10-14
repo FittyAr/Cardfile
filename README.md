@@ -20,7 +20,19 @@ the [Zed](https://zed.dev) editor.
 - Recycle bin, themes, configurable keyboard shortcuts and a command palette.
 - Export to Markdown, HTML, PDF and JSON.
 - Portable mode, so you can carry your cards on a USB drive.
+- Share cards with other users (view or edit); every user has their own lock password and keys.
+- Optional AI assistant with your own cloud or local AI (OpenAI, Claude, Gemini, Ollama, LM Studio
+  and more): search, rewrite, format, tag and reorder cards by chat. Hidden until you set it up.
+- Built-in MCP server and API keys, so AI apps like Claude or Cursor can use your cards; every AI
+  change is attributed to the AI and can be undone.
+- Audio and video attachments play inside the card; drag images and files between cards.
+- Chinese, Japanese, Korean and right-to-left scripts (Hebrew, Arabic, Persian).
+- 21 interface languages.
 - No telemetry.
+
+> **About translations:** every translation other than English was made with AI. We apologize
+> for any mistakes and we are grateful for reports so we can fix them: please
+> [open an issue](https://github.com/FittyAr/Cardfile/issues).
 
 ## Install
 

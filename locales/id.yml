@@ -88,12 +88,21 @@ editor:
     replace: Ganti
     replace_one: Ganti
     replace_all: Ganti semua
+  media:
+    open_external: "Buka di pemutar sistem"
 
 common:
   back: Kembali
   next: Berikutnya
   ok: OK
   cancel: Batal
+  apply: "Terapkan"
+  copied: "Disalin ke papan klip"
+  copy: "Salin"
+  done: "Selesai"
+  edit: "Edit"
+  remove: "Hapus"
+  save: "Simpan"
 
 time:
   just_now: baru saja
@@ -202,6 +211,7 @@ nav:
   favorites: Favorit
   recycle_bin: Tempat sampah
   tags: LABEL
+  shared: "Dibagikan dengan saya"
 
 list:
   count: "%{n} kartu"
@@ -243,6 +253,7 @@ card:
     hint: Kartu terkunci kembali setelah beberapa waktu tidak aktif.
     wrong: Kata sandi salah.
     no_password: Kata sandi kunci belum diatur. Atur di Pengaturan → Keamanan.
+    no_key: "Kartu ini tidak dibagikan dengan kunci Anda. Minta pemiliknya membagikannya lagi."
   protect:
     tooltip: Perlindungan kartu
     unlock_first: Buka kunci kartu terlebih dahulu.
@@ -254,6 +265,7 @@ card:
     title: Hapus permanen
     body: Kartu ini akan dihapus selamanya. Tindakan ini tidak dapat dibatalkan.
     confirm: Hapus permanen
+  updated_by: "Diedit %{date} oleh %{name}"
 
 tags:
   new: Label baru…
@@ -267,6 +279,7 @@ history:
   title: Riwayat versi
   restore: Pulihkan versi ini
   empty: Belum ada versi sebelumnya.
+  by: "oleh %{name}"
 
 recycle:
   empty: Kosongkan tempat sampah
@@ -329,6 +342,7 @@ settings:
     security: Keamanan
     users: Pengguna
     data: Data
+    ai: "AI"
   general:
     theme: Tema
     language: Bahasa
@@ -374,6 +388,12 @@ settings:
     new_password: Kata sandi baru
     save_password: Simpan kata sandi
     password_saved: Kata sandi diubah.
+    current_lock_password: "Kata sandi kunci saat ini"
+    new_lock_password: "Kata sandi kunci baru"
+    save_lock_password: "Simpan kata sandi kunci"
+    lock_hint_same: "Kartu pribadi dan terenkripsi dibuka dengan kata sandi masuk Anda. Atur kata sandi lain di sini untuk memakai kata sandi kunci terpisah; mengetik ulang kata sandi masuk akan kembali ke satu kata sandi."
+    lock_hint_separate: "Anda memakai kata sandi kunci terpisah untuk kartu pribadi dan terenkripsi. Masukkan kata sandi masuk Anda sebagai kata sandi kunci baru untuk memakai satu kata sandi untuk keduanya."
+    lock_hint_nopw: "Kata sandi ini melindungi kartu pribadi dan terenkripsi Anda. Setiap pengguna punya kata sandinya sendiri."
   users:
     admin: administrator
     add: Tambah pengguna
@@ -387,3 +407,124 @@ settings:
     standard: Mode standar.
     export: Ekspor
     export_hint: Mengekspor semua kartu yang tidak pribadi atau terenkripsi.
+
+share:
+  button: "Bagikan…"
+  title: "Bagikan “%{title}”"
+  none: "Tanpa akses"
+  view: "Dapat melihat"
+  edit: "Dapat mengedit"
+  no_users: "Belum ada pengguna lain. Tambahkan di Pengaturan → Pengguna."
+  no_keys: "%{name} belum menyiapkan kuncinya. Mereka perlu masuk (atau membuka kunci kartu yang dilindungi) sekali."
+  unlock_encrypted: "Buka kunci kartu terenkripsi ini terlebih dahulu untuk membagikannya."
+  shared_by: "%{name} · %{permission}"
+  view_only: "Kartu ini dibagikan kepada Anda hanya untuk dilihat."
+  owner_only: "Hanya pemilik kartu yang dapat melakukannya."
+
+drag:
+  moved: "Dipindahkan ke “%{title}”"
+  copied: "Disalin ke “%{title}”"
+  cannot_edit: "Anda tidak dapat mengedit kartu itu."
+  protected: "Buka kunci kartu itu sebelum melepaskan file ke dalamnya."
+
+activity:
+  create: "Dibuat"
+  edit: "Diedit"
+  delete: "Dipindahkan ke tempat sampah"
+  restore: "Dipulihkan"
+  pin: "Disematkan"
+  unpin: "Sematan dilepas"
+  favorite: "Ditandai sebagai favorit"
+  unfavorite: "Dihapus dari favorit"
+  move: "Diurutkan ulang"
+  tag: "Label diubah"
+  share: "Dibagikan"
+  unshare: "Berhenti dibagikan"
+  none: "Perlindungan dihapus"
+  read_only: "Dijadikan hanya-baca"
+  private: "Dijadikan pribadi"
+  encrypted: "Dienkripsi"
+
+ai:
+  providers: "Layanan AI"
+  providers_hint: "Hubungkan AI cloud atau lokal untuk mendapatkan asisten. Tombolnya hanya muncul setelah sebuah layanan dikonfigurasi."
+  local: "lokal"
+  cloud: "cloud"
+  provider:
+    add: "Tambah layanan AI"
+    name: "Nama"
+    url: "URL dasar"
+    model: "Model"
+    key: "Kunci API"
+    key_optional: "Kunci API (opsional)"
+    kind: "Format API"
+    api_version: "Versi API"
+    pick_model: "Pilih model"
+    get_key: "Dapatkan kunci API"
+    test: "Uji koneksi"
+    test_ok: "Terhubung. Layanan merespons."
+    incomplete: "Isi nama, URL, dan model."
+    not_ready: "Pengaturan belum lengkap (kunci API, URL, atau model)"
+    active: "Sedang dipakai"
+    use: "Pakai"
+  chat:
+    title: "Asisten"
+    allow_private: "Izinkan asisten membaca dan mengedit kartu pribadi"
+    encrypted_note: "Kartu terenkripsi tidak pernah tersedia untuk AI mana pun."
+  mcp:
+    title: "Server MCP untuk klien AI"
+    hint: "Memungkinkan aplikasi AI seperti Claude, Cursor, atau VS Code memakai Cardfile selama terbuka, hanya di komputer ini (127.0.0.1). Setiap klien memerlukan kunci API; perubahan yang dibuatnya dicatat sebagai dibuat oleh Cardfile AI atas nama Anda."
+    enable: "Jalankan server MCP"
+    port: "Port"
+    bad_port: "Gunakan nomor port antara 1024 dan 65535."
+    running: "Berjalan di %{url}"
+    failed: "Tidak dapat dimulai: %{error}"
+    stopped: "Berhenti"
+  keys:
+    title: "Kunci API"
+    hint: "Kunci memungkinkan klien AI melihat dan mengubah apa yang bisa Anda lihat dan ubah, sebagai Cardfile AI. Cabut kapan saja."
+    name_placeholder: "Nama kunci, mis. Claude Desktop"
+    default_name: "Klien AI"
+    create: "Buat kunci"
+    read_only_option: "Hanya-baca"
+    private_option: "Izinkan kartu pribadi"
+    read_only: "hanya-baca"
+    private: "kartu pribadi"
+    used: "dipakai %{when}"
+    never_used: "belum pernah dipakai"
+    revoke: "Cabut"
+    revoke_body: "Klien AI yang memakai “%{name}” akan langsung kehilangan akses."
+    copy_now: "Salin kunci sekarang; kunci tidak akan ditampilkan lagi. Lalu tambahkan ke klien AI Anda:"
+  activity:
+    title: "Aktivitas AI terbaru"
+    empty: "AI belum mengubah apa pun."
+
+chat:
+  title: "Asisten"
+  toggle: "Asisten"
+  placeholder: "Tanyakan kepada asisten…"
+  send: "Kirim"
+  stop: "Hentikan"
+  clear: "Hapus percakapan"
+  close: "Sembunyikan asisten"
+  thinking: "Sedang bekerja…"
+  no_provider: "Konfigurasikan layanan AI di Pengaturan → AI terlebih dahulu."
+  empty: "Tanyakan apa saja tentang kartu Anda. Misalnya:"
+  example1: "“Cari catatanku tentang perjalanan dan beri label Liburan.”"
+  example2: "“Ubah kartu catatan rapat menjadi daftar periksa yang rapi.”"
+  example3: "“Urutkan kartu resepku menurut abjad.”"
+  tool:
+    search_cards: "Mencari"
+    get_card: "Membaca kartu"
+    list_tags: "Mendaftar label"
+    recent_activity: "Memeriksa aktivitas terbaru"
+    create_card: "Membuat kartu"
+    update_card: "Menulis ulang kartu"
+    edit_card_text: "Mengedit teks"
+    append_to_card: "Menambahkan ke kartu"
+    tag_card: "Memberi label"
+    create_tag: "Membuat label"
+    set_card_flags: "Mengubah penanda"
+    reorder_cards: "Mengurutkan ulang kartu"
+    delete_card: "Memindahkan ke tempat sampah"
+    restore_card: "Memulihkan kartu"

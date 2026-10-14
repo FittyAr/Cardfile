@@ -103,7 +103,10 @@ jobs:
       - name: Debian package
         # dpkg-shlibdeps resolves `depends = "$auto"` against installed libraries.
         run: |
-          sudo apt-get update && sudo apt-get install -y --no-install-recommends libxkbcommon0 libxkbcommon-x11-0
+          # ALSA runtime (inline audio/video playback); renamed libasound2t64 on Ubuntu 24.04.
+          sudo apt-get update
+          ALSA=libasound2; apt-cache show libasound2t64 >/dev/null 2>&1 && ALSA=libasound2t64
+          sudo apt-get install -y --no-install-recommends libxkbcommon0 libxkbcommon-x11-0 "$ALSA"
           cargo deb -p cardfile --no-build --no-strip -o packaging/out/
       - name: RPM package
         # RPM versions cannot contain '-'; '~' sorts a pre-release before the final release.

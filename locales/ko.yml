@@ -88,12 +88,21 @@ editor:
     replace: 바꾸기
     replace_one: 바꾸기
     replace_all: 모두 바꾸기
+  media:
+    open_external: "시스템 플레이어에서 열기"
 
 common:
   back: 뒤로
   next: 다음
   ok: 확인
   cancel: 취소
+  apply: "적용"
+  copied: "클립보드에 복사했습니다"
+  copy: "복사"
+  done: "완료"
+  edit: "편집"
+  remove: "제거"
+  save: "저장"
 
 time:
   just_now: 방금
@@ -202,6 +211,7 @@ nav:
   favorites: 즐겨찾기
   recycle_bin: 휴지통
   tags: 태그
+  shared: "나와 공유됨"
 
 list:
   count: "카드 %{n}장"
@@ -243,6 +253,7 @@ card:
     hint: 일정 시간 동안 사용하지 않으면 카드가 다시 잠깁니다.
     wrong: 비밀번호가 올바르지 않습니다.
     no_password: 잠금 비밀번호가 설정되지 않았습니다. 설정 → 보안에서 지정하세요.
+    no_key: "이 카드는 내 키로 공유되지 않았습니다. 소유자에게 다시 공유해 달라고 요청하세요."
   protect:
     tooltip: 카드 보호
     unlock_first: 먼저 카드의 잠금을 해제하세요.
@@ -254,6 +265,7 @@ card:
     title: 영구 삭제
     body: 이 카드는 영구적으로 삭제됩니다. 되돌릴 수 없습니다.
     confirm: 영구 삭제
+  updated_by: "%{date}에 %{name}님이 편집함"
 
 tags:
   new: 새 태그…
@@ -267,6 +279,7 @@ history:
   title: 버전 기록
   restore: 이 버전 복원
   empty: 이전 버전이 아직 없습니다.
+  by: "%{name}님"
 
 recycle:
   empty: 휴지통 비우기
@@ -329,6 +342,7 @@ settings:
     security: 보안
     users: 사용자
     data: 데이터
+    ai: "AI"
   general:
     theme: 테마
     language: 언어
@@ -374,6 +388,12 @@ settings:
     new_password: 새 비밀번호
     save_password: 비밀번호 저장
     password_saved: 비밀번호가 변경되었습니다.
+    current_lock_password: "현재 잠금 비밀번호"
+    new_lock_password: "새 잠금 비밀번호"
+    save_lock_password: "잠금 비밀번호 저장"
+    lock_hint_same: "비공개 카드와 암호화된 카드는 로그인 비밀번호로 잠금 해제됩니다. 여기에서 다른 비밀번호를 설정하면 별도의 잠금 비밀번호를 사용합니다. 로그인 비밀번호를 다시 입력하면 하나의 비밀번호로 돌아갑니다."
+    lock_hint_separate: "비공개 카드와 암호화된 카드에 별도의 잠금 비밀번호를 사용 중입니다. 새 잠금 비밀번호로 로그인 비밀번호를 입력하면 두 가지 모두 하나의 비밀번호를 사용합니다."
+    lock_hint_nopw: "이 비밀번호는 비공개 카드와 암호화된 카드를 보호합니다. 사용자마다 각자의 비밀번호가 있습니다."
   users:
     admin: 관리자
     add: 사용자 추가
@@ -387,3 +407,124 @@ settings:
     standard: 표준 모드입니다.
     export: 내보내기
     export_hint: 비공개 또는 암호화되지 않은 모든 카드를 내보냅니다.
+
+share:
+  button: "공유…"
+  title: "“%{title}” 공유"
+  none: "액세스 권한 없음"
+  view: "보기 가능"
+  edit: "편집 가능"
+  no_users: "아직 다른 사용자가 없습니다. 설정 → 사용자에서 추가하세요."
+  no_keys: "%{name}님이 아직 키를 설정하지 않았습니다. 한 번 로그인(또는 보호된 카드 잠금 해제)해야 합니다."
+  unlock_encrypted: "공유하려면 먼저 이 암호화된 카드의 잠금을 해제하세요."
+  shared_by: "%{name} · %{permission}"
+  view_only: "이 카드는 보기 전용으로 공유되었습니다."
+  owner_only: "카드 소유자만 할 수 있습니다."
+
+drag:
+  moved: "“%{title}”(으)로 이동했습니다"
+  copied: "“%{title}”에 복사했습니다"
+  cannot_edit: "해당 카드를 편집할 수 없습니다."
+  protected: "파일을 놓기 전에 해당 카드의 잠금을 해제하세요."
+
+activity:
+  create: "만듦"
+  edit: "편집함"
+  delete: "휴지통으로 이동함"
+  restore: "복원함"
+  pin: "고정함"
+  unpin: "고정 해제함"
+  favorite: "즐겨찾기에 추가함"
+  unfavorite: "즐겨찾기에서 제거함"
+  move: "순서 변경함"
+  tag: "태그 변경함"
+  share: "공유함"
+  unshare: "공유 중지함"
+  none: "보호 해제함"
+  read_only: "읽기 전용으로 설정함"
+  private: "비공개로 설정함"
+  encrypted: "암호화함"
+
+ai:
+  providers: "AI 서비스"
+  providers_hint: "클라우드 또는 로컬 AI를 연결하면 어시스턴트를 사용할 수 있습니다. 버튼은 서비스를 구성한 후에만 표시됩니다."
+  local: "로컬"
+  cloud: "클라우드"
+  provider:
+    add: "AI 서비스 추가"
+    name: "이름"
+    url: "기본 URL"
+    model: "모델"
+    key: "API 키"
+    key_optional: "API 키 (선택 사항)"
+    kind: "API 형식"
+    api_version: "API 버전"
+    pick_model: "모델 선택"
+    get_key: "API 키 받기"
+    test: "연결 테스트"
+    test_ok: "연결되었습니다. 서비스가 응답했습니다."
+    incomplete: "이름, URL, 모델을 입력하세요."
+    not_ready: "설정 누락 (API 키, URL 또는 모델)"
+    active: "사용 중"
+    use: "사용"
+  chat:
+    title: "어시스턴트"
+    allow_private: "어시스턴트가 비공개 카드를 읽고 편집하도록 허용"
+    encrypted_note: "암호화된 카드는 어떤 AI에도 제공되지 않습니다."
+  mcp:
+    title: "AI 클라이언트용 MCP 서버"
+    hint: "Claude, Cursor, VS Code 같은 AI 앱이 Cardfile이 열려 있는 동안 이 컴퓨터에서만(127.0.0.1) Cardfile을 사용할 수 있게 합니다. 클라이언트마다 API 키가 필요하며, 클라이언트가 만든 변경 사항은 Cardfile AI가 사용자를 대신해 수행한 것으로 기록됩니다."
+    enable: "MCP 서버 실행"
+    port: "포트"
+    bad_port: "1024에서 65535 사이의 포트 번호를 사용하세요."
+    running: "%{url}에서 실행 중"
+    failed: "시작할 수 없음: %{error}"
+    stopped: "중지됨"
+  keys:
+    title: "API 키"
+    hint: "키를 사용하면 AI 클라이언트가 Cardfile AI로서 내가 접근할 수 있는 내용을 보고 변경할 수 있습니다. 언제든지 취소할 수 있습니다."
+    name_placeholder: "키 이름 (예: Claude Desktop)"
+    default_name: "AI 클라이언트"
+    create: "키 만들기"
+    read_only_option: "읽기 전용"
+    private_option: "비공개 카드 허용"
+    read_only: "읽기 전용"
+    private: "비공개 카드"
+    used: "%{when} 사용"
+    never_used: "사용한 적 없음"
+    revoke: "취소"
+    revoke_body: "“%{name}”을(를) 사용하는 AI 클라이언트는 즉시 액세스 권한을 잃습니다."
+    copy_now: "지금 키를 복사하세요. 다시 표시되지 않습니다. 그런 다음 AI 클라이언트에 추가하세요:"
+  activity:
+    title: "최근 AI 활동"
+    empty: "AI가 아직 아무것도 변경하지 않았습니다."
+
+chat:
+  title: "어시스턴트"
+  toggle: "어시스턴트"
+  placeholder: "어시스턴트에게 질문하기…"
+  send: "보내기"
+  stop: "중지"
+  clear: "대화 지우기"
+  close: "어시스턴트 숨기기"
+  thinking: "작업 중…"
+  no_provider: "먼저 설정 → AI에서 AI 서비스를 구성하세요."
+  empty: "카드에 관해 무엇이든 물어보세요. 예:"
+  example1: "“여행 관련 메모를 찾아서 ‘여행’ 태그를 붙여 줘.”"
+  example2: "“회의록 카드를 깔끔한 체크리스트로 바꿔 줘.”"
+  example3: "“레시피 카드를 가나다순으로 정렬해 줘.”"
+  tool:
+    search_cards: "검색함"
+    get_card: "카드 읽음"
+    list_tags: "태그 목록 확인함"
+    recent_activity: "최근 활동 확인함"
+    create_card: "카드 만듦"
+    update_card: "카드 다시 작성함"
+    edit_card_text: "텍스트 편집함"
+    append_to_card: "카드에 추가함"
+    tag_card: "태그 지정함"
+    create_tag: "태그 만듦"
+    set_card_flags: "플래그 변경함"
+    reorder_cards: "카드 순서 변경함"
+    delete_card: "휴지통으로 이동함"
+    restore_card: "카드 복원함"

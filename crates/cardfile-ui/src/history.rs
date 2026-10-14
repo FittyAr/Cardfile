@@ -1,6 +1,7 @@
 //! Version history dialog for a card.
 
 use cardfile_core::{Card, LockMode};
+use cardfile_crypto::CardKey;
 use cardfile_doc::Document;
 use cardfile_i18n::t;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
@@ -10,7 +11,6 @@ use gpui_kit::{
     App, AppContext as _, Entity, InteractiveElement as _, IntoElement, ParentElement as _,
     StatefulInteractiveElement as _, Styled as _, Window, div, px,
 };
-use zeroize::Zeroizing;
 
 use crate::card_pane::CardPane;
 use crate::state::{AppState, run_db};
@@ -20,11 +20,13 @@ struct Entry {
     title: String,
     doc: Document,
     created_at: i64,
+    /// Display name of whoever wrote this version.
+    author: Option<String>,
 }
 
 pub fn open(
     card: Card,
-    password: Option<Zeroizing<String>>,
+    key: Option<CardKey>,
     pane: Entity<CardPane>,
     window: &mut Window,
     cx: &mut App,
@@ -32,26 +34,33 @@ pub fn open(
     let db = AppState::db(cx);
     let id = card.id;
     let lock_mode = card.lock_mode;
-    // Each revision has its own salt, so decrypting runs Argon2 once per entry: keep
-    // it on the background executor.
     let task = run_db(cx, move |_| {
         let revs = db.card_revisions(id)?;
+        let mut names = std::collections::HashMap::new();
         Ok(revs
             .into_iter()
             .filter_map(|r| {
-                let doc = match (&r.encrypted, lock_mode, &password) {
-                    (Some(p), LockMode::Encrypted, Some(pw)) => {
+                let doc = match (&r.encrypted, lock_mode, &key) {
+                    (Some(p), LockMode::Encrypted, Some(key)) => {
                         let json =
-                            cardfile_crypto::decrypt(p, pw, id.to_string().as_bytes()).ok()?;
+                            cardfile_crypto::decrypt_with_key(p, key, id.to_string().as_bytes())
+                                .ok()?;
                         Document::from_json(&json).ok()?
                     }
                     (None, _, _) => Document::from_json(&r.content).ok()?,
                     _ => return None,
                 };
+                let author = r.author_id.and_then(|a| {
+                    names
+                        .entry(a)
+                        .or_insert_with(|| db.user(a).ok().map(|u| u.display_name))
+                        .clone()
+                });
                 Some(Entry {
                     title: r.title,
                     doc,
                     created_at: r.created_at,
+                    author,
                 })
             })
             .collect::<Vec<Entry>>())
@@ -98,7 +107,13 @@ fn show(entries: Vec<Entry>, pane: Entity<CardPane>, window: &mut Window, cx: &m
                             .text_size(px(11.))
                             .text_color(th.muted_foreground)
                             .child(e.title.clone()),
-                    ),
+                    )
+                    .children(e.author.clone().map(|a| {
+                        div()
+                            .text_size(px(11.))
+                            .text_color(th.muted_foreground)
+                            .child(cardfile_i18n::t_args("history.by", &[("name", &a)]))
+                    })),
             );
         }
         let preview = entries

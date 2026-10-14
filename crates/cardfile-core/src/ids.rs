@@ -55,6 +55,14 @@ uuid_id!(
     /// Identifies a stored card revision.
     RevisionId
 );
+uuid_id!(
+    /// Identifies an API key handed to an AI client.
+    ApiKeyId
+);
+uuid_id!(
+    /// Identifies an entry of the activity log.
+    ActivityId
+);
 
 /// Content address of a blob: the lowercase hex BLAKE3 hash of its bytes.
 #[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]

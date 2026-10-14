@@ -165,6 +165,7 @@ impl Wizard {
             auth_mode: self.auth,
             enabled_lock_modes: self.lock_modes.clone(),
             allow_registration: self.allow_registration && self.auth == AuthMode::MultiUser,
+            ..AppSettings::default()
         };
         let password = self.password.read(cx).value().to_string();
         let mut username = self.username.read(cx).value().trim().to_string();
@@ -187,7 +188,7 @@ impl Wizard {
                 Some(db) => db,
                 None => Database::open(&paths.db(), Some(&paths.backups()))?,
             };
-            let mut settings = settings;
+            let settings = settings;
             let hash = if password.is_empty() {
                 None
             } else {
@@ -198,17 +199,24 @@ impl Wizard {
             } else {
                 hash.clone()
             };
-            if auth == AuthMode::NoPassword {
-                settings.lock_password_hash = hash;
+            let mut user = db.create_user(&username, &display, account_hash.as_deref(), true)?;
+            if auth == AuthMode::NoPassword && hash.is_some() {
+                db.set_lock_hash(user.id, hash.as_deref())?;
+                user = db.user(user.id)?;
             }
-            let user = db.create_user(&username, &display, account_hash.as_deref(), true)?;
+            // A key pair now, so cards can be shared with this user right away.
+            if !password.is_empty()
+                && let Some(updated) = crate::locks::ensure_keys(&db, &user, &password)?
+            {
+                user = updated;
+            }
             db.save_user_settings(user.id, &settings)?;
             db.save_app_settings(&app)?;
             let welcome = crate::welcome::welcome_document();
             db.create_card(
-                user.id,
+                &cardfile_core::Actor::user(user.id),
                 NewCard {
-                    title: t("welcome.title"),
+                    title: cardfile_i18n::t_raw("welcome.title"),
                     plain_text: cardfile_doc::to_plain_text(&welcome),
                     content: welcome.to_json(),
                     lock_mode: LockMode::None,

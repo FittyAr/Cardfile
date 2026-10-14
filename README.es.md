@@ -20,7 +20,22 @@ framework de UI del editor [Zed](https://zed.dev).
 - Papelera, temas, atajos de teclado configurables y paleta de comandos.
 - Exportación a Markdown, HTML, PDF y JSON.
 - Modo portable, para llevar tus tarjetas en un pendrive.
+- Compartir tarjetas con otros usuarios (ver o editar); cada usuario tiene su propia contraseña
+  de bloqueo y sus claves.
+- Asistente de IA opcional con tu propia IA en la nube o local (OpenAI, Claude, Gemini, Ollama,
+  LM Studio y más): buscá, reescribí, formateá, etiquetá y reordená tarjetas conversando. No se
+  muestra hasta que lo configurás.
+- Servidor MCP integrado y API keys, para que apps de IA como Claude o Cursor usen tus tarjetas;
+  cada cambio de la IA queda registrado a su nombre y se puede deshacer.
+- Audio y video adjuntos se reproducen dentro de la tarjeta; arrastrá imágenes y archivos entre
+  tarjetas.
+- Chino, japonés, coreano y escrituras de derecha a izquierda (hebreo, árabe, persa).
+- Interfaz en 21 idiomas.
 - Sin telemetría.
+
+> **Sobre las traducciones:** todas las traducciones distintas del inglés fueron hechas con IA.
+> Pedimos disculpas por los errores que puedan tener y agradecemos los reportes para corregirlos:
+> [abrí un issue](https://github.com/FittyAr/Cardfile/issues).
 
 ## Instalación
 

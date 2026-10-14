@@ -21,8 +21,12 @@ see Markdown.
 | `cardfile-crypto` | Argon2id hashing, card encryption (XChaCha20-Poly1305), key handling. | core |
 | `cardfile-db` | Diesel schema, embedded migrations, repository implementations, FTS5. | core, doc |
 | `cardfile-i18n` | Locale loading and the `t!()` macro. | — |
-| `cardfile-editor` | GPUI WYSIWYG editor widget. | core, doc, i18n |
+| `cardfile-editor` | GPUI WYSIWYG editor widget (incl. inline media player, bidi). | doc, i18n, media |
 | `cardfile-updater` | New-version check and minisign verification. | core |
+| `cardfile-media` | Inline audio/video playback engine (symphonia + rodio, MP4/H.264 via OpenH264). No GPUI. | — |
+| `cardfile-ai` | Blocking LLM client (provider presets, tool calling, agent loop). No GPUI. | — |
+| `cardfile-agent` | AI tools over the database (used by the MCP server and the chat). | core, db, doc |
+| `cardfile-mcp` | Embedded MCP server (Streamable HTTP on 127.0.0.1); tools come from the app via a trait. | — |
 | `cardfile-ui` | GPUI application views. | everything above |
 | `cardfile` | Binary: CLI args, logging, data dir, wiring. | ui |
 
@@ -43,7 +47,9 @@ cargo deny check                              # licenses, advisories, sources
 All four checks (fmt, clippy, test, deny) must pass before a PR is opened. CI enforces them.
 
 Linux build deps (Debian/Ubuntu): `libxkbcommon-dev libxkbcommon-x11-dev libwayland-dev
-libvulkan-dev libfontconfig-dev libfreetype-dev libx11-xcb-dev libssl-dev pkg-config`.
+libvulkan-dev libfontconfig-dev libfreetype-dev libx11-xcb-dev libssl-dev libasound2-dev pkg-config`
+(the full list CI uses is in `scripts/install-linux-deps.sh`). Building OpenH264 from source needs
+a C/C++ compiler (MSVC on Windows, gcc/g++ on Linux); `nasm` is optional and only speeds it up.
 
 ## Rules
 

@@ -88,12 +88,21 @@ editor:
     replace: Zamień
     replace_one: Zamień
     replace_all: Zamień wszystko
+  media:
+    open_external: "Otwórz w odtwarzaczu systemowym"
 
 common:
   back: Wstecz
   next: Dalej
   ok: OK
   cancel: Anuluj
+  apply: "Zastosuj"
+  copied: "Skopiowano do schowka"
+  copy: "Kopiuj"
+  done: "Gotowe"
+  edit: "Edytuj"
+  remove: "Usuń"
+  save: "Zapisz"
 
 time:
   just_now: przed chwilą
@@ -202,6 +211,7 @@ nav:
   favorites: Ulubione
   recycle_bin: Kosz
   tags: TAGI
+  shared: "Udostępnione mi"
 
 list:
   count: "Liczba kart: %{n}"
@@ -243,6 +253,7 @@ card:
     hint: Karta blokuje się ponownie po okresie bezczynności.
     wrong: Nieprawidłowe hasło.
     no_password: Nie ustawiono hasła blokady. Ustaw je w Ustawienia → Bezpieczeństwo.
+    no_key: "Ta karta nie została udostępniona dla Twojego klucza. Poproś jej właściciela o ponowne udostępnienie."
   protect:
     tooltip: Ochrona karty
     unlock_first: Najpierw odblokuj kartę.
@@ -254,6 +265,7 @@ card:
     title: Usuń trwale
     body: Ta karta zostanie usunięta na zawsze. Tej operacji nie można cofnąć.
     confirm: Usuń trwale
+  updated_by: "Edytowano %{date} przez: %{name}"
 
 tags:
   new: Nowy tag…
@@ -267,6 +279,7 @@ history:
   title: Historia wersji
   restore: Przywróć tę wersję
   empty: Brak wcześniejszych wersji.
+  by: "autor: %{name}"
 
 recycle:
   empty: Opróżnij kosz
@@ -329,6 +342,7 @@ settings:
     security: Bezpieczeństwo
     users: Użytkownicy
     data: Dane
+    ai: "AI"
   general:
     theme: Motyw
     language: Język
@@ -374,6 +388,12 @@ settings:
     new_password: Nowe hasło
     save_password: Zapisz hasło
     password_saved: Hasło zostało zmienione.
+    current_lock_password: "Obecne hasło blokady"
+    new_lock_password: "Nowe hasło blokady"
+    save_lock_password: "Zapisz hasło blokady"
+    lock_hint_same: "Karty prywatne i zaszyfrowane odblokowujesz hasłem logowania. Ustaw tu inne hasło, aby używać osobnego hasła blokady; ponowne wpisanie hasła logowania przywraca jedno hasło."
+    lock_hint_separate: "Używasz osobnego hasła blokady dla kart prywatnych i zaszyfrowanych. Wpisz hasło logowania jako nowe hasło blokady, aby używać jednego hasła do obu."
+    lock_hint_nopw: "To hasło chroni Twoje karty prywatne i zaszyfrowane. Każdy użytkownik ma własne."
   users:
     admin: administrator
     add: Dodaj użytkownika
@@ -387,3 +407,124 @@ settings:
     standard: Tryb standardowy.
     export: Eksportuj
     export_hint: Eksportuje wszystkie karty, które nie są prywatne ani zaszyfrowane.
+
+share:
+  button: "Udostępnij…"
+  title: "Udostępnij „%{title}”"
+  none: "Brak dostępu"
+  view: "Może wyświetlać"
+  edit: "Może edytować"
+  no_users: "Nie ma jeszcze innych użytkowników. Dodaj ich w Ustawienia → Użytkownicy."
+  no_keys: "%{name} nie skonfigurował(a) jeszcze swoich kluczy. Wystarczy raz się zalogować (lub odblokować chronioną kartę)."
+  unlock_encrypted: "Najpierw odblokuj tę zaszyfrowaną kartę, aby ją udostępnić."
+  shared_by: "%{name} · %{permission}"
+  view_only: "Ta karta jest Ci udostępniona tylko do wyświetlania."
+  owner_only: "Tylko właściciel karty może to zrobić."
+
+drag:
+  moved: "Przeniesiono do „%{title}”"
+  copied: "Skopiowano do „%{title}”"
+  cannot_edit: "Nie możesz edytować tej karty."
+  protected: "Odblokuj tę kartę, zanim upuścisz na nią pliki."
+
+activity:
+  create: "Utworzono"
+  edit: "Edytowano"
+  delete: "Przeniesiono do kosza"
+  restore: "Przywrócono"
+  pin: "Przypięto"
+  unpin: "Odpięto"
+  favorite: "Dodano do ulubionych"
+  unfavorite: "Usunięto z ulubionych"
+  move: "Zmieniono kolejność"
+  tag: "Zmieniono tagi"
+  share: "Udostępniono"
+  unshare: "Zakończono udostępnianie"
+  none: "Usunięto ochronę"
+  read_only: "Ustawiono tylko do odczytu"
+  private: "Ustawiono jako prywatną"
+  encrypted: "Zaszyfrowano"
+
+ai:
+  providers: "Usługi AI"
+  providers_hint: "Połącz chmurową lub lokalną AI, aby korzystać z asystenta. Jego przyciski pojawią się dopiero po skonfigurowaniu usługi."
+  local: "lokalna"
+  cloud: "chmurowa"
+  provider:
+    add: "Dodaj usługę AI"
+    name: "Nazwa"
+    url: "Bazowy URL"
+    model: "Model"
+    key: "Klucz API"
+    key_optional: "Klucz API (opcjonalny)"
+    kind: "Format API"
+    api_version: "Wersja API"
+    pick_model: "Wybierz model"
+    get_key: "Uzyskaj klucz API"
+    test: "Testuj połączenie"
+    test_ok: "Połączono. Usługa odpowiedziała."
+    incomplete: "Podaj nazwę, URL i model."
+    not_ready: "Brak ustawień (klucz API, URL lub model)"
+    active: "W użyciu"
+    use: "Użyj"
+  chat:
+    title: "Asystent"
+    allow_private: "Pozwól asystentowi czytać i edytować karty prywatne"
+    encrypted_note: "Karty zaszyfrowane nigdy nie są dostępne dla żadnej AI."
+  mcp:
+    title: "Serwer MCP dla klientów AI"
+    hint: "Pozwala aplikacjom AI, takim jak Claude, Cursor czy VS Code, korzystać z Cardfile, gdy jest otwarty, tylko na tym komputerze (127.0.0.1). Każdy klient potrzebuje klucza API; wprowadzone przez niego zmiany są zapisywane jako dokonane przez Cardfile AI w Twoim imieniu."
+    enable: "Uruchom serwer MCP"
+    port: "Port"
+    bad_port: "Podaj numer portu od 1024 do 65535."
+    running: "Działa pod adresem %{url}"
+    failed: "Nie można uruchomić: %{error}"
+    stopped: "Zatrzymany"
+  keys:
+    title: "Klucze API"
+    hint: "Klucz pozwala klientowi AI widzieć i zmieniać to samo co Ty, jako Cardfile AI. Możesz go w każdej chwili unieważnić."
+    name_placeholder: "Nazwa klucza, np. Claude Desktop"
+    default_name: "Klient AI"
+    create: "Utwórz klucz"
+    read_only_option: "Tylko do odczytu"
+    private_option: "Zezwól na karty prywatne"
+    read_only: "tylko do odczytu"
+    private: "karty prywatne"
+    used: "użyto %{when}"
+    never_used: "nigdy nieużywany"
+    revoke: "Unieważnij"
+    revoke_body: "Klienci AI używający „%{name}” natychmiast stracą dostęp."
+    copy_now: "Skopiuj klucz teraz; nie zostanie pokazany ponownie. Następnie dodaj go do klienta AI:"
+  activity:
+    title: "Ostatnia aktywność AI"
+    empty: "AI jeszcze niczego nie zmieniła."
+
+chat:
+  title: "Asystent"
+  toggle: "Asystent"
+  placeholder: "Zapytaj asystenta…"
+  send: "Wyślij"
+  stop: "Zatrzymaj"
+  clear: "Wyczyść rozmowę"
+  close: "Ukryj asystenta"
+  thinking: "Pracuję…"
+  no_provider: "Najpierw skonfiguruj usługę AI w Ustawienia → AI."
+  empty: "Zapytaj o cokolwiek dotyczącego Twoich kart. Na przykład:"
+  example1: "„Znajdź moje notatki o wycieczce i oznacz je tagiem Podróże”."
+  example2: "„Zamień kartę z notatkami ze spotkania w schludną listę kontrolną”."
+  example3: "„Posortuj moje karty z przepisami alfabetycznie”."
+  tool:
+    search_cards: "Wyszukano"
+    get_card: "Odczytano kartę"
+    list_tags: "Wyświetlono tagi"
+    recent_activity: "Sprawdzono ostatnią aktywność"
+    create_card: "Utworzono kartę"
+    update_card: "Przepisano kartę"
+    edit_card_text: "Edytowano tekst"
+    append_to_card: "Dodano do karty"
+    tag_card: "Otagowano"
+    create_tag: "Utworzono tag"
+    set_card_flags: "Zmieniono flagi"
+    reorder_cards: "Zmieniono kolejność kart"
+    delete_card: "Przeniesiono do kosza"
+    restore_card: "Przywrócono kartę"

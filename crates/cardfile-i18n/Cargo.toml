@@ -14,3 +14,5 @@ workspace = true
 
 [dependencies]
 rust-i18n.workspace = true
+unicode-bidi.workspace = true
+ar-reshaper.workspace = true

@@ -88,12 +88,21 @@ editor:
     replace: Reemplazar
     replace_one: Reemplazar
     replace_all: Reemplazar todo
+  media:
+    open_external: "Abrir en el reproductor del sistema"
 
 common:
   back: Atrás
   next: Siguiente
   ok: Aceptar
   cancel: Cancelar
+  apply: "Aplicar"
+  copied: "Copiado al portapapeles"
+  copy: "Copiar"
+  done: "Listo"
+  edit: "Editar"
+  remove: "Quitar"
+  save: "Guardar"
 
 time:
   just_now: ahora mismo
@@ -202,6 +211,7 @@ nav:
   favorites: Favoritas
   recycle_bin: Papelera
   tags: ETIQUETAS
+  shared: "Compartidas conmigo"
 
 list:
   count: "%{n} fichas"
@@ -243,6 +253,7 @@ card:
     hint: La ficha se vuelve a bloquear tras un período de inactividad.
     wrong: Contraseña incorrecta.
     no_password: No hay contraseña de bloqueo. Define una en Ajustes → Seguridad.
+    no_key: "Esta ficha no se compartió con tu clave. Pide a su propietario que vuelva a compartirla."
   protect:
     tooltip: Protección de la ficha
     unlock_first: Desbloquea primero la ficha.
@@ -254,6 +265,7 @@ card:
     title: Eliminar definitivamente
     body: Esta ficha se eliminará para siempre. No se puede deshacer.
     confirm: Eliminar definitivamente
+  updated_by: "Editada %{date} por %{name}"
 
 tags:
   new: Nueva etiqueta…
@@ -267,6 +279,7 @@ history:
   title: Historial de versiones
   restore: Restaurar esta versión
   empty: Aún no hay versiones anteriores.
+  by: "por %{name}"
 
 recycle:
   empty: Vaciar papelera
@@ -329,6 +342,7 @@ settings:
     security: Seguridad
     users: Usuarios
     data: Datos
+    ai: "IA"
   general:
     theme: Tema
     language: Idioma
@@ -374,6 +388,12 @@ settings:
     new_password: Contraseña nueva
     save_password: Guardar contraseña
     password_saved: Contraseña cambiada.
+    current_lock_password: "Contraseña de bloqueo actual"
+    new_lock_password: "Contraseña de bloqueo nueva"
+    save_lock_password: "Guardar contraseña de bloqueo"
+    lock_hint_same: "Las fichas privadas y cifradas se desbloquean con tu contraseña de inicio de sesión. Define aquí otra contraseña para usar una contraseña de bloqueo aparte; si vuelves a escribir tu contraseña de inicio de sesión, volverás a usar una sola."
+    lock_hint_separate: "Usas una contraseña de bloqueo aparte para las fichas privadas y cifradas. Escribe tu contraseña de inicio de sesión como nueva contraseña de bloqueo para usar una sola para ambas cosas."
+    lock_hint_nopw: "Esta contraseña protege tus fichas privadas y cifradas. Cada usuario tiene la suya."
   users:
     admin: administrador
     add: Añadir usuario
@@ -387,3 +407,124 @@ settings:
     standard: Modo estándar.
     export: Exportar
     export_hint: Exporta todas las fichas que no sean privadas ni cifradas.
+
+share:
+  button: "Compartir…"
+  title: "Compartir «%{title}»"
+  none: "Sin acceso"
+  view: "Puede ver"
+  edit: "Puede editar"
+  no_users: "Todavía no hay otros usuarios. Añádelos en Ajustes → Usuarios."
+  no_keys: "%{name} aún no ha configurado sus claves. Debe iniciar sesión (o desbloquear una ficha protegida) una vez."
+  unlock_encrypted: "Desbloquea primero esta ficha cifrada para compartirla."
+  shared_by: "%{name} · %{permission}"
+  view_only: "Esta ficha se compartió contigo solo para ver."
+  owner_only: "Solo el propietario de la ficha puede hacer eso."
+
+drag:
+  moved: "Movido a «%{title}»"
+  copied: "Copiado a «%{title}»"
+  cannot_edit: "No puedes editar esa ficha."
+  protected: "Desbloquea esa ficha antes de soltar archivos en ella."
+
+activity:
+  create: "Creada"
+  edit: "Editada"
+  delete: "Movida a la papelera"
+  restore: "Restaurada"
+  pin: "Fijada"
+  unpin: "Desfijada"
+  favorite: "Marcada como favorita"
+  unfavorite: "Quitada de favoritas"
+  move: "Reordenada"
+  tag: "Etiquetas cambiadas"
+  share: "Compartida"
+  unshare: "Dejó de compartirse"
+  none: "Protección quitada"
+  read_only: "Puesta en solo lectura"
+  private: "Hecha privada"
+  encrypted: "Cifrada"
+
+ai:
+  providers: "Servicios de IA"
+  providers_hint: "Conecta una IA en la nube o local para tener el asistente. Sus botones solo aparecen cuando hay un servicio configurado."
+  local: "local"
+  cloud: "nube"
+  provider:
+    add: "Añadir servicio de IA"
+    name: "Nombre"
+    url: "URL base"
+    model: "Modelo"
+    key: "Clave de API"
+    key_optional: "Clave de API (opcional)"
+    kind: "Formato de API"
+    api_version: "Versión de API"
+    pick_model: "Elegir un modelo"
+    get_key: "Obtener una clave de API"
+    test: "Probar conexión"
+    test_ok: "Conectado. El servicio respondió."
+    incomplete: "Completa el nombre, la URL y el modelo."
+    not_ready: "Faltan ajustes (clave de API, URL o modelo)"
+    active: "En uso"
+    use: "Usar"
+  chat:
+    title: "Asistente"
+    allow_private: "Permitir que el asistente lea y edite fichas privadas"
+    encrypted_note: "Las fichas cifradas nunca están disponibles para ninguna IA."
+  mcp:
+    title: "Servidor MCP para clientes de IA"
+    hint: "Permite que apps de IA como Claude, Cursor o VS Code usen Cardfile mientras está abierto, solo en este ordenador (127.0.0.1). Cada cliente necesita una clave de API; los cambios que haga se registran como hechos por Cardfile AI en tu nombre."
+    enable: "Ejecutar el servidor MCP"
+    port: "Puerto"
+    bad_port: "Usa un número de puerto entre 1024 y 65535."
+    running: "En ejecución en %{url}"
+    failed: "No se pudo iniciar: %{error}"
+    stopped: "Detenido"
+  keys:
+    title: "Claves de API"
+    hint: "Una clave permite a un cliente de IA ver y cambiar lo mismo que tú, como Cardfile AI. Puedes revocarla en cualquier momento."
+    name_placeholder: "Nombre de la clave, p. ej. Claude Desktop"
+    default_name: "Cliente de IA"
+    create: "Crear clave"
+    read_only_option: "Solo lectura"
+    private_option: "Permitir fichas privadas"
+    read_only: "solo lectura"
+    private: "fichas privadas"
+    used: "usada %{when}"
+    never_used: "nunca usada"
+    revoke: "Revocar"
+    revoke_body: "Los clientes de IA que usen «%{name}» perderán el acceso de inmediato."
+    copy_now: "Copia la clave ahora; no se volverá a mostrar. Después añádela a tu cliente de IA:"
+  activity:
+    title: "Actividad reciente de la IA"
+    empty: "La IA todavía no ha cambiado nada."
+
+chat:
+  title: "Asistente"
+  toggle: "Asistente"
+  placeholder: "Pregunta al asistente…"
+  send: "Enviar"
+  stop: "Detener"
+  clear: "Borrar conversación"
+  close: "Ocultar asistente"
+  thinking: "Trabajando…"
+  no_provider: "Primero configura un servicio de IA en Ajustes → IA."
+  empty: "Pide lo que quieras sobre tus fichas. Por ejemplo:"
+  example1: "«Busca mis notas sobre el viaje y etiquétalas como Viajes»."
+  example2: "«Convierte la ficha de notas de la reunión en una lista de tareas ordenada»."
+  example3: "«Ordena alfabéticamente mis fichas de recetas»."
+  tool:
+    search_cards: "Búsqueda realizada"
+    get_card: "Ficha leída"
+    list_tags: "Etiquetas listadas"
+    recent_activity: "Actividad reciente consultada"
+    create_card: "Ficha creada"
+    update_card: "Ficha reescrita"
+    edit_card_text: "Texto editado"
+    append_to_card: "Añadido a la ficha"
+    tag_card: "Etiquetada"
+    create_tag: "Etiqueta creada"
+    set_card_flags: "Marcas cambiadas"
+    reorder_cards: "Fichas reordenadas"
+    delete_card: "Movida a la papelera"
+    restore_card: "Ficha restaurada"

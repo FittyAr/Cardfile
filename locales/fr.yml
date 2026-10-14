@@ -88,12 +88,21 @@ editor:
     replace: Remplacer
     replace_one: Remplacer
     replace_all: Tout remplacer
+  media:
+    open_external: "Ouvrir dans le lecteur du système"
 
 common:
   back: Retour
   next: Suivant
   ok: OK
   cancel: Annuler
+  apply: "Appliquer"
+  copied: "Copié dans le presse-papiers"
+  copy: "Copier"
+  done: "Terminé"
+  edit: "Modifier"
+  remove: "Retirer"
+  save: "Enregistrer"
 
 time:
   just_now: à l'instant
@@ -202,6 +211,7 @@ nav:
   favorites: Favoris
   recycle_bin: Corbeille
   tags: ÉTIQUETTES
+  shared: "Partagées avec moi"
 
 list:
   count: "%{n} fiches"
@@ -243,6 +253,7 @@ card:
     hint: La fiche se verrouille à nouveau après une période d'inactivité.
     wrong: Mot de passe incorrect.
     no_password: Aucun mot de passe de verrouillage n'est défini. Définissez-en un dans Paramètres → Sécurité.
+    no_key: "Cette fiche n'a pas été partagée avec votre clé. Demandez à son propriétaire de la partager à nouveau."
   protect:
     tooltip: Protection de la fiche
     unlock_first: Déverrouillez d'abord la fiche.
@@ -254,6 +265,7 @@ card:
     title: Supprimer définitivement
     body: Cette fiche sera supprimée définitivement. Cette action est irréversible.
     confirm: Supprimer définitivement
+  updated_by: "Modifiée %{date} par %{name}"
 
 tags:
   new: Nouvelle étiquette…
@@ -267,6 +279,7 @@ history:
   title: Historique des versions
   restore: Restaurer cette version
   empty: Aucune version antérieure pour le moment.
+  by: "par %{name}"
 
 recycle:
   empty: Vider la corbeille
@@ -329,6 +342,7 @@ settings:
     security: Sécurité
     users: Utilisateurs
     data: Données
+    ai: "IA"
   general:
     theme: Thème
     language: Langue
@@ -374,6 +388,12 @@ settings:
     new_password: Nouveau mot de passe
     save_password: Enregistrer le mot de passe
     password_saved: Mot de passe modifié.
+    current_lock_password: "Mot de passe de verrouillage actuel"
+    new_lock_password: "Nouveau mot de passe de verrouillage"
+    save_lock_password: "Enregistrer le mot de passe de verrouillage"
+    lock_hint_same: "Les fiches privées et chiffrées se déverrouillent avec votre mot de passe de connexion. Définissez ici un autre mot de passe pour utiliser un mot de passe de verrouillage distinct ; saisir à nouveau votre mot de passe de connexion revient à un seul mot de passe."
+    lock_hint_separate: "Vous utilisez un mot de passe de verrouillage distinct pour les fiches privées et chiffrées. Saisissez votre mot de passe de connexion comme nouveau mot de passe de verrouillage pour n'en utiliser qu'un seul."
+    lock_hint_nopw: "Ce mot de passe protège vos fiches privées et chiffrées. Chaque utilisateur a le sien."
   users:
     admin: administrateur
     add: Ajouter un utilisateur
@@ -387,3 +407,124 @@ settings:
     standard: Mode standard.
     export: Exporter
     export_hint: Exporte toutes les fiches qui ne sont ni privées ni chiffrées.
+
+share:
+  button: "Partager…"
+  title: "Partager « %{title} »"
+  none: "Aucun accès"
+  view: "Lecture"
+  edit: "Modification"
+  no_users: "Il n'y a pas encore d'autres utilisateurs. Ajoutez-en dans Paramètres → Utilisateurs."
+  no_keys: "%{name} n'a pas encore configuré ses clés. Cette personne doit se connecter (ou déverrouiller une fiche protégée) une fois."
+  unlock_encrypted: "Déverrouillez d'abord cette fiche chiffrée pour la partager."
+  shared_by: "%{name} · %{permission}"
+  view_only: "Cette fiche est partagée avec vous en lecture seule."
+  owner_only: "Seul le propriétaire de la fiche peut faire cela."
+
+drag:
+  moved: "Déplacé vers « %{title} »"
+  copied: "Copié vers « %{title} »"
+  cannot_edit: "Vous ne pouvez pas modifier cette fiche."
+  protected: "Déverrouillez cette fiche avant d'y déposer des fichiers."
+
+activity:
+  create: "Créée"
+  edit: "Modifiée"
+  delete: "Mise à la corbeille"
+  restore: "Restaurée"
+  pin: "Épinglée"
+  unpin: "Désépinglée"
+  favorite: "Ajoutée aux favoris"
+  unfavorite: "Retirée des favoris"
+  move: "Réordonnée"
+  tag: "Étiquettes modifiées"
+  share: "Partagée"
+  unshare: "Partage arrêté"
+  none: "Protection retirée"
+  read_only: "Mise en lecture seule"
+  private: "Rendue privée"
+  encrypted: "Chiffrée"
+
+ai:
+  providers: "Services d'IA"
+  providers_hint: "Connectez une IA dans le cloud ou locale pour obtenir l'assistant. Ses boutons n'apparaissent qu'une fois un service configuré."
+  local: "local"
+  cloud: "cloud"
+  provider:
+    add: "Ajouter un service d'IA"
+    name: "Nom"
+    url: "URL de base"
+    model: "Modèle"
+    key: "Clé d'API"
+    key_optional: "Clé d'API (facultative)"
+    kind: "Format d'API"
+    api_version: "Version d'API"
+    pick_model: "Choisir un modèle"
+    get_key: "Obtenir une clé d'API"
+    test: "Tester la connexion"
+    test_ok: "Connecté. Le service a répondu."
+    incomplete: "Renseignez le nom, l'URL et le modèle."
+    not_ready: "Paramètres manquants (clé d'API, URL ou modèle)"
+    active: "Utilisé"
+    use: "Utiliser"
+  chat:
+    title: "Assistant"
+    allow_private: "Autoriser l'assistant à lire et modifier les fiches privées"
+    encrypted_note: "Les fiches chiffrées ne sont jamais accessibles à aucune IA."
+  mcp:
+    title: "Serveur MCP pour les clients d'IA"
+    hint: "Permet aux applications d'IA comme Claude, Cursor ou VS Code d'utiliser Cardfile lorsqu'il est ouvert, sur cet ordinateur uniquement (127.0.0.1). Chaque client a besoin d'une clé d'API ; ses modifications sont enregistrées comme faites par Cardfile AI en votre nom."
+    enable: "Exécuter le serveur MCP"
+    port: "Port"
+    bad_port: "Utilisez un numéro de port entre 1024 et 65535."
+    running: "En cours d'exécution sur %{url}"
+    failed: "Impossible de démarrer : %{error}"
+    stopped: "Arrêté"
+  keys:
+    title: "Clés d'API"
+    hint: "Une clé permet à un client d'IA de voir et de modifier ce que vous pouvez, en tant que Cardfile AI. Révoquez-la à tout moment."
+    name_placeholder: "Nom de la clé, p. ex. Claude Desktop"
+    default_name: "Client d'IA"
+    create: "Créer une clé"
+    read_only_option: "Lecture seule"
+    private_option: "Autoriser les fiches privées"
+    read_only: "lecture seule"
+    private: "fiches privées"
+    used: "utilisée %{when}"
+    never_used: "jamais utilisée"
+    revoke: "Révoquer"
+    revoke_body: "Les clients d'IA qui utilisent « %{name} » perdront l'accès immédiatement."
+    copy_now: "Copiez la clé maintenant ; elle ne sera plus affichée. Ajoutez-la ensuite à votre client d'IA :"
+  activity:
+    title: "Activité récente de l'IA"
+    empty: "L'IA n'a encore rien modifié."
+
+chat:
+  title: "Assistant"
+  toggle: "Assistant"
+  placeholder: "Demandez à l'assistant…"
+  send: "Envoyer"
+  stop: "Arrêter"
+  clear: "Effacer la conversation"
+  close: "Masquer l'assistant"
+  thinking: "En cours…"
+  no_provider: "Configurez d'abord un service d'IA dans Paramètres → IA."
+  empty: "Demandez ce que vous voulez à propos de vos fiches. Par exemple :"
+  example1: "« Trouve mes notes sur le voyage et ajoute-leur l'étiquette Voyage. »"
+  example2: "« Transforme la fiche de notes de réunion en une liste de tâches bien rangée. »"
+  example3: "« Trie mes fiches de recettes par ordre alphabétique. »"
+  tool:
+    search_cards: "Recherche effectuée"
+    get_card: "Fiche lue"
+    list_tags: "Étiquettes listées"
+    recent_activity: "Activité récente consultée"
+    create_card: "Fiche créée"
+    update_card: "Fiche réécrite"
+    edit_card_text: "Texte modifié"
+    append_to_card: "Ajouté à la fiche"
+    tag_card: "Étiquetée"
+    create_tag: "Étiquette créée"
+    set_card_flags: "Indicateurs modifiés"
+    reorder_cards: "Fiches réordonnées"
+    delete_card: "Mise à la corbeille"
+    restore_card: "Fiche restaurée"

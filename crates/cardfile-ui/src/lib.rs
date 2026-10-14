@@ -1,16 +1,21 @@
 //! Cardfile's GPUI application.
 
+mod ai_settings;
 mod app;
 mod assets;
 mod card_pane;
+mod chat;
 mod dialogs;
 mod export;
 mod history;
 pub mod keymap;
+mod locks;
 mod login;
+mod mcp_host;
 mod palette;
 pub mod paths;
 mod settings;
+mod share;
 mod spell;
 mod state;
 mod tags;
@@ -68,7 +73,6 @@ pub fn run(paths: DataPaths) {
                 db,
                 app: app_settings,
                 session: None,
-                card_password: None,
             });
 
             let bounds = Bounds::centered(None, size(px(1180.), px(760.)), cx);

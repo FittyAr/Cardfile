@@ -26,7 +26,15 @@ pub struct AppSettings {
     pub enabled_lock_modes: Vec<LockMode>,
     /// Allow anyone at the login screen to create an account (multi-user only).
     pub allow_registration: bool,
+    /// Run the local MCP server while the app is open, so AI clients can use Cardfile
+    /// with an API key.
+    pub mcp_enabled: bool,
+    /// TCP port of the MCP server on 127.0.0.1.
+    pub mcp_port: u16,
 }
+
+/// Default port of the local MCP server.
+pub const DEFAULT_MCP_PORT: u16 = 7337;
 
 impl Default for AppSettings {
     fn default() -> Self {
@@ -35,6 +43,8 @@ impl Default for AppSettings {
             auth_mode: AuthMode::default(),
             enabled_lock_modes: LockMode::ALL.to_vec(),
             allow_registration: false,
+            mcp_enabled: false,
+            mcp_port: DEFAULT_MCP_PORT,
         }
     }
 }
@@ -69,11 +79,19 @@ pub struct UserSettings {
     pub check_for_updates: bool,
     pub confirm_delete: bool,
     pub language: String,
-    /// Argon2 hash of the password protecting private and encrypted cards when the
-    /// account itself has no password (password-free mode).
-    pub lock_password_hash: Option<String>,
     /// Width of the card list column in logical pixels.
     pub list_width: f32,
+    /// AI services the user configured (serialized `cardfile_ai::ProviderConfig`s).
+    /// The assistant UI only appears when at least one is usable.
+    pub ai_providers: Vec<serde_json::Value>,
+    /// Id of the provider the chat uses.
+    pub ai_active_provider: Option<String>,
+    /// Let the in-app assistant read and edit private cards (never encrypted ones).
+    pub ai_chat_allow_private: bool,
+    /// Show the assistant panel.
+    pub ai_panel_open: bool,
+    /// Width of the assistant panel in logical pixels.
+    pub ai_panel_width: f32,
 }
 
 impl Default for UserSettings {
@@ -95,8 +113,12 @@ impl Default for UserSettings {
             check_for_updates: true,
             confirm_delete: true,
             language: "en".into(),
-            lock_password_hash: None,
             list_width: 300.0,
+            ai_providers: Vec::new(),
+            ai_active_provider: None,
+            ai_chat_allow_private: false,
+            ai_panel_open: true,
+            ai_panel_width: 360.0,
         }
     }
 }

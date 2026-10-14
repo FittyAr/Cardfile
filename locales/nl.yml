@@ -88,12 +88,21 @@ editor:
     replace: Vervangen
     replace_one: Vervangen
     replace_all: Alles vervangen
+  media:
+    open_external: "Openen in de systeemspeler"
 
 common:
   back: Terug
   next: Volgende
   ok: OK
   cancel: Annuleren
+  apply: "Toepassen"
+  copied: "Gekopieerd naar het klembord"
+  copy: "Kopiëren"
+  done: "Klaar"
+  edit: "Bewerken"
+  remove: "Verwijderen"
+  save: "Opslaan"
 
 time:
   just_now: zojuist
@@ -202,6 +211,7 @@ nav:
   favorites: Favorieten
   recycle_bin: Prullenbak
   tags: LABELS
+  shared: "Gedeeld met mij"
 
 list:
   count: "%{n} kaarten"
@@ -243,6 +253,7 @@ card:
     hint: De kaart wordt na een periode van inactiviteit opnieuw vergrendeld.
     wrong: Onjuist wachtwoord.
     no_password: Er is geen vergrendelwachtwoord ingesteld. Stel er een in via Instellingen → Beveiliging.
+    no_key: "Deze kaart is niet met je sleutel gedeeld. Vraag de eigenaar om hem opnieuw te delen."
   protect:
     tooltip: Kaartbeveiliging
     unlock_first: Ontgrendel eerst de kaart.
@@ -254,6 +265,7 @@ card:
     title: Definitief verwijderen
     body: Deze kaart wordt voorgoed verwijderd. Dit kan niet ongedaan worden gemaakt.
     confirm: Definitief verwijderen
+  updated_by: "Bewerkt %{date} door %{name}"
 
 tags:
   new: Nieuw label…
@@ -267,6 +279,7 @@ history:
   title: Versiegeschiedenis
   restore: Deze versie herstellen
   empty: Nog geen eerdere versies.
+  by: "door %{name}"
 
 recycle:
   empty: Prullenbak legen
@@ -329,6 +342,7 @@ settings:
     security: Beveiliging
     users: Gebruikers
     data: Gegevens
+    ai: "AI"
   general:
     theme: Thema
     language: Taal
@@ -374,6 +388,12 @@ settings:
     new_password: Nieuw wachtwoord
     save_password: Wachtwoord opslaan
     password_saved: Wachtwoord gewijzigd.
+    current_lock_password: "Huidig vergrendelwachtwoord"
+    new_lock_password: "Nieuw vergrendelwachtwoord"
+    save_lock_password: "Vergrendelwachtwoord opslaan"
+    lock_hint_same: "Privé- en versleutelde kaarten worden ontgrendeld met je inlogwachtwoord. Stel hier een ander wachtwoord in om een apart vergrendelwachtwoord te gebruiken; typ je inlogwachtwoord opnieuw om terug te gaan naar één wachtwoord."
+    lock_hint_separate: "Je gebruikt een apart vergrendelwachtwoord voor privé- en versleutelde kaarten. Voer je inlogwachtwoord in als nieuw vergrendelwachtwoord om voor beide één wachtwoord te gebruiken."
+    lock_hint_nopw: "Dit wachtwoord beschermt je privé- en versleutelde kaarten. Elke gebruiker heeft een eigen wachtwoord."
   users:
     admin: beheerder
     add: Gebruiker toevoegen
@@ -387,3 +407,124 @@ settings:
     standard: Standaardmodus.
     export: Exporteren
     export_hint: Exporteert alle kaarten die niet privé of versleuteld zijn.
+
+share:
+  button: "Delen…"
+  title: "“%{title}” delen"
+  none: "Geen toegang"
+  view: "Kan bekijken"
+  edit: "Kan bewerken"
+  no_users: "Er zijn nog geen andere gebruikers. Voeg ze toe in Instellingen → Gebruikers."
+  no_keys: "%{name} heeft nog geen sleutels ingesteld. Diegene moet één keer inloggen (of een beveiligde kaart ontgrendelen)."
+  unlock_encrypted: "Ontgrendel deze versleutelde kaart eerst om hem te delen."
+  shared_by: "%{name} · %{permission}"
+  view_only: "Deze kaart is met je gedeeld om alleen te bekijken."
+  owner_only: "Alleen de eigenaar van de kaart kan dat doen."
+
+drag:
+  moved: "Verplaatst naar “%{title}”"
+  copied: "Gekopieerd naar “%{title}”"
+  cannot_edit: "Je kunt die kaart niet bewerken."
+  protected: "Ontgrendel die kaart voordat je er bestanden op neerzet."
+
+activity:
+  create: "Gemaakt"
+  edit: "Bewerkt"
+  delete: "Naar de prullenbak verplaatst"
+  restore: "Hersteld"
+  pin: "Vastgezet"
+  unpin: "Losgemaakt"
+  favorite: "Als favoriet gemarkeerd"
+  unfavorite: "Uit favorieten verwijderd"
+  move: "Volgorde gewijzigd"
+  tag: "Labels gewijzigd"
+  share: "Gedeeld"
+  unshare: "Delen gestopt"
+  none: "Beveiliging verwijderd"
+  read_only: "Alleen-lezen gemaakt"
+  private: "Privé gemaakt"
+  encrypted: "Versleuteld"
+
+ai:
+  providers: "AI-diensten"
+  providers_hint: "Koppel een cloud- of lokale AI om de assistent te gebruiken. De knoppen verschijnen pas als er een dienst is ingesteld."
+  local: "lokaal"
+  cloud: "cloud"
+  provider:
+    add: "AI-dienst toevoegen"
+    name: "Naam"
+    url: "Basis-URL"
+    model: "Model"
+    key: "API-sleutel"
+    key_optional: "API-sleutel (optioneel)"
+    kind: "API-indeling"
+    api_version: "API-versie"
+    pick_model: "Kies een model"
+    get_key: "API-sleutel aanvragen"
+    test: "Verbinding testen"
+    test_ok: "Verbonden. De dienst heeft geantwoord."
+    incomplete: "Vul de naam, URL en het model in."
+    not_ready: "Ontbrekende instellingen (API-sleutel, URL of model)"
+    active: "In gebruik"
+    use: "Gebruiken"
+  chat:
+    title: "Assistent"
+    allow_private: "De assistent privékaarten laten lezen en bewerken"
+    encrypted_note: "Versleutelde kaarten zijn nooit beschikbaar voor een AI."
+  mcp:
+    title: "MCP-server voor AI-clients"
+    hint: "Laat AI-apps zoals Claude, Cursor of VS Code Cardfile gebruiken terwijl het open is, alleen op deze computer (127.0.0.1). Elke client heeft een API-sleutel nodig; wijzigingen worden vastgelegd als gedaan door Cardfile AI namens jou."
+    enable: "MCP-server uitvoeren"
+    port: "Poort"
+    bad_port: "Gebruik een poortnummer tussen 1024 en 65535."
+    running: "Actief op %{url}"
+    failed: "Kan niet starten: %{error}"
+    stopped: "Gestopt"
+  keys:
+    title: "API-sleutels"
+    hint: "Met een sleutel kan een AI-client zien en wijzigen wat jij kunt, als Cardfile AI. Je kunt hem op elk moment intrekken."
+    name_placeholder: "Sleutelnaam, bijv. Claude Desktop"
+    default_name: "AI-client"
+    create: "Sleutel maken"
+    read_only_option: "Alleen-lezen"
+    private_option: "Privékaarten toestaan"
+    read_only: "alleen-lezen"
+    private: "privékaarten"
+    used: "gebruikt %{when}"
+    never_used: "nooit gebruikt"
+    revoke: "Intrekken"
+    revoke_body: "AI-clients die “%{name}” gebruiken, verliezen meteen hun toegang."
+    copy_now: "Kopieer de sleutel nu; hij wordt niet opnieuw getoond. Voeg hem daarna toe aan je AI-client:"
+  activity:
+    title: "Recente AI-activiteit"
+    empty: "De AI heeft nog niets gewijzigd."
+
+chat:
+  title: "Assistent"
+  toggle: "Assistent"
+  placeholder: "Vraag het de assistent…"
+  send: "Verzenden"
+  stop: "Stoppen"
+  clear: "Gesprek wissen"
+  close: "Assistent verbergen"
+  thinking: "Bezig…"
+  no_provider: "Stel eerst een AI-dienst in via Instellingen → AI."
+  empty: "Vraag alles over je kaarten. Bijvoorbeeld:"
+  example1: "“Zoek mijn notities over de reis en geef ze het label Reizen.”"
+  example2: "“Maak van de kaart met vergadernotities een nette checklist.”"
+  example3: "“Sorteer mijn receptkaarten alfabetisch.”"
+  tool:
+    search_cards: "Gezocht"
+    get_card: "Kaart gelezen"
+    list_tags: "Labels opgehaald"
+    recent_activity: "Recente activiteit bekeken"
+    create_card: "Kaart gemaakt"
+    update_card: "Kaart herschreven"
+    edit_card_text: "Tekst bewerkt"
+    append_to_card: "Aan kaart toegevoegd"
+    tag_card: "Gelabeld"
+    create_tag: "Label gemaakt"
+    set_card_flags: "Kenmerken gewijzigd"
+    reorder_cards: "Kaartvolgorde gewijzigd"
+    delete_card: "Naar de prullenbak verplaatst"
+    restore_card: "Kaart hersteld"

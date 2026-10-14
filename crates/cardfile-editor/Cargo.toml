@@ -15,8 +15,12 @@ workspace = true
 [dependencies]
 cardfile-doc.workspace = true
 unicode-segmentation.workspace = true
+unicode-bidi.workspace = true
 cardfile-i18n.workspace = true
 gpui-kit.workspace = true
+cardfile-media.workspace = true
+image.workspace = true
+tracing.workspace = true
 
 [dev-dependencies]
 pretty_assertions.workspace = true
