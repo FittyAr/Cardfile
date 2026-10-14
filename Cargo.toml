@@ -1,0 +1,98 @@
+[workspace]
+resolver = "3"
+members = ["crates/*"]
+default-members = ["crates/cardfile"]
+
+[workspace.package]
+version = "2.0.0-alpha.1"
+edition = "2024"
+rust-version = "1.99"
+license = "MIT OR Apache-2.0"
+authors = ["FittyAr"]
+repository = "https://github.com/FittyAr/Cardfile"
+homepage = "https://github.com/FittyAr/Cardfile"
+publish = false
+
+[workspace.dependencies]
+# Internal crates
+cardfile-core = { path = "crates/cardfile-core" }
+cardfile-crypto = { path = "crates/cardfile-crypto" }
+cardfile-db = { path = "crates/cardfile-db" }
+cardfile-doc = { path = "crates/cardfile-doc" }
+cardfile-editor = { path = "crates/cardfile-editor" }
+cardfile-i18n = { path = "crates/cardfile-i18n" }
+cardfile-ui = { path = "crates/cardfile-ui" }
+cardfile-updater = { path = "crates/cardfile-updater" }
+
+# UI
+gpui-kit = "0.7.3"
+
+# Data
+diesel = { version = "2.3.14", default-features = false, features = ["sqlite", "returning_clauses_for_sqlite_3_35"] }
+diesel_migrations = { version = "2.3.2", features = ["sqlite"] }
+libsqlite3-sys = { version = "0.38.2", features = ["bundled"] }
+
+# General
+anyhow = "1.0.104"
+base64 = "0.23.1"
+directories = "6.0.0"
+jiff = { version = "0.2.38", features = ["serde"] }
+parking_lot = "0.12.5"
+semver = "1.0.28"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+thiserror = "2.0.21"
+toml = "1.1.8"
+unicode-segmentation = "1.13.3"
+uuid = { version = "1.28.0", features = ["v7", "serde"] }
+
+# Crypto
+argon2 = "0.6.0"
+blake3 = "1.8.7"
+chacha20poly1305 = "0.11.0"
+rand = "0.10.3"
+zeroize = { version = "1.9.1", features = ["derive"] }
+
+# Documents / export
+image = { version = "0.25.10", default-features = false, features = ["png", "jpeg", "gif", "webp", "bmp"] }
+krilla = "0.8.2"
+pulldown-cmark = "0.13.4"
+spellbook = "0.4.2"
+
+# Platform
+open = "5.4.4"
+rfd = "0.17.2"
+rust-i18n = "4.2.4"
+ureq = "3.4.2"
+minisign-verify = "0.3.0"
+
+# Observability
+tracing = "0.1.44"
+tracing-appender = "0.2.5"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+
+# Dev
+pretty_assertions = "1.4.1"
+tempfile = "3.27.0"
+
+[workspace.lints.rust]
+unsafe_code = "deny"
+missing_debug_implementations = "allow"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+unwrap_used = "warn"
+expect_used = "warn"
+dbg_macro = "warn"
+todo = "warn"
+
+[profile.dev]
+# GPUI is heavy; optimize dependencies even in debug builds for a usable UI.
+[profile.dev.package."*"]
+opt-level = 2
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true
+panic = "abort"

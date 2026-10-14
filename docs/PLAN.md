@@ -1,0 +1,376 @@
+# Cardfile 2.0 — Plan de reescritura en Rust + GPUI
+
+> Estado: **aprobado** · Fecha: 2026-10-14 · Versión objetivo inicial: `2.0.0-alpha.1`
+
+Este documento es la fuente de verdad del proyecto. `AGENTS.md` lo referencia y todo cambio de
+alcance debe reflejarse aquí primero.
+
+---
+
+## 1. Decisiones tomadas
+
+| # | Tema | Decisión |
+|---|------|----------|
+| 1 | Modo web / Docker | **Descartado**. Solo escritorio. |
+| 2 | Autenticación | Configurable en el asistente de primer arranque: **multiusuario** (usuario + contraseña), **usuario único** (solo contraseña) o **sin contraseña**. |
+| 3 | Bloqueo de tarjetas | Tres niveles, habilitables y elegibles por el usuario: **(A) Solo lectura** (evita ediciones accidentales, sin contraseña), **(B) Privada** (requiere contraseña para ver, título enmascarado), **(C) Cifrada** (contenido cifrado en reposo con clave derivada de contraseña). |
+| 4 | Funcionalidades | Todas: etiquetas/categorías, imágenes embebidas, adjuntos, exportación (Markdown, HTML, PDF, JSON), favoritos/fijadas, orden manual, historial de versiones. |
+| 5 | Búsqueda | Texto completo (título + contenido) con resaltado; alcance configurable (solo título / título + contenido / incluir etiquetas). |
+| 6 | Papelera | Se mantiene (borrado lógico, restaurar, vaciar). |
+| 7 | Importación | **No** existe ningún tipo de importación ni restauración (ni Flet, ni `.crd`, ni backups JSON). Se arranca de cero. |
+| 8 | Temas | Se portan los 9 temas actuales, se crean nuevos y se soportan temas JSON externos. |
+| 9 | Idiomas | Se desarrolla **solo en inglés**, con infraestructura i18n completa desde el día 1 (ningún string de UI hardcodeado). La traducción se hará al final. |
+| 10 | Modo portable | Se mantiene. |
+| 11 | Sincronización | Fuera de alcance, pero el modelo de datos queda **preparado** (UUIDv7, timestamps, revisión, tombstones). |
+| 12 | Plataformas | Windows y Linux. **macOS queda fuera** por ahora (sin cuenta Apple Developer); el código se mantiene portable para sumarlo luego. |
+| 13 | Atajos | Configurables mediante keymap JSON (mismo modelo que Zed). |
+| 14–15 | Editor | WYSIWYG "lo más parecido a Word sin exagerar". El usuario nunca ve Markdown. Exportación a Markdown. |
+| 16 | Atajos Markdown al escribir | Sí (`# ` → título, `- ` → lista, `[] ` → checklist, etc.). |
+| 17 | Corrector ortográfico | Sí. |
+| 18 | UI | **GPUI + gpui-component**. **No** se hace fork de Zed. |
+| 19 | ORM | **Diesel** (SQLite). |
+| 20 | Licencia | **`MIT OR Apache-2.0`**, copyright **FittyAr**. |
+| 21 | Toolchain | Rust stable más reciente (1.99 al 2026-10-14), edición 2024. |
+| 22 | Estructura | Workspace de Cargo con varios crates. |
+| 23 | Limpieza | Se elimina todo el código Flet. Se conservan logos, imágenes y assets. El instalador Inno Setup se conserva y se actualiza. |
+| 24 | Versión | `2.0.0-alpha.1`. |
+| 25 | Idioma del repo | Código, identificadores y commits en inglés. Documentación en español e inglés. |
+| 26 | Flujo Git | Conventional Commits, ramas + PR contra `main`. |
+| 27 | Archivos de agente | Solo `AGENTS.md`. |
+| 28 | Firma | Sin certificado pago. Microsoft Store firma el MSIX. Artefactos de release firmados con **minisign**. |
+| 29 | Store / winget | Cuenta de Partner Center existente. ID winget: `FittyAr.Cardfile`. |
+| 30 | Linux | Primero `.deb`, `.rpm`, AppImage; luego Flathub y AUR. |
+| 31 | Actualizaciones | Aviso in-app de nueva versión (sin auto-instalar). Deshabilitado en builds de Store/winget/repos. |
+| 32 | Telemetría | Ninguna. |
+
+### 1.1 ¿Por qué no un fork de Zed?
+
+- **Licencia**: GPUI es Apache-2.0, pero la mayoría de los crates de Zed (`editor`, `workspace`,
+  `project`, …) son **GPL-3.0 / AGPL-3.0**. Un fork obligaría a licenciar Cardfile como GPL.
+- **Tamaño**: Zed tiene 200+ crates (LSP, colaboración, terminal, IA, extensiones). Recortarlo y
+  mantenerlo sincronizado cuesta más que construir sobre GPUI.
+- **gpui-component** (Longbridge, Apache-2.0) ya aporta 60+ widgets, temas, dock, render de
+  Markdown/HTML y un input de texto basado en `ropey`.
+
+**Regla**: nunca copiar código de crates GPL/AGPL de Zed. Solo se depende de `gpui`
+(publicado como `gpui-pre`) y crates con licencia permisiva.
+
+---
+
+## 2. Stack tecnológico
+
+Las versiones se fijan con `cargo add` (última disponible) al comenzar cada fase y se
+registran en `Cargo.lock`. Valores verificados al 2026-10-14:
+
+| Área | Crate / herramienta | Versión ref. | Licencia |
+|------|---------------------|--------------|----------|
+| UI framework + widgets | `gpui-kit` (agrupa `gpui-pre` 0.3.9 + gpui-component + assets) | 0.7.3 | Apache-2.0 |
+| Buffer de texto | `ropey` (vía gpui-component) | 2.0.0-beta | MIT |
+| ORM | `diesel` + `diesel_migrations` (feature `sqlite`, SQLite bundled) | 2.3.x | MIT OR Apache-2.0 |
+| Búsqueda | SQLite **FTS5** (tabla virtual vía migraciones SQL) | — | Dominio público |
+| IDs | `uuid` (v7) | última | MIT OR Apache-2.0 |
+| Fechas | `jiff` o `time` | última | MIT OR Apache-2.0 |
+| Serialización | `serde`, `serde_json` | última | MIT OR Apache-2.0 |
+| Errores | `thiserror` (libs), `anyhow` (bin) | última | MIT OR Apache-2.0 |
+| Logs | `tracing`, `tracing-subscriber`, `tracing-appender` | última | MIT |
+| Hash de contraseñas | `argon2` (RustCrypto) | última | MIT OR Apache-2.0 |
+| Cifrado | `chacha20poly1305` (XChaCha20-Poly1305), `zeroize`, `rand` | última | MIT OR Apache-2.0 |
+| Hash de blobs | `blake3` | última | CC0 / Apache-2.0 |
+| Markdown (export) | `pulldown-cmark` / `comrak` (GFM) | última | MIT / BSD-2 |
+| PDF (export) | `krilla` | última | MIT OR Apache-2.0 |
+| Resaltado de código | `syntect` + `two-face` (vía gpui-component) | última | MIT |
+| Imágenes | `image` | última | MIT OR Apache-2.0 |
+| Corrector | `spellbook` (Hunspell-compatible) + diccionario en_US de `wooorm/dictionaries` | última | MPL-2.0* / MIT-like |
+| i18n | `rust-i18n` | última | MIT |
+| Directorios | `directories` | última | MIT OR Apache-2.0 |
+| Config | `serde` + TOML (`toml`) | última | MIT OR Apache-2.0 |
+| Updater | `ureq` + `minisign-verify` + `semver` | última | MIT / Apache |
+| Diálogos de archivo | `rfd` (si GPUI no expone lo necesario) | última | MIT |
+| Releases | `dist` (cargo-dist) | 0.32.x | MIT OR Apache-2.0 |
+| Paquetes Linux | `cargo-deb`, `cargo-generate-rpm`, `linuxdeploy` (AppImage) | última | MIT |
+| Licencias | `cargo-deny`, `cargo-about` | última | MIT OR Apache-2.0 |
+| Changelog | `git-cliff` | última | MIT OR Apache-2.0 |
+
+\* **MPL-2.0** es copyleft débil a nivel de archivo: compatible con distribuir Cardfile bajo
+MIT/Apache siempre que no modifiquemos los archivos de `spellbook`. Se aprueba como excepción
+explícita en `deny.toml`; si se prefiere evitarlo, alternativa: implementación propia sobre
+listas de palabras (más pobre).
+
+### 2.1 Política de licencias
+
+- `deny.toml` con allowlist: `MIT`, `Apache-2.0`, `Apache-2.0 WITH LLVM-exception`, `BSD-2-Clause`,
+  `BSD-3-Clause`, `ISC`, `Zlib`, `Unicode-3.0`, `CC0-1.0`, `MPL-2.0` (solo crates listados y sin modificar:
+  `spellbook`, y transitivas `cbindgen` [build], `dwrote` [GPUI], `option-ext` [`directories`]).
+  **GPL/AGPL/LGPL prohibidas.** `cargo deny check` corre en CI y bloquea el merge.
+- `cargo about generate` produce `THIRD_PARTY_LICENSES.html` en cada release y se incluye en los
+  paquetes y en la pantalla "About → Licenses" de la app.
+- `docs/CREDITS.md` cita proyectos de los que tomamos ideas, assets o código (con enlace y licencia).
+- Todo código copiado de terceros conserva su cabecera de licencia original.
+
+---
+
+## 3. Arquitectura
+
+### 3.1 Workspace
+
+```
+Cardfile/
+├─ Cargo.toml                 # [workspace], dependencias compartidas, perfiles
+├─ rust-toolchain.toml        # channel = "stable"
+├─ crates/
+│  ├─ cardfile/               # bin: entrypoint, wiring, CLI args (--portable, --data-dir)
+│  ├─ cardfile-core/          # dominio puro: entidades, servicios, errores, traits de repos
+│  ├─ cardfile-db/            # Diesel: schema.rs, migraciones, impl de repositorios
+│  ├─ cardfile-crypto/        # argon2, cifrado de tarjetas, manejo de claves en memoria
+│  ├─ cardfile-doc/           # modelo de documento + exportadores (md, html, pdf, json)
+│  ├─ cardfile-editor/        # widget GPUI del editor WYSIWYG
+│  ├─ cardfile-ui/            # vistas GPUI: shell, lista, wizard, settings, diálogos
+│  ├─ cardfile-i18n/          # carga de locales (en.yml) + macro t!()
+│  └─ cardfile-updater/       # chequeo de versión + verificación minisign
+├─ assets/                    # iconos, logos, temas JSON, keymaps, fuentes, diccionarios
+├─ locales/en.yml
+├─ packaging/
+│  ├─ windows/installer.iss   # Inno Setup actualizado
+│  ├─ windows/msix/           # AppxManifest.xml + assets de Store
+│  └─ linux/                  # .desktop, metainfo AppStream, iconos, AppImage, flatpak
+├─ docs/
+├─ xtask/                     # tareas: package, bundle-licenses, gen-icons
+└─ .github/workflows/
+```
+
+Dependencias permitidas entre crates (sin ciclos):
+`core` ← `db`, `crypto`, `doc` ← `editor` ← `ui` ← `cardfile` (bin). `core` no depende de GPUI ni de Diesel.
+
+### 3.2 Modelo de documento (lo que guarda el editor)
+
+Como el editor tiene capacidades tipo Word (colores, alineación) que Markdown no expresa,
+el formato canónico es un **árbol de bloques JSON versionado** (`doc_version`), similar a
+ProseMirror/Notion:
+
+- **Bloques**: `paragraph`, `heading(1..3)`, `bullet_list`, `ordered_list`, `check_list`,
+  `quote`, `code_block(lang)`, `table`, `image(blob_id, width)`, `attachment(blob_id)`,
+  `divider`, `callout`.
+- **Atributos de bloque**: alineación (izq/centro/der/justificado), sangría.
+- **Marcas inline**: bold, italic, underline, strike, code, link, color de texto, resaltado,
+  tamaño (pequeño/normal/grande/muy grande — escala fija, no libre), super/subíndice.
+- **Exportación**: Markdown (GFM; lo no expresable se degrada o usa HTML inline opcional),
+  HTML, PDF, JSON (copia fiel).
+- Se guarda también `plain_text` derivado para FTS5 y vista previa en la lista.
+
+### 3.3 Base de datos (Diesel + SQLite)
+
+Preparada para sincronización futura: PK `UUIDv7` (texto/blob), `created_at`, `updated_at`,
+`deleted_at` (tombstone), `rev` (contador), `device_id`.
+
+| Tabla | Campos principales |
+|-------|-------------------|
+| `users` | id, username, password_hash (argon2id, null si sin contraseña), display_name, is_admin, settings_json, created/updated/deleted |
+| `cards` | id, owner_id, title, content_json, plain_text, lock_mode (`none`/`read_only`/`private`/`encrypted`), encrypted_payload, crypto_meta, is_pinned, is_favorite, sort_key (fraccional), created/updated/deleted, rev |
+| `card_revisions` | id, card_id, content_json (o cifrado), title, created_at — historial con límite configurable |
+| `tags` | id, owner_id, name, color |
+| `card_tags` | card_id, tag_id |
+| `blobs` | id (blake3), mime, size, data (BLOB) — imágenes y adjuntos, deduplicados |
+| `card_blobs` | card_id, blob_id |
+| `app_settings` | key, value_json — config global (modo de auth, etc.) |
+| `cards_fts` | tabla virtual FTS5 (title, plain_text) mantenida con triggers |
+
+- Migraciones embebidas (`embed_migrations!`) aplicadas al arrancar, con backup automático previo.
+- Acceso a DB en hilo de fondo (`cx.background_executor()`), nunca en el hilo de UI.
+- Pragmas: `journal_mode=WAL`, `foreign_keys=ON`, `busy_timeout`.
+- Las tarjetas cifradas no se indexan en FTS (solo título si no es privada).
+
+### 3.4 Autenticación y bloqueo
+
+- **Modo de auth** se elige en el asistente de primer arranque (para las builds de Store no hay
+  forma práctica de preguntar en el instalador, por eso es en el primer arranque; el instalador
+  Inno puede preseleccionarlo vía parámetro opcional). Modificable luego por un admin en Settings.
+  - *Multiusuario*: pantalla de login; el primer usuario es admin y gestiona usuarios.
+  - *Usuario único*: pantalla de solo contraseña.
+  - *Sin contraseña*: entra directo.
+- Bloqueo automático por inactividad (configurable) y al minimizar (opcional).
+- **Niveles de bloqueo por tarjeta**:
+  - *Solo lectura*: el editor queda inmutable; un clic en el candado (o atajo) desbloquea.
+  - *Privada*: título enmascarado, contenido oculto hasta ingresar contraseña; re-bloqueo temporal.
+  - *Cifrada*: clave derivada con Argon2id (contraseña de tarjeta o maestra), XChaCha20-Poly1305,
+    claves en memoria con `zeroize`. Advertencia clara: contraseña perdida = datos perdidos.
+- Settings permite habilitar/deshabilitar cada nivel y elegir el nivel por defecto.
+
+### 3.5 Editor WYSIWYG (`cardfile-editor`) — módulo de mayor riesgo
+
+Componente propio sobre primitivas de texto de GPUI (`TextLayout`, `ShapedLine`,
+`InputHandler` para IME), sin código GPL de Zed:
+
+- Modelo: árbol de bloques (3.2) + selección/cursor por (bloque, offset). Cada bloque usa un `ropey`.
+- Operaciones como transacciones → **undo/redo** con agrupación.
+- Barra de herramientas tipo Word (compacta) + menú contextual + atajos (`Ctrl+B/I/U`, etc.).
+- Atajos Markdown al escribir (input rules) y "slash menu" (`/` para insertar bloque).
+- Pegado: texto plano, HTML (convertido al modelo), imágenes del portapapeles.
+- Drag & drop de imágenes y archivos.
+- Tablas: insertar/quitar filas/columnas, navegación con Tab.
+- Corrector ortográfico con subrayado y sugerencias en menú contextual.
+- IME y accesibilidad: soporte de IME desde el inicio; accesibilidad según lo que exponga GPUI.
+
+Se valida con un **spike temprano** (Fase 1) antes de construir el resto de la UI sobre él.
+
+### 3.6 UI
+
+- Layout: sidebar (búsqueda, filtros por etiqueta, favoritos, papelera) + lista de tarjetas +
+  panel de tarjeta (editor). Ventana redimensionable, estado persistido.
+- Componentes de gpui-component (List, Input, Dialog, Popover, Sidebar, Dock, Theme).
+- Temas: los 9 actuales (snow, midnight, cyber, forest, nordic, sunset, lavender, ocean,
+  graphite) + nuevos (p. ej. "paper", "solarized light/dark", "high contrast"), en JSON en
+  `assets/themes/`, más carpeta de temas del usuario.
+- Keymap por defecto en `assets/keymaps/default.json`, override en el directorio de config.
+- Command palette (`Ctrl+Shift+P`).
+
+### 3.7 Datos y configuración en disco
+
+- Estándar: `directories::ProjectDirs("ar", "FittyAr", "Cardfile")`
+  (Windows `%APPDATA%\FittyAr\Cardfile`, Linux XDG).
+- Portable: si existe `portable.flag` (o `--portable`) junto al ejecutable, todo va en `./data`.
+- Archivos: `cardfile.db`, `settings.toml`, `keymap.json`, `themes/`, `logs/`, `backups/`.
+
+---
+
+## 4. Convenciones (resumen; detalle en `AGENTS.md`)
+
+- `cargo fmt`, `cargo clippy --all-targets -- -D warnings`, `cargo test`, `cargo deny check` deben pasar.
+- Sin `unwrap()`/`expect()` fuera de tests salvo invariantes documentadas.
+- Errores tipados por crate (`thiserror`); `anyhow` solo en el bin.
+- Todo string visible pasa por `t!()`; claves en `locales/en.yml`.
+- Tests: unitarios en cada crate, integración de DB con SQLite en memoria, tests de
+  ida y vuelta del modelo de documento y exportadores, tests de UI con `gpui::TestAppContext`.
+- Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`, `ci:`, `build:`).
+  Ramas `feat/...`, `fix/...`, `chore/...`; PR contra `main`, squash merge, título del PR = commit.
+
+---
+
+## 5. CI/CD y distribución
+
+### 5.1 Workflows
+
+| Workflow | Disparador | Jobs |
+|----------|-----------|------|
+| `ci.yml` | PR y push a `main` | fmt, clippy, test (matriz Windows/Linux), `cargo deny`, título de PR semántico |
+| `release.yml` | tag `v*` | generado/ampliado desde `dist`: build por target, archivos, instaladores shell/PowerShell, Inno Setup, MSIX, `.deb`, `.rpm`, AppImage, `SHA256SUMS`, firma minisign, licencias de terceros, GitHub Release con changelog `git-cliff` |
+| `winget.yml` | release publicada | `winget-releaser` → PR a `microsoft/winget-pkgs` para `FittyAr.Cardfile` (requiere PAT `WINGET_TOKEN`; la primera versión se envía a mano) |
+| `store.yml` | manual / release estable | sube el MSIX a Partner Center (`msstore` CLI; secretos de Azure AD de Partner Center) |
+
+Targets: `x86_64-pc-windows-msvc`, `aarch64-pc-windows-msvc`, `x86_64-unknown-linux-gnu`,
+`aarch64-unknown-linux-gnu`. (macOS se agregará cuando exista cuenta Apple Developer.)
+
+### 5.2 Instalación con un comando
+
+```powershell
+irm https://github.com/FittyAr/Cardfile/releases/latest/download/cardfile-installer.ps1 | iex
+```
+```bash
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/FittyAr/Cardfile/releases/latest/download/cardfile-installer.sh | sh
+```
+```powershell
+winget install FittyAr.Cardfile
+```
+
+### 5.3 Firma
+
+- **minisign**: clave secreta en el secreto `MINISIGN_SECRET_KEY` (+ password). Se firman todos los
+  artefactos y `SHA256SUMS`. La clave pública va en el README, en `docs/` y embebida en el updater.
+- **Windows**: el MSIX lo firma Microsoft Store. Los `.exe`/instalador Inno quedan sin firma
+  Authenticode (SmartScreen avisará; documentado). Opción futura: Azure Trusted Signing.
+- **macOS**: fuera de alcance por ahora.
+
+### 5.4 Updater
+
+Consulta `releases/latest` de GitHub al arrancar (configurable, desactivable), compara `semver`,
+muestra aviso con notas y enlace. Al descargar desde la app se verifica la firma minisign.
+Compilado con feature `self-update-check`, **desactivada** en builds de Store, winget y repos Linux.
+
+---
+
+## 6. Fases
+
+Cada fase termina con PR(s) mergeados, CI verde y criterios de aceptación cumplidos.
+
+### Fase 0 — Limpieza y andamiaje
+1. Rama `chore/rust-rewrite-bootstrap`.
+2. Eliminar código Flet: `src/`, `tests/`, `docker/`, `lang/`, `main.py`, `requirements.txt`,
+   `run.ps1`, `run.sh`, `build.spec`, docs obsoletas (`ANALISIS.md`, `MIGRACION.md`,
+   `auth_redirect_fix.md`, `markdown_editor_*.md`, `compilacion_y_release.md`, `signing.md`,
+   READMEs traducidos), workflow `release.yml` actual.
+3. Conservar `assets/` y mover `installer.iss` → `packaging/windows/installer.iss` (se actualiza en Fase 8;
+   se mantiene el `AppId` GUID original).
+4. Crear: `.gitignore` (Rust + IDE + OS), `.gitattributes`, `.editorconfig`, `rust-toolchain.toml`,
+   `rustfmt.toml`, `clippy.toml`, `deny.toml`, `about.toml`, `cliff.toml`, `LICENSE-MIT`,
+   `LICENSE-APACHE` (FittyAr), `README.md` + `README.es.md`, `AGENTS.md`, `CONTRIBUTING.md`,
+   `docs/CREDITS.md`, `.github/` (ci.yml, plantillas de PR/issue, dependabot para cargo y actions).
+5. Workspace con todos los crates vacíos; el bin abre una ventana GPUI "Hello Cardfile".
+- **Aceptación**: `cargo build` en Windows y Linux en CI, `cargo deny` verde.
+
+### Fase 1 — Spike del editor (riesgo técnico)
+- Prototipo en `cardfile-editor`: párrafos + headings + bold/italic, cursor, selección con
+  mouse/teclado, IME, undo/redo, copy/paste de texto plano, varios miles de palabras sin lag.
+- **Aceptación**: demo funcional en `examples/` y documento corto con decisiones/límites.
+  Si el enfoque no escala, se replantea aquí, no después.
+
+### Fase 2 — Núcleo de datos
+- `cardfile-core` (entidades, servicios, traits), `cardfile-db` (schema, migraciones, repos, FTS5,
+  triggers, backups), `cardfile-doc` (modelo + serialización + `plain_text`).
+- **Aceptación**: tests de repos y de búsqueda; ida y vuelta JSON del documento.
+
+### Fase 3 — Shell de la aplicación
+- Ventana, sidebar, lista de tarjetas, crear/renombrar/borrar/restaurar, papelera, búsqueda
+  configurable con resaltado, temas (9 + nuevos + externos), keymap, command palette,
+  Settings (General/Apariencia/Editor/Seguridad/Datos/Acerca de), i18n, modo portable, logs.
+- **Aceptación**: CRUD completo con editor básico de Fase 1.
+
+### Fase 4 — Seguridad
+- Asistente de primer arranque (idioma, almacenamiento estándar/portable, modo de auth, tema).
+- Login multiusuario / contraseña única / sin contraseña; gestión de usuarios (admin).
+- Bloqueo por inactividad; niveles de tarjeta Solo lectura / Privada / Cifrada; cambio de contraseña
+  con re-cifrado.
+- **Aceptación**: tests de crypto (vectores, contraseña incorrecta, corrupción), flujos de UI.
+
+### Fase 5 — Editor completo
+- Listas (todas), checklists, citas, divisor, bloques de código con resaltado, tablas, links,
+  colores, resaltado, tamaños, alineación, sangría, imágenes (pegar/arrastrar/redimensionar),
+  adjuntos, atajos Markdown, slash menu, pegado HTML, buscar/reemplazar dentro de la tarjeta.
+- **Aceptación**: suite de tests del modelo y de input rules; prueba manual guiada.
+
+### Fase 6 — Organización y exportación
+- Etiquetas con color, filtros, favoritos, fijadas, orden manual (drag & drop), historial de
+  versiones con vista/restauración, exportación de tarjeta o colección a Markdown/HTML/PDF/JSON.
+- **Aceptación**: exportaciones validadas con fixtures (golden files).
+
+### Fase 7 — Corrector ortográfico
+- `spellbook` + diccionario en_US, subrayado, sugerencias, "agregar al diccionario", activar/desactivar,
+  diccionarios por idioma preparados para la traducción.
+
+### Fase 8 — Empaquetado y distribución
+- `dist` + jobs extra: Inno Setup actualizado (branding actual, idiomas, preselección de modo de auth),
+  MSIX + Store, `.deb`/`.rpm`/AppImage, minisign, `THIRD_PARTY_LICENSES`, winget, updater.
+- **Aceptación**: tag `v2.0.0-alpha.1` publica una release completa e instalable por cada vía.
+
+### Fase 9 — Pulido y estable
+- Rendimiento (10k tarjetas), accesibilidad, docs de usuario (es/en), `CREDITS.md` completo,
+  entrega de `locales/en.yml` para traducción, Flathub y AUR, `2.0.0`.
+
+---
+
+## 7. Riesgos
+
+| Riesgo | Mitigación |
+|--------|-----------|
+| GPUI es pre-1.0 y su API cambia | Pin exacto igual al de gpui-component; actualizar juntos; aislar GPUI en `editor`/`ui`. |
+| Editor WYSIWYG es complejo | Spike en Fase 1; alcance "Word sin exagerar"; modelo propio simple. |
+| Sin firma Authenticode / Apple | Store para Windows firmado, minisign + documentación; evaluar Azure Trusted Signing. |
+| Dependencias Linux de GPUI (Vulkan, Wayland/X11) | Documentar requisitos; AppImage/Flatpak empaquetan lo necesario. |
+| MPL-2.0 del corrector | Excepción explícita y sin modificar el crate; alternativa documentada. |
+| Pérdida de datos cifrados | Advertencias, backups automáticos, tests exhaustivos. |
+
+---
+
+## 8. Puntos resueltos
+
+1. No hay importación ni restauración de ningún tipo.
+2. Se acepta la excepción MPL-2.0 para `spellbook`.
+3. macOS queda fuera hasta contar con cuenta Apple Developer.
