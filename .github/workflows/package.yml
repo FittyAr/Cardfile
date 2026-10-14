@@ -25,7 +25,7 @@ jobs:
       MSIX_PUBLISHER: ${{ vars.MSIX_PUBLISHER }}
       MSIX_PUBLISHER_DISPLAY_NAME: ${{ vars.MSIX_PUBLISHER_DISPLAY_NAME }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Download build
         uses: actions/download-artifact@v8
         with:
@@ -78,7 +78,7 @@ jobs:
             appimage_arch: aarch64
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - uses: taiki-e/install-action@v2
         with:
