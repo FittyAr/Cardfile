@@ -77,14 +77,14 @@ registran en `Cargo.lock`. Valores verificados al 2026-10-14:
 | Cifrado | `chacha20poly1305` (XChaCha20-Poly1305), `zeroize`, `rand` | última | MIT OR Apache-2.0 |
 | Hash de blobs | `blake3` | última | CC0 / Apache-2.0 |
 | Markdown (export) | `pulldown-cmark` / `comrak` (GFM) | última | MIT / BSD-2 |
-| PDF (export) | `krilla` | última | MIT OR Apache-2.0 |
+| PDF (export) | `krilla` + `harfrust` (medición; fuentes del sistema) | última | MIT OR Apache-2.0 / MIT |
 | Resaltado de código | `syntect` + `two-face` (vía gpui-component) | última | MIT |
 | Imágenes | `image` | última | MIT OR Apache-2.0 |
 | Corrector | `spellbook` (Hunspell-compatible) + diccionario en_US de `wooorm/dictionaries` | última | MPL-2.0* / MIT-like |
 | i18n | `rust-i18n` | última | MIT |
 | Directorios | `directories` | última | MIT OR Apache-2.0 |
 | Config | `serde` + TOML (`toml`) | última | MIT OR Apache-2.0 |
-| Updater | `ureq` + `minisign-verify` + `semver` | última | MIT / Apache |
+| Updater | `ureq` + `semver` (solo aviso; sin descarga) | última | MIT / Apache |
 | Diálogos de archivo | `rfd` (si GPUI no expone lo necesario) | última | MIT |
 | Releases | `dist` (cargo-dist) | 0.32.x | MIT OR Apache-2.0 |
 | Paquetes Linux | `cargo-deb`, `cargo-generate-rpm`, `linuxdeploy` (AppImage) | última | MIT |
@@ -182,8 +182,8 @@ Preparada para sincronización futura: PK `UUIDv7` (texto/blob), `created_at`, `
 ### 3.4 Autenticación y bloqueo
 
 - **Modo de auth** se elige en el asistente de primer arranque (para las builds de Store no hay
-  forma práctica de preguntar en el instalador, por eso es en el primer arranque; el instalador
-  Inno puede preseleccionarlo vía parámetro opcional). Modificable luego por un admin en Settings.
+  forma práctica de preguntar en el instalador, por eso es en el primer arranque).
+  Modificable luego por un admin en Settings.
   - *Multiusuario*: pantalla de login; el primer usuario es admin y gestiona usuarios.
   - *Usuario único*: pantalla de solo contraseña.
   - *Sin contraseña*: entra directo.
@@ -281,9 +281,10 @@ winget install FittyAr.Cardfile
 
 ### 5.4 Updater
 
-Consulta `releases/latest` de GitHub al arrancar (configurable, desactivable), compara `semver`,
-muestra aviso con notas y enlace. Al descargar desde la app se verifica la firma minisign.
-Compilado con feature `self-update-check`, **desactivada** en builds de Store, winget y repos Linux.
+Consulta las releases de GitHub al arrancar (configurable, desactivable), compara `semver`
+(pre-releases solo si la versión instalada es pre-release) y muestra un aviso con enlace. No
+descarga ni instala nada. Feature `update-check`; además se desactiva sola cuando la app corre
+instalada por la Store (`WindowsApps`), por un gestor de paquetes Linux (`/usr`), Flatpak o Snap.
 
 ---
 
@@ -346,7 +347,7 @@ Cada fase termina con PR(s) mergeados, CI verde y criterios de aceptación cumpl
   diccionarios por idioma preparados para la traducción.
 
 ### Fase 8 — Empaquetado y distribución
-- `dist` + jobs extra: Inno Setup actualizado (branding actual, idiomas, preselección de modo de auth),
+- `dist` + jobs extra: Inno Setup actualizado (branding actual, idiomas),
   MSIX + Store, `.deb`/`.rpm`/AppImage, minisign, `THIRD_PARTY_LICENSES`, winget, updater.
 - **Aceptación**: tag `v2.0.0-alpha.1` publica una release completa e instalable por cada vía.
 

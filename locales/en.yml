@@ -77,3 +77,295 @@ editor:
   attachment:
     open_hint: Double-click to open
   read_only: This card is read-only. Unlock it to edit.
+
+common:
+  back: Back
+  next: Next
+  ok: OK
+  cancel: Cancel
+
+time:
+  just_now: just now
+  minutes_ago: "%{n} min ago"
+  hours_ago: "%{n} h ago"
+  days_ago: "%{n} d ago"
+
+lock:
+  none: Unprotected
+  read_only: Read-only
+  read_only_desc: Visible, but editing needs one click to unlock. Prevents accidental changes.
+  private: Private
+  private_desc: Title masked and content hidden until you enter your password.
+  encrypted: Encrypted
+  encrypted_desc: Content encrypted on disk with your password. A forgotten password cannot be recovered.
+
+wizard:
+  step:
+    welcome: Welcome
+    storage: Storage
+    security: Sign-in
+    protection: Card protection
+    appearance: Appearance
+    finish: Ready
+  welcome:
+    title: Welcome to Cardfile
+    body: "Your digital card file for notes, ideas and anything you want to keep. Let's set it up in a few steps."
+  storage:
+    standard: Standard
+    standard_desc: "Data is stored in your user profile:"
+    portable: Portable
+    portable_desc: Data is stored in a "data" folder next to Cardfile, so you can carry it on a USB drive.
+    portable_unavailable: Portable mode is unavailable because the program folder is not writable.
+  security:
+    none: No password
+    none_desc: Cardfile opens directly. Best for a personal computer.
+    single: Password
+    single_desc: One account protected by a password.
+    multi: Several users
+    multi_desc: Each person signs in with a user name and password and has their own cards.
+    username: User name
+    display_name: Display name
+    password: Password
+    confirm: Confirm password
+    lock_password: Lock password (optional)
+    lock_password_hint: Used to unlock private and encrypted cards. You can set it later in Settings.
+    allow_registration: Allow new users to create an account from the sign-in screen
+  protection:
+    intro: Choose which protection levels can be used for cards.
+    default: Protection for new cards
+    needs_password: Private and encrypted cards need a lock password. Go back to set one, or set it later in Settings.
+  appearance:
+    intro: Pick a theme. You can change it any time in Settings.
+  finish:
+    intro: "Everything is ready:"
+    later: All of this can be changed later in Settings.
+    start: Start using Cardfile
+  error:
+    username: Enter a user name.
+    password_short: The password must have at least 4 characters.
+    password_mismatch: The passwords do not match.
+    portable: Could not enable portable mode
+
+login:
+  title: Sign in
+  register_title: Create account
+  locked_title: "Cardfile is locked, %{name}"
+  username: User name
+  display_name: Display name
+  password: Password
+  confirm: Confirm password
+  sign_in: Sign in
+  unlock: Unlock
+  create: Create account
+  need_account: Create an account
+  have_account: I already have an account
+  error:
+    invalid: Wrong user name or password.
+    taken: That user name is already taken.
+
+welcome:
+  title: Welcome to Cardfile
+  body: |
+    ## Getting started
+
+    Cardfile keeps your notes as **cards**. Create one with the **+** button or **Ctrl+N**.
+
+    - Format text with the toolbar or shortcuts: **Ctrl+B** bold, *Ctrl+I* italic, Ctrl+U underline.
+    - Type `# ` for a heading, `- ` for a list or `[] ` for a checklist.
+    - Paste or drag images and files into a card.
+    - Use **Ctrl+F** to search all your cards and **Ctrl+Shift+P** for every command.
+
+    ## Protect your cards
+
+    Use the lock button at the top of a card to make it *read-only*, *private* or *encrypted*.
+
+    - [ ] Create your first card
+    - [ ] Try a tag to organize cards
+
+search:
+  placeholder: Search cards
+  focus: Search cards
+
+nav:
+  all: All cards
+  favorites: Favorites
+  recycle_bin: Recycle bin
+  tags: TAGS
+
+list:
+  count: "%{n} cards"
+  empty: No cards here yet.
+  no_results: No cards match your search.
+
+sort:
+  title: Sort
+  manual: Manual (drag to reorder)
+  updated: Last modified
+  created: Date created
+  title_asc: Title
+
+card:
+  new: New card
+  untitled: Untitled
+  delete: Move to recycle bin
+  restore: Restore
+  pin: Pin to top
+  unpin: Unpin
+  favorite: Add to favorites
+  unfavorite: Remove from favorites
+  tags: Tags
+  history: Version history
+  none_selected: No card selected
+  none_hint: Select a card or press Ctrl+N to create one.
+  read_only_banner: This card is read-only.
+  unlock_edit: Edit
+  deleted_banner: This card is in the recycle bin.
+  saving: Saving…
+  updated: "Saved %{date}"
+  words: "%{n} words"
+  unlock:
+    private: This card is private
+    encrypted: This card is encrypted
+    placeholder: Password
+    button: Unlock
+    hint: The card locks again after a period of inactivity.
+    wrong: Wrong password.
+    no_password: No lock password is set. Set one in Settings → Security.
+  protect:
+    tooltip: Card protection
+    unlock_first: Unlock the card first.
+    needs_password: Set a lock password in Settings → Security first.
+    encrypt_title: Encrypt card
+    encrypt_body: Enter your password to encrypt this card. Without it the card cannot be opened.
+  purge:
+    title: Delete permanently
+    body: This card will be deleted forever. This cannot be undone.
+    confirm: Delete permanently
+
+tags:
+  new: New tag…
+  edit: Edit tag
+  delete: Delete tag
+  delete_body: "Delete the tag \"%{name}\"? Cards keep their content."
+  name: Tag name
+  exists: A tag with that name already exists.
+
+history:
+  title: Version history
+  restore: Restore this version
+  empty: No earlier versions yet.
+
+recycle:
+  empty: Empty recycle bin
+  empty_title: Empty recycle bin
+  empty_body: All cards in the recycle bin will be deleted forever.
+
+export:
+  markdown: Export as Markdown
+  html: Export as HTML
+  pdf: Export as PDF
+  json: Export as JSON
+  choose_folder: Choose a folder for the export
+  done: "Exported to %{path}"
+  failed: "Export failed: %{error}"
+  skipped: "%{n} private or encrypted cards were not exported."
+
+backup:
+  done: "Backup saved to %{path}"
+
+menu:
+  settings: Settings
+  command_palette: Command palette
+  keymap: Edit keyboard shortcuts
+  export_all: Export all cards
+  backup: Back up now
+  open_data_folder: Open data folder
+  check_updates: Check for updates
+  about: About Cardfile
+  lock: Lock
+  sign_out: Sign out
+  quit: Quit
+
+palette:
+  placeholder: Type a command…
+
+updates:
+  title: Update available
+  available: "Cardfile %{version} is available. Click to download."
+  latest: You have the latest version.
+  failed: "Could not check for updates: %{error}"
+  managed: Updates for this installation are handled by your app store or package manager.
+
+about:
+  version: "Version %{version}"
+  description: A modern digital card file for your notes.
+  license: Free software under the MIT or Apache 2.0 license.
+  website: Website
+  third_party: Third-party licenses
+
+settings:
+  title: Settings
+  open: Open
+  never: Never
+  "off": "Off"
+  seconds: "%{n} seconds"
+  minutes: "%{n} minutes"
+  tab:
+    general: General
+    editor: Editor
+    security: Security
+    users: Users
+    data: Data
+  general:
+    theme: Theme
+    language: Language
+    language_hint: More languages are coming.
+    font_size: Editor text size
+    confirm_delete: Ask before deleting cards
+    check_updates: Check for updates on startup
+    check_updates_hint: Only checks GitHub for a newer version. No data is sent.
+    keymap: Keyboard shortcuts
+    keymap_hint: Edit keymap.json to change any shortcut. Restart to apply.
+  editor:
+    markdown_shortcuts: Markdown shortcuts
+    markdown_shortcuts_hint: "Typing # , - , [] , **bold** and similar formats text automatically."
+    spellcheck: Check spelling
+    spellcheck_hint: Misspelled words are underlined. Right-click for suggestions.
+    no_dictionaries: No dictionaries installed.
+    spell_language: Dictionary
+    search_scope: Search in
+    scope_title: Titles only
+    scope_content: Titles and content
+    scope_all: Titles, content and tags
+    default_lock: Protection for new cards
+    default_lock_hint: Applied when a card is created.
+    history: Versions kept per card
+    history_hint: A version is saved at most every 5 minutes while editing.
+  security:
+    auto_lock: Lock after inactivity
+    auto_lock_hint: Asks for your password again after this time without activity.
+    relock: Hide unlocked private cards after
+    relock_hint: Private and encrypted cards lock again after this time without editing.
+    mask: Visible characters of private titles
+    mask_hint: The rest of the title is masked in the list.
+    lock_modes: Available protection levels
+    change_password: Change password
+    lock_password: Lock password
+    password_hint: This password unlocks private and encrypted cards. Encrypted cards are re-encrypted when you change it.
+    current_password: Current password
+    new_password: New password
+    save_password: Save password
+    password_saved: Password changed.
+  users:
+    admin: administrator
+    add: Add user
+    create: Create
+    delete: Delete user
+    delete_body: The account is removed. Its cards stay in the database.
+    invalid: Enter a user name and a password of at least 4 characters.
+  data:
+    location: Data folder
+    portable: Portable mode is active.
+    standard: Standard mode.
+    export: Export
+    export_hint: Export all cards that are not private or encrypted.

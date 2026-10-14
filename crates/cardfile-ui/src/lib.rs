@@ -1,30 +1,101 @@
-//! GPUI views for Cardfile.
+//! Cardfile's GPUI application.
 
-use gpui_kit::component::*;
-use gpui_kit::*;
+mod app;
+mod assets;
+mod card_pane;
+mod dialogs;
+mod export;
+mod history;
+pub mod keymap;
+mod login;
+mod palette;
+pub mod paths;
+mod settings;
+mod spell;
+mod state;
+mod tags;
+pub mod themes;
+mod updater;
+mod welcome;
+mod widgets;
+mod wizard;
+mod workspace;
 
-struct Hello;
+use gpui_kit::{AppContext as _, Bounds, TitlebarOptions, WindowBounds, WindowOptions, px, size};
 
-impl Render for Hello {
-    fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
-        div()
-            .v_flex()
-            .size_full()
-            .items_center()
-            .justify_center()
-            .child("Hello, Cardfile!")
-    }
+pub use paths::DataPaths;
+
+fn window_icon() -> Option<std::sync::Arc<image::RgbaImage>> {
+    let bytes = include_bytes!("../../../packaging/linux/icons/256x256/ar.fittyar.Cardfile.png");
+    image::load_from_memory(bytes)
+        .ok()
+        .map(|i| std::sync::Arc::new(i.to_rgba8()))
 }
 
-/// Run the application.
-pub fn run() -> anyhow::Result<()> {
-    gpui_kit::application().run(|cx| {
-        gpui_kit::init(cx);
-        if let Err(err) =
-            gpui_kit::open_window(WindowOptions::default(), cx, |_, cx| cx.new(|_| Hello))
-        {
-            eprintln!("failed to open window: {err}");
-        }
-    });
-    Ok(())
+/// Start the application with the resolved data location. Blocks until quit.
+pub fn run(paths: DataPaths) {
+    gpui_kit::application()
+        .with_assets(assets::Assets)
+        .run(move |cx| {
+            gpui_kit::init(cx);
+            cardfile_i18n::set_locale("en");
+            themes::init(&paths, cx);
+            themes::apply(themes::DEFAULT_THEME, cx);
+            keymap::init(&paths, cx);
+
+            // Open the database if it already exists; the wizard creates it otherwise.
+            let (db, app_settings) = if paths.db().exists() {
+                match cardfile_db::Database::open(&paths.db(), Some(&paths.backups())) {
+                    Ok(db) => {
+                        let settings = db.app_settings().unwrap_or_default();
+                        (Some(db), settings)
+                    }
+                    Err(e) => {
+                        tracing::error!("cannot open database: {e:#}");
+                        eprintln!(
+                            "Cardfile: cannot open database {}: {e}",
+                            paths.db().display()
+                        );
+                        cx.quit();
+                        return;
+                    }
+                }
+            } else {
+                (None, Default::default())
+            };
+            cx.set_global(state::AppState {
+                paths: paths.clone(),
+                db,
+                app: app_settings,
+                session: None,
+                card_password: None,
+            });
+
+            let bounds = Bounds::centered(None, size(px(1180.), px(760.)), cx);
+            let options = WindowOptions {
+                window_bounds: Some(WindowBounds::Windowed(bounds)),
+                titlebar: Some(TitlebarOptions {
+                    title: Some("Cardfile".into()),
+                    ..Default::default()
+                }),
+                app_id: Some("ar.fittyar.Cardfile".into()),
+                window_min_size: Some(size(px(760.), px(480.))),
+                // Used by X11; Windows takes the icon from the executable's resources.
+                icon: window_icon(),
+                ..Default::default()
+            };
+            if let Err(e) = gpui_kit::open_window(options, cx, |window, cx| {
+                cx.new(|cx| app::CardfileApp::new(window, cx))
+            }) {
+                tracing::error!("open window: {e:#}");
+                cx.quit();
+            }
+            cx.on_window_closed(|cx, _| {
+                if cx.windows().is_empty() {
+                    cx.quit();
+                }
+            })
+            .detach();
+            cx.activate(true);
+        });
 }

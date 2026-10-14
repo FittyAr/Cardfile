@@ -1,0 +1,17 @@
+# Steps injected by `dist` before each build (see dist-workspace.toml).
+- name: Install Linux build dependencies
+  if: runner.os == 'Linux'
+  shell: bash
+  run: ./scripts/install-linux-deps.sh
+- name: Fetch spelling dictionaries
+  shell: bash
+  run: ./scripts/fetch-dictionaries.sh
+- name: Install cargo-about
+  uses: taiki-e/install-action@v2
+  with:
+    tool: cargo-about
+- name: Generate third-party licenses
+  shell: bash
+  run: |
+    mkdir -p packaging/out
+    cargo about generate --workspace -o packaging/out/THIRD_PARTY_LICENSES.html packaging/licenses/about.hbs

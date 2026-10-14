@@ -1,0 +1,957 @@
+//! The main screen: sidebar, card list and card pane.
+
+use std::time::Duration;
+
+use cardfile_core::{
+    AuthMode, CardFilter, CardId, CardSummary, LockMode, SortOrder, Tag, TagId, mask_title,
+};
+use cardfile_i18n::{t, t_args};
+use gpui_kit::assets::IconName;
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::input::{Input, InputEvent, InputState};
+use gpui_kit::component::menu::{ContextMenuExt as _, DropdownMenu as _, PopupMenuItem};
+use gpui_kit::component::{ActiveTheme as _, Sizable as _, WindowExt as _, h_flex, v_flex};
+use gpui_kit::prelude::FluentBuilder as _;
+use gpui_kit::{
+    AnyElement, App, AppContext as _, Context, Entity, EventEmitter, FocusHandle, Focusable,
+    FontWeight, HighlightStyle, InteractiveElement as _, IntoElement, ParentElement as _, Render,
+    ScrollStrategy, SharedString, StatefulInteractiveElement as _, Styled as _, StyledText,
+    Subscription, Task, UniformListScrollHandle, Window, div, img, px, uniform_list,
+};
+
+use crate::card_pane::{CardPane, CardPaneEvent};
+use crate::keymap::*;
+use crate::state::{AppState, TaskExt as _, run_db};
+use crate::widgets::relative_time;
+
+pub enum WorkspaceEvent {
+    Lock,
+    SignOut,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum View {
+    All,
+    Favorites,
+    Tag(TagId),
+    RecycleBin,
+}
+
+/// A card being dragged in the list.
+#[derive(Clone)]
+struct DraggedCard {
+    id: CardId,
+    title: SharedString,
+}
+
+struct DragPreview(SharedString);
+
+impl Render for DragPreview {
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        div()
+            .px(px(10.))
+            .py(px(6.))
+            .rounded(px(6.))
+            .bg(cx.theme().popover)
+            .border_1()
+            .border_color(cx.theme().primary)
+            .shadow_md()
+            .child(self.0.clone())
+    }
+}
+
+pub struct Workspace {
+    focus: FocusHandle,
+    view: View,
+    search: Entity<InputState>,
+    cards: Vec<CardSummary>,
+    tags: Vec<Tag>,
+    selected: Option<CardId>,
+    pane: Entity<CardPane>,
+    list_scroll: UniformListScrollHandle,
+    load_task: Option<Task<()>>,
+    search_task: Option<Task<()>>,
+    counts: (usize, usize, usize),
+    _subs: Vec<Subscription>,
+}
+
+impl EventEmitter<WorkspaceEvent> for Workspace {}
+
+impl Focusable for Workspace {
+    fn focus_handle(&self, _: &App) -> FocusHandle {
+        self.focus.clone()
+    }
+}
+
+const ITEM_HEIGHT: f32 = 74.;
+
+impl Workspace {
+    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+        let search = cx.new(|cx| InputState::new(window, cx).placeholder(t("search.placeholder")));
+        let pane = cx.new(|cx| CardPane::new(window, cx));
+        let subs = vec![
+            cx.subscribe_in(
+                &search,
+                window,
+                |this, _, ev: &InputEvent, window, cx| match ev {
+                    InputEvent::Change => {
+                        // Debounce typing in the search box.
+                        this.search_task = Some(cx.spawn_in(window, async move |this, cx| {
+                            cx.background_executor()
+                                .timer(Duration::from_millis(150))
+                                .await;
+                            let _ = this.update_in(cx, |this, window, cx| this.reload(window, cx));
+                        }));
+                    }
+                    InputEvent::PressEnter { .. } => {
+                        if let Some(first) = this.cards.first().map(|c| c.id) {
+                            this.select(first, window, cx);
+                        }
+                    }
+                    _ => {}
+                },
+            ),
+            cx.subscribe_in(
+                &pane,
+                window,
+                |this, _, ev: &CardPaneEvent, window, cx| match ev {
+                    CardPaneEvent::Saved | CardPaneEvent::ListChanged => this.reload(window, cx),
+                },
+            ),
+            cx.observe_global_in::<crate::tags::TagsChanged>(window, |this, window, cx| {
+                this.reload(window, cx)
+            }),
+        ];
+        let mut ws = Self {
+            focus: cx.focus_handle(),
+            view: View::All,
+            search,
+            cards: Vec::new(),
+            tags: Vec::new(),
+            selected: None,
+            pane,
+            list_scroll: UniformListScrollHandle::new(),
+            load_task: None,
+            search_task: None,
+            counts: (0, 0, 0),
+            _subs: subs,
+        };
+        ws.reload(window, cx);
+        ws
+    }
+
+    fn owner(cx: &App) -> Option<cardfile_core::UserId> {
+        AppState::session(cx).map(|s| s.user.id)
+    }
+
+    fn filter(&self, cx: &App) -> CardFilter {
+        let s = AppState::user_settings(cx);
+        CardFilter {
+            query: self.search.read(cx).value().to_string(),
+            scope: s.search_scope,
+            tag: match self.view {
+                View::Tag(t) => Some(t),
+                _ => None,
+            },
+            favorites_only: self.view == View::Favorites,
+            deleted: self.view == View::RecycleBin,
+            sort: s.sort,
+        }
+    }
+
+    /// Reload the card list, tags and counters.
+    pub fn reload(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let Some(owner) = Self::owner(cx) else { return };
+        let filter = self.filter(cx);
+        let db = AppState::db(cx);
+        let task = run_db(cx, move |_| {
+            let cards = db.list_cards(owner, &filter)?;
+            let tags = db.list_tags(owner)?;
+            let all = db.list_cards(owner, &CardFilter::default())?;
+            let favorites = all.iter().filter(|c| c.is_favorite).count();
+            let deleted = db
+                .list_cards(
+                    owner,
+                    &CardFilter {
+                        deleted: true,
+                        ..Default::default()
+                    },
+                )?
+                .len();
+            Ok((cards, tags, (all.len(), favorites, deleted)))
+        });
+        self.load_task = Some(cx.spawn_in(window, async move |this, cx| {
+            let Ok((cards, tags, counts)) = task.await else {
+                return;
+            };
+            let _ = this.update_in(cx, |this, _window, cx| {
+                this.cards = cards;
+                this.counts = counts;
+                this.pane.update(cx, |p, cx| p.set_tags(tags.clone(), cx));
+                this.tags = tags;
+                cx.notify();
+            });
+        }));
+    }
+
+    pub fn select(&mut self, id: CardId, window: &mut Window, cx: &mut Context<Self>) {
+        if self.selected == Some(id) && self.pane.read(cx).card_id() == Some(id) {
+            return;
+        }
+        self.selected = Some(id);
+        if let Some(ix) = self.cards.iter().position(|c| c.id == id) {
+            self.list_scroll.scroll_to_item(ix, ScrollStrategy::Center);
+        }
+        let db = AppState::db(cx);
+        let task = run_db(cx, move |_| db.card(id));
+        cx.spawn_in(window, async move |this, cx| {
+            if let Ok(card) = task.await {
+                let _ = this.update_in(cx, |this, window, cx| {
+                    if this.selected == Some(card.id) {
+                        this.pane.update(cx, |p, cx| p.open(Some(card), window, cx));
+                    }
+                });
+            }
+        })
+        .detach();
+        cx.notify();
+    }
+
+    fn set_view(&mut self, view: View, window: &mut Window, cx: &mut Context<Self>) {
+        self.view = view;
+        self.reload(window, cx);
+    }
+
+    fn new_card(&mut self, _: &NewCard, window: &mut Window, cx: &mut Context<Self>) {
+        let Some(owner) = Self::owner(cx) else { return };
+        if self.view == View::RecycleBin {
+            self.view = View::All;
+        }
+        let settings = AppState::user_settings(cx);
+        // Content-hiding modes need a password; fall back to no protection otherwise.
+        let mut lock = settings.default_lock_mode;
+        if lock.hides_content() && AppState::lock_password_hash(cx).is_none()
+            || lock == LockMode::Encrypted
+        {
+            lock = LockMode::None;
+        }
+        let tag = match self.view {
+            View::Tag(t) => Some(t),
+            _ => None,
+        };
+        let favorite = self.view == View::Favorites;
+        let db = AppState::db(cx);
+        let task = run_db(cx, move |_| {
+            let card = db.create_card(
+                owner,
+                cardfile_core::NewCard {
+                    title: String::new(),
+                    lock_mode: lock,
+                    ..Default::default()
+                },
+            )?;
+            if let Some(tag) = tag {
+                db.set_card_tags(card.id, &[tag])?;
+            }
+            if favorite {
+                db.set_card_favorite(card.id, true)?;
+            }
+            db.card(card.id)
+        });
+        cx.spawn_in(window, async move |this, cx| {
+            if let Ok(card) = task.await {
+                let _ = this.update_in(cx, |this, window, cx| {
+                    this.selected = Some(card.id);
+                    this.pane.update(cx, |p, cx| {
+                        p.open(Some(card), window, cx);
+                    });
+                    // A brand-new card is open for editing even if read-only by default.
+                    this.reload(window, cx);
+                    window.focus_next(cx);
+                });
+            }
+        })
+        .detach();
+    }
+
+    fn move_card(
+        &mut self,
+        dragged: CardId,
+        target_ix: usize,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let Some(from) = self.cards.iter().position(|c| c.id == dragged) else {
+            return;
+        };
+        if from == target_ix {
+            return;
+        }
+        // Neighbours at the drop position (after removing the dragged card).
+        let mut order: Vec<CardId> = self.cards.iter().map(|c| c.id).collect();
+        let id = order.remove(from);
+        let at = target_ix.min(order.len());
+        order.insert(at, id);
+        let before = at.checked_sub(1).map(|i| order[i]);
+        let after = order.get(at + 1).copied();
+        let card = self.cards.remove(from);
+        self.cards.insert(at, card);
+        cx.notify();
+        let db = AppState::db(cx);
+        let task = run_db(cx, move |_| db.move_card(dragged, before, after));
+        cx.spawn_in(window, async move |this, cx| {
+            let _ = task.await;
+            let _ = this.update_in(cx, |this, window, cx| this.reload(window, cx));
+        })
+        .detach();
+    }
+
+    // ---------------------------------------------------------------------
+    // Actions
+    // ---------------------------------------------------------------------
+
+    fn delete_card(&mut self, _: &DeleteCard, window: &mut Window, cx: &mut Context<Self>) {
+        self.pane.update(cx, |p, cx| p.delete(window, cx));
+    }
+    fn focus_search(&mut self, _: &FocusSearch, window: &mut Window, cx: &mut Context<Self>) {
+        let focus = self.search.focus_handle(cx);
+        focus.focus(window, cx);
+    }
+    fn toggle_pin(&mut self, _: &TogglePin, _: &mut Window, cx: &mut Context<Self>) {
+        self.pane.update(cx, |p, cx| p.toggle_pin(cx));
+    }
+    fn toggle_favorite(&mut self, _: &ToggleFavorite, _: &mut Window, cx: &mut Context<Self>) {
+        self.pane.update(cx, |p, cx| p.toggle_favorite(cx));
+    }
+    fn export_card(&mut self, _: &ExportCard, window: &mut Window, cx: &mut Context<Self>) {
+        self.pane.update(cx, |p, cx| {
+            p.export(crate::export::Format::Markdown, window, cx)
+        });
+    }
+    fn export_all(&mut self, _: &ExportAll, window: &mut Window, cx: &mut Context<Self>) {
+        if let Some(owner) = Self::owner(cx) {
+            crate::export::export_all(owner, crate::export::Format::Markdown, window, cx);
+        }
+    }
+    fn show_history(&mut self, _: &ShowHistory, window: &mut Window, cx: &mut Context<Self>) {
+        self.pane.update(cx, |p, cx| p.show_history(window, cx));
+    }
+    fn show_all(&mut self, _: &ShowAllCards, window: &mut Window, cx: &mut Context<Self>) {
+        self.set_view(View::All, window, cx);
+    }
+    fn show_favorites(&mut self, _: &ShowFavorites, window: &mut Window, cx: &mut Context<Self>) {
+        self.set_view(View::Favorites, window, cx);
+    }
+    fn show_recycle(&mut self, _: &ShowRecycleBin, window: &mut Window, cx: &mut Context<Self>) {
+        self.set_view(View::RecycleBin, window, cx);
+    }
+    fn lock_app(&mut self, _: &LockApp, _: &mut Window, cx: &mut Context<Self>) {
+        if AppState::get(cx).app.auth_mode == AuthMode::NoPassword {
+            // Nothing to unlock with; just hide protected content.
+            self.pane.update(cx, |p, cx| p.relock(cx));
+            return;
+        }
+        self.pane.update(cx, |p, cx| p.flush_save(cx));
+        cx.emit(WorkspaceEvent::Lock);
+    }
+    fn sign_out(&mut self, _: &SignOut, _: &mut Window, cx: &mut Context<Self>) {
+        self.pane.update(cx, |p, cx| p.flush_save(cx));
+        cx.emit(WorkspaceEvent::SignOut);
+    }
+    fn empty_recycle_bin(
+        &mut self,
+        _: &EmptyRecycleBin,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let Some(owner) = Self::owner(cx) else { return };
+        let ws = cx.entity();
+        crate::dialogs::confirm(
+            t("recycle.empty_title"),
+            t("recycle.empty_body"),
+            t("recycle.empty"),
+            window,
+            cx,
+            move |window, cx| {
+                let db = AppState::db(cx);
+                let task = run_db(cx, move |_| db.empty_recycle_bin(owner));
+                let ws = ws.clone();
+                window
+                    .spawn(cx, async move |cx| {
+                        let _ = task.await;
+                        let _ = ws.update_in(cx, |ws, window, cx| {
+                            ws.pane.update(cx, |p, cx| {
+                                if p.card().is_some_and(|c| c.is_deleted()) {
+                                    p.open(None, window, cx);
+                                }
+                            });
+                            ws.reload(window, cx);
+                        });
+                    })
+                    .detach();
+            },
+        );
+    }
+
+    pub fn flush(&mut self, cx: &mut Context<Self>) {
+        self.pane.update(cx, |p, cx| p.flush_save(cx));
+    }
+
+    pub fn apply_settings(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.pane.update(cx, |p, cx| p.apply_user_settings(cx));
+        self.reload(window, cx);
+    }
+
+    // ---------------------------------------------------------------------
+    // Rendering
+    // ---------------------------------------------------------------------
+
+    fn nav_item(
+        &self,
+        id: &'static str,
+        icon: IconName,
+        label: String,
+        count: Option<usize>,
+        view: View,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
+        let active = self.view == view;
+        let th = cx.theme();
+        h_flex()
+            .id(id)
+            .gap(px(8.))
+            .px(px(10.))
+            .py(px(6.))
+            .rounded(px(6.))
+            .cursor_pointer()
+            .text_size(px(14.))
+            .when(active, |d| {
+                d.bg(th.sidebar_accent).font_weight(FontWeight::MEDIUM)
+            })
+            .hover(|d| d.bg(th.sidebar_accent.opacity(0.6)))
+            .on_click(cx.listener(move |this, _, window, cx| this.set_view(view, window, cx)))
+            .child(
+                gpui_kit::component::Icon::new(icon)
+                    .size_4()
+                    .text_color(th.muted_foreground),
+            )
+            .child(div().flex_1().child(label))
+            .children(count.map(|n| {
+                div()
+                    .text_size(px(12.))
+                    .text_color(th.muted_foreground)
+                    .child(n.to_string())
+            }))
+            .into_any_element()
+    }
+
+    fn render_sidebar(&self, cx: &mut Context<Self>) -> AnyElement {
+        let session = AppState::session(cx).cloned();
+        let multi = AppState::get(cx).app.auth_mode != AuthMode::NoPassword;
+        let (all, favs, deleted) = self.counts;
+        let mut tags = v_flex().gap(px(1.));
+        for tag in &self.tags {
+            let id = tag.id;
+            let active = self.view == View::Tag(id);
+            let color = cardfile_editor::parse_hex(&tag.color).unwrap_or(cx.theme().primary);
+            let th = cx.theme();
+            let tag_clone = tag.clone();
+            tags = tags.child(
+                h_flex()
+                    .id(SharedString::from(format!("tag-{id}")))
+                    .gap(px(8.))
+                    .px(px(10.))
+                    .py(px(5.))
+                    .rounded(px(6.))
+                    .cursor_pointer()
+                    .text_size(px(14.))
+                    .when(active, |d| d.bg(th.sidebar_accent))
+                    .hover(|d| d.bg(th.sidebar_accent.opacity(0.6)))
+                    .on_click(cx.listener(move |this, _, window, cx| {
+                        this.set_view(View::Tag(id), window, cx)
+                    }))
+                    .child(div().size(px(9.)).rounded_full().bg(color))
+                    .child(tag.name.clone())
+                    .context_menu(move |menu, _, _| {
+                        let edit = tag_clone.clone();
+                        let del = tag_clone.clone();
+                        menu.item(PopupMenuItem::new(t("tags.edit")).on_click(
+                            move |_, window, cx| {
+                                crate::tags::edit_tag_dialog(Some(edit.clone()), window, cx);
+                            },
+                        ))
+                        .item(
+                            PopupMenuItem::new(t("tags.delete")).on_click(move |_, window, cx| {
+                                let id = del.id;
+                                crate::dialogs::confirm(
+                                    t("tags.delete"),
+                                    t_args("tags.delete_body", &[("name", &del.name)]),
+                                    t("tags.delete"),
+                                    window,
+                                    cx,
+                                    move |_, cx| {
+                                        let db = AppState::db(cx);
+                                        run_db(cx, move |_| db.delete_tag(id))
+                                            .detach_and_log_err(cx);
+                                        cx.set_global(crate::tags::TagsChanged);
+                                    },
+                                );
+                            }),
+                        )
+                    }),
+            );
+        }
+        let th = cx.theme();
+        let user_menu = Button::new("user-menu")
+            .ghost()
+            .small()
+            .icon(IconName::Settings)
+            .tooltip(t("menu.settings"))
+            .dropdown_menu(move |menu, _, _| {
+                let mut menu = menu
+                    .menu(t("menu.settings"), Box::new(OpenSettings))
+                    .menu(t("menu.command_palette"), Box::new(CommandPalette))
+                    .separator()
+                    .menu(t("menu.export_all"), Box::new(ExportAll))
+                    .menu(t("menu.backup"), Box::new(BackupNow))
+                    .menu(t("menu.open_data_folder"), Box::new(OpenDataFolder))
+                    .separator()
+                    .menu(t("menu.check_updates"), Box::new(CheckForUpdates))
+                    .menu(t("menu.about"), Box::new(About));
+                if multi {
+                    menu = menu
+                        .separator()
+                        .menu(t("menu.lock"), Box::new(LockApp))
+                        .menu(t("menu.sign_out"), Box::new(SignOut));
+                }
+                menu.separator().menu(t("menu.quit"), Box::new(Quit))
+            });
+        v_flex()
+            .w(px(220.))
+            .h_full()
+            .flex_shrink_0()
+            .bg(th.sidebar)
+            .border_r_1()
+            .border_color(th.sidebar_border)
+            .text_color(th.sidebar_foreground)
+            .child(
+                h_flex()
+                    .gap(px(8.))
+                    .px(px(14.))
+                    .py(px(12.))
+                    .child(img("cardfile/icon.png").size(px(24.)))
+                    .child(
+                        div()
+                            .font_weight(FontWeight::BOLD)
+                            .text_size(px(16.))
+                            .child(t("app.name")),
+                    ),
+            )
+            .child(
+                div().px(px(10.)).pb(px(8.)).child(
+                    Input::new(&self.search)
+                        .small()
+                        .prefix(gpui_kit::component::Icon::new(IconName::Search).size_4())
+                        .cleanable(true),
+                ),
+            )
+            .child(
+                v_flex()
+                    .px(px(6.))
+                    .gap(px(1.))
+                    .child(self.nav_item(
+                        "nav-all",
+                        IconName::NotebookPen,
+                        t("nav.all"),
+                        Some(all),
+                        View::All,
+                        cx,
+                    ))
+                    .child(self.nav_item(
+                        "nav-fav",
+                        IconName::Star,
+                        t("nav.favorites"),
+                        Some(favs),
+                        View::Favorites,
+                        cx,
+                    ))
+                    .child(self.nav_item(
+                        "nav-bin",
+                        IconName::Delete,
+                        t("nav.recycle_bin"),
+                        Some(deleted),
+                        View::RecycleBin,
+                        cx,
+                    )),
+            )
+            .child(
+                h_flex()
+                    .justify_between()
+                    .px(px(16.))
+                    .pt(px(16.))
+                    .pb(px(4.))
+                    .text_size(px(12.))
+                    .text_color(cx.theme().muted_foreground)
+                    .child(t("nav.tags"))
+                    .child(
+                        Button::new("add-tag")
+                            .ghost()
+                            .xsmall()
+                            .icon(IconName::Plus)
+                            .tooltip(t("tags.new"))
+                            .on_click(|_, window, cx| crate::tags::new_tag_dialog(window, cx)),
+                    ),
+            )
+            .child(
+                div()
+                    .id("tag-list")
+                    .flex_1()
+                    .min_h_0()
+                    .px(px(6.))
+                    .overflow_y_scroll()
+                    .child(tags),
+            )
+            .child(
+                h_flex()
+                    .justify_between()
+                    .px(px(12.))
+                    .py(px(8.))
+                    .border_t_1()
+                    .border_color(cx.theme().sidebar_border)
+                    .child(
+                        h_flex()
+                            .gap(px(6.))
+                            .min_w_0()
+                            .child(gpui_kit::component::Icon::new(IconName::User).size_4())
+                            .child(
+                                div().text_size(px(13.)).truncate().child(
+                                    session.map(|s| s.user.display_name).unwrap_or_default(),
+                                ),
+                            ),
+                    )
+                    .child(user_menu),
+            )
+            .into_any_element()
+    }
+
+    fn render_list(&self, cx: &mut Context<Self>) -> AnyElement {
+        let settings = AppState::user_settings(cx);
+        let manual = settings.sort == SortOrder::Manual
+            && self.search.read(cx).value().is_empty()
+            && self.view != View::RecycleBin;
+        let count = self.cards.len();
+        let title = match self.view {
+            View::All => t("nav.all"),
+            View::Favorites => t("nav.favorites"),
+            View::RecycleBin => t("nav.recycle_bin"),
+            View::Tag(id) => self
+                .tags
+                .iter()
+                .find(|t| t.id == id)
+                .map(|t| t.name.clone())
+                .unwrap_or_default(),
+        };
+        let sort = settings.sort;
+        let sort_menu = Button::new("sort")
+            .ghost()
+            .xsmall()
+            .icon(IconName::ArrowDownUp)
+            .tooltip(t("sort.title"))
+            .dropdown_menu(move |mut menu, _, _| {
+                for (s, key) in [
+                    (SortOrder::Manual, "sort.manual"),
+                    (SortOrder::UpdatedDesc, "sort.updated"),
+                    (SortOrder::CreatedDesc, "sort.created"),
+                    (SortOrder::TitleAsc, "sort.title_asc"),
+                ] {
+                    menu = menu.item(PopupMenuItem::new(t(key)).checked(sort == s).on_click(
+                        move |_, window, cx| {
+                            AppState::update_user_settings(cx, |u| u.sort = s);
+                            window.dispatch_action(Box::new(crate::keymap::ShowAllCards), cx);
+                            window.refresh();
+                        },
+                    ));
+                }
+                menu
+            });
+        let header = h_flex()
+            .justify_between()
+            .px(px(14.))
+            .py(px(10.))
+            .border_b_1()
+            .border_color(cx.theme().border)
+            .child(
+                v_flex()
+                    .child(div().font_weight(FontWeight::SEMIBOLD).child(title))
+                    .child(
+                        div()
+                            .text_size(px(12.))
+                            .text_color(cx.theme().muted_foreground)
+                            .child(t_args("list.count", &[("n", &count.to_string())])),
+                    ),
+            )
+            .child(
+                h_flex()
+                    .gap(px(2.))
+                    .child(sort_menu)
+                    .when(self.view == View::RecycleBin && count > 0, |d| {
+                        d.child(
+                            Button::new("empty-bin")
+                                .ghost()
+                                .xsmall()
+                                .icon(IconName::Delete)
+                                .tooltip(t("recycle.empty"))
+                                .on_click(|_, window, cx| {
+                                    window.dispatch_action(Box::new(EmptyRecycleBin), cx)
+                                }),
+                        )
+                    })
+                    .when(self.view != View::RecycleBin, |d| {
+                        d.child(
+                            Button::new("new-card")
+                                .primary()
+                                .xsmall()
+                                .icon(IconName::Plus)
+                                .tooltip(t("card.new"))
+                                .on_click(|_, window, cx| {
+                                    window.dispatch_action(Box::new(NewCard), cx)
+                                }),
+                        )
+                    }),
+            );
+        let mask_chars = settings.mask_visible_chars;
+        let list = if count == 0 {
+            div()
+                .flex_1()
+                .flex()
+                .items_center()
+                .justify_center()
+                .p(px(20.))
+                .text_center()
+                .text_color(cx.theme().muted_foreground)
+                .child(if self.search.read(cx).value().is_empty() {
+                    t("list.empty")
+                } else {
+                    t("list.no_results")
+                })
+                .into_any_element()
+        } else {
+            uniform_list(
+                "cards",
+                count,
+                cx.processor(move |this, range: std::ops::Range<usize>, _window, cx| {
+                    range
+                        .map(|ix| this.render_item(ix, manual, mask_chars, cx))
+                        .collect::<Vec<_>>()
+                }),
+            )
+            .flex_1()
+            .w_full()
+            .track_scroll(&self.list_scroll)
+            .into_any_element()
+        };
+        v_flex()
+            .w(px(settings.list_width.clamp(220., 520.)))
+            .flex_shrink_0()
+            .h_full()
+            .border_r_1()
+            .border_color(cx.theme().border)
+            .bg(cx.theme().background)
+            .child(header)
+            .child(list)
+            .into_any_element()
+    }
+
+    fn render_item(
+        &self,
+        ix: usize,
+        manual: bool,
+        mask_chars: usize,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
+        let Some(card) = self.cards.get(ix) else {
+            return div().into_any_element();
+        };
+        let th = cx.theme();
+        let selected = self.selected == Some(card.id);
+        let title = if card.title.trim().is_empty() {
+            t("card.untitled")
+        } else if card.lock_mode == LockMode::Private {
+            mask_title(&card.title, mask_chars)
+        } else {
+            card.title.clone()
+        };
+        let secondary: AnyElement = match &card.snippet {
+            Some(snippet) => {
+                // Matches are wrapped in \u{1}…\u{2}.
+                let mut text = String::new();
+                let mut highlights = Vec::new();
+                let mut start = None;
+                for ch in snippet.chars() {
+                    match ch {
+                        '\u{1}' => start = Some(text.len()),
+                        '\u{2}' => {
+                            if let Some(s) = start.take() {
+                                highlights.push((
+                                    s..text.len(),
+                                    HighlightStyle {
+                                        font_weight: Some(FontWeight::BOLD),
+                                        background_color: Some(th.warning.opacity(0.3)),
+                                        ..Default::default()
+                                    },
+                                ));
+                            }
+                        }
+                        '\n' => text.push(' '),
+                        c => text.push(c),
+                    }
+                }
+                StyledText::new(text)
+                    .with_highlights(highlights)
+                    .into_any_element()
+            }
+            None if card.lock_mode.hides_content() => {
+                t(&format!("lock.{}", card.lock_mode.as_str())).into_any_element()
+            }
+            None => card.preview.clone().into_any_element(),
+        };
+        let id = card.id;
+        let dragged = DraggedCard {
+            id,
+            title: title.clone().into(),
+        };
+        let mut flags = h_flex().gap(px(4.)).flex_shrink_0();
+        if card.is_pinned {
+            flags = flags.child(
+                gpui_kit::component::Icon::new(IconName::Pin)
+                    .size_3()
+                    .text_color(th.muted_foreground),
+            );
+        }
+        if card.is_favorite {
+            flags = flags.child(
+                gpui_kit::component::Icon::new(IconName::Star)
+                    .size_3()
+                    .text_color(th.warning),
+            );
+        }
+        if card.lock_mode != LockMode::None {
+            flags = flags.child(
+                gpui_kit::component::Icon::new(IconName::Lock)
+                    .size_3()
+                    .text_color(th.muted_foreground),
+            );
+        }
+        let mut tag_dots = h_flex().gap(px(3.));
+        for tag in self
+            .tags
+            .iter()
+            .filter(|t| card.tags.contains(&t.id))
+            .take(5)
+        {
+            tag_dots = tag_dots.child(
+                div()
+                    .size(px(6.))
+                    .rounded_full()
+                    .bg(cardfile_editor::parse_hex(&tag.color).unwrap_or(th.primary)),
+            );
+        }
+        let mut item = v_flex()
+            .id(("card", ix))
+            .w_full()
+            .overflow_hidden()
+            .h(px(ITEM_HEIGHT))
+            .px(px(14.))
+            .py(px(8.))
+            .gap(px(2.))
+            .border_b_1()
+            .border_color(th.border.opacity(0.5))
+            .cursor_pointer()
+            .when(selected, |d| {
+                d.bg(th.list_active)
+                    .border_l_2()
+                    .border_color(th.list_active_border)
+            })
+            .when(!selected, |d| d.hover(|d| d.bg(th.list_hover)))
+            .on_click(cx.listener(move |this, _, window, cx| this.select(id, window, cx)))
+            .child(
+                h_flex()
+                    .gap(px(6.))
+                    .child(
+                        div()
+                            .flex_1()
+                            .min_w_0()
+                            .truncate()
+                            .font_weight(FontWeight::MEDIUM)
+                            .text_size(px(14.))
+                            .child(title),
+                    )
+                    .child(flags),
+            )
+            .child(
+                h_flex().child(
+                    div()
+                        .flex_1()
+                        .min_w_0()
+                        .truncate()
+                        .text_size(px(12.))
+                        .text_color(th.muted_foreground)
+                        .child(secondary),
+                ),
+            )
+            .child(
+                h_flex()
+                    .justify_between()
+                    .text_size(px(11.))
+                    .text_color(th.muted_foreground.opacity(0.8))
+                    .child(relative_time(card.deleted_at.unwrap_or(card.updated_at)))
+                    .child(tag_dots),
+            );
+        if manual {
+            let primary = th.primary;
+            item = item
+                .on_drag(dragged, |d, _, _, cx| {
+                    cx.new(|_| DragPreview(d.title.clone()))
+                })
+                .drag_over::<DraggedCard>(move |s, _, _, _| s.border_t_2().border_color(primary))
+                .on_drop(cx.listener(move |this, d: &DraggedCard, window, cx| {
+                    this.move_card(d.id, ix, window, cx)
+                }));
+        }
+        item.into_any_element()
+    }
+}
+
+impl Render for Workspace {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let sidebar = self.render_sidebar(cx);
+        let list = self.render_list(cx);
+        h_flex()
+            .id("workspace")
+            .key_context(WORKSPACE)
+            .track_focus(&self.focus)
+            .size_full()
+            .on_action(cx.listener(Self::new_card))
+            .on_action(cx.listener(Self::delete_card))
+            .on_action(cx.listener(Self::focus_search))
+            .on_action(cx.listener(Self::toggle_pin))
+            .on_action(cx.listener(Self::toggle_favorite))
+            .on_action(cx.listener(Self::export_card))
+            .on_action(cx.listener(Self::export_all))
+            .on_action(cx.listener(Self::show_history))
+            .on_action(cx.listener(Self::show_all))
+            .on_action(cx.listener(Self::show_favorites))
+            .on_action(cx.listener(Self::show_recycle))
+            .on_action(cx.listener(Self::lock_app))
+            .on_action(cx.listener(Self::sign_out))
+            .on_action(cx.listener(Self::empty_recycle_bin))
+            .child(sidebar)
+            .child(list)
+            .child(div().flex_1().min_w_0().h_full().child(self.pane.clone()))
+    }
+}
+
+#[allow(dead_code)]
+fn _assert_window_ext(w: &mut Window, cx: &mut App) {
+    let _ = w.has_active_dialog(cx);
+}

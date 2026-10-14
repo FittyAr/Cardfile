@@ -12,6 +12,30 @@ publish.workspace = true
 [lints]
 workspace = true
 
+[features]
+update-check = []
+
 [dependencies]
 gpui-kit.workspace = true
 anyhow.workspace = true
+cardfile-core.workspace = true
+cardfile-crypto.workspace = true
+cardfile-db.workspace = true
+cardfile-doc.workspace = true
+cardfile-editor.workspace = true
+cardfile-i18n.workspace = true
+cardfile-updater.workspace = true
+directories.workspace = true
+jiff.workspace = true
+parking_lot.workspace = true
+semver.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+spellbook.workspace = true
+tracing.workspace = true
+zeroize.workspace = true
+open.workspace = true
+image.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

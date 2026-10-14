@@ -6,6 +6,7 @@
 mod export;
 mod markdown_in;
 mod model;
+pub mod pdf;
 
 pub mod rules;
 
