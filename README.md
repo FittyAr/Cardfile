@@ -51,7 +51,7 @@ curl -fsSL https://raw.githubusercontent.com/FittyAr/Cardfile/main/install.sh | 
 
 The one-line installers always install the **newest** release (stable, or the newest pre-release
 while there is no newer stable one), verify its SHA-256 and minisign signature, and add Cardfile to
-the Start menu / application menu and the desktop. Everything goes under a `FittyAr` folder (`%LOCALAPPDATA%\Programs\FittyAr\Cardfile`, `~/.local/lib/FittyAr/Cardfile`). No administrator rights are needed, and
+the Start menu / application menu and the desktop. Everything goes under a `FittyAr` folder (`%LOCALAPPDATA%\Programs\FittyAr\Cardfile`, `~/.local/lib/FittyAr/Cardfile`), and so do your cards (`%APPDATA%\FittyAr\Cardfile`, `~/.local/share/FittyAr/Cardfile`). No administrator rights are needed, and
 Cardfile then updates itself from inside the app. Options:
 
 | | Windows | Linux |

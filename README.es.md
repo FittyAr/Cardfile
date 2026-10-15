@@ -54,7 +54,8 @@ curl -fsSL https://raw.githubusercontent.com/FittyAr/Cardfile/main/install.sh | 
 Los instaladores de una línea siempre instalan la release **más nueva** (estable, o la
 pre-release más nueva mientras no haya una estable más reciente), verifican su SHA-256 y su firma
 minisign, y agregan Cardfile al menú Inicio / menú de aplicaciones y al escritorio. Todo queda dentro de una carpeta `FittyAr` (`%LOCALAPPDATA%\Programs\FittyAr\Cardfile`,
-`~/.local/lib/FittyAr/Cardfile`). No hacen falta
+`~/.local/lib/FittyAr/Cardfile`), igual que tus tarjetas (`%APPDATA%\FittyAr\Cardfile`,
+`~/.local/share/FittyAr/Cardfile`). No hacen falta
 permisos de administrador y después Cardfile se actualiza solo desde la app. Opciones:
 
 | | Windows | Linux |

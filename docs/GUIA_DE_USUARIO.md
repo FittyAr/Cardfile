@@ -150,7 +150,15 @@ Cardfile busca versiones nuevas al iniciar (Configuración → General). Cuando 
 
 ## ¿Dónde están mis archivos?
 
-Abrí el menú de configuración y elegí **Open data folder**. La carpeta contiene:
+Abrí el menú de configuración y elegí **Open data folder**. Salvo que uses una de las opciones de abajo, es:
+
+- Windows: `%APPDATA%\FittyAr\Cardfile\data`
+- Linux: `~/.local/share/FittyAr/Cardfile` (`$XDG_DATA_HOME/FittyAr/Cardfile` si está definida)
+- macOS: `~/Library/Application Support/FittyAr/Cardfile`
+
+Las versiones anteriores usaban `~/.local/share/cardfile` en Linux y `~/Library/Application Support/ar.FittyAr.Cardfile` en macOS; Cardfile mueve esa carpeta al lugar nuevo la primera vez que arranca. Si no puede moverla, la sigue usando.
+
+La carpeta contiene:
 
 - `cardfile.db`: todas tus tarjetas
 - `backups/`: respaldos de la base de datos

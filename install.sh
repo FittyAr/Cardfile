@@ -11,7 +11,8 @@
 # Installs the program to ~/.local/lib/FittyAr/Cardfile (all FittyAr apps share the
 # FittyAr folder) with a `cardfile` command in
 # ~/.local/bin, an application-menu entry (.desktop file + icons) and a
-# desktop shortcut. No root needed. Cardfile updates itself afterwards
+# desktop shortcut. No root needed. The cards live in
+# ${XDG_DATA_HOME:-~/.local/share}/FittyAr/Cardfile. Cardfile updates itself afterwards
 # (Settings -> General).
 #
 # The download is checked against the signed SHA256SUMS and its own minisign
@@ -41,8 +42,12 @@ BIN_DIR="$HOME/.local/bin"
 APPS_DIR="$DATA_HOME/applications"
 ICONS_DIR="$DATA_HOME/icons/hicolor"
 DESKTOP_FILE="$APPS_DIR/$APP_ID.desktop"
-# Where Cardfile keeps the cards (asked before deleting on uninstall).
-CARDS_DIR="$DATA_HOME/cardfile"
+# Where Cardfile keeps the cards (asked before deleting on uninstall), in the
+# shared FittyAr folder. Cardfile moves the folder of the earlier layout there
+# on its next start.
+CARDS_VENDOR_DIR="$DATA_HOME/FittyAr"
+CARDS_DIR="$CARDS_VENDOR_DIR/Cardfile"
+PREVIOUS_CARDS_DIR="$DATA_HOME/cardfile"
 # Installed by the cargo-dist installer of 2.0.0-alpha.1 to 2.0.0-alpha.3.
 LEGACY_DIR="$HOME/.cardfile/bin"
 ICON_SIZES="16 24 32 48 64 128 256 512"
@@ -173,14 +178,17 @@ uninstall() {
         echo "Uninstall cancelled."
         return 0
     fi
-    if [ -d "$CARDS_DIR" ] && [ "$ASSUME_YES" != "true" ]; then
-        if ask "Also delete your cards and settings in $CARDS_DIR? This cannot be undone."; then
-            rm -rf "$CARDS_DIR"
+    for cards in "$CARDS_DIR" "$PREVIOUS_CARDS_DIR"; do
+        [ -d "$cards" ] && [ "$ASSUME_YES" != "true" ] || continue
+        if ask "Also delete your cards and settings in $cards? This cannot be undone."; then
+            rm -rf "$cards"
             echo "Your cards and settings were deleted."
         else
-            echo "Your cards and settings were kept in $CARDS_DIR."
+            echo "Your cards and settings were kept in $cards."
         fi
-    fi
+    done
+    # Leave the shared FittyAr folder only while other apps use it.
+    rmdir "$CARDS_VENDOR_DIR" 2> /dev/null || true
 }
 
 # ─── Install ─────────────────────────────────────────────────────────────────

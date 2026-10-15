@@ -257,8 +257,12 @@ Se valida con un **spike temprano** (Fase 1) antes de construir el resto de la U
 
 ### 3.7 Datos y configuración en disco
 
-- Estándar: `directories::ProjectDirs("ar", "FittyAr", "Cardfile")`
-  (Windows `%APPDATA%\FittyAr\Cardfile`, Linux XDG).
+- Estándar: carpeta `FittyAr/Cardfile`, compartida por todas las apps FittyAr: Windows
+  `%APPDATA%\FittyAr\Cardfile\data` (`directories::ProjectDirs`), Linux
+  `$XDG_DATA_HOME/FittyAr/Cardfile` (`~/.local/share` si no está), macOS
+  `~/Library/Application Support/FittyAr/Cardfile`. La carpeta anterior (`$XDG_DATA_HOME/cardfile`,
+  `ar.FittyAr.Cardfile` en macOS) se renombra al arrancar: nunca se borra ni se mezcla, y si no se
+  puede mover se sigue usando.
 - Portable: si existe `portable.flag` (o `--portable`) junto al ejecutable, todo va en `./data`.
 - Archivos: `cardfile.db`, `settings.toml`, `keymap.json`, `themes/`, `logs/`, `backups/`.
 
