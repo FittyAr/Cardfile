@@ -1,0 +1,38 @@
+# Cardfile
+> A modern digital card file for your notes, inspired by the classic Windows 3.1 Cardfile. Native, fast and private: written in Rust with GPUI. Windows and Linux.
+
+Cardfile 2 is a full rewrite (currently in alpha) of the Cardfile notes app. Notes live on cards edited in a WYSIWYG editor (users never see Markdown), stored in a local SQLite database. No telemetry.
+
+## Key Resources
+- [Website](https://cardfile.fitty.ar): Landing page and screenshots.
+- [Changelog](https://cardfile.fitty.ar/changelog.html): Release history.
+- [GitHub Repository](https://github.com/FittyAr/Cardfile): Source code.
+- [Releases](https://github.com/FittyAr/Cardfile/releases): Installers and signed binaries.
+- [User guide](https://github.com/FittyAr/Cardfile/blob/main/docs/USER_GUIDE.md)
+
+## Licensing
+- **Cardfile**: MIT or Apache-2.0, at your option.
+- **Website**: MIT.
+
+## Features
+- Word-like editor: headings, lists, checklists, tables, code blocks, colors, images, attachments, inline audio.
+- Full-text search (SQLite FTS5), tags, favorites, pinned cards, manual ordering, version history, recycle bin.
+- Card protection: read-only, private (password to view) and encrypted (XChaCha20-Poly1305, Argon2id), per-user keys, card sharing.
+- Multi-user, single-password or password-free mode.
+- Export to Markdown, HTML, PDF and JSON; portable mode.
+- Optional AI assistant (OpenAI, Anthropic, Gemini, Mistral, Ollama, LM Studio and more), hidden until configured.
+- Built-in MCP server on 127.0.0.1 with per-client API keys for AI apps such as Claude, Cursor or VS Code.
+- 21 interface languages, CJK and right-to-left scripts, 15 themes, command palette, configurable shortcuts.
+- Self-updater that verifies SHA-256 and minisign signatures.
+
+## Quick Installation
+
+### Windows (PowerShell)
+```powershell
+irm https://raw.githubusercontent.com/FittyAr/Cardfile/main/install.ps1 | iex
+```
+
+### Linux
+```bash
+curl -fsSL https://raw.githubusercontent.com/FittyAr/Cardfile/main/install.sh | sh
+```

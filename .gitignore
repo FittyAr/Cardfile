@@ -1,0 +1,14 @@
+# OS files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Screenshot tooling output (see tools/showcase/README.md)
+tools/showcase/out/
+*.log
+node_modules/

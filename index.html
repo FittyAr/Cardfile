@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title data-i18n="title">Cardfile | Tus notas en tarjetas, nativo y privado</title>
+  <meta name="description"
+    content="Un fichero digital moderno para tus notas, inspirado en el Cardfile de Windows 3.1. Nativo, rápido y privado: escrito en Rust con GPUI. Windows y Linux." />
+  <meta name="keywords" content="Cardfile, notas, tarjetas, fichero, notes app, note taking, Rust, GPUI, Windows 3.1, cardfile, WYSIWYG, Markdown, privacy, MCP, offline" />
+  <link rel="canonical" href="https://cardfile.fitty.ar/" />
+  <meta name="theme-color" content="#0a0a0d" />
+
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
+  <link rel="icon" type="image/png" href="assets/icon.png" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://cardfile.fitty.ar/" />
+  <meta property="og:title" content="Cardfile | Tus notas en tarjetas, nativo y privado" />
+  <meta property="og:description" content="Un fichero digital moderno para tus notas, inspirado en el Cardfile de Windows 3.1. Nativo, rápido y privado." />
+  <meta property="og:image" content="https://cardfile.fitty.ar/assets/social.png" />
+  <meta property="og:site_name" content="Cardfile" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:url" content="https://cardfile.fitty.ar/" />
+  <meta name="twitter:title" content="Cardfile | Tus notas en tarjetas, nativo y privado" />
+  <meta name="twitter:description" content="Un fichero digital moderno para tus notas, inspirado en el Cardfile de Windows 3.1. Nativo, rápido y privado." />
+  <meta name="twitter:image" content="https://cardfile.fitty.ar/assets/social.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/index.css" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Cardfile",
+    "applicationCategory": "ProductivityApplication",
+    "operatingSystem": "Windows, Linux",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "url": "https://cardfile.fitty.ar/",
+    "downloadUrl": "https://github.com/FittyAr/Cardfile/releases",
+    "license": "https://github.com/FittyAr/Cardfile/blob/main/LICENSE-MIT",
+    "author": { "@type": "Person", "name": "FittyAr", "url": "https://fitty.ar/" }
+  }
+  </script>
+</head>
+
+<body>
+  <header class="header">
+    <div class="container nav">
+      <a class="logo" href="index.html">
+        <img src="assets/icon.svg" alt="" width="32" height="32" />
+        <span>Card<b>file</b></span>
+      </a>
+      <nav class="nav-links">
+        <a href="#features" data-i18n="nav_features">Características</a>
+        <a href="#tour" data-i18n="nav_tour">Recorrido</a>
+        <a href="#gallery" data-i18n="nav_gallery">Capturas</a>
+        <a href="#install" data-i18n="nav_install">Instalación</a>
+        <a href="changelog.html" data-i18n="nav_changelog">Cambios</a>
+        <a href="https://fitty.ar/" data-i18n="nav_back">Volver a fitty.ar</a>
+      </nav>
+      <div class="nav-right">
+        <div class="lang-selector">
+          <button class="lang-btn" data-lang="es" onclick="switchLanguage('es')">ES</button>
+          <span class="lang-separator">|</span>
+          <button class="lang-btn" data-lang="en" onclick="switchLanguage('en')">EN</button>
+        </div>
+        <a class="nav-btn" href="https://github.com/FittyAr/Cardfile" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero -->
+    <section class="hero">
+      <div class="container">
+        <a href="https://github.com/FittyAr/Cardfile/releases" target="_blank" rel="noopener" class="release-link">
+          <span class="badge" id="release-badge">
+            <span aria-hidden="true">◆</span> <span id="release-text" data-i18n="release_loading">Cargando versión...</span>
+          </span>
+        </a>
+        <h1 class="hero-title" data-i18n="hero_title">Tus notas,<br><span>una tarjeta a la vez</span>.</h1>
+        <p class="hero-subtitle" data-i18n="hero_subtitle">
+          Un fichero digital moderno inspirado en el clásico Cardfile de Windows 3.1. Nativo, rápido y privado:
+          escrito en Rust con GPUI, el motor de interfaz del editor Zed.
+        </p>
+        <div class="hero-ctas">
+          <a class="btn-primary" href="#install" data-i18n="btn_download">Descargar gratis</a>
+          <a class="btn-secondary" href="https://github.com/FittyAr/Cardfile" target="_blank" rel="noopener" data-i18n="btn_source">Ver código fuente</a>
+        </div>
+        <p class="hero-note" data-i18n="hero_note">Windows y Linux · Código abierto (MIT / Apache-2.0) · Sin telemetría</p>
+
+        <div class="hero-shot">
+          <div class="window-frame">
+            <img src="assets/screens/01-editor.webp" width="1586" height="993" data-i18n-alt="alt_hero"
+              alt="Cardfile mostrando una tarjeta con lista de tareas, tabla e imagen" fetchpriority="high" />
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><strong>21</strong><span data-i18n="stat_langs">idiomas de interfaz</span></div>
+          <div class="stat"><strong>15</strong><span data-i18n="stat_themes">temas incluidos</span></div>
+          <div class="stat"><strong>4</strong><span data-i18n="stat_export">formatos de exportación</span></div>
+          <div class="stat"><strong>0</strong><span data-i18n="stat_telemetry">telemetría</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="section" id="features">
+      <div class="container">
+        <div class="section-header">
+          <span class="eyebrow" data-i18n="features_eyebrow">Todo en su lugar</span>
+          <h2 class="section-title" data-i18n="features_title">Lo que una libreta debería ser</h2>
+          <p class="section-subtitle" data-i18n="features_subtitle">
+            Escribe sin pensar en formatos, encuentra cualquier cosa al instante y quédate tranquilo con tus datos.
+          </p>
+        </div>
+
+        <div class="features-grid">
+          <article class="feature-card">
+            <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></div>
+            <h3 data-i18n="f1_title">Editor tipo Word</h3>
+            <p data-i18n="f1_desc">Títulos, listas, casillas, tablas, bloques de código, colores, imágenes y adjuntos. Sin sintaxis Markdown que aprender.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></div>
+            <h3 data-i18n="f2_title">Búsqueda instantánea</h3>
+            <p data-i18n="f2_desc">Búsqueda de texto completo en títulos y contenido, con etiquetas, favoritas, fijadas y orden manual.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+            <h3 data-i18n="f3_title">Privacidad por tarjeta</h3>
+            <p data-i18n="f3_desc">Solo lectura, privada (contraseña para ver) o cifrada en disco con XChaCha20-Poly1305 y Argon2id.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/><circle cx="12" cy="12" r="3"/></svg></div>
+            <h3 data-i18n="f4_title">IA opcional, a tu manera</h3>
+            <p data-i18n="f4_desc">Conecta tu IA en la nube o local (OpenAI, Claude, Gemini, Ollama, LM Studio…) para buscar, reescribir y ordenar por chat. Oculta hasta que la configures.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 7 4 12l5 5"/><path d="m15 7 5 5-5 5"/></svg></div>
+            <h3 data-i18n="f5_title">Servidor MCP integrado</h3>
+            <p data-i18n="f5_desc">Apps de IA como Claude, Cursor o VS Code pueden usar tus tarjetas con una API key. Cada cambio queda atribuido y se puede deshacer.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg></div>
+            <h3 data-i18n="f6_title">Historial y papelera</h3>
+            <p data-i18n="f6_desc">Cada tarjeta guarda sus versiones anteriores y nada se borra de verdad hasta que vacíes la papelera.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6"/><path d="M12 12v6M9 15l3 3 3-3"/></svg></div>
+            <h3 data-i18n="f7_title">Exporta sin ataduras</h3>
+            <p data-i18n="f7_desc">Markdown, HTML, PDF y JSON, por tarjeta o todo el fichero. Tus notas siguen siendo tuyas.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></div>
+            <h3 data-i18n="f8_title">Cualquier idioma</h3>
+            <p data-i18n="f8_desc">21 idiomas de interfaz y soporte completo para chino, japonés, coreano y escritura de derecha a izquierda.</p>
+          </article>
+          <article class="feature-card">
+            <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="14" rx="2"/><path d="M10 16v4h4v-4"/><path d="M10 6h4"/></svg></div>
+            <h3 data-i18n="f9_title">Portable y multiusuario</h3>
+            <p data-i18n="f9_desc">Lleva tus tarjetas en un pendrive. Elige al inicio entre multiusuario, una sola contraseña o sin contraseña.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tour -->
+    <section class="section" id="tour" style="background: rgba(19, 19, 26, 0.35);">
+      <div class="container">
+        <div class="section-header">
+          <span class="eyebrow" data-i18n="tour_eyebrow">Recorrido</span>
+          <h2 class="section-title" data-i18n="tour_title">Pensado para el día a día</h2>
+        </div>
+
+        <div class="showcase">
+          <div class="showcase-text">
+            <h3 data-i18n="s1_title">Escribe como en un procesador de texto</h3>
+            <p data-i18n="s1_desc">Nunca verás un asterisco ni un numeral. Lo que escribes es lo que ves, y si prefieres los atajos de Markdown, también funcionan.</p>
+            <ul class="check-list">
+              <li data-i18n="s1_li1">Imágenes con tamaño ajustable y adjuntos</li>
+              <li data-i18n="s1_li2">Tablas, casillas y bloques de código</li>
+              <li data-i18n="s1_li3">Audio que se reproduce dentro de la tarjeta</li>
+            </ul>
+          </div>
+          <div class="window-frame"><img src="assets/screens/02-travel.webp" width="1586" height="993" loading="lazy" data-i18n-alt="alt_travel" alt="Tarjeta de viaje con imagen, tabla y lista en el tema Paper" /></div>
+        </div>
+
+        <div class="showcase reverse">
+          <div class="showcase-text">
+            <h3 data-i18n="s2_title">Encuentra cualquier cosa al instante</h3>
+            <p data-i18n="s2_desc">La búsqueda de texto completo (SQLite FTS5) revisa títulos y contenido mientras escribes, y resalta lo que encontró.</p>
+            <ul class="check-list">
+              <li data-i18n="s2_li1">Etiquetas de colores, favoritas y fijadas</li>
+              <li data-i18n="s2_li2">Paleta de comandos con <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd></li>
+              <li data-i18n="s2_li3">Atajos de teclado configurables</li>
+            </ul>
+          </div>
+          <div class="window-frame"><img src="assets/screens/05-search.webp" width="1586" height="993" loading="lazy" data-i18n-alt="alt_search" alt="Resultado de búsqueda con el término resaltado" /></div>
+        </div>
+
+        <div class="showcase">
+          <div class="showcase-text">
+            <h3 data-i18n="s3_title">Tres niveles de protección</h3>
+            <p data-i18n="s3_desc">Elige cuánto proteger cada tarjeta. Cada usuario tiene su propia contraseña de bloqueo y sus propias claves.</p>
+            <div class="levels" style="grid-template-columns: 1fr;">
+              <div class="level"><span class="level-tag" data-i18n="l1_tag">Solo lectura</span><p data-i18n="l1_desc">Evita ediciones accidentales en recetas, manuales o referencias.</p></div>
+              <div class="level"><span class="level-tag" data-i18n="l2_tag">Privada</span><p data-i18n="l2_desc">Pide contraseña para ver el contenido; el título se enmascara en la lista.</p></div>
+              <div class="level"><span class="level-tag" data-i18n="l3_tag">Cifrada</span><p data-i18n="l3_desc">Cifrada en disco con una clave propia por tarjeta, que puedes compartir con otros usuarios.</p></div>
+            </div>
+          </div>
+          <div class="window-frame"><img src="assets/screens/09-private.webp" width="1586" height="993" loading="lazy" data-i18n-alt="alt_private" alt="Tarjeta privada pidiendo contraseña" /></div>
+        </div>
+
+        <div class="showcase reverse">
+          <div class="showcase-text">
+            <h3 data-i18n="s4_title">Tu IA, con tus reglas</h3>
+            <p data-i18n="s4_desc">El asistente aparece solo si lo configuras, con el proveedor que elijas o con un modelo local. Y el servidor MCP integrado deja que Claude, Cursor o VS Code trabajen con tus tarjetas, solo en 127.0.0.1.</p>
+            <ul class="check-list">
+              <li data-i18n="s4_li1">API keys por cliente, de solo lectura si quieres</li>
+              <li data-i18n="s4_li2">Cada cambio de la IA queda firmado como «Cardfile AI»</li>
+              <li data-i18n="s4_li3">Las claves de los servicios se guardan en el gestor de credenciales del sistema</li>
+            </ul>
+          </div>
+          <div class="window-frame"><img src="assets/screens/11-mcp.webp" width="1586" height="993" loading="lazy" data-i18n-alt="alt_mcp" alt="Ajustes del servidor MCP con dos API keys" /></div>
+        </div>
+
+        <div class="showcase">
+          <div class="showcase-text">
+            <h3 data-i18n="s5_title">Nada se pierde</h3>
+            <p data-i18n="s5_desc">Vuelve a cualquier versión anterior de una tarjeta y exporta a Markdown, HTML, PDF o JSON cuando quieras. Copias de seguridad con un clic.</p>
+          </div>
+          <div class="window-frame"><img src="assets/screens/07-history.webp" width="1586" height="993" loading="lazy" data-i18n-alt="alt_history" alt="Historial de versiones de una tarjeta" /></div>
+        </div>
+
+        <div class="showcase reverse">
+          <div class="showcase-text">
+            <h3 data-i18n="s6_title">Habla tu idioma, y todos los demás</h3>
+            <p data-i18n="s6_desc">Interfaz en 21 idiomas y texto bidireccional real: hebreo, árabe y persa conviven con chino, japonés y coreano en la misma tarjeta.</p>
+          </div>
+          <div class="window-frame"><img src="assets/screens/04-languages.webp" width="1586" height="993" loading="lazy" data-i18n-alt="alt_languages" alt="Tarjeta con texto en varios idiomas y escrituras" /></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Gallery -->
+    <section class="section" id="gallery">
+      <div class="container">
+        <div class="section-header">
+          <span class="eyebrow" data-i18n="gallery_eyebrow">Capturas</span>
+          <h2 class="section-title" data-i18n="gallery_title">Míralo en acción</h2>
+          <p class="section-subtitle" data-i18n="gallery_subtitle">Capturas reales de la app, con datos de ejemplo.</p>
+        </div>
+        <div class="gallery-container">
+          <div class="gallery-display" id="gallery-display">
+            <div class="gallery-nav">
+              <button class="gallery-btn" id="prev-btn" aria-label="Previous">◀</button>
+              <button class="gallery-btn" id="next-btn" aria-label="Next">▶</button>
+            </div>
+          </div>
+          <div class="gallery-caption" id="gallery-caption"></div>
+          <div class="gallery-thumbnails" id="gallery-thumbnails"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Install -->
+    <section class="section" id="install">
+      <div class="container">
+        <div class="section-header">
+          <span class="eyebrow" data-i18n="install_eyebrow">Instalación</span>
+          <h2 class="section-title" data-i18n="install_title">Instálalo en un minuto</h2>
+          <p class="section-subtitle" data-i18n="install_subtitle">
+            El instalador descarga la versión más nueva, verifica su SHA-256 y su firma minisign y crea los accesos directos. Sin permisos de administrador.
+          </p>
+        </div>
+
+        <div class="terminal-window">
+          <div class="terminal-header">
+            <div class="terminal-buttons">
+              <span class="terminal-btn close"></span>
+              <span class="terminal-btn minimize"></span>
+              <span class="terminal-btn maximize"></span>
+            </div>
+            <div class="terminal-title" id="terminal-title">install.ps1</div>
+            <div></div>
+          </div>
+          <div class="terminal-tabs" role="tablist">
+            <button class="terminal-tab active" id="tab-windows" onclick="switchTab('windows')" data-i18n="install_windows">Windows (PowerShell)</button>
+            <button class="terminal-tab" id="tab-linux" onclick="switchTab('linux')">Linux</button>
+          </div>
+          <div class="terminal-body">
+            <div id="code-windows">
+              <div class="terminal-line">
+                <span class="terminal-prompt">PS&gt;</span>
+                <span class="terminal-code" id="cmd-windows">irm https://raw.githubusercontent.com/FittyAr/Cardfile/main/install.ps1 | iex</span>
+              </div>
+              <div class="terminal-comment" data-i18n="install_win_note"># Se instala en %LOCALAPPDATA%\Programs\FittyAr\Cardfile</div>
+            </div>
+            <div id="code-linux" style="display: none;">
+              <div class="terminal-line">
+                <span class="terminal-prompt">$</span>
+                <span class="terminal-code" id="cmd-linux">curl -fsSL https://raw.githubusercontent.com/FittyAr/Cardfile/main/install.sh | sh</span>
+              </div>
+              <div class="terminal-comment" data-i18n="install_linux_note"># Se instala en ~/.local/lib/FittyAr/Cardfile</div>
+            </div>
+            <div class="copy-container">
+              <button class="btn-copy" id="btn-copy" onclick="copyCommand()" data-i18n="btn_copy">📋 Copiar comando</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="install-extras">
+          <div class="install-extra">
+            <strong data-i18n="extra1_title">Paquetes</strong>
+            <span data-i18n="extra1_desc">Instalador para Windows, .deb, .rpm y AppImage en cada</span>
+            <a href="https://github.com/FittyAr/Cardfile/releases" target="_blank" rel="noopener" data-i18n="extra1_link">release</a>.
+          </div>
+          <div class="install-extra">
+            <strong data-i18n="extra2_title">Se actualiza solo</strong>
+            <span data-i18n="extra2_desc">Descarga la nueva versión, verifica la firma, la instala y reinicia, desde la propia app.</span>
+          </div>
+          <div class="install-extra">
+            <strong data-i18n="extra3_title">Firmado con minisign</strong>
+            <span data-i18n="extra3_desc">Puedes verificar cada archivo con la clave pública publicada en</span>
+            <a href="https://github.com/FittyAr/Cardfile/blob/main/docs/SIGNING.md" target="_blank" rel="noopener">SIGNING.md</a>.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Story -->
+    <section class="section">
+      <div class="container">
+        <div class="story">
+          <div>
+            <span class="badge" data-i18n="story_badge">Desde 1990</span>
+            <h3 data-i18n="story_title">El fichero de Windows 3.1, reinventado</h3>
+            <p data-i18n="story_p1">
+              El Cardfile original era un fichero de tarjetas: un título arriba, tus notas abajo y nada más. Cardfile 2
+              mantiene esa simpleza y le suma lo que hoy esperamos de una app de notas.
+            </p>
+            <p data-i18n="story_p2">
+              Es una reescritura completa en Rust con GPUI: arranca al instante, funciona sin conexión, guarda todo en una
+              base SQLite local y no envía ningún dato. Está en alfa: pruébala y cuéntanos qué te falta.
+            </p>
+            <a class="btn-primary" href="https://github.com/FittyAr/Cardfile/issues" target="_blank" rel="noopener" data-i18n="story_btn">Enviar sugerencias ↗</a>
+          </div>
+          <div class="story-art">
+            <img src="assets/icon.svg" alt="" width="260" height="260" />
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="logo" style="margin-bottom: 8px; font-size: 1rem;">
+            <img src="assets/icon.svg" alt="" style="width: 24px; height: 24px;" />
+            <span>Card<b>file</b></span>
+          </div>
+          <p style="margin: 0; font-size: 0.85rem;" data-i18n="footer_text">
+            Hecho en Rust. Cardfile se distribuye bajo MIT o Apache-2.0; este sitio, bajo MIT.
+          </p>
+        </div>
+        <div class="footer-links">
+          <a href="https://fitty.ar/">fitty.ar</a>
+          <a href="https://fitty.ar/es/pages/projects.html" data-i18n="footer_projects">Proyectos</a>
+          <a href="changelog.html" data-i18n="nav_changelog">Cambios</a>
+          <a href="https://github.com/FittyAr/Cardfile/blob/main/docs/USER_GUIDE.md" target="_blank" rel="noopener" data-i18n="footer_guide">Guía de uso</a>
+          <a href="https://github.com/FittyAr/Cardfile" target="_blank" rel="noopener">GitHub</a>
+        </div>
+      </div>
+      <p class="footer-note" data-i18n="footer_disclaimer">
+        Windows es una marca registrada de Microsoft Corporation. Las demás marcas mencionadas (Claude, Cursor, VS Code,
+        OpenAI, Gemini, Zed) pertenecen a sus respectivos dueños y se citan solo como referencia. Las capturas usan datos ficticios.
+      </p>
+    </div>
+  </footer>
+
+  <script src="js/translations.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/index.js"></script>
+</body>
+
+</html>
