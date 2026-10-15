@@ -7,7 +7,8 @@
 # newest stable one, or the newest pre-release while no stable release is newer.
 # -Stable ignores pre-releases; -Version installs that exact tag.
 #
-# Installs to %LOCALAPPDATA%\Programs\Cardfile, adds Start menu and desktop
+# Installs to %LOCALAPPDATA%\Programs\FittyAr\Cardfile (all FittyAr apps share the
+# FittyAr folder; the cards live in %APPDATA%\FittyAr\Cardfile), adds Start menu and desktop
 # shortcuts, puts the folder on the user PATH and registers Cardfile in
 # "Installed apps" so it can be uninstalled from Windows Settings. No admin
 # rights are needed. Cardfile updates itself afterwards (Settings -> General).
@@ -44,7 +45,8 @@ $minisignPubKey = "RWSEWpMd7tkiGAaQwVFXiSYyfV6ODYRttbEFQ/WBOTzrbMB1diAfrG+w"
 $minisignVersion = "0.12"
 $minisignZipSha256 = "37b600344e20c19314b2e82813db2bfdcc408b77b876f7727889dbd46d539479"
 
-$installDir = Join-Path $env:LOCALAPPDATA "Programs\Cardfile"
+$vendorDir = Join-Path $env:LOCALAPPDATA "Programs\FittyAr"
+$installDir = Join-Path $vendorDir "Cardfile"
 $exePath = Join-Path $installDir "cardfile.exe"
 # Shell folders, with the usual locations as a fallback (GetFolderPath can be empty).
 function Get-ShellFolder([string]$name, [string]$fallback) {
@@ -59,6 +61,8 @@ $uninstallKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Cardf
 $dataDir = Join-Path $env:APPDATA "FittyAr\Cardfile"
 # Installed by the cargo-dist installer of 2.0.0-alpha.1 to 2.0.0-alpha.3.
 $legacyDir = Join-Path $env:USERPROFILE ".cardfile\bin"
+# Used by this script before installs moved under the FittyAr folder.
+$previousDir = Join-Path $env:LOCALAPPDATA "Programs\Cardfile"
 
 # Whether this machine runs ARM64 Windows (also when this PowerShell itself
 # runs emulated as x64).
@@ -311,6 +315,12 @@ function Install-Files([string]$package) {
 }
 
 function Remove-Legacy {
+    # The earlier layout of this same installer: replaced silently.
+    if (Test-Path (Join-Path $previousDir "cardfile.exe")) {
+        Write-Host "Moving from $previousDir to $installDir..."
+        Remove-Item -Recurse -Force $previousDir -ErrorAction SilentlyContinue
+        Remove-FromUserPath $previousDir
+    }
     $legacyExe = Join-Path $legacyDir "cardfile.exe"
     if (-not (Test-Path $legacyExe)) { return }
     Write-Host "An older Cardfile installation was found in $legacyDir."
@@ -373,6 +383,10 @@ function Invoke-Uninstall {
         Remove-Item -Recurse -Force $uninstallKey -ErrorAction SilentlyContinue
         # The running uninstall.ps1 lives in $installDir; PowerShell has read it already.
         Remove-Item -Recurse -Force $installDir -ErrorAction SilentlyContinue
+        # Leave the shared FittyAr folder only while other apps use it.
+        if ((Test-Path $vendorDir) -and -not (Get-ChildItem $vendorDir)) {
+            Remove-Item -Force $vendorDir -ErrorAction SilentlyContinue
+        }
         Write-Host "Cardfile was removed." -ForegroundColor Green
     } else {
         Write-Host "Uninstall cancelled."

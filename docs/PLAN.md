@@ -310,7 +310,7 @@ el SHA-256 contra el `SHA256SUMS` firmado y las firmas minisign (minisign oficia
 fijado por SHA-256 si no está instalado), y crean los accesos directos:
 - **Windows**: `%LOCALAPPDATA%\Programs\Cardfile`, accesos en menú Inicio y escritorio, PATH de
   usuario y entrada en *Aplicaciones instaladas* (desinstalador `uninstall.ps1` local).
-- **Linux**: `~/.local/lib/cardfile` + enlace `~/.local/bin/cardfile`, `.desktop` en
+- **Linux**: `~/.local/lib/FittyAr/Cardfile` + enlace `~/.local/bin/cardfile`, `.desktop` en
   `~/.local/share/applications`, íconos hicolor y acceso en el escritorio (`xdg-user-dir`).
 Migran la instalación anterior de cargo-dist (`~/.cardfile/bin`). Inspirado en el instalador de
 Pairee (mismo autor).

@@ -8,7 +8,8 @@
 # newest stable one, or the newest pre-release while no stable release is
 # newer. --stable ignores pre-releases; --version installs that exact tag.
 #
-# Installs the program to ~/.local/lib/cardfile with a `cardfile` command in
+# Installs the program to ~/.local/lib/FittyAr/Cardfile (all FittyAr apps share the
+# FittyAr folder) with a `cardfile` command in
 # ~/.local/bin, an application-menu entry (.desktop file + icons) and a
 # desktop shortcut. No root needed. Cardfile updates itself afterwards
 # (Settings -> General).
@@ -32,7 +33,10 @@ MINISIGN_VERSION="0.12"
 MINISIGN_TARBALL_SHA256="9a599b48ba6eb7b1e80f12f36b94ceca7c00b7a5173c95c3efc88d9822957e73"
 
 DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
-LIB_DIR="$HOME/.local/lib/cardfile"
+VENDOR_DIR="$HOME/.local/lib/FittyAr"
+LIB_DIR="$VENDOR_DIR/Cardfile"
+# Used by this script before installs moved under the FittyAr folder.
+PREVIOUS_DIR="$HOME/.local/lib/cardfile"
 BIN_DIR="$HOME/.local/bin"
 APPS_DIR="$DATA_HOME/applications"
 ICONS_DIR="$DATA_HOME/icons/hicolor"
@@ -153,6 +157,8 @@ uninstall() {
         echo "Cardfile is not installed in $LIB_DIR."
     elif ask "Uninstall Cardfile from $LIB_DIR?"; then
         rm -rf "$LIB_DIR"
+        # Leave the shared FittyAr folder only while other apps use it.
+        rmdir "$VENDOR_DIR" 2> /dev/null || true
         # Only our own link: never a cardfile installed some other way.
         if [ -L "$BIN_DIR/cardfile" ]; then
             rm -f "$BIN_DIR/cardfile"
@@ -378,6 +384,11 @@ install_files() {
 }
 
 remove_legacy() {
+    # The earlier layout of this same installer: replaced silently.
+    if [ -f "$PREVIOUS_DIR/cardfile" ]; then
+        echo "Moving from $PREVIOUS_DIR to $LIB_DIR..."
+        rm -rf "$PREVIOUS_DIR"
+    fi
     [ -f "$LEGACY_DIR/cardfile" ] || return 0
     echo "An older Cardfile installation was found in $LEGACY_DIR."
     if ask "Remove it (your cards are kept)?"; then
