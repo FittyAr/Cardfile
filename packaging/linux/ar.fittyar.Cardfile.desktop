@@ -6,6 +6,6 @@ Comment=A modern digital card file for your notes
 Exec=cardfile
 Icon=ar.fittyar.Cardfile
 Terminal=false
-Categories=Office;Utility;TextEditor;
+Categories=Office;
 Keywords=notes;cards;notebook;editor;
 StartupWMClass=ar.fittyar.Cardfile

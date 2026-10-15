@@ -9,7 +9,7 @@ generates `.github/workflows/release.yml`. Don't edit that file by hand: change
 | File | Produced by | Notes |
 |------|-------------|-------|
 | `cardfile-<target>.zip` / `.tar.xz` | dist | Portable archives for Windows and Linux (x64, ARM64) |
-| `cardfile-installer.ps1` / `cardfile-installer.sh` | dist | One-line installers (`irm … \| iex`, `curl … \| sh`) |
+| `install.ps1` / `install.sh` (repo root, not a release asset) | maintainers | One-line installers served from `main`; they always pick the newest release, so they need no change per release. They rely on the archive names `cardfile-<target>.zip` / `.tar.xz`, `SHA256SUMS` and the minisign trusted comment `Cardfile <tag> release file: <name>` |
 | `Cardfile-<version>-setup-<arch>.exe` | `package.yml` | Inno Setup installer, also used by winget |
 | `Cardfile-<version>-<arch>.msix` | `package.yml` | For Microsoft Store submission (the Store signs it) |
 | `.deb`, `.rpm`, `.AppImage` | `package.yml` | Linux packages for x86_64 and aarch64 |

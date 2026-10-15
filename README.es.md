@@ -42,19 +42,35 @@ framework de UI del editor [Zed](https://zed.dev).
 **Windows (PowerShell)**
 
 ```powershell
-irm https://github.com/FittyAr/Cardfile/releases/latest/download/cardfile-installer.ps1 | iex
-```
-
-**Windows (winget)**
-
-```powershell
-winget install FittyAr.Cardfile
+irm https://raw.githubusercontent.com/FittyAr/Cardfile/main/install.ps1 | iex
 ```
 
 **Linux**
 
 ```bash
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/FittyAr/Cardfile/releases/latest/download/cardfile-installer.sh | sh
+curl -fsSL https://raw.githubusercontent.com/FittyAr/Cardfile/main/install.sh | sh
+```
+
+Los instaladores de una línea siempre instalan la release **más nueva** (estable, o la
+pre-release más nueva mientras no haya una estable más reciente), verifican su SHA-256 y su firma
+minisign, y agregan Cardfile al menú Inicio / menú de aplicaciones y al escritorio. No hacen falta
+permisos de administrador y después Cardfile se actualiza solo desde la app. Opciones:
+
+| | Windows | Linux |
+|---|---|---|
+| Solo releases estables | `-Stable` | `--stable` |
+| Una versión concreta | `-Version v2.0.0` | `--version v2.0.0` |
+| Sin acceso en el escritorio | `-NoDesktopShortcut` | `--no-desktop-shortcut` |
+| Desinstalar | `-Uninstall` (o *Configuración → Aplicaciones*) | `--uninstall` |
+
+En Windows las opciones se pasan con
+`& ([scriptblock]::Create((irm https://raw.githubusercontent.com/FittyAr/Cardfile/main/install.ps1))) -Stable`;
+en Linux con `curl … | sh -s -- --stable`.
+
+**Windows (winget)**
+
+```powershell
+winget install FittyAr.Cardfile
 ```
 
 Cada [release](https://github.com/FittyAr/Cardfile/releases) también incluye `.deb`, `.rpm`,

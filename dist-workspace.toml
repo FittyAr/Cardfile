@@ -5,15 +5,15 @@ members = ["cargo:."]
 [dist]
 cargo-dist-version = "0.32.0"
 ci = "github"
-installers = ["shell", "powershell"]
+# One-line installers are install.ps1 / install.sh in the repository root: they always
+# install the newest release, so dist does not build version-pinned ones.
+installers = []
 targets = [
     "x86_64-pc-windows-msvc",
     "aarch64-pc-windows-msvc",
     "x86_64-unknown-linux-gnu",
     "aarch64-unknown-linux-gnu",
 ]
-install-path = "~/.cardfile/bin"
-install-updater = false
 pr-run-mode = "plan"
 # Files added to every archive next to the executable.
 include = ["packaging/dictionaries", "packaging/out/THIRD_PARTY_LICENSES.html"]

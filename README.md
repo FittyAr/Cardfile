@@ -40,19 +40,35 @@ the [Zed](https://zed.dev) editor.
 **Windows (PowerShell)**
 
 ```powershell
-irm https://github.com/FittyAr/Cardfile/releases/latest/download/cardfile-installer.ps1 | iex
-```
-
-**Windows (winget)**
-
-```powershell
-winget install FittyAr.Cardfile
+irm https://raw.githubusercontent.com/FittyAr/Cardfile/main/install.ps1 | iex
 ```
 
 **Linux**
 
 ```bash
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/FittyAr/Cardfile/releases/latest/download/cardfile-installer.sh | sh
+curl -fsSL https://raw.githubusercontent.com/FittyAr/Cardfile/main/install.sh | sh
+```
+
+The one-line installers always install the **newest** release (stable, or the newest pre-release
+while there is no newer stable one), verify its SHA-256 and minisign signature, and add Cardfile to
+the Start menu / application menu and the desktop. No administrator rights are needed, and
+Cardfile then updates itself from inside the app. Options:
+
+| | Windows | Linux |
+|---|---|---|
+| Only stable releases | `-Stable` | `--stable` |
+| A specific version | `-Version v2.0.0` | `--version v2.0.0` |
+| No desktop shortcut | `-NoDesktopShortcut` | `--no-desktop-shortcut` |
+| Uninstall | `-Uninstall` (or *Settings → Apps*) | `--uninstall` |
+
+On Windows pass options with
+`& ([scriptblock]::Create((irm https://raw.githubusercontent.com/FittyAr/Cardfile/main/install.ps1))) -Stable`;
+on Linux with `curl … | sh -s -- --stable`.
+
+**Windows (winget)**
+
+```powershell
+winget install FittyAr.Cardfile
 ```
 
 `.deb`, `.rpm`, AppImage and the Inno Setup installer are attached to every

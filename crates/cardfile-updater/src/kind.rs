@@ -37,8 +37,9 @@ pub enum InstallKind {
         /// The running executable.
         exe: PathBuf,
     },
-    /// A bare executable in a writable folder, e.g. from the `cardfile-installer.ps1` /
-    /// `.sh` scripts (`~/.cardfile/bin`) or an unpacked archive; the update replaces the files.
+    /// A bare executable in a writable folder, e.g. from the `install.ps1` / `install.sh`
+    /// one-line installers (`%LOCALAPPDATA%\Programs\Cardfile`, `~/.local/lib/cardfile`) or
+    /// an unpacked archive; the update replaces the files.
     Standalone {
         /// The running executable.
         exe: PathBuf,

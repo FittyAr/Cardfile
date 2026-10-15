@@ -294,14 +294,26 @@ Targets: `x86_64-pc-windows-msvc`, `aarch64-pc-windows-msvc`, `x86_64-unknown-li
 ### 5.2 Instalación con un comando
 
 ```powershell
-irm https://github.com/FittyAr/Cardfile/releases/latest/download/cardfile-installer.ps1 | iex
+irm https://raw.githubusercontent.com/FittyAr/Cardfile/main/install.ps1 | iex
 ```
 ```bash
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/FittyAr/Cardfile/releases/latest/download/cardfile-installer.sh | sh
+curl -fsSL https://raw.githubusercontent.com/FittyAr/Cardfile/main/install.sh | sh
 ```
 ```powershell
 winget install FittyAr.Cardfile
 ```
+
+`install.ps1` e `install.sh` (raíz del repo, servidos desde `main`) no están atados a una versión:
+consultan la API de GitHub e instalan la release más nueva (estable, o la pre-release más nueva si
+no hay una estable posterior; `-Stable`/`--stable` y `-Version`/`--version` lo cambian), verifican
+el SHA-256 contra el `SHA256SUMS` firmado y las firmas minisign (minisign oficial descargado y
+fijado por SHA-256 si no está instalado), y crean los accesos directos:
+- **Windows**: `%LOCALAPPDATA%\Programs\Cardfile`, accesos en menú Inicio y escritorio, PATH de
+  usuario y entrada en *Aplicaciones instaladas* (desinstalador `uninstall.ps1` local).
+- **Linux**: `~/.local/lib/cardfile` + enlace `~/.local/bin/cardfile`, `.desktop` en
+  `~/.local/share/applications`, íconos hicolor y acceso en el escritorio (`xdg-user-dir`).
+Migran la instalación anterior de cargo-dist (`~/.cardfile/bin`). Inspirado en el instalador de
+Pairee (mismo autor).
 
 ### 5.3 Firma
 
@@ -323,7 +335,7 @@ fondo), al estilo de Zed (solo ideas; nada de su código GPL):
 1. **Tipo de instalación** (`InstallKind::detect`): Store/MSIX (`WindowsApps`), gestor de
    paquetes Linux (`/usr`, salvo `/usr/local`), Flatpak (`FLATPAK_ID`), Snap (`SNAP`), AppImage
    (`APPIMAGE`), Inno Setup (`unins000.exe` junto al exe), portable (`portable.flag`) o binario
-   suelto en carpeta escribible (instaladores de dist en `~/.cardfile/bin`, archivo descomprimido).
+   suelto en carpeta escribible (`install.ps1`/`install.sh`, archivo descomprimido).
    Store, gestores de paquetes, Flatpak, Snap y copias en carpetas de solo lectura **no** se
    autoactualizan: siguen con el aviso y el enlace a la release.
 2. **Asset**: `.zip` (Windows) o `.tar.xz` (Linux) para binario suelto/portable, el `.AppImage`
