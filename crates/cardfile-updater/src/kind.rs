@@ -38,7 +38,8 @@ pub enum InstallKind {
         exe: PathBuf,
     },
     /// A bare executable in a writable folder, e.g. from the `install.ps1` / `install.sh`
-    /// one-line installers (`%LOCALAPPDATA%\Programs\Cardfile`, `~/.local/lib/cardfile`) or
+    /// one-line installers (`%LOCALAPPDATA%\Programs\FittyAr\Cardfile`,
+    /// `~/.local/lib/FittyAr/Cardfile`) or
     /// an unpacked archive; the update replaces the files.
     Standalone {
         /// The running executable.
