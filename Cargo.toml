@@ -4,7 +4,7 @@ members = ["crates/*"]
 default-members = ["crates/cardfile"]
 
 [workspace.package]
-version = "2.0.0-alpha.2"
+version = "2.0.0-alpha.3"
 edition = "2024"
 rust-version = "1.99"
 license = "MIT OR Apache-2.0"
@@ -67,21 +67,24 @@ harfrust = "0.14.0"
 pulldown-cmark = "0.13.4"
 spellbook = "0.4.2"
 
-# Media (inline audio/video playback in cards)
+# Media (inline audio playback in cards; patent-free formats only: MP3, WAV, OGG/Vorbis, FLAC)
 # Output only: decoding is done with symphonia directly, so rodio's own decoders stay off.
 rodio = { version = "0.23.0", default-features = false, features = ["playback", "tracing"] }
-symphonia = { version = "0.6.1", default-features = false, features = ["aac", "flac", "isomp4", "mp3", "ogg", "pcm", "vorbis", "wav", "id3v2"] }
-re_mp4 = "0.5.1"
-# `source` builds Cisco's OpenH264 from the bundled C/C++ sources: no runtime download.
-openh264 = { version = "0.9.8", default-features = false, features = ["source"] }
+symphonia = { version = "0.6.1", default-features = false, features = ["flac", "mp3", "ogg", "pcm", "vorbis", "wav", "id3v2"] }
 
 # Platform
 open = "5.4.4"
+keyring = "4.2.0"
 rfd = "0.17.2"
 rust-i18n = "4.2.4"
 tiny_http = "0.12.0"
 ureq = "3.4.2"
 minisign-verify = "0.3.0"
+# Self-updater: checksums and release archives (pure Rust, decoders only).
+sha2 = { version = "0.11.1", default-features = false }
+zip = { version = "9.0.3", default-features = false, features = ["deflate-flate2-zlib-rs"] }
+tar = { version = "0.4.46", default-features = false }
+lzma-rust2 = { version = "0.22.0", default-features = false, features = ["std", "xz"] }
 
 # Observability
 tracing = "0.1.44"
@@ -89,9 +92,7 @@ tracing-appender = "0.2.5"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 
 # Dev
-bytes = "1.12.1"
 hound = "3.5.1"
-mp4 = "0.14.0"
 pretty_assertions = "1.4.1"
 tempfile = "3.27.0"
 
@@ -110,7 +111,7 @@ todo = "warn"
 # GPUI is heavy; optimize dependencies even in debug builds for a usable UI.
 [profile.dev.package."*"]
 opt-level = 2
-# Per-pixel frame conversion and the audio callback must keep up in real time.
+# The audio callback and decoder thread must keep up in real time.
 [profile.dev.package.cardfile-media]
 opt-level = 2
 

@@ -65,6 +65,7 @@ editor:
     smaller: Kleiner
     larger: Groter
     fit: Aan breedte aanpassen
+    keep_ratio: "Verhoudingen herstellen"
   menu:
     cut: Knippen
     copy: Kopiëren
@@ -321,6 +322,15 @@ updates:
   latest: Je hebt de nieuwste versie.
   failed: "Kon niet op updates controleren: %{error}"
   managed: Updates voor deze installatie worden beheerd door je appstore of pakketbeheerder.
+  dialog_title: "Cardfile %{version} is beschikbaar"
+  current: "Je hebt versie %{version}."
+  install: "Bijwerken en herstarten"
+  later: "Later"
+  open_page: "Releasepagina"
+  downloading: "Downloaden… %{mb} MB"
+  installing: "Installeren…"
+  installed_restart: "De update is geïnstalleerd. Herstart Cardfile om hem te gebruiken."
+  manual: "Deze kopie van Cardfile kan zichzelf niet bijwerken. Download de nieuwe versie van de releasepagina."
 
 about:
   version: "Versie %{version}"
@@ -328,6 +338,18 @@ about:
   license: Vrije software onder de MIT- of Apache 2.0-licentie.
   website: Website
   third_party: Licenties van derden
+  version_label: "Versie"
+  channel: "Kanaal"
+  channel_preview: "Preview (alfa)"
+  channel_stable: "Stabiel"
+  platform: "Platform"
+  license_label: "Licentie"
+  copyright: "Copyright"
+  built_with: "Gebouwd met Rust en GPUI. Tekst gezet in Inter en JetBrains Mono (SIL Open Font License)."
+  translations: "Vertalingen in andere talen dan het Engels zijn met AI gemaakt. Meld fouten, zodat we ze kunnen verbeteren."
+  guide: "Gebruikershandleiding"
+  report: "Een probleem melden"
+  changelog: "Wat is er nieuw"
 
 settings:
   title: Instellingen
@@ -343,6 +365,9 @@ settings:
     users: Gebruikers
     data: Gegevens
     ai: "AI"
+    ai_services: "AI-diensten"
+    ai_assistant: "Assistent"
+    mcp: "AI-apps (MCP)"
   general:
     theme: Thema
     language: Taal
@@ -407,6 +432,11 @@ settings:
     standard: Standaardmodus.
     export: Exporteren
     export_hint: Exporteert alle kaarten die niet privé of versleuteld zijn.
+  group:
+    app: "App"
+    privacy: "Privacy en beveiliging"
+    ai: "AI"
+    data: "Gegevens"
 
 share:
   button: "Delen…"
@@ -498,6 +528,25 @@ ai:
   activity:
     title: "Recente AI-activiteit"
     empty: "De AI heeft nog niets gewijzigd."
+  services:
+    yours: "Je AI-diensten"
+    none: "Nog geen AI-dienst. Kies er hieronder een: clouddiensten hebben een API-sleutel van de aanbieder nodig; lokale diensten draaien gratis op deze computer."
+    ready: "Klaar"
+    ready_local: "Klaar (op deze computer)"
+    add: "Dienst toevoegen"
+    cloud_title: "Clouddiensten"
+    cloud_hint: "Krachtige modellen die door de aanbieder worden gedraaid. Je hebt een account en een API-sleutel nodig."
+    local_title: "Op deze computer"
+    local_hint: "Gratis en privé: installeer de app, download een model en Cardfile maakt er verbinding mee."
+    custom: "Andere compatibele dienst"
+    custom_hint: "Elke OpenAI-compatibele URL"
+    connect: "%{name} koppelen"
+    edit: "%{name} bewerken"
+    key_hint: "Maak een sleutel aan op de website van de aanbieder en plak die hier. Hij wordt opgeslagen in de referentiebeheerder van je systeem."
+    model_hint: "Het voorgestelde model is een goed begin. “Verbinding testen” laadt ook de modellen die je account kan gebruiken."
+    local_steps: "Zorg dat de app draait en minstens één gedownload model heeft. Er is geen API-sleutel nodig."
+    advanced: "Geavanceerd (server-URL en API-indeling)"
+    no_keyring: "De referentiebeheerder van je systeem is niet beschikbaar, dus API-sleutels worden opgeslagen in de Cardfile-database."
 
 chat:
   title: "Assistent"
@@ -528,3 +577,6 @@ chat:
     reorder_cards: "Kaartvolgorde gewijzigd"
     delete_card: "Naar de prullenbak verplaatst"
     restore_card: "Kaart hersteld"
+
+attachment:
+  no_app: "Geen enkele app op deze computer kan “%{name}” openen. Installeer een programma voor dit bestandstype (voor video's een mediaspeler zoals VLC) en probeer het opnieuw."

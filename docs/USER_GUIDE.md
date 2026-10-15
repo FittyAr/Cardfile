@@ -67,9 +67,9 @@ Type `/` in an empty line to open a menu of blocks: headings, lists, table, imag
 - **Insert → Table** creates a 3×3 table.
   - `Tab` moves to the next cell; in the last cell it adds a row.
   - Right-click a table to add or remove rows and columns.
-- Right-click an image to make it smaller, larger, or fit the width.
+- Click an image to show its handles: drag the **corner** to resize it keeping its proportions, or the **right** or **bottom** edge to stretch it. Right-click it to make it smaller, larger, fit the width or restore its proportions.
 - **Drag an image or attachment** to move it inside the card. Drop it on another card in the list to move it there; hold `Ctrl` (or `Alt`) while dropping to copy it instead.
-- **Audio and video play inside the card.** MP3, WAV, OGG, FLAC and AAC/M4A audio and MP4 (H.264) video get a player with play/pause, a seek bar and mute. Other formats open in your system player.
+- **Audio plays inside the card.** MP3, WAV, OGG and FLAC audio get a player with play/pause, a seek bar and mute. Video, AAC/M4A and other formats open in your system player; if no application on your computer can open them, Cardfile tells you.
 
 ### Other languages and scripts
 
@@ -127,6 +127,10 @@ Cardfile includes an MCP server so AI apps such as Claude Desktop, Claude Code, 
 1. In **Settings → AI**, turn on **Run the MCP server** (it listens on `127.0.0.1` only; default port 7337).
 2. Under **API keys**, create a key. Choose *Read only* or *Allow private cards* if you want. Copy the key: it is shown only once, together with ready-to-paste settings for each AI app.
 3. The AI app sees exactly what you see. Its changes are recorded as made by Cardfile AI, through that key. **Revoke** a key to cut its access immediately. The list shows when each key was last used, and *Recent AI activity* shows what the AI changed.
+
+## Updates
+
+Cardfile checks for new versions at startup (Settings → General). When one is available, click the notice, read what's new and choose **Update and restart**: Cardfile downloads it, checks its signature and installs it. Copies installed from the Microsoft Store or a Linux package manager are updated by them instead.
 
 ## Export and backup
 

@@ -65,6 +65,7 @@ editor:
     smaller: Nhỏ hơn
     larger: Lớn hơn
     fit: Vừa chiều rộng
+    keep_ratio: "Khôi phục tỷ lệ"
   menu:
     cut: Cắt
     copy: Sao chép
@@ -321,6 +322,15 @@ updates:
   latest: Bạn đang dùng phiên bản mới nhất.
   failed: "Không thể kiểm tra cập nhật: %{error}"
   managed: Cập nhật cho bản cài đặt này do cửa hàng ứng dụng hoặc trình quản lý gói của bạn xử lý.
+  dialog_title: "Đã có Cardfile %{version}"
+  current: "Bạn đang dùng phiên bản %{version}."
+  install: "Cập nhật và khởi động lại"
+  later: "Để sau"
+  open_page: "Trang phát hành"
+  downloading: "Đang tải xuống… %{mb} MB"
+  installing: "Đang cài đặt…"
+  installed_restart: "Bản cập nhật đã được cài đặt. Hãy khởi động lại Cardfile để sử dụng."
+  manual: "Bản Cardfile này không thể tự cập nhật. Hãy tải phiên bản mới từ trang phát hành."
 
 about:
   version: "Phiên bản %{version}"
@@ -328,6 +338,18 @@ about:
   license: Phần mềm tự do theo giấy phép MIT hoặc Apache 2.0.
   website: Trang web
   third_party: Giấy phép của bên thứ ba
+  version_label: "Phiên bản"
+  channel: "Kênh"
+  channel_preview: "Xem trước (alpha)"
+  channel_stable: "Ổn định"
+  platform: "Nền tảng"
+  license_label: "Giấy phép"
+  copyright: "Bản quyền"
+  built_with: "Được xây dựng bằng Rust và GPUI. Văn bản dùng phông Inter và JetBrains Mono (SIL Open Font License)."
+  translations: "Các bản dịch ngoài tiếng Anh được thực hiện bằng AI. Vui lòng báo cho chúng tôi nếu có lỗi để chúng tôi sửa."
+  guide: "Hướng dẫn sử dụng"
+  report: "Báo cáo sự cố"
+  changelog: "Có gì mới"
 
 settings:
   title: Cài đặt
@@ -343,6 +365,9 @@ settings:
     users: Người dùng
     data: Dữ liệu
     ai: "AI"
+    ai_services: "Dịch vụ AI"
+    ai_assistant: "Trợ lý"
+    mcp: "Ứng dụng AI (MCP)"
   general:
     theme: Giao diện
     language: Ngôn ngữ
@@ -407,6 +432,11 @@ settings:
     standard: Chế độ tiêu chuẩn.
     export: Xuất
     export_hint: Xuất tất cả thẻ không phải thẻ riêng tư hoặc đã mã hóa.
+  group:
+    app: "Ứng dụng"
+    privacy: "Quyền riêng tư và bảo mật"
+    ai: "AI"
+    data: "Dữ liệu"
 
 share:
   button: "Chia sẻ…"
@@ -498,6 +528,25 @@ ai:
   activity:
     title: "Hoạt động AI gần đây"
     empty: "AI chưa thay đổi gì."
+  services:
+    yours: "Dịch vụ AI của bạn"
+    none: "Chưa có dịch vụ AI nào. Hãy chọn một dịch vụ bên dưới: dịch vụ đám mây cần khóa API từ nhà cung cấp; dịch vụ cục bộ chạy miễn phí trên máy tính này."
+    ready: "Sẵn sàng"
+    ready_local: "Sẵn sàng (trên máy tính này)"
+    add: "Thêm dịch vụ"
+    cloud_title: "Dịch vụ đám mây"
+    cloud_hint: "Các mô hình mạnh do nhà cung cấp vận hành. Bạn cần một tài khoản và một khóa API."
+    local_title: "Trên máy tính này"
+    local_hint: "Miễn phí và riêng tư: cài ứng dụng, tải xuống một mô hình, rồi Cardfile sẽ kết nối với nó."
+    custom: "Dịch vụ tương thích khác"
+    custom_hint: "Bất kỳ URL nào tương thích với OpenAI"
+    connect: "Kết nối %{name}"
+    edit: "Chỉnh sửa %{name}"
+    key_hint: "Tạo khóa trên trang web của nhà cung cấp và dán vào đây. Khóa được lưu trong trình quản lý thông tin xác thực của hệ thống."
+    model_hint: "Mô hình được gợi ý là điểm khởi đầu tốt. “Kiểm tra kết nối” cũng sẽ tải các mô hình mà tài khoản của bạn có thể dùng."
+    local_steps: "Hãy đảm bảo ứng dụng đang chạy và đã tải xuống ít nhất một mô hình. Không cần khóa API."
+    advanced: "Nâng cao (URL máy chủ và định dạng API)"
+    no_keyring: "Trình quản lý thông tin xác thực của hệ thống không khả dụng, nên khóa API được lưu trong cơ sở dữ liệu Cardfile."
 
 chat:
   title: "Trợ lý"
@@ -528,3 +577,6 @@ chat:
     reorder_cards: "Đã sắp xếp lại thẻ"
     delete_card: "Đã chuyển vào thùng rác"
     restore_card: "Đã khôi phục thẻ"
+
+attachment:
+  no_app: "Không có ứng dụng nào trên máy tính này có thể mở “%{name}”. Hãy cài đặt một chương trình cho loại tệp này (với video, hãy dùng trình phát đa phương tiện như VLC) rồi thử lại."

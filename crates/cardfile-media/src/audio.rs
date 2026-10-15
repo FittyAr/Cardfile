@@ -27,7 +27,7 @@ use symphonia::core::meta::MetadataOptions;
 use symphonia::core::units::{Time, TimeBase};
 
 use crate::shared::Shared;
-use crate::{AudioOutput, MediaError, MediaKind};
+use crate::{AudioOutput, MediaError};
 
 /// How much decoded audio is buffered ahead of the output, in seconds.
 const RING_SECONDS: f64 = 0.5;
@@ -49,13 +49,13 @@ pub(crate) struct AudioTrack {
 
 /// Probes `data` and opens its first decodable audio track.
 ///
-/// Returns `Ok(None)` when the container has no decodable audio track (used for
-/// MP4 videos without sound).
+/// Fails with [`MediaError::Unsupported`] when no track can be decoded (e.g. an
+/// OGG file carrying Opus, for which no decoder is compiled in).
 pub(crate) fn open_track(
     data: Arc<[u8]>,
     mime: &str,
     ext: Option<&str>,
-) -> Result<Option<AudioTrack>, MediaError> {
+) -> Result<AudioTrack, MediaError> {
     let mut hint = Hint::new();
     if let Some(ext) = ext {
         hint.with_extension(ext);
@@ -92,7 +92,9 @@ pub(crate) fn open_track(
         }
     }
     let Some((track, decoder)) = chosen else {
-        return Ok(None);
+        return Err(MediaError::Unsupported(
+            "no playable audio track".to_owned(),
+        ));
     };
 
     let params = decoder.codec_params();
@@ -118,7 +120,7 @@ pub(crate) fn open_track(
             .map(|n| Duration::from_secs_f64(n as f64 / f64::from(rate)))
     });
 
-    Ok(Some(AudioTrack {
+    Ok(AudioTrack {
         reader,
         decoder,
         track_id: track.id,
@@ -126,7 +128,7 @@ pub(crate) fn open_track(
         rate,
         channels,
         duration,
-    }))
+    })
 }
 
 fn sym_err(err: SymError) -> MediaError {
@@ -514,7 +516,7 @@ pub(crate) fn run(
             }
         }
 
-        if shared.kind == MediaKind::Audio && audio.is_drained() && !shared.is_ended() {
+        if audio.is_drained() && !shared.is_ended() {
             shared.mark_ended();
         }
 

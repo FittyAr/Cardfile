@@ -65,6 +65,7 @@ editor:
     smaller: Lebih kecil
     larger: Lebih besar
     fit: Sesuaikan lebar
+    keep_ratio: "Pulihkan proporsi"
   menu:
     cut: Potong
     copy: Salin
@@ -321,6 +322,15 @@ updates:
   latest: Anda menggunakan versi terbaru.
   failed: "Tidak dapat memeriksa pembaruan: %{error}"
   managed: Pembaruan untuk instalasi ini dikelola oleh toko aplikasi atau manajer paket Anda.
+  dialog_title: "Cardfile %{version} tersedia"
+  current: "Anda menggunakan versi %{version}."
+  install: "Perbarui dan mulai ulang"
+  later: "Nanti"
+  open_page: "Halaman rilis"
+  downloading: "Mengunduh… %{mb} MB"
+  installing: "Memasang…"
+  installed_restart: "Pembaruan sudah terpasang. Mulai ulang Cardfile untuk menggunakannya."
+  manual: "Salinan Cardfile ini tidak dapat memperbarui dirinya sendiri. Unduh versi baru dari halaman rilis."
 
 about:
   version: "Versi %{version}"
@@ -328,6 +338,18 @@ about:
   license: Perangkat lunak bebas berlisensi MIT atau Apache 2.0.
   website: Situs web
   third_party: Lisensi pihak ketiga
+  version_label: "Versi"
+  channel: "Kanal"
+  channel_preview: "Pratinjau (alfa)"
+  channel_stable: "Stabil"
+  platform: "Platform"
+  license_label: "Lisensi"
+  copyright: "Hak cipta"
+  built_with: "Dibuat dengan Rust dan GPUI. Teks menggunakan Inter dan JetBrains Mono (SIL Open Font License)."
+  translations: "Terjemahan selain bahasa Inggris dibuat dengan AI. Laporkan kesalahan apa pun agar kami bisa memperbaikinya."
+  guide: "Panduan pengguna"
+  report: "Laporkan masalah"
+  changelog: "Yang baru"
 
 settings:
   title: Pengaturan
@@ -343,6 +365,9 @@ settings:
     users: Pengguna
     data: Data
     ai: "AI"
+    ai_services: "Layanan AI"
+    ai_assistant: "Asisten"
+    mcp: "Aplikasi AI (MCP)"
   general:
     theme: Tema
     language: Bahasa
@@ -407,6 +432,11 @@ settings:
     standard: Mode standar.
     export: Ekspor
     export_hint: Mengekspor semua kartu yang tidak pribadi atau terenkripsi.
+  group:
+    app: "Aplikasi"
+    privacy: "Privasi dan keamanan"
+    ai: "AI"
+    data: "Data"
 
 share:
   button: "Bagikan…"
@@ -498,6 +528,25 @@ ai:
   activity:
     title: "Aktivitas AI terbaru"
     empty: "AI belum mengubah apa pun."
+  services:
+    yours: "Layanan AI Anda"
+    none: "Belum ada layanan AI. Pilih salah satu di bawah: layanan cloud memerlukan kunci API dari penyedia; layanan lokal berjalan gratis di komputer ini."
+    ready: "Siap"
+    ready_local: "Siap (di komputer ini)"
+    add: "Tambah layanan"
+    cloud_title: "Layanan cloud"
+    cloud_hint: "Model andal yang dijalankan oleh penyedia. Anda memerlukan akun dan kunci API."
+    local_title: "Di komputer ini"
+    local_hint: "Gratis dan privat: instal aplikasinya, unduh model, dan Cardfile akan terhubung ke sana."
+    custom: "Layanan kompatibel lainnya"
+    custom_hint: "URL apa pun yang kompatibel dengan OpenAI"
+    connect: "Hubungkan %{name}"
+    edit: "Edit %{name}"
+    key_hint: "Buat kunci di situs web penyedia lalu tempel di sini. Kunci disimpan di pengelola kredensial sistem Anda."
+    model_hint: "Model yang disarankan adalah awal yang baik. “Uji koneksi” juga memuat model yang dapat dipakai akun Anda."
+    local_steps: "Pastikan aplikasinya sedang berjalan dan sudah mengunduh setidaknya satu model. Kunci API tidak diperlukan."
+    advanced: "Lanjutan (URL server dan format API)"
+    no_keyring: "Pengelola kredensial sistem Anda tidak tersedia, jadi kunci API disimpan di basis data Cardfile."
 
 chat:
   title: "Asisten"
@@ -528,3 +577,6 @@ chat:
     reorder_cards: "Mengurutkan ulang kartu"
     delete_card: "Memindahkan ke tempat sampah"
     restore_card: "Memulihkan kartu"
+
+attachment:
+  no_app: "Tidak ada aplikasi di komputer ini yang dapat membuka “%{name}”. Instal program untuk jenis file ini (untuk video, pemutar media seperti VLC) lalu coba lagi."

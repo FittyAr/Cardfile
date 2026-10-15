@@ -40,3 +40,6 @@ desktop.ini
 # Fetched by scripts/fetch-dictionaries.sh in CI
 /packaging/dictionaries/
 .claude/worktrees/
+
+# Python venv for scripts/render_brand.py
+.venv-brand/

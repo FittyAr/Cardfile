@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <title>Cardfile</title>
+  <!-- Cardfile app icon. Grid: 256 x 256. Used for every raster of 48 px and up;
+       sizes of 32 px and below use icon-small.svg. -->
+  <defs>
+    <filter id="cf-shadow" x="-20%" y="-20%" width="140%" height="160%">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+  </defs>
+  <!-- Tile -->
+  <rect x="12" y="12" width="232" height="232" rx="56" fill="#F26B4A"/>
+  <!-- Back card with its index tab -->
+  <path d="M72 90V67q0-10 10-10h36q6 0 8.2 5.6L134 84v6z" fill="#B93D24"/>
+  <rect x="64" y="77" width="148" height="100" rx="12" fill="#F8C1A9"/>
+  <!-- Middle card -->
+  <rect x="54" y="88" width="148" height="100" rx="12" fill="#FCDCCC"/>
+  <!-- The one soft shadow, under the front card -->
+  <rect x="44" y="105" width="148" height="100" rx="12" fill="#9C3019" opacity="0.32" filter="url(#cf-shadow)"/>
+  <!-- Front card -->
+  <rect x="44" y="99" width="148" height="100" rx="12" fill="#FFF9F5"/>
+  <rect x="58" y="114" width="38" height="12" rx="6" fill="#F26B4A"/>
+  <g stroke="#F6B59D" stroke-width="6" stroke-linecap="round">
+    <path d="M61 147H175M61 165H175M61 183H145"/>
+  </g>
+</svg>

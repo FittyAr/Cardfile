@@ -78,7 +78,22 @@ Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: deskto
 
 [Run]
 Filename: "{app}\{#AppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(AppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+; Cardfile's self-updater runs this installer with /VERYSILENT /RELAUNCH after quitting:
+; start the app again, as the user who launched the update (not elevated).
+Filename: "{app}\{#AppExeName}"; Flags: nowait runasoriginaluser skipifnotsilent; Check: ShouldRelaunch
 
 [UninstallDelete]
 ; User data lives in %APPDATA%\FittyAr\Cardfile and is intentionally kept.
 Type: filesandordirs; Name: "{app}\dictionaries"
+
+[Code]
+// True when the command line has /RELAUNCH (added by cardfile-updater).
+function ShouldRelaunch: Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  for I := 1 to ParamCount do
+    if CompareText(ParamStr(I), '/RELAUNCH') = 0 then
+      Result := True;
+end;

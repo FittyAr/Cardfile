@@ -39,6 +39,7 @@ spellbook.workspace = true
 tracing.workspace = true
 zeroize.workspace = true
 open.workspace = true
+keyring.workspace = true
 image.workspace = true
 
 [dev-dependencies]

@@ -15,9 +15,8 @@ use cardfile_media::{MediaKind, PlaybackState, Player};
 use gpui_kit::component::{h_flex, v_flex};
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::{
-    AnyElement, Bounds, Context, CursorStyle, Entity, Hsla, ImageSource, InteractiveElement as _,
-    IntoElement, MouseButton, ObjectFit, ParentElement as _, Pixels, RenderImage, Styled as _,
-    StyledImage as _, Task, canvas, div, img, px,
+    AnyElement, Bounds, Context, CursorStyle, Entity, Hsla, InteractiveElement as _, IntoElement,
+    MouseButton, ParentElement as _, Pixels, Styled as _, Task, canvas, div, px,
 };
 
 use crate::editor::RichEditor;
@@ -26,8 +25,6 @@ use crate::editor::RichEditor;
 #[derive(Default)]
 pub(crate) struct MediaState {
     players: HashMap<String, Player>,
-    /// Latest uploaded frame per blob, with the decoder's sequence number.
-    frames: HashMap<String, (u64, Arc<RenderImage>)>,
     /// Blobs that failed to open (unsupported codec, missing data).
     failed: HashMap<String, String>,
     tick: Option<Task<()>>,
@@ -40,7 +37,6 @@ impl MediaState {
             p.pause();
         }
         self.players.clear();
-        self.frames.clear();
         self.failed.clear();
         self.tick = None;
     }
@@ -55,12 +51,6 @@ impl MediaState {
 /// Whether an attachment can play inline.
 pub(crate) fn playable(att: &Attachment) -> Option<MediaKind> {
     cardfile_media::media_kind(&att.mime, Some(&att.file_name))
-}
-
-fn to_render_image(frame: &cardfile_media::VideoFrame) -> Option<Arc<RenderImage>> {
-    // GPUI stores frames as BGRA, which is what the decoder produces.
-    let buffer = image::RgbaImage::from_raw(frame.width, frame.height, frame.bgra.clone())?;
-    Some(Arc::new(RenderImage::new(vec![image::Frame::new(buffer)])))
 }
 
 fn format_time(d: Duration) -> String {
@@ -165,27 +155,12 @@ impl RichEditor {
         }));
     }
 
-    fn video_frame(&mut self, blob: &str, player: Option<&Player>) -> Option<Arc<RenderImage>> {
-        let player = player?;
-        let frame = player.current_frame().or_else(|| player.poster())?;
-        if let Some((seq, image)) = self.media.frames.get(blob)
-            && *seq == frame.seq
-        {
-            return Some(image.clone());
-        }
-        let image = to_render_image(&frame)?;
-        self.media
-            .frames
-            .insert(blob.to_owned(), (frame.seq, image.clone()));
-        Some(image)
-    }
-
-    /// The inline player for an audio or video attachment.
+    /// The inline player for an audio attachment.
     pub(crate) fn render_media(
         &mut self,
         ix: usize,
         att: &Attachment,
-        kind: MediaKind,
+        _kind: MediaKind,
         selected: bool,
         colors: MediaColors,
         entity: &Entity<Self>,
@@ -201,11 +176,6 @@ impl RichEditor {
             _ => 0.,
         };
         let muted = player.as_ref().is_some_and(|p| p.volume() == 0.);
-        let frame = if kind == MediaKind::Video {
-            self.video_frame(&att.blob, player.as_ref())
-        } else {
-            None
-        };
 
         let toggle_att = att.clone();
         let ent = entity.clone();
@@ -323,43 +293,6 @@ impl RichEditor {
                 colors.primary
             } else {
                 colors.border
-            })
-            .when(kind == MediaKind::Video, |d| {
-                let video = match &frame {
-                    Some(image) => img(ImageSource::Render(image.clone()))
-                        .object_fit(ObjectFit::Contain)
-                        .w_full()
-                        .max_h(px(420.))
-                        .into_any_element(),
-                    None => div()
-                        .h(px(160.))
-                        .w_full()
-                        .rounded(px(6.))
-                        .bg(gpui_kit::black())
-                        .flex()
-                        .items_center()
-                        .justify_center()
-                        .text_color(gpui_kit::white())
-                        .text_size(px(28.))
-                        .child("🎬")
-                        .into_any_element(),
-                };
-                let toggle_att = att.clone();
-                let ent = entity.clone();
-                d.child(
-                    div()
-                        .id(("media-video", ix))
-                        .w_full()
-                        .rounded(px(6.))
-                        .overflow_hidden()
-                        .bg(gpui_kit::black())
-                        .cursor(CursorStyle::PointingHand)
-                        .on_mouse_down(MouseButton::Left, move |_, _, cx| {
-                            cx.stop_propagation();
-                            ent.update(cx, |e, cx| e.media_toggle(&toggle_att, cx));
-                        })
-                        .child(video),
-                )
             })
             .child(controls)
             .when_some(failed, |d, err| {

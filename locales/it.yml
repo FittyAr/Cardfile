@@ -65,6 +65,7 @@ editor:
     smaller: Più piccola
     larger: Più grande
     fit: Adatta alla larghezza
+    keep_ratio: "Ripristina proporzioni"
   menu:
     cut: Taglia
     copy: Copia
@@ -321,6 +322,15 @@ updates:
   latest: Hai l'ultima versione.
   failed: "Impossibile verificare gli aggiornamenti: %{error}"
   managed: Gli aggiornamenti di questa installazione sono gestiti dal tuo app store o gestore di pacchetti.
+  dialog_title: "Cardfile %{version} è disponibile"
+  current: "Hai la versione %{version}."
+  install: "Aggiorna e riavvia"
+  later: "Più tardi"
+  open_page: "Pagina della versione"
+  downloading: "Download in corso… %{mb} MB"
+  installing: "Installazione in corso…"
+  installed_restart: "L'aggiornamento è installato. Riavvia Cardfile per usarlo."
+  manual: "Questa copia di Cardfile non può aggiornarsi da sola. Scarica la nuova versione dalla pagina della versione."
 
 about:
   version: "Versione %{version}"
@@ -328,6 +338,18 @@ about:
   license: Software libero con licenza MIT o Apache 2.0.
   website: Sito web
   third_party: Licenze di terze parti
+  version_label: "Versione"
+  channel: "Canale"
+  channel_preview: "Anteprima (alfa)"
+  channel_stable: "Stabile"
+  platform: "Piattaforma"
+  license_label: "Licenza"
+  copyright: "Copyright"
+  built_with: "Realizzato con Rust e GPUI. Testi composti in Inter e JetBrains Mono (SIL Open Font License)."
+  translations: "Le traduzioni diverse dall'inglese sono state realizzate con l'IA. Segnalaci eventuali errori così possiamo correggerli."
+  guide: "Guida utente"
+  report: "Segnala un problema"
+  changelog: "Novità"
 
 settings:
   title: Impostazioni
@@ -343,6 +365,9 @@ settings:
     users: Utenti
     data: Dati
     ai: "IA"
+    ai_services: "Servizi di IA"
+    ai_assistant: "Assistente"
+    mcp: "App di IA (MCP)"
   general:
     theme: Tema
     language: Lingua
@@ -407,6 +432,11 @@ settings:
     standard: Modalità standard.
     export: Esporta
     export_hint: Esporta tutte le schede che non sono private né crittografate.
+  group:
+    app: "App"
+    privacy: "Privacy e sicurezza"
+    ai: "IA"
+    data: "Dati"
 
 share:
   button: "Condividi…"
@@ -498,6 +528,25 @@ ai:
   activity:
     title: "Attività recente dell'IA"
     empty: "L'IA non ha ancora modificato nulla."
+  services:
+    yours: "I tuoi servizi di IA"
+    none: "Nessun servizio di IA per ora. Scegline uno qui sotto: i servizi cloud richiedono una chiave API del fornitore; quelli locali funzionano gratis su questo computer."
+    ready: "Pronto"
+    ready_local: "Pronto (su questo computer)"
+    add: "Aggiungi un servizio"
+    cloud_title: "Servizi cloud"
+    cloud_hint: "Modelli potenti eseguiti dal fornitore. Servono un account e una chiave API."
+    local_title: "Su questo computer"
+    local_hint: "Gratis e privato: installa l'app, scarica un modello e Cardfile si collega."
+    custom: "Altro servizio compatibile"
+    custom_hint: "Qualsiasi URL compatibile con OpenAI"
+    connect: "Collega %{name}"
+    edit: "Modifica %{name}"
+    key_hint: "Crea una chiave sul sito del fornitore e incollala qui. Viene salvata nel gestore delle credenziali del sistema."
+    model_hint: "Il modello suggerito è un buon punto di partenza. «Prova connessione» carica anche i modelli che il tuo account può usare."
+    local_steps: "Assicurati che l'app sia in esecuzione e abbia almeno un modello scaricato. Non serve alcuna chiave API."
+    advanced: "Avanzate (URL del server e formato API)"
+    no_keyring: "Il gestore delle credenziali del sistema non è disponibile, quindi le chiavi API vengono salvate nel database di Cardfile."
 
 chat:
   title: "Assistente"
@@ -528,3 +577,6 @@ chat:
     reorder_cards: "Schede riordinate"
     delete_card: "Spostata nel cestino"
     restore_card: "Scheda ripristinata"
+
+attachment:
+  no_app: "Nessuna applicazione su questo computer può aprire «%{name}». Installa un programma per questo tipo di file (per i video, un lettore multimediale come VLC) e riprova."

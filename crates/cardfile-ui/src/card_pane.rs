@@ -61,7 +61,8 @@ pub struct CardPane {
     /// The editor's blob store; seals new images while an encrypted card is open.
     blobs: Arc<DbBlobs>,
     toolbar: Entity<EditorToolbar>,
-    title: Entity<InputState>,
+    /// One-line editor (it lays out right-to-left titles correctly).
+    title: Entity<RichEditor>,
     unlock: Entity<InputState>,
     unlock_error: Option<SharedString>,
     unlocking: bool,
@@ -101,7 +102,14 @@ impl CardPane {
             e
         });
         let toolbar = cx.new(|cx| EditorToolbar::new(editor.clone(), cx));
-        let title = cx.new(|cx| InputState::new(window, cx).placeholder(t("card.untitled")));
+        let title = cx.new(|cx| {
+            let mut e = RichEditor::new(Document::default(), cx);
+            e.set_single_line(true);
+            e.set_strong(true, cx);
+            e.set_font_size(px(20.), cx);
+            e.set_placeholder(Some(cardfile_i18n::t_raw("card.untitled")));
+            e
+        });
         let unlock = cx.new(|cx| {
             InputState::new(window, cx)
                 .placeholder(t("card.unlock.placeholder"))
@@ -112,12 +120,12 @@ impl CardPane {
             cx.subscribe_in(
                 &title,
                 window,
-                |this, _, ev: &InputEvent, window, cx| match ev {
-                    InputEvent::Change if !this.suppress_title_event => {
+                |this, _, ev: &EditorEvent, window, cx| match ev {
+                    EditorEvent::Changed if !this.suppress_title_event => {
                         this.title_dirty = true;
                         this.schedule_save(cx);
                     }
-                    InputEvent::PressEnter { .. } => {
+                    EditorEvent::Submit => {
                         let focus = this.editor.focus_handle(cx);
                         focus.focus(window, cx);
                     }
@@ -352,9 +360,10 @@ impl CardPane {
         };
         self.suppress_title_event = true;
         let disabled = !self.editable();
-        self.title.update(cx, |s, cx| {
-            s.set_value(shown, window, cx);
-            s.set_disabled(disabled, cx);
+        let _ = window;
+        self.title.update(cx, |e, cx| {
+            e.set_text(&shown, cx);
+            e.set_read_only(disabled, cx);
         });
         self.suppress_title_event = false;
         self.title_dirty = false;
@@ -392,6 +401,7 @@ impl CardPane {
             EditorEvent::OpenAttachment { blob, file_name } => {
                 crate::export::open_attachment(blob.clone(), file_name.clone(), window, cx)
             }
+            EditorEvent::Submit => {}
         }
     }
 
@@ -438,7 +448,7 @@ impl CardPane {
         let id = card.id;
         let encrypted = card.lock_mode == LockMode::Encrypted;
         let doc = self.editor.read(cx).document().clone();
-        let title = self.title.read(cx).value().trim().to_string();
+        let title = self.title.read(cx).text().trim().to_string();
         let title = if title.is_empty() {
             cardfile_i18n::t_raw("card.untitled")
         } else {
@@ -995,8 +1005,8 @@ impl CardPane {
 
     fn set_title_value(&mut self, title: &str, window: &mut Window, cx: &mut Context<Self>) {
         self.suppress_title_event = true;
-        self.title
-            .update(cx, |s, cx| s.set_value(title.to_owned(), window, cx));
+        let _ = window;
+        self.title.update(cx, |e, cx| e.set_text(title, cx));
         self.suppress_title_event = false;
         self.title_dirty = true;
     }
@@ -1013,7 +1023,7 @@ impl CardPane {
             return;
         }
         self.flush_save(cx);
-        let title = self.title.read(cx).value().to_string();
+        let title = self.title.read(cx).text();
         let doc = self.editor.read(cx).document().clone();
         crate::export::export_card(id, title, doc, format, window, cx);
     }
@@ -1179,12 +1189,11 @@ impl CardPane {
             .border_b_1()
             .border_color(th.border)
             .child(
-                div().flex_1().min_w_0().child(
-                    Input::new(&self.title)
-                        .appearance(false)
-                        .text_size(px(20.))
-                        .font_weight(gpui_kit::FontWeight::SEMIBOLD),
-                ),
+                div()
+                    .flex_1()
+                    .min_w_0()
+                    .h(px(38.))
+                    .child(self.title.clone()),
             )
             .children(shared_badge)
             .when(!deleted && can_share, |d| {
@@ -1415,7 +1424,11 @@ impl Render for CardPane {
                     v_flex()
                         .items_center()
                         .gap(px(8.))
-                        .child(div().text_size(px(40.)).child("🗂"))
+                        .child(
+                            gpui_kit::img("cardfile/icon.png")
+                                .size(px(56.))
+                                .opacity(0.85),
+                        )
                         .child(t("card.none_selected"))
                         .child(div().text_size(px(12.)).child(t("card.none_hint"))),
                 )

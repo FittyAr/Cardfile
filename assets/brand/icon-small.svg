@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <title>Cardfile</title>
+  <!-- Simplified app icon for 16, 24 and 32 px. Grid: 32 x 32; edges sit on even
+       coordinates so they land on whole pixels at 16 px. Two cards, no shadow. -->
+  <rect width="32" height="32" rx="7" fill="#F26B4A"/>
+  <path d="M8 10V6q0-2 2-2h4.6q1.2 0 1.6 1.1L18 10z" fill="#B93D24"/>
+  <rect x="8" y="8" width="20" height="14" rx="2" fill="#F8C1A9"/>
+  <rect x="4" y="12" width="22" height="16" rx="2.5" fill="#FFF9F5"/>
+  <rect x="8" y="16" width="8" height="4" rx="1" fill="#F26B4A"/>
+  <rect x="8" y="22" width="14" height="2" rx="1" fill="#F6B59D"/>
+</svg>

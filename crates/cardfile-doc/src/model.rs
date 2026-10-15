@@ -209,6 +209,10 @@ pub struct Image {
     /// Display width in logical pixels; `None` fits the editor width.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub width: Option<f32>,
+    /// Display height in logical pixels when the image was stretched; `None` keeps
+    /// the aspect ratio.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub height: Option<f32>,
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub alt: String,
 }

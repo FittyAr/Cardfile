@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" color="#1F1A17">
+  <title>Cardfile</title>
+  <!-- Single-colour symbol (no tile): back card with tab, front card with a gap
+       between them and the label/lines knocked out. Paints with currentColor,
+       so CSS `color` recolours it; standalone it renders near-black. -->
+  <defs>
+    <mask id="cf-gap" maskUnits="userSpaceOnUse" x="0" y="0" width="256" height="256">
+      <rect width="256" height="256" fill="#fff"/>
+      <rect x="12" y="88" width="200" height="148" rx="28" fill="#000"/>
+    </mask>
+    <mask id="cf-holes" maskUnits="userSpaceOnUse" x="0" y="0" width="256" height="256">
+      <rect width="256" height="256" fill="#fff"/>
+      <rect x="44" y="120" width="46" height="16" rx="8" fill="#000"/>
+      <path d="M48 164H176M48 190H140" stroke="#000" stroke-width="10" stroke-linecap="round"/>
+    </mask>
+  </defs>
+  <g fill="currentColor">
+    <g mask="url(#cf-gap)">
+      <path d="M66 72V46q0-14 14-14h42q9 0 12 8.5L144 68v4z"/>
+      <rect x="56" y="60" width="176" height="124" rx="16"/>
+    </g>
+    <rect x="24" y="100" width="176" height="124" rx="16" mask="url(#cf-holes)"/>
+  </g>
+</svg>

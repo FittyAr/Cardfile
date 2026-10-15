@@ -20,7 +20,7 @@
       <li>Export to Markdown, HTML, PDF and JSON</li>
       <li>Share cards with other users</li>
       <li>Optional AI assistant and MCP server for AI apps</li>
-      <li>Inline audio and video playback</li>
+      <li>Inline audio playback and in-app updates</li>
       <li>No telemetry</li>
     </ul>
   </description>
@@ -29,6 +29,7 @@
   <url type="bugtracker">https://github.com/FittyAr/Cardfile/issues</url>
   <content_rating type="oars-1.1" />
   <releases>
+    <release version="2.0.0-alpha.3" date="2026-10-15" type="development" />
     <release version="2.0.0-alpha.2" date="2026-10-14" type="development" />
     <release version="2.0.0-alpha.1" date="2026-10-14" type="development" />
   </releases>

@@ -65,6 +65,7 @@ editor:
     smaller: Daha küçük
     larger: Daha büyük
     fit: Genişliğe sığdır
+    keep_ratio: "Oranları geri yükle"
   menu:
     cut: Kes
     copy: Kopyala
@@ -321,6 +322,15 @@ updates:
   latest: En son sürümü kullanıyorsunuz.
   failed: "Güncellemeler denetlenemedi: %{error}"
   managed: Bu kurulumun güncellemeleri uygulama mağazanız veya paket yöneticiniz tarafından yönetilir.
+  dialog_title: "Cardfile %{version} mevcut"
+  current: "Sürüm %{version} kullanıyorsunuz."
+  install: "Güncelle ve yeniden başlat"
+  later: "Daha sonra"
+  open_page: "Sürüm sayfası"
+  downloading: "İndiriliyor… %{mb} MB"
+  installing: "Kuruluyor…"
+  installed_restart: "Güncelleme kuruldu. Kullanmak için Cardfile'ı yeniden başlatın."
+  manual: "Cardfile'ın bu kopyası kendini güncelleyemez. Yeni sürümü sürüm sayfasından indirin."
 
 about:
   version: "Sürüm %{version}"
@@ -328,6 +338,18 @@ about:
   license: MIT veya Apache 2.0 lisansı altında özgür yazılım.
   website: Web sitesi
   third_party: Üçüncü taraf lisansları
+  version_label: "Sürüm"
+  channel: "Kanal"
+  channel_preview: "Önizleme (alfa)"
+  channel_stable: "Kararlı"
+  platform: "Platform"
+  license_label: "Lisans"
+  copyright: "Telif hakkı"
+  built_with: "Rust ve GPUI ile geliştirildi. Metinler Inter ve JetBrains Mono yazı tipleriyle dizildi (SIL Open Font License)."
+  translations: "İngilizce dışındaki çeviriler yapay zekâ ile yapıldı. Düzeltebilmemiz için lütfen hataları bildirin."
+  guide: "Kullanım kılavuzu"
+  report: "Sorun bildir"
+  changelog: "Yenilikler"
 
 settings:
   title: Ayarlar
@@ -343,6 +365,9 @@ settings:
     users: Kullanıcılar
     data: Veriler
     ai: "Yapay zekâ"
+    ai_services: "Yapay zekâ hizmetleri"
+    ai_assistant: "Asistan"
+    mcp: "Yapay zekâ uygulamaları (MCP)"
   general:
     theme: Tema
     language: Dil
@@ -407,6 +432,11 @@ settings:
     standard: Standart mod.
     export: Dışa aktar
     export_hint: Özel veya şifreli olmayan tüm kartları dışa aktarır.
+  group:
+    app: "Uygulama"
+    privacy: "Gizlilik ve güvenlik"
+    ai: "Yapay zekâ"
+    data: "Veriler"
 
 share:
   button: "Paylaş…"
@@ -498,6 +528,25 @@ ai:
   activity:
     title: "Son yapay zekâ etkinliği"
     empty: "Yapay zekâ henüz hiçbir şeyi değiştirmedi."
+  services:
+    yours: "Yapay zekâ hizmetleriniz"
+    none: "Henüz yapay zekâ hizmeti yok. Aşağıdan birini seçin: bulut hizmetleri sağlayıcıdan bir API anahtarı gerektirir; yerel hizmetler bu bilgisayarda ücretsiz çalışır."
+    ready: "Hazır"
+    ready_local: "Hazır (bu bilgisayarda)"
+    add: "Hizmet ekle"
+    cloud_title: "Bulut hizmetleri"
+    cloud_hint: "Sağlayıcı tarafından çalıştırılan güçlü modeller. Bir hesaba ve API anahtarına ihtiyacınız var."
+    local_title: "Bu bilgisayarda"
+    local_hint: "Ücretsiz ve gizli: uygulamayı kurun, bir model indirin; Cardfile ona bağlanır."
+    custom: "Diğer uyumlu hizmet"
+    custom_hint: "OpenAI uyumlu herhangi bir URL"
+    connect: "%{name} bağla"
+    edit: "%{name} düzenle"
+    key_hint: "Sağlayıcının web sitesinde bir anahtar oluşturun ve buraya yapıştırın. Anahtar, sisteminizin kimlik bilgisi yöneticisinde saklanır."
+    model_hint: "Önerilen model iyi bir başlangıçtır. “Bağlantıyı test et” ayrıca hesabınızın kullanabileceği modelleri de yükler."
+    local_steps: "Uygulamanın çalıştığından ve en az bir modelin indirilmiş olduğundan emin olun. API anahtarı gerekmez."
+    advanced: "Gelişmiş (sunucu URL'si ve API biçimi)"
+    no_keyring: "Sisteminizin kimlik bilgisi yöneticisi kullanılamıyor; bu nedenle API anahtarları Cardfile veritabanında saklanır."
 
 chat:
   title: "Asistan"
@@ -528,3 +577,6 @@ chat:
     reorder_cards: "Kartlar yeniden sıralandı"
     delete_card: "Geri dönüşüm kutusuna taşındı"
     restore_card: "Kart geri yüklendi"
+
+attachment:
+  no_app: "Bu bilgisayarda “%{name}” dosyasını açabilecek bir uygulama yok. Bu dosya türü için bir program kurun (videolar için VLC gibi bir medya oynatıcı) ve yeniden deneyin."

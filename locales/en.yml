@@ -65,6 +65,7 @@ editor:
     smaller: Smaller
     larger: Larger
     fit: Fit width
+    keep_ratio: "Restore proportions"
   menu:
     cut: Cut
     copy: Copy
@@ -321,6 +322,15 @@ updates:
   latest: You have the latest version.
   failed: "Could not check for updates: %{error}"
   managed: Updates for this installation are handled by your app store or package manager.
+  dialog_title: "Cardfile %{version} is available"
+  current: "You have version %{version}."
+  install: "Update and restart"
+  later: "Later"
+  open_page: "Release page"
+  downloading: "Downloading… %{mb} MB"
+  installing: "Installing…"
+  installed_restart: "The update is installed. Restart Cardfile to use it."
+  manual: "This copy of Cardfile can't update itself. Download the new version from the release page."
 
 about:
   version: "Version %{version}"
@@ -328,6 +338,18 @@ about:
   license: Free software under the MIT or Apache 2.0 license.
   website: Website
   third_party: Third-party licenses
+  version_label: "Version"
+  channel: "Channel"
+  channel_preview: "Preview (alpha)"
+  channel_stable: "Stable"
+  platform: "Platform"
+  license_label: "License"
+  copyright: "Copyright"
+  built_with: "Built with Rust and GPUI. Text set in Inter and JetBrains Mono (SIL Open Font License)."
+  translations: "Translations other than English were made with AI. Please report any mistakes so we can fix them."
+  guide: "User guide"
+  report: "Report a problem"
+  changelog: "What's new"
 
 settings:
   title: Settings
@@ -343,6 +365,9 @@ settings:
     users: Users
     data: Data
     ai: "AI"
+    ai_services: "AI services"
+    ai_assistant: "Assistant"
+    mcp: "AI apps (MCP)"
   general:
     theme: Theme
     language: Language
@@ -407,6 +432,11 @@ settings:
     standard: Standard mode.
     export: Export
     export_hint: Export all cards that are not private or encrypted.
+  group:
+    app: "App"
+    privacy: "Privacy and security"
+    ai: "AI"
+    data: "Data"
 
 share:
   button: "Share…"
@@ -498,6 +528,25 @@ ai:
   activity:
     title: "Recent AI activity"
     empty: "The AI has not changed anything yet."
+  services:
+    yours: "Your AI services"
+    none: "No AI service yet. Pick one below: cloud services need an API key from the provider; local ones run on this computer for free."
+    ready: "Ready"
+    ready_local: "Ready (on this computer)"
+    add: "Add a service"
+    cloud_title: "Cloud services"
+    cloud_hint: "Powerful models run by the provider. You need an account and an API key."
+    local_title: "On this computer"
+    local_hint: "Free and private: install the app, download a model, and Cardfile connects to it."
+    custom: "Other compatible service"
+    custom_hint: "Any OpenAI-compatible URL"
+    connect: "Connect %{name}"
+    edit: "Edit %{name}"
+    key_hint: "Create a key in the provider's website and paste it here. It is stored in your system's credential manager."
+    model_hint: "The suggested model is a good start. “Test connection” also loads the models your account can use."
+    local_steps: "Make sure the app is running and has at least one model downloaded. No API key is needed."
+    advanced: "Advanced (server URL and API format)"
+    no_keyring: "Your system's credential manager is not available, so API keys are stored in the Cardfile database."
 
 chat:
   title: "Assistant"
@@ -528,3 +577,6 @@ chat:
     reorder_cards: "Reordered cards"
     delete_card: "Moved to the recycle bin"
     restore_card: "Restored card"
+
+attachment:
+  no_app: "No application on this computer can open “%{name}”. Install a program for this file type (for videos, a media player such as VLC) and try again."

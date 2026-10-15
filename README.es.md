@@ -27,8 +27,8 @@ framework de UI del editor [Zed](https://zed.dev).
   muestra hasta que lo configurás.
 - Servidor MCP integrado y API keys, para que apps de IA como Claude o Cursor usen tus tarjetas;
   cada cambio de la IA queda registrado a su nombre y se puede deshacer.
-- Audio y video adjuntos se reproducen dentro de la tarjeta; arrastrá imágenes y archivos entre
-  tarjetas.
+- El audio adjunto se reproduce dentro de la tarjeta; el video se abre con el reproductor del
+  sistema. Arrastrá imágenes y archivos entre tarjetas.
 - Chino, japonés, coreano y escrituras de derecha a izquierda (hebreo, árabe, persa).
 - Interfaz en 21 idiomas.
 - Sin telemetría.

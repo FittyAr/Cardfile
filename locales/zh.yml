@@ -65,6 +65,7 @@ editor:
     smaller: 缩小
     larger: 放大
     fit: 适应宽度
+    keep_ratio: "恢复比例"
   menu:
     cut: 剪切
     copy: 复制
@@ -321,6 +322,15 @@ updates:
   latest: 您使用的已是最新版本。
   failed: "无法检查更新：%{error}"
   managed: 此安装的更新由您的应用商店或包管理器负责。
+  dialog_title: "Cardfile %{version} 已发布"
+  current: "您当前的版本是 %{version}。"
+  install: "更新并重启"
+  later: "稍后"
+  open_page: "发布页面"
+  downloading: "正在下载… %{mb} MB"
+  installing: "正在安装…"
+  installed_restart: "更新已安装。请重启 Cardfile 以使用新版本。"
+  manual: "此 Cardfile 副本无法自行更新。请从发布页面下载新版本。"
 
 about:
   version: "版本 %{version}"
@@ -328,6 +338,18 @@ about:
   license: 自由软件，采用 MIT 或 Apache 2.0 许可证。
   website: 网站
   third_party: 第三方许可证
+  version_label: "版本"
+  channel: "渠道"
+  channel_preview: "预览版（alpha）"
+  channel_stable: "稳定版"
+  platform: "平台"
+  license_label: "许可证"
+  copyright: "版权"
+  built_with: "使用 Rust 和 GPUI 构建。文字采用 Inter 和 JetBrains Mono 字体（SIL Open Font License）。"
+  translations: "英语以外的翻译均由 AI 完成。如发现错误，请告诉我们，以便修正。"
+  guide: "用户指南"
+  report: "报告问题"
+  changelog: "新功能"
 
 settings:
   title: 设置
@@ -343,6 +365,9 @@ settings:
     users: 用户
     data: 数据
     ai: "AI"
+    ai_services: "AI 服务"
+    ai_assistant: "助手"
+    mcp: "AI 应用（MCP）"
   general:
     theme: 主题
     language: 语言
@@ -407,6 +432,11 @@ settings:
     standard: 标准模式。
     export: 导出
     export_hint: 导出所有非私密、非加密的卡片。
+  group:
+    app: "应用"
+    privacy: "隐私与安全"
+    ai: "AI"
+    data: "数据"
 
 share:
   button: "共享…"
@@ -498,6 +528,25 @@ ai:
   activity:
     title: "最近的 AI 活动"
     empty: "AI 尚未进行任何更改。"
+  services:
+    yours: "您的 AI 服务"
+    none: "尚未添加 AI 服务。请在下方选择一个：云端服务需要服务商提供的 API 密钥；本地服务在本机上免费运行。"
+    ready: "就绪"
+    ready_local: "就绪（在本机上）"
+    add: "添加服务"
+    cloud_title: "云端服务"
+    cloud_hint: "由服务商运行的强大模型。您需要一个账户和一个 API 密钥。"
+    local_title: "在本机上"
+    local_hint: "免费且私密：安装应用并下载模型，Cardfile 就会连接到它。"
+    custom: "其他兼容服务"
+    custom_hint: "任何兼容 OpenAI 的 URL"
+    connect: "连接 %{name}"
+    edit: "编辑 %{name}"
+    key_hint: "在服务商的网站上创建密钥并粘贴到此处。密钥将保存在系统的凭据管理器中。"
+    model_hint: "建议的模型是一个不错的起点。“测试连接”还会加载您的账户可用的模型。"
+    local_steps: "请确保该应用正在运行，并且至少已下载一个模型。无需 API 密钥。"
+    advanced: "高级（服务器 URL 和 API 格式）"
+    no_keyring: "系统的凭据管理器不可用，因此 API 密钥将保存在 Cardfile 数据库中。"
 
 chat:
   title: "助手"
@@ -528,3 +577,6 @@ chat:
     reorder_cards: "已调整卡片顺序"
     delete_card: "已移到回收站"
     restore_card: "已恢复卡片"
+
+attachment:
+  no_app: "本机上没有可以打开“%{name}”的应用程序。请安装支持此文件类型的程序（视频可使用 VLC 等媒体播放器），然后重试。"

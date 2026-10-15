@@ -2,13 +2,13 @@
 
 use cardfile_core::{AuthMode, LockMode, SearchScope, User, UserId};
 use cardfile_i18n::{t, t_args};
+use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::checkbox::Checkbox;
 use gpui_kit::component::input::{Input, InputState};
 use gpui_kit::component::menu::{DropdownMenu as _, PopupMenuItem};
 use gpui_kit::component::notification::Notification;
 use gpui_kit::component::switch::Switch;
-use gpui_kit::component::tab::{Tab, TabBar};
 use gpui_kit::component::{ActiveTheme as _, Sizable as _, WindowExt as _, h_flex, v_flex};
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::{
@@ -27,64 +27,132 @@ use crate::workspace::Workspace;
 
 pub fn open(workspace: Entity<Workspace>, window: &mut Window, cx: &mut App) {
     let view = cx.new(|cx| SettingsView::new(workspace, window, cx));
+    // Large enough for the sidebar layout, never wider than the window.
+    let width = (window.viewport_size().width * 0.9).clamp(px(640.), px(1080.));
     window.open_dialog(cx, move |dialog, _, _| {
         dialog
             .title(t("settings.title"))
-            .w(px(720.))
+            .w(width)
             .child(view.clone())
     });
 }
 
 pub fn open_about(window: &mut Window, cx: &mut App) {
-    window.open_dialog(cx, move |dialog, _, cx| {
-        dialog.title(t("menu.about")).w(px(480.)).child(about(cx))
-    })
+    window.open_dialog(cx, move |dialog, _, cx| dialog.w(px(560.)).child(about(cx)))
 }
 
 fn about(cx: &App) -> AnyElement {
     let th = cx.theme();
+    let version = env!("CARGO_PKG_VERSION");
+    let channel = if version.contains('-') {
+        t("about.channel_preview")
+    } else {
+        t("about.channel_stable")
+    };
+    let platform = format!("{} · {}", std::env::consts::OS, std::env::consts::ARCH);
+    let link = |id: &'static str, label: String, url: &'static str| {
+        Button::new(id)
+            .small()
+            .ghost()
+            .label(label)
+            .on_click(move |_, _, cx| cx.open_url(url))
+    };
+    let info = |label: String, value: String| {
+        h_flex()
+            .justify_between()
+            .py(px(4.))
+            .border_b_1()
+            .border_color(th.border.opacity(0.6))
+            .text_size(px(12.))
+            .child(div().text_color(th.muted_foreground).child(label))
+            .child(div().child(value))
+    };
     v_flex()
-        .gap(px(10.))
-        .items_center()
-        .child(img("cardfile/logo.png").size(px(96.)))
+        .gap(px(14.))
         .child(
-            div()
-                .text_size(px(22.))
-                .font_weight(gpui_kit::FontWeight::BOLD)
-                .child(t("app.name")),
+            h_flex()
+                .gap(px(16.))
+                .items_center()
+                .child(img("cardfile/icon.png").size(px(72.)))
+                .child(
+                    v_flex()
+                        .gap(px(2.))
+                        .child(
+                            div()
+                                .text_size(px(24.))
+                                .font_weight(gpui_kit::FontWeight::BOLD)
+                                .child(t("app.name")),
+                        )
+                        .child(
+                            div()
+                                .text_color(th.muted_foreground)
+                                .child(t("about.description")),
+                        ),
+                ),
         )
-        .child(div().text_color(th.muted_foreground).child(t_args(
-            "about.version",
-            &[("version", env!("CARGO_PKG_VERSION"))],
-        )))
-        .child(div().text_center().child(t("about.description")))
+        .child(
+            v_flex()
+                .child(info(t("about.version_label"), version.to_owned()))
+                .child(info(t("about.channel"), channel))
+                .child(info(t("about.platform"), platform))
+                .child(info(
+                    t("about.license_label"),
+                    "MIT OR Apache-2.0".to_owned(),
+                ))
+                .child(info(t("about.copyright"), "© 2026 FittyAr".to_owned())),
+        )
         .child(
             div()
                 .text_size(px(12.))
                 .text_color(th.muted_foreground)
-                .child(t("about.license")),
+                .child(t("about.built_with")),
+        )
+        .child(
+            div()
+                .text_size(px(12.))
+                .text_color(th.muted_foreground)
+                .child(t("about.translations")),
         )
         .child(
             h_flex()
-                .gap(px(8.))
-                .child(
-                    Button::new("about-site")
-                        .small()
-                        .label(t("about.website"))
-                        .on_click(|_, _, cx| cx.open_url("https://github.com/FittyAr/Cardfile")),
-                )
+                .flex_wrap()
+                .gap(px(4.))
+                .child(link(
+                    "about-site",
+                    t("about.website"),
+                    "https://github.com/FittyAr/Cardfile",
+                ))
+                .child(link(
+                    "about-guide",
+                    t("about.guide"),
+                    "https://github.com/FittyAr/Cardfile/blob/main/docs/USER_GUIDE.md",
+                ))
+                .child(link(
+                    "about-issue",
+                    t("about.report"),
+                    "https://github.com/FittyAr/Cardfile/issues/new",
+                ))
+                .child(link(
+                    "about-changelog",
+                    t("about.changelog"),
+                    "https://github.com/FittyAr/Cardfile/blob/main/CHANGELOG.md",
+                ))
                 .child(
                     Button::new("about-licenses")
                         .small()
+                        .ghost()
                         .label(t("about.third_party"))
                         .on_click(|_, _, cx| open_third_party(cx)),
-                )
-                .child(
-                    Button::new("about-update")
-                        .small()
-                        .label(t("menu.check_updates"))
-                        .on_click(|_, window, cx| crate::updater::check_now(window, cx)),
                 ),
+        )
+        .child(
+            h_flex().justify_end().child(
+                Button::new("about-update")
+                    .small()
+                    .primary()
+                    .label(t("menu.check_updates"))
+                    .on_click(|_, window, cx| crate::updater::check_now(window, cx)),
+            ),
         )
         .into_any_element()
 }
@@ -108,7 +176,9 @@ enum Tab_ {
     Editor,
     Security,
     Users,
-    Ai,
+    AiServices,
+    AiAssistant,
+    Mcp,
     Data,
 }
 
@@ -169,6 +239,20 @@ impl SettingsView {
         };
         v.load_users(cx);
         v
+    }
+
+    fn select(&mut self, tab: Tab_, _window: &mut Window, cx: &mut Context<Self>) {
+        self.tab = tab;
+        let page = match tab {
+            Tab_::AiAssistant => Some(crate::ai_settings::AiPage::Assistant),
+            Tab_::Mcp => Some(crate::ai_settings::AiPage::Mcp),
+            Tab_::AiServices => Some(crate::ai_settings::AiPage::Services),
+            _ => None,
+        };
+        if let Some(page) = page {
+            self.ai.update(cx, |a, cx| a.set_page(page, cx));
+        }
+        cx.notify();
     }
 
     fn is_admin(cx: &App) -> bool {
@@ -302,7 +386,7 @@ impl SettingsView {
             ))
             .child(Self::row(
                 t("settings.general.language"),
-                Some(t("settings.general.language_hint")),
+                Some(t("about.translations")),
                 Self::choice(
                     "language",
                     current_lang,
@@ -1125,52 +1209,141 @@ fn language_name(code: &str) -> String {
     }
 }
 
+/// A titled group of sidebar entries: (section, icon, label).
+type NavGroup = (String, Vec<(Tab_, IconName, String)>);
+
 impl Render for SettingsView {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let multi_admin =
             AppState::get(cx).app.auth_mode == AuthMode::MultiUser && Self::is_admin(cx);
-        let mut tabs = vec![
-            (Tab_::General, t("settings.tab.general")),
-            (Tab_::Editor, t("settings.tab.editor")),
-            (Tab_::Security, t("settings.tab.security")),
+        // Sections grouped in a sidebar, so new settings get a place without crowding.
+        let mut groups: Vec<NavGroup> = vec![
+            (
+                t("settings.group.app"),
+                vec![
+                    (Tab_::General, IconName::Settings, t("settings.tab.general")),
+                    (
+                        Tab_::Editor,
+                        IconName::NotebookPen,
+                        t("settings.tab.editor"),
+                    ),
+                ],
+            ),
+            (
+                t("settings.group.privacy"),
+                vec![(Tab_::Security, IconName::Lock, t("settings.tab.security"))],
+            ),
+            (
+                t("settings.group.ai"),
+                vec![
+                    (
+                        Tab_::AiServices,
+                        IconName::Sparkles,
+                        t("settings.tab.ai_services"),
+                    ),
+                    (
+                        Tab_::AiAssistant,
+                        IconName::Bot,
+                        t("settings.tab.ai_assistant"),
+                    ),
+                    (Tab_::Mcp, IconName::KeyRound, t("settings.tab.mcp")),
+                ],
+            ),
+            (
+                t("settings.group.data"),
+                vec![(Tab_::Data, IconName::Inbox, t("settings.tab.data"))],
+            ),
         ];
         if multi_admin {
-            tabs.push((Tab_::Users, t("settings.tab.users")));
+            groups[1]
+                .1
+                .push((Tab_::Users, IconName::Users, t("settings.tab.users")));
         }
-        tabs.push((Tab_::Ai, t("settings.tab.ai")));
-        tabs.push((Tab_::Data, t("settings.tab.data")));
-        let selected = tabs
-            .iter()
-            .position(|(tab, _)| *tab == self.tab)
-            .unwrap_or(0);
-        let ids: Vec<Tab_> = tabs.iter().map(|(t, _)| *t).collect();
-        let mut bar = TabBar::new("settings-tabs")
-            .selected_index(selected)
-            .on_click(cx.listener(move |v, ix: &usize, _, cx| {
-                if let Some(tab) = ids.get(*ix) {
-                    v.tab = *tab;
-                    cx.notify();
+        let th = cx.theme();
+        let mut nav = v_flex()
+            .w(px(210.))
+            .flex_shrink_0()
+            .h_full()
+            .py(px(6.))
+            .pr(px(10.))
+            .gap(px(2.))
+            .border_r_1()
+            .border_color(th.border);
+        let mut title = String::new();
+        for (group, items) in groups {
+            nav = nav.child(
+                div()
+                    .px(px(10.))
+                    .pt(px(10.))
+                    .pb(px(2.))
+                    .text_size(px(11.))
+                    .text_color(th.muted_foreground)
+                    .child(group.to_uppercase()),
+            );
+            for (tab, icon, label) in items {
+                let active = self.tab == tab;
+                if active {
+                    title = label.clone();
                 }
-            }));
-        for (_, label) in &tabs {
-            bar = bar.child(Tab::new().label(label.clone()));
+                nav = nav.child(
+                    h_flex()
+                        .id(SharedString::from(format!("nav-{label}")))
+                        .gap(px(8.))
+                        .px(px(10.))
+                        .py(px(6.))
+                        .rounded(px(6.))
+                        .cursor_pointer()
+                        .text_size(px(13.))
+                        .when(active, |d| {
+                            d.bg(th.accent).font_weight(gpui_kit::FontWeight::MEDIUM)
+                        })
+                        .hover(|d| d.bg(th.accent.opacity(0.6)))
+                        .child(
+                            gpui_kit::component::Icon::new(icon)
+                                .size_4()
+                                .text_color(th.muted_foreground),
+                        )
+                        .child(label)
+                        .on_click(cx.listener(move |v, _, window, cx| v.select(tab, window, cx))),
+                );
+            }
         }
         let body = match self.tab {
             Tab_::General => self.general(cx),
             Tab_::Editor => self.editor(cx),
             Tab_::Security => self.security(cx),
             Tab_::Users => self.users(cx),
-            Tab_::Ai => self.ai.clone().into_any_element(),
+            Tab_::AiServices | Tab_::AiAssistant | Tab_::Mcp => self.ai.clone().into_any_element(),
             Tab_::Data => self.data(cx),
         };
-        v_flex().gap(px(12.)).h(px(460.)).child(bar).child(
-            div()
-                .id("settings-body")
-                .flex_1()
-                .overflow_y_scroll()
-                .pr(px(6.))
-                .child(body),
-        )
+        let height = (window.viewport_size().height * 0.8).clamp(px(420.), px(760.));
+        h_flex()
+            .h(height)
+            .items_start()
+            .gap(px(18.))
+            .child(nav)
+            .child(
+                v_flex()
+                    .flex_1()
+                    .min_w_0()
+                    .h_full()
+                    .gap(px(10.))
+                    .child(
+                        div()
+                            .text_size(px(18.))
+                            .font_weight(gpui_kit::FontWeight::SEMIBOLD)
+                            .child(title),
+                    )
+                    .child(
+                        div()
+                            .id("settings-body")
+                            .flex_1()
+                            .min_h_0()
+                            .overflow_y_scroll()
+                            .pr(px(8.))
+                            .child(body),
+                    ),
+            )
     }
 }
 

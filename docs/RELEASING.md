@@ -15,6 +15,17 @@ generates `.github/workflows/release.yml`. Don't edit that file by hand: change
 | `.deb`, `.rpm`, `.AppImage` | `package.yml` | Linux packages for x86_64 and aarch64 |
 | `SHA256SUMS`, `*.minisig` | `sign.yml` | Checksums and minisign signatures of every file above, attached once the release exists |
 
+### In-app updates depend on these files
+
+The self-updater (`crates/cardfile-updater`) picks the asset by name, so keep these names
+stable: `cardfile-<arch>-pc-windows-msvc.zip`, `cardfile-<arch>-unknown-linux-gnu.tar.xz`,
+`Cardfile-<version>-<x86_64|aarch64>.AppImage` and `Cardfile-<version>-setup-<x64|arm64>.exe`.
+It installs a file only if its SHA-256 is in the signed `SHA256SUMS` **and** its own
+`<file>.minisig` verifies with `PUBLIC_KEY` and carries the trusted comment
+`Cardfile <tag> release file: <file>` (written by `sign.yml`). A release without signatures is
+never offered. The Inno Setup installer must keep the `/RELAUNCH` `[Run]` entry in
+`installer.iss`: the app quits and the silent installer starts it again.
+
 ## One-time setup
 
 ### 1. Minisign key (release signatures)
@@ -59,7 +70,7 @@ minisign -G -W -p minisign.pub -s minisign.key
 3. The first submission (store listing, screenshots, age rating) is done in Partner Center by hand. Upload the `.msix` from a release.
 4. Later versions: run the **Microsoft Store** workflow manually with the release tag.
 
-The MSIX build detects that it runs from `WindowsApps` and turns off Cardfile's own update notification; the Store handles updates.
+The MSIX build detects that it runs from `WindowsApps` and turns off Cardfile's own updater; the Store handles updates.
 
 ## Cutting a release
 

@@ -462,7 +462,11 @@ pub fn to_html(doc: &Document, title: &str, blobs: &dyn BlobResolver) -> String 
                 let width = img
                     .width
                     .map(|w| format!(" width=\"{w}\""))
-                    .unwrap_or_default();
+                    .unwrap_or_default()
+                    + &img
+                        .height
+                        .map(|h| format!(" height=\"{h}\""))
+                        .unwrap_or_default();
                 let _ = writeln!(
                     body,
                     "<p{attrs}><img src=\"{}\" alt=\"{}\"{width}></p>",

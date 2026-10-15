@@ -10,6 +10,7 @@ pub mod editor;
 mod element;
 mod find;
 pub mod history;
+pub mod image_resize;
 mod layout;
 mod media;
 pub mod model;

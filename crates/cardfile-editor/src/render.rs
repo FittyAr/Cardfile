@@ -100,7 +100,7 @@ impl RichEditor {
             misspelled: pal.danger,
             found: pal.found,
             found_current: pal.found_current,
-            bold: bold || cell_header,
+            bold: bold || cell_header || self.strong,
             italic: matches!(block.kind, BlockKind::Quote),
             mono: matches!(block.kind, BlockKind::Code { .. }),
             strike: checked,
@@ -257,15 +257,29 @@ impl RichEditor {
                 let ent = entity.clone();
                 let dragged = DraggedBlock::new(entity.entity_id(), ix, block);
                 let loaded = self.image_for(image);
-                let width = image.width;
+                let (width, height) =
+                    crate::image_resize::preview_size(self.image_drag.as_ref(), ix)
+                        .map_or((image.width, image.height), |(w, h)| (Some(w), h));
                 let body: AnyElement = match loaded {
                     Some(data) => {
-                        let el = img(ImageSource::Image(data))
-                            .object_fit(ObjectFit::Contain)
-                            .max_w_full();
-                        match width {
-                            Some(w) => el.w(px(w)).into_any_element(),
-                            None => el.w_full().into_any_element(),
+                        let el = img(ImageSource::Image(data)).max_w_full();
+                        match (width, height) {
+                            // Stretched: show exactly the chosen box.
+                            // An explicit ratio stops GPUI from imposing the image's own.
+                            (Some(w), Some(h)) => el
+                                .object_fit(ObjectFit::Fill)
+                                .aspect_ratio(w / h.max(1.))
+                                .w(px(w))
+                                .h(px(h))
+                                .into_any_element(),
+                            (Some(w), None) => el
+                                .object_fit(ObjectFit::Contain)
+                                .w(px(w))
+                                .into_any_element(),
+                            _ => el
+                                .object_fit(ObjectFit::Contain)
+                                .w_full()
+                                .into_any_element(),
                         }
                     }
                     None => div()
@@ -298,7 +312,23 @@ impl RichEditor {
                                     cx.new(|_| DragPreview(d.label.clone()))
                                 })
                             })
-                            .child(body),
+                            .relative()
+                            .child(body)
+                            .child({
+                                // Remember the painted size: resizing starts from it.
+                                let bounds = self.image_bounds.clone();
+                                canvas(
+                                    move |b, _, _| {
+                                        bounds.borrow_mut().insert(ix, b);
+                                    },
+                                    |_, _, _, _| {},
+                                )
+                                .absolute()
+                                .size_full()
+                            })
+                            .when(selected && !self.is_read_only(), |d| {
+                                d.children(Self::resize_handles(ix, pal.primary, entity))
+                            }),
                     )
                     .into_any_element()
             }
@@ -395,6 +425,45 @@ impl RichEditor {
         }
     }
 
+    /// The three resize handles of a selected image.
+    fn resize_handles(ix: usize, color: Hsla, entity: &Entity<Self>) -> Vec<AnyElement> {
+        use crate::image_resize::{HANDLE, Handle};
+        let half = HANDLE / 2.;
+        [
+            (Handle::Right, "resize-r", CursorStyle::ResizeLeftRight),
+            (Handle::Bottom, "resize-b", CursorStyle::ResizeUpDown),
+            (
+                Handle::Corner,
+                "resize-c",
+                CursorStyle::ResizeUpLeftDownRight,
+            ),
+        ]
+        .into_iter()
+        .map(|(handle, id, cursor)| {
+            let ent = entity.clone();
+            let el = div()
+                .id((id, ix))
+                .absolute()
+                .size(HANDLE)
+                .rounded(px(2.))
+                .bg(color)
+                .border_1()
+                .border_color(gpui_kit::white())
+                .cursor(cursor)
+                .on_mouse_down(MouseButton::Left, move |ev, _, cx| {
+                    cx.stop_propagation();
+                    ent.update(cx, |e, cx| e.start_image_drag(ix, handle, ev.position, cx));
+                });
+            match handle {
+                Handle::Right => el.right(-half).top(gpui_kit::relative(0.5)).mt(-half),
+                Handle::Bottom => el.bottom(-half).left(gpui_kit::relative(0.5)).ml(-half),
+                Handle::Corner => el.right(-half).bottom(-half),
+            }
+            .into_any_element()
+        })
+        .collect()
+    }
+
     /// Wrap a block so images and attachments can be dropped before it.
     fn drop_zone(ix: usize, el: AnyElement, color: Hsla, cx: &mut Context<Self>) -> AnyElement {
         div()
@@ -459,7 +528,8 @@ impl RichEditor {
                 .separator()
                 .menu(t("editor.image.smaller"), Box::new(ImageSmaller))
                 .menu(t("editor.image.larger"), Box::new(ImageLarger))
-                .menu(t("editor.image.fit"), Box::new(ImageFit));
+                .menu(t("editor.image.fit"), Box::new(ImageFit))
+                .menu(t("editor.image.keep_ratio"), Box::new(ImageKeepRatio));
         }
         menu
     }
@@ -492,7 +562,11 @@ impl Render for RichEditor {
                 None
             };
             let el = self.render_block(ix, block, number, &pal, &entity, cx);
-            children.push(Self::drop_zone(ix, el, pal.primary, cx));
+            children.push(if self.single_line {
+                el
+            } else {
+                Self::drop_zone(ix, el, pal.primary, cx)
+            });
         }
 
         let focus = self.focus_handle.clone();
@@ -513,25 +587,28 @@ impl Render for RichEditor {
         .absolute()
         .size_full();
 
+        let content = if self.single_line {
+            v_flex().w_full().px(px(2.)).py(px(4.)).children(children)
+        } else {
+            v_flex()
+                .w_full()
+                .px(px(28.))
+                .py(px(20.))
+                .gap(px(6.))
+                .children(children)
+                .child(Self::drop_zone(
+                    blocks.len(),
+                    div().h(px(80.)).into_any_element(),
+                    pal.primary,
+                    cx,
+                ))
+        };
         let scroll = div()
             .id("rich-editor-scroll")
             .size_full()
             .overflow_y_scroll()
             .track_scroll(&self.scroll)
-            .child(
-                v_flex()
-                    .w_full()
-                    .px(px(28.))
-                    .py(px(20.))
-                    .gap(px(6.))
-                    .children(children)
-                    .child(Self::drop_zone(
-                        blocks.len(),
-                        div().h(px(80.)).into_any_element(),
-                        pal.primary,
-                        cx,
-                    )),
-            );
+            .child(content);
 
         let root = div()
             .id("rich-editor")

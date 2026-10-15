@@ -8,6 +8,17 @@ use crate::paths::DataPaths;
 const BUNDLED: &str = include_str!("../../../assets/themes/cardfile.json");
 pub const DEFAULT_THEME: &str = "Midnight";
 
+/// Register the bundled fonts with the text system.
+pub fn load_fonts(cx: &mut App) {
+    let fonts = cardfile_doc::fonts::ALL
+        .iter()
+        .map(|b| std::borrow::Cow::Borrowed(*b))
+        .collect();
+    if let Err(e) = cx.text_system().add_fonts(fonts) {
+        tracing::error!("bundled fonts: {e:#}");
+    }
+}
+
 /// Register bundled themes and any `*.json` theme files in the user's theme folder.
 pub fn init(paths: &DataPaths, cx: &mut App) {
     let registry = ThemeRegistry::global_mut(cx);
@@ -47,5 +58,11 @@ pub fn apply(name: &str, cx: &mut App) {
         let mode = config.mode;
         Theme::update(cx, |t| t.apply_config(&config));
         Theme::change(mode, None, cx);
+        // The bundled fonts, whatever the theme file says, so text looks the same on
+        // every system.
+        Theme::update(cx, |t| {
+            t.font_family = cardfile_doc::fonts::TEXT_FAMILY.into();
+            t.mono_font_family = cardfile_doc::fonts::MONO_FAMILY.into();
+        });
     }
 }

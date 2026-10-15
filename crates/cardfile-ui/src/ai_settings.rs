@@ -1,9 +1,10 @@
 //! Settings → AI: AI services for the assistant, the local MCP server and the API keys
 //! AI clients use, and what the AI did recently.
 
-use cardfile_ai::{ApiKind, CUSTOM_PRESET_ID, PRESETS, ProviderConfig};
+use cardfile_ai::{ApiKind, CUSTOM_PRESET_ID, PRESETS, Preset, ProviderConfig};
 use cardfile_core::{ActivityEntry, ApiKey, AuthMode};
 use cardfile_i18n::{t, t_args};
+use gpui_kit::assets::IconName;
 use gpui_kit::component::Disableable as _;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::checkbox::Checkbox;
@@ -14,21 +15,74 @@ use gpui_kit::component::switch::Switch;
 use gpui_kit::component::{ActiveTheme as _, Sizable as _, WindowExt as _, h_flex, v_flex};
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::{
-    AnyElement, App, AppContext as _, ClipboardItem, Context, Entity, IntoElement,
-    ParentElement as _, Render, SharedString, Styled as _, Window, div, px,
+    AnyElement, App, AppContext as _, ClipboardItem, Context, Entity, InteractiveElement as _,
+    IntoElement, ParentElement as _, Render, SharedString, StatefulInteractiveElement as _,
+    Styled as _, Window, div, px,
 };
 
 use crate::mcp_host::{McpServer, Status};
+use crate::secrets::AiKeys;
 use crate::state::{AppState, TaskExt as _, run_db};
 use crate::widgets::{error, field, hint, relative_time, section};
 
-/// The user's configured AI services.
+/// The user's configured AI services, with their API keys from the credential store.
 pub fn providers(cx: &App) -> Vec<ProviderConfig> {
     AppState::user_settings(cx)
         .ai_providers
         .into_iter()
-        .filter_map(|v| serde_json::from_value(v).ok())
+        .filter_map(|v| serde_json::from_value::<ProviderConfig>(v).ok())
+        .map(|mut p| {
+            if p.api_key.is_none() {
+                p.api_key = AiKeys::get(cx, &p.id);
+            }
+            p
+        })
         .collect()
+}
+
+/// Load the signed-in user's AI keys from the OS credential store (in the
+/// background), moving keys that older versions kept in the settings there.
+pub fn load_keys(cx: &mut App) {
+    let Some(session) = AppState::session(cx).cloned() else {
+        return;
+    };
+    let configs: Vec<ProviderConfig> = session
+        .settings
+        .ai_providers
+        .iter()
+        .filter_map(|v| serde_json::from_value(v.clone()).ok())
+        .collect();
+    let user = session.user.id;
+    let task = cx.background_spawn(async move {
+        let ok = crate::secrets::store_available();
+        let mut keys = std::collections::HashMap::new();
+        let mut migrated = false;
+        for p in &configs {
+            if let Some(k) = p.api_key.as_deref().filter(|k| !k.is_empty()) {
+                if ok && crate::secrets::write(user, &p.id, Some(k)).is_ok() {
+                    migrated = true;
+                }
+                keys.insert(p.id.clone(), zeroize::Zeroizing::new(k.to_owned()));
+            } else if ok && let Some(k) = crate::secrets::read(user, &p.id) {
+                keys.insert(p.id.clone(), k);
+            }
+        }
+        (keys, ok, migrated)
+    });
+    cx.spawn(async move |cx| {
+        let (keys, ok, migrated) = task.await;
+        cx.update(|cx| {
+            AiKeys::replace(cx, keys, ok);
+            if migrated {
+                // Rewrite the settings without the plaintext keys.
+                let list = providers(cx);
+                let active = AppState::user_settings(cx).ai_active_provider;
+                save_providers(&list, active, cx);
+            }
+            cx.refresh_windows();
+        });
+    })
+    .detach();
 }
 
 /// The service the assistant uses, if one is configured and usable. The assistant
@@ -44,9 +98,42 @@ pub fn active_provider(cx: &App) -> Option<ProviderConfig> {
         .cloned()
 }
 
+/// Persist the provider list. API keys go to the OS credential store; they are
+/// kept in the settings only when that store is unavailable.
 fn save_providers(list: &[ProviderConfig], active: Option<String>, cx: &mut App) {
+    let store_ok = AiKeys::store_ok(cx);
+    let old: Vec<String> = providers(cx).into_iter().map(|p| p.id).collect();
+    let mut writes: Vec<(String, Option<String>)> = Vec::new();
+    for p in list {
+        AiKeys::set(cx, &p.id, p.api_key.clone());
+        writes.push((p.id.clone(), p.api_key.clone()));
+    }
+    for id in old
+        .into_iter()
+        .filter(|id| !list.iter().any(|p| &p.id == id))
+    {
+        AiKeys::set(cx, &id, None);
+        writes.push((id, None));
+    }
+    if store_ok && let Some(user) = AppState::session(cx).map(|s| s.user.id) {
+        cx.background_spawn(async move {
+            for (id, key) in writes {
+                if let Err(e) = crate::secrets::write(user, &id, key.as_deref()) {
+                    tracing::warn!("credential store: {e}");
+                }
+            }
+        })
+        .detach();
+    }
     let values: Vec<serde_json::Value> = list
         .iter()
+        .map(|p| {
+            let mut p = p.clone();
+            if store_ok {
+                p.api_key = None;
+            }
+            p
+        })
         .filter_map(|p| serde_json::to_value(p).ok())
         .collect();
     AppState::update_user_settings(cx, |s| {
@@ -56,8 +143,19 @@ fn save_providers(list: &[ProviderConfig], active: Option<String>, cx: &mut App)
     cx.refresh_windows();
 }
 
+/// Which part of the AI settings is shown (each is its own page in Settings).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AiPage {
+    Services,
+    Assistant,
+    Mcp,
+}
+
 pub struct AiSettings {
+    page: AiPage,
     editing: Option<ProviderConfig>,
+    /// Show the endpoint and API format fields.
+    advanced: bool,
     f_name: Entity<InputState>,
     f_url: Entity<InputState>,
     f_model: Entity<InputState>,
@@ -83,7 +181,9 @@ impl AiSettings {
         };
         let port = AppState::get(cx).app.mcp_port.to_string();
         let mut this = Self {
+            page: AiPage::Services,
             editing: None,
+            advanced: false,
             f_name: input(t("ai.provider.name"), window, cx),
             f_url: input(t("ai.provider.url"), window, cx),
             f_model: input(t("ai.provider.model"), window, cx),
@@ -107,6 +207,15 @@ impl AiSettings {
         };
         this.load(cx);
         this
+    }
+
+    pub fn set_page(&mut self, page: AiPage, cx: &mut Context<Self>) {
+        self.page = page;
+        if page != AiPage::Services {
+            self.editing = None;
+        }
+        self.load(cx);
+        cx.notify();
     }
 
     fn load(&mut self, cx: &mut Context<Self>) {
@@ -244,65 +353,102 @@ impl AiSettings {
     }
 
     fn render_providers(&mut self, cx: &mut Context<Self>) -> AnyElement {
+        if self.editing.is_some() {
+            return self.render_editor(cx);
+        }
         let list = providers(cx);
         let active = active_provider(cx).map(|p| p.id);
-        let th = cx.theme();
-        let mut col = v_flex()
-            .gap(px(4.))
-            .child(section(t("ai.providers"), cx))
-            .child(hint(t("ai.providers_hint"), cx));
+        let th = cx.theme().clone();
+        let mut col = v_flex().gap(px(8.)).child(hint(t("ai.providers_hint"), cx));
+
+        // 1. What is already connected.
+        col = col.child(section(t("ai.services.yours"), cx));
+        if list.is_empty() {
+            col = col.child(
+                div()
+                    .p(px(12.))
+                    .rounded(px(8.))
+                    .border_1()
+                    .border_color(th.border)
+                    .text_size(px(13.))
+                    .text_color(th.muted_foreground)
+                    .child(t("ai.services.none")),
+            );
+        }
         for p in &list {
             let id = p.id.clone();
             let is_active = active.as_deref() == Some(p.id.as_str());
             let (edit_cfg, del_id, act_id) = (p.clone(), id.clone(), id.clone());
-            let local = if p.is_local() {
-                t("ai.local")
+            let ready = p.is_usable();
+            let status = if !ready {
+                (t("ai.provider.not_ready"), th.warning)
+            } else if p.is_local() {
+                (t("ai.services.ready_local"), th.success)
             } else {
-                t("ai.cloud")
+                (t("ai.services.ready"), th.success)
             };
             col = col.child(
                 h_flex()
                     .justify_between()
-                    .px(px(10.))
-                    .py(px(6.))
-                    .rounded(px(6.))
-                    .bg(th.muted.opacity(0.5))
+                    .gap(px(10.))
+                    .px(px(12.))
+                    .py(px(10.))
+                    .rounded(px(8.))
+                    .border_1()
+                    .border_color(if is_active { th.primary } else { th.border })
                     .child(
                         v_flex()
+                            .gap(px(2.))
+                            .min_w_0()
                             .child(
-                                div()
-                                    .text_size(px(14.))
-                                    .child(format!("{} · {}", p.name, p.model)),
+                                h_flex()
+                                    .gap(px(8.))
+                                    .child(
+                                        div()
+                                            .text_size(px(14.))
+                                            .font_weight(gpui_kit::FontWeight::MEDIUM)
+                                            .child(p.name.clone()),
+                                    )
+                                    .when(is_active, |d| {
+                                        d.child(
+                                            div()
+                                                .px(px(6.))
+                                                .rounded_full()
+                                                .bg(th.primary)
+                                                .text_color(th.primary_foreground)
+                                                .text_size(px(11.))
+                                                .child(t("ai.provider.active")),
+                                        )
+                                    }),
                             )
                             .child(
-                                div()
+                                h_flex()
+                                    .gap(px(6.))
                                     .text_size(px(12.))
-                                    .text_color(th.muted_foreground)
-                                    .child(if p.is_usable() {
-                                        local
-                                    } else {
-                                        t("ai.provider.not_ready")
-                                    }),
+                                    .child(div().size(px(7.)).rounded_full().bg(status.1))
+                                    .child(
+                                        div()
+                                            .text_color(th.muted_foreground)
+                                            .child(format!("{} · {}", status.0, p.model)),
+                                    ),
                             ),
                     )
                     .child(
                         h_flex()
                             .gap(px(4.))
-                            .child(
-                                Button::new(SharedString::from(format!("use-{id}")))
-                                    .xsmall()
-                                    .label(if is_active {
-                                        t("ai.provider.active")
-                                    } else {
-                                        t("ai.provider.use")
-                                    })
-                                    .when(is_active, |b| b.primary())
-                                    .when(!is_active, |b| b.outline())
-                                    .on_click(cx.listener(move |_, _, _, cx| {
-                                        let list = providers(cx);
-                                        save_providers(&list, Some(act_id.clone()), cx);
-                                    })),
-                            )
+                            .flex_shrink_0()
+                            .when(!is_active && ready, |d| {
+                                d.child(
+                                    Button::new(SharedString::from(format!("use-{id}")))
+                                        .xsmall()
+                                        .outline()
+                                        .label(t("ai.provider.use"))
+                                        .on_click(cx.listener(move |_, _, _, cx| {
+                                            let list = providers(cx);
+                                            save_providers(&list, Some(act_id.clone()), cx);
+                                        })),
+                                )
+                            })
                             .child(
                                 Button::new(SharedString::from(format!("edit-{id}")))
                                     .xsmall()
@@ -324,33 +470,108 @@ impl AiSettings {
                     ),
             );
         }
-        let view = cx.entity();
-        let add = Button::new("add-provider")
-            .small()
-            .outline()
-            .label(t("ai.provider.add"))
-            .dropdown_caret(true)
-            .dropdown_menu(move |mut menu, _, _| {
-                for preset in PRESETS {
-                    let view = view.clone();
-                    let label = if preset.local {
-                        format!("{} ({})", preset.name, t("ai.local"))
-                    } else {
-                        preset.name.to_owned()
-                    };
-                    menu = menu.item(PopupMenuItem::new(label).on_click(move |_, window, cx| {
-                        let mut cfg = ProviderConfig::from_preset(preset);
-                        cfg.id = cardfile_core::UserId::new().to_string();
-                        view.update(cx, |v, cx| v.edit(cfg, window, cx));
-                    }));
-                }
-                menu
-            });
-        col = col.child(div().pt(px(6.)).child(add));
-        if self.editing.is_some() {
-            col = col.child(self.render_editor(cx));
+
+        // 2. Pick a new service: cloud or on this computer.
+        col = col.child(section(t("ai.services.add"), cx));
+        for (local, title, desc) in [
+            (
+                false,
+                t("ai.services.cloud_title"),
+                t("ai.services.cloud_hint"),
+            ),
+            (
+                true,
+                t("ai.services.local_title"),
+                t("ai.services.local_hint"),
+            ),
+        ] {
+            let mut grid = h_flex().flex_wrap().gap(px(8.));
+            for preset in PRESETS
+                .iter()
+                .filter(|p| p.local == local && p.id != CUSTOM_PRESET_ID)
+            {
+                grid = grid.child(self.preset_tile(preset, cx));
+            }
+            if !local && let Some(custom) = PRESETS.iter().find(|p| p.id == CUSTOM_PRESET_ID) {
+                grid = grid.child(self.preset_tile(custom, cx));
+            }
+            col = col
+                .child(
+                    div()
+                        .pt(px(4.))
+                        .text_size(px(13.))
+                        .font_weight(gpui_kit::FontWeight::MEDIUM)
+                        .child(title),
+                )
+                .child(hint(desc, cx))
+                .child(grid);
+        }
+        if !AiKeys::store_ok(cx) {
+            col = col.child(
+                div()
+                    .pt(px(6.))
+                    .text_size(px(12.))
+                    .text_color(th.warning)
+                    .child(t("ai.services.no_keyring")),
+            );
         }
         col.into_any_element()
+    }
+
+    fn preset_tile(&self, preset: &'static Preset, cx: &mut Context<Self>) -> AnyElement {
+        let th = cx.theme();
+        let detail = if preset.id == CUSTOM_PRESET_ID {
+            t("ai.services.custom_hint")
+        } else if preset.default_model.is_empty() {
+            String::new()
+        } else {
+            preset.default_model.to_owned()
+        };
+        h_flex()
+            .id(SharedString::from(format!("preset-{}", preset.id)))
+            .w(px(180.))
+            .gap(px(8.))
+            .px(px(10.))
+            .py(px(8.))
+            .rounded(px(8.))
+            .border_1()
+            .border_color(th.border)
+            .cursor_pointer()
+            .hover(|d| d.bg(th.accent).border_color(th.primary))
+            .child(
+                gpui_kit::component::Icon::new(if preset.local {
+                    IconName::Bot
+                } else {
+                    IconName::Sparkles
+                })
+                .size_4()
+                .text_color(th.primary),
+            )
+            .child(
+                v_flex()
+                    .min_w_0()
+                    .child(div().text_size(px(13.)).truncate().child(
+                        if preset.id == CUSTOM_PRESET_ID {
+                            t("ai.services.custom")
+                        } else {
+                            preset.name.to_owned()
+                        },
+                    ))
+                    .child(
+                        div()
+                            .text_size(px(11.))
+                            .truncate()
+                            .text_color(th.muted_foreground)
+                            .child(detail),
+                    ),
+            )
+            .on_click(cx.listener(move |this, _, window, cx| {
+                let mut cfg = ProviderConfig::from_preset(preset);
+                cfg.id = cardfile_core::UserId::new().to_string();
+                this.advanced = preset.id == CUSTOM_PRESET_ID;
+                this.edit(cfg, window, cx);
+            }))
+            .into_any_element()
     }
 
     fn render_editor(&mut self, cx: &mut Context<Self>) -> AnyElement {
@@ -359,9 +580,18 @@ impl AiSettings {
         };
         let custom = cfg.preset == CUSTOM_PRESET_ID;
         let preset = cfg.preset_info();
+        let is_new = !providers(cx).iter().any(|p| p.id == cfg.id);
         let th = cx.theme();
-        let view = cx.entity();
         let kind = cfg.kind;
+        let needs_key = cfg.requires_api_key() || custom;
+        let local = preset.is_some_and(|p| p.local);
+        let key_url = preset.map(|p| p.key_url).filter(|u| !u.is_empty());
+        let name = preset
+            .map(|p| p.name.to_owned())
+            .filter(|_| !custom)
+            .unwrap_or_else(|| t("ai.services.custom"));
+
+        let view = cx.entity();
         let kind_menu = Button::new("api-kind")
             .small()
             .outline()
@@ -389,9 +619,9 @@ impl AiSettings {
         let models = self.models.clone();
         let model_menu = Button::new("model-pick")
             .small()
-            .ghost()
-            .icon(gpui_kit::assets::IconName::ChevronDown)
-            .tooltip(t("ai.provider.pick_model"))
+            .outline()
+            .label(t("ai.provider.pick_model"))
+            .dropdown_caret(true)
             .dropdown_menu(move |mut menu, _, _| {
                 for m in &models {
                     let view = view.clone();
@@ -407,64 +637,124 @@ impl AiSettings {
                 }
                 menu
             });
-        let needs_key = cfg.requires_api_key();
-        let key_url = preset.map(|p| p.key_url).filter(|u| !u.is_empty());
-        let mut form = v_flex()
-            .gap(px(8.))
-            .mt(px(8.))
-            .p(px(12.))
-            .rounded(px(8.))
-            .border_1()
-            .border_color(th.border)
-            .child(
-                div()
-                    .font_weight(gpui_kit::FontWeight::SEMIBOLD)
-                    .child(preset.map(|p| p.name).unwrap_or("Custom").to_owned()),
-            )
-            .child(field(t("ai.provider.name"), Input::new(&self.f_name), cx));
-        if custom {
-            form = form.child(field(t("ai.provider.kind"), kind_menu, cx));
+
+        // Step-by-step form: key, model, name; technical details under "Advanced".
+        let mut form = v_flex().gap(px(12.)).child(
+            h_flex()
+                .gap(px(8.))
+                .child(
+                    Button::new("back-services")
+                        .small()
+                        .ghost()
+                        .icon(IconName::ArrowLeft)
+                        .label(t("common.back"))
+                        .on_click(cx.listener(|this, _, _, cx| {
+                            this.editing = None;
+                            this.error = None;
+                            cx.notify();
+                        })),
+                )
+                .child(
+                    div()
+                        .text_size(px(16.))
+                        .font_weight(gpui_kit::FontWeight::SEMIBOLD)
+                        .child(if is_new {
+                            t_args("ai.services.connect", &[("name", &name)])
+                        } else {
+                            t_args("ai.services.edit", &[("name", &name)])
+                        }),
+                ),
+        );
+        if local {
+            form = form.child(hint(t("ai.services.local_steps"), cx));
         }
-        form = form
-            .child(field(t("ai.provider.url"), Input::new(&self.f_url), cx))
-            .child(field(
-                t("ai.provider.model"),
-                h_flex()
-                    .gap(px(4.))
-                    .child(div().flex_1().child(Input::new(&self.f_model)))
-                    .when(!self.models.is_empty(), |d| d.child(model_menu)),
-                cx,
-            ))
-            .child(field(
+        if needs_key || !local {
+            let mut key_row = h_flex()
+                .gap(px(8.))
+                .child(div().flex_1().child(Input::new(&self.f_key).mask_toggle()));
+            if let Some(url) = key_url {
+                key_row = key_row.child(
+                    Button::new("get-key")
+                        .small()
+                        .outline()
+                        .icon(IconName::ExternalLink)
+                        .label(t("ai.provider.get_key"))
+                        .on_click(move |_, _, cx| cx.open_url(url)),
+                );
+            }
+            form = form.child(step(
+                "1",
                 if needs_key {
                     t("ai.provider.key")
                 } else {
                     t("ai.provider.key_optional")
                 },
-                Input::new(&self.f_key).mask_toggle(),
-                cx,
-            ));
-        if kind == ApiKind::AzureOpenAi {
-            form = form.child(field(
-                t("ai.provider.api_version"),
-                Input::new(&self.f_version),
+                Some(t("ai.services.key_hint")),
+                key_row.into_any_element(),
                 cx,
             ));
         }
-        if let Some(url) = key_url {
-            form = form.child(
-                Button::new("get-key")
-                    .xsmall()
-                    .link()
-                    .label(t("ai.provider.get_key"))
-                    .on_click(move |_, _, cx| cx.open_url(url)),
-            );
+        form = form
+            .child(step(
+                "2",
+                t("ai.provider.model"),
+                Some(t("ai.services.model_hint")),
+                h_flex()
+                    .gap(px(8.))
+                    .child(div().flex_1().child(Input::new(&self.f_model)))
+                    .when(!self.models.is_empty(), |d| d.child(model_menu))
+                    .into_any_element(),
+                cx,
+            ))
+            .child(step(
+                "3",
+                t("ai.provider.name"),
+                None,
+                Input::new(&self.f_name).into_any_element(),
+                cx,
+            ));
+        // Advanced: endpoint and wire format, needed for custom and Azure.
+        let advanced = self.advanced || custom || kind == ApiKind::AzureOpenAi;
+        form = form.child(
+            Button::new("toggle-advanced")
+                .xsmall()
+                .ghost()
+                .icon(if advanced {
+                    IconName::ChevronDown
+                } else {
+                    IconName::ChevronRight
+                })
+                .label(t("ai.services.advanced"))
+                .on_click(cx.listener(|this, _, _, cx| {
+                    this.advanced = !this.advanced;
+                    cx.notify();
+                })),
+        );
+        if advanced {
+            let mut adv = v_flex()
+                .gap(px(8.))
+                .pl(px(12.))
+                .border_l_2()
+                .border_color(th.border)
+                .child(field(t("ai.provider.url"), Input::new(&self.f_url), cx))
+                .child(field(t("ai.provider.kind"), kind_menu, cx));
+            if kind == ApiKind::AzureOpenAi {
+                adv = adv.child(field(
+                    t("ai.provider.api_version"),
+                    Input::new(&self.f_version),
+                    cx,
+                ));
+            }
+            form = form.child(adv);
         }
         if let Some((ok, msg)) = &self.test {
             form = form.child(
                 div()
+                    .px(px(10.))
+                    .py(px(6.))
+                    .rounded(px(6.))
+                    .bg(if *ok { th.success } else { th.danger }.opacity(0.12))
                     .text_size(px(12.))
-                    .text_color(if *ok { th.success } else { th.danger })
                     .child(msg.clone()),
             );
         }
@@ -472,17 +762,6 @@ impl AiSettings {
             h_flex()
                 .justify_end()
                 .gap(px(6.))
-                .child(
-                    Button::new("cancel-provider")
-                        .small()
-                        .ghost()
-                        .label(t("common.cancel"))
-                        .on_click(cx.listener(|this, _, _, cx| {
-                            this.editing = None;
-                            this.error = None;
-                            cx.notify();
-                        })),
-                )
                 .child(
                     Button::new("test-provider")
                         .small()
@@ -849,13 +1128,53 @@ fn copy_row(id: &str, text: String, cx: &App) -> AnyElement {
         .into_any_element()
 }
 
+/// A numbered step of the "connect a service" form.
+fn step(n: &str, label: String, help: Option<String>, control: AnyElement, cx: &App) -> AnyElement {
+    let th = cx.theme();
+    h_flex()
+        .items_start()
+        .gap(px(10.))
+        .child(
+            div()
+                .mt(px(2.))
+                .size(px(20.))
+                .flex_shrink_0()
+                .rounded_full()
+                .bg(th.primary)
+                .text_color(th.primary_foreground)
+                .text_size(px(11.))
+                .flex()
+                .items_center()
+                .justify_center()
+                .child(n.to_owned()),
+        )
+        .child(
+            v_flex()
+                .flex_1()
+                .min_w_0()
+                .gap(px(4.))
+                .child(
+                    div()
+                        .text_size(px(13.))
+                        .font_weight(gpui_kit::FontWeight::MEDIUM)
+                        .child(label),
+                )
+                .children(help.map(|h| hint(h, cx)))
+                .child(control),
+        )
+        .into_any_element()
+}
+
 impl Render for AiSettings {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        v_flex()
-            .gap(px(14.))
-            .child(self.render_providers(cx))
-            .child(self.render_chat_options(cx))
-            .child(self.render_mcp(cx))
-            .child(self.render_activity(cx))
+        match self.page {
+            AiPage::Services => self.render_providers(cx),
+            AiPage::Assistant => v_flex()
+                .gap(px(14.))
+                .child(self.render_chat_options(cx))
+                .child(self.render_activity(cx))
+                .into_any_element(),
+            AiPage::Mcp => self.render_mcp(cx),
+        }
     }
 }

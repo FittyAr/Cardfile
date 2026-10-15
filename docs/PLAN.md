@@ -47,10 +47,17 @@ alcance debe reflejarse aquí primero.
 | 35 | Usuario IA y auditoría | Existe una cuenta `cardfile-ai` (tipo `ai`, sin login). Todo cambio guarda `updated_by`, el autor de cada revisión y una entrada en `activity` (actor, en nombre de quién, vía qué API key o "chat"). La IA ve exactamente lo que ve el usuario que le dio acceso. |
 | 36 | MCP | Servidor MCP **HTTP (Streamable HTTP) dentro de la app**, solo en `127.0.0.1`, activable en Settings → IA, puerto configurable (7337). Autenticación con **API keys** por usuario (hash BLAKE3), con opciones *solo lectura* y *permitir privadas*; nunca cifradas. |
 | 37 | Asistente IA | Presets para OpenAI, Anthropic, Gemini, Mistral, Groq, DeepSeek, xAI, OpenRouter, Together, Perplexity, Azure OpenAI, Ollama, LM Studio y personalizados. Panel de chat con herramientas (buscar, leer, crear, reescribir, editar texto, etiquetar, favoritos/fijadas, reordenar, papelera). Aplica cambios directo: revisión previa en el historial y borrados a la papelera. Toda la UI de IA se oculta hasta configurar un servicio. |
-| 38 | Multimedia | Reproducción inline de audio (MP3, WAV, OGG, FLAC, AAC) y video MP4/H.264 (OpenH264 desde fuente). Otros formatos: reproductor del sistema. |
+| 38 | Multimedia | Reproducción inline solo de audio libre de patentes: MP3, WAV, OGG/Vorbis y FLAC. El video, el AAC/M4A y los demás formatos se abren con el reproductor del sistema; si ninguna aplicación puede abrirlos, la app se lo informa al usuario. Sin códecs con patentes (H.264, AAC). |
 | 39 | Adjuntos | Imágenes y adjuntos se arrastran dentro de la tarjeta (mover; Ctrl/Alt copia) o sobre otra tarjeta de la lista (mover; Ctrl/Alt copia). |
 | 40 | Escrituras | CJK en UI y PDF (fuente de respaldo del sistema). RTL: el editor reordena los glifos según el algoritmo bidi Unicode y alinea a la derecha los párrafos RTL; etiquetas de UI en orden visual (con formas de presentación árabes); HTML con `dir="rtl"`. Límite: los inputs de una línea de gpui-component siguen mostrando RTL de izquierda a derecha. |
 | 41 | Traducciones | 21 idiomas, todos salvo el inglés hechos con IA; los README lo indican y piden reportes. |
+| 42 | Barra de título | Propia, al estilo de Zed: decoraciones del cliente (`TitleBar` de gpui-component), menú de la app, ícono y título; controles de ventana dibujados por la app en Windows y Linux. |
+| 43 | Tipografía | **Inter** (texto e interfaz) y **JetBrains Mono** (código), OFL 1.1, incrustadas en el binario (`cardfile-doc::fonts`) y usadas también en el PDF. CJK/árabe/hebreo usan fuentes del sistema como respaldo. |
+| 44 | Logo | Rediseño plano (fichas apiladas con pestaña, paleta coral) en SVG (`assets/brand/`); todos los PNG/ICO se generan con `scripts/render_brand.py`. |
+| 45 | Claves de IA | Las API keys de los servicios de IA se guardan en el almacén de credenciales del sistema (`keyring`: Credential Manager / Secret Service); si no está disponible, en la base con aviso. |
+| 46 | Configuración | Diálogo amplio con barra lateral agrupada (App, Privacidad y seguridad, IA, Datos); la IA se divide en Servicios, Asistente y Apps de IA (MCP). Alta de servicios guiada: elegir proveedor (nube/local) → API key → modelo → nombre; opciones avanzadas plegadas. |
+| 47 | Imágenes | Redimensionables con manijas: esquina mantiene proporción; bordes derecho/inferior estiran libremente (`Image.height`). |
+| 48 | Campos de una línea | El título de la ficha y la entrada del chat usan el editor propio en modo una línea, que dispone el texto RTL correctamente. |
 
 ### 1.1 ¿Por qué no un fork de Zed?
 
@@ -90,12 +97,11 @@ registran en `Cargo.lock`. Valores verificados al 2026-10-14:
 | Resaltado de código | `syntect` + `two-face` (vía gpui-component) | última | MIT |
 | Imágenes | `image` | última | MIT OR Apache-2.0 |
 | Corrector | `spellbook` (Hunspell-compatible) + diccionario en_US de `wooorm/dictionaries` | última | MPL-2.0* / MIT-like |
-| Audio (adjuntos) | `rodio` (salida vía `cpal`, sin decoders propios) + `symphonia` (MP3, WAV, OGG/Vorbis, FLAC, AAC/M4A) | 0.23.0 / 0.6.1 | MIT OR Apache-2.0 / MPL-2.0* |
-| Video (adjuntos) | `re_mp4` (demux MP4) + `openh264` (H.264, compilado desde fuente; sin descarga en runtime) | 0.5.1 / 0.9.8 | MIT / BSD-2-Clause |
+| Audio (adjuntos) | `rodio` (salida vía `cpal`, sin decoders propios) + `symphonia` (MP3, WAV, OGG/Vorbis, FLAC; sin AAC ni MP4) | 0.23.0 / 0.6.1 | MIT OR Apache-2.0 / MPL-2.0* |
 | i18n | `rust-i18n` | última | MIT |
 | Directorios | `directories` | última | MIT OR Apache-2.0 |
 | Config | `serde` + TOML (`toml`) | última | MIT OR Apache-2.0 |
-| Updater | `ureq` + `semver` (solo aviso; sin descarga) | última | MIT / Apache |
+| Updater | `ureq` + `semver` + `minisign-verify` + `sha2`; `zip`, `tar`, `lzma-rust2` (desempaquetado, Rust puro) | última | MIT / Apache / MIT OR Apache |
 | Diálogos de archivo | `rfd` (si GPUI no expone lo necesario) | última | MIT |
 | Releases | `dist` (cargo-dist) | 0.32.x | MIT OR Apache-2.0 |
 | Paquetes Linux | `cargo-deb`, `cargo-generate-rpm`, `linuxdeploy` (AppImage) | última | MIT |
@@ -106,17 +112,17 @@ registran en `Cargo.lock`. Valores verificados al 2026-10-14:
 MIT/Apache siempre que no modifiquemos los archivos de `spellbook`. Se aprueba como excepción
 explícita en `deny.toml`; si se prefiere evitarlo, alternativa: implementación propia sobre
 listas de palabras (más pobre). Lo mismo aplica a los crates de `symphonia` (decodificación de
-audio en `cardfile-media`), usados sin modificar. Formatos de video distintos de MP4/H.264 quedan
-fuera de alcance: la UI los abre con el reproductor del sistema. Nunca ffmpeg, GStreamer ni libvlc.
+audio en `cardfile-media`), usados sin modificar. El video, el AAC/M4A y cualquier otro formato
+quedan fuera de alcance (se evitan los códecs con patentes): la UI los abre con el reproductor del
+sistema. Nunca ffmpeg, GStreamer ni libvlc.
 
 ### 2.1 Política de licencias
 
 - `deny.toml` con allowlist: `MIT`, `Apache-2.0`, `Apache-2.0 WITH LLVM-exception`, `BSD-2-Clause`,
   `BSD-3-Clause`, `ISC`, `Zlib`, `Unicode-3.0`, `CC0-1.0`, `MPL-2.0` (solo crates listados y sin modificar:
   `spellbook`; `symphonia`, `symphonia-core`, `symphonia-common`, `symphonia-metadata`,
-  `symphonia-bundle-flac`, `symphonia-bundle-mp3`, `symphonia-codec-aac`, `symphonia-codec-pcm`,
-  `symphonia-codec-vorbis`, `symphonia-format-isomp4`, `symphonia-format-ogg`,
-  `symphonia-format-riff` [decodificación de audio, `cardfile-media`]; y transitivas `cbindgen`
+  `symphonia-bundle-flac`, `symphonia-bundle-mp3`, `symphonia-codec-pcm`,
+  `symphonia-codec-vorbis`, `symphonia-format-ogg`, `symphonia-format-riff` [decodificación de audio, `cardfile-media`]; y transitivas `cbindgen`
   [build], `dwrote` [GPUI], `option-ext` [`directories`]).
   **GPL/AGPL/LGPL prohibidas.** `cargo deny check` corre en CI y bloquea el merge.
 - `cargo about generate` produce `THIRD_PARTY_LICENSES.html` en cada release y se incluye en los
@@ -143,7 +149,7 @@ Cardfile/
 │  ├─ cardfile-editor/        # widget GPUI del editor WYSIWYG
 │  ├─ cardfile-ui/            # vistas GPUI: shell, lista, wizard, settings, diálogos
 │  ├─ cardfile-i18n/          # carga de locales (en.yml) + macro t!()
-│  ├─ cardfile-media/         # reproducción inline de audio/video (sin GPUI)
+│  ├─ cardfile-media/         # reproducción inline de audio MP3/WAV/OGG/FLAC (sin GPUI)
 │  ├─ cardfile-ai/            # cliente LLM bloqueante: presets, formatos de API, tool calling
 │  ├─ cardfile-mcp/           # servidor MCP Streamable HTTP (tiny_http), herramientas vía trait
 │  ├─ cardfile-agent/         # herramientas de la IA sobre la DB (compartidas por MCP y chat)
@@ -155,7 +161,7 @@ Cardfile/
 │  ├─ windows/msix/           # AppxManifest.xml + assets de Store
 │  └─ linux/                  # .desktop, metainfo AppStream, iconos, AppImage, flatpak
 ├─ docs/
-├─ xtask/                     # tareas: package, bundle-licenses, gen-icons
+├─ scripts/                   # render_brand.py (iconos desde SVG), check_locales.py, …
 └─ .github/workflows/
 ```
 
@@ -308,9 +314,33 @@ winget install FittyAr.Cardfile
 ### 5.4 Updater
 
 Consulta las releases de GitHub al arrancar (configurable, desactivable), compara `semver`
-(pre-releases solo si la versión instalada es pre-release) y muestra un aviso con enlace. No
-descarga ni instala nada. Feature `update-check`; además se desactiva sola cuando la app corre
-instalada por la Store (`WindowsApps`), por un gestor de paquetes Linux (`/usr`), Flatpak o Snap.
+(pre-releases solo si la versión instalada es pre-release) y solo anuncia releases cuyo
+`SHA256SUMS` lleva una firma minisign válida de la clave embebida (`PUBLIC_KEY`).
+
+Actualización automática (`cardfile-updater`, sin GPUI, funciones bloqueantes en el executor de
+fondo), al estilo de Zed (solo ideas; nada de su código GPL):
+
+1. **Tipo de instalación** (`InstallKind::detect`): Store/MSIX (`WindowsApps`), gestor de
+   paquetes Linux (`/usr`, salvo `/usr/local`), Flatpak (`FLATPAK_ID`), Snap (`SNAP`), AppImage
+   (`APPIMAGE`), Inno Setup (`unins000.exe` junto al exe), portable (`portable.flag`) o binario
+   suelto en carpeta escribible (instaladores de dist en `~/.cardfile/bin`, archivo descomprimido).
+   Store, gestores de paquetes, Flatpak, Snap y copias en carpetas de solo lectura **no** se
+   autoactualizan: siguen con el aviso y el enlace a la release.
+2. **Asset**: `.zip` (Windows) o `.tar.xz` (Linux) para binario suelto/portable, el `.AppImage`
+   de la arquitectura, o el `-setup-<arch>.exe` de Inno Setup.
+3. **Descarga** con progreso y cancelación a un temporal junto al destino (mismo sistema de
+   archivos). Se exigen **ambas** verificaciones: SHA-256 contra el `SHA256SUMS` firmado y la
+   firma `.minisig` propia del asset (comentario de confianza con tag y nombre de archivo).
+   Cualquier diferencia cancela la instalación.
+4. **Instalación**: archivo → se desempaqueta junto al exe y cada archivo incluido reemplaza al
+   instalado (en Windows el exe en uso se renombra a `cardfile.exe.old`, borrado en el siguiente
+   arranque por `cleanup_after_update`; en Linux, rename atómico). AppImage → se reemplaza el
+   archivo (temporal + chmod + rename). Inno Setup → se ejecuta el instalador con
+   `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RELAUNCH` y la app sale; el
+   instalador la vuelve a abrir (`[Run]` con `/RELAUNCH`).
+5. **Reinicio**: `restart(exe)` lanza el nuevo ejecutable con los mismos argumentos y la app sale.
+
+Feature `update-check` en `cardfile-ui` para desactivarlo en builds de tienda/paquete.
 
 ---
 

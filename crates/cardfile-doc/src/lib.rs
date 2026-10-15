@@ -5,6 +5,7 @@
 
 pub mod bidi;
 mod export;
+pub mod fonts;
 mod markdown_in;
 mod model;
 pub mod pdf;

@@ -1,6 +1,6 @@
 [package]
 name = "cardfile-updater"
-description = "New version check for Cardfile"
+description = "New version check and self-updater for Cardfile"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -19,3 +19,12 @@ serde_json.workspace = true
 thiserror.workspace = true
 ureq.workspace = true
 minisign-verify.workspace = true
+sha2.workspace = true
+zip.workspace = true
+tar.workspace = true
+lzma-rust2.workspace = true
+tempfile.workspace = true
+
+[dev-dependencies]
+# The encoder builds the .tar.xz fixtures of the extraction tests.
+lzma-rust2 = { workspace = true, features = ["encoder"] }

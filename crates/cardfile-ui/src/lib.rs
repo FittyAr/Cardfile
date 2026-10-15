@@ -14,6 +14,7 @@ mod login;
 mod mcp_host;
 mod palette;
 pub mod paths;
+mod secrets;
 mod settings;
 mod share;
 mod spell;
@@ -44,6 +45,7 @@ pub fn run(paths: DataPaths) {
         .run(move |cx| {
             gpui_kit::init(cx);
             cardfile_i18n::set_locale("en");
+            themes::load_fonts(cx);
             themes::init(&paths, cx);
             themes::apply(themes::DEFAULT_THEME, cx);
             keymap::init(&paths, cx);
@@ -76,17 +78,19 @@ pub fn run(paths: DataPaths) {
             });
 
             let bounds = Bounds::centered(None, size(px(1180.), px(760.)), cx);
+            // The app draws its own title bar (like Zed): no native frame.
             let options = WindowOptions {
                 window_bounds: Some(WindowBounds::Windowed(bounds)),
                 titlebar: Some(TitlebarOptions {
                     title: Some("Cardfile".into()),
-                    ..Default::default()
+                    ..gpui_kit::component::TitleBar::title_bar_options()
                 }),
+                window_decorations: Some(gpui_kit::WindowDecorations::Client),
                 app_id: Some("ar.fittyar.Cardfile".into()),
                 window_min_size: Some(size(px(760.), px(480.))),
                 // Used by X11; Windows takes the icon from the executable's resources.
                 icon: window_icon(),
-                ..Default::default()
+                ..gpui_kit::component::TitleBar::window_options()
             };
             if let Err(e) = gpui_kit::open_window(options, cx, |window, cx| {
                 cx.new(|cx| app::CardfileApp::new(window, cx))

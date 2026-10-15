@@ -92,7 +92,7 @@ pub(crate) struct SlashMenu {
 impl RichEditor {
     /// Called after text input: open the menu on `/` typed in an empty paragraph.
     pub(crate) fn maybe_open_slash(&mut self, typed: &str) {
-        if typed != "/" || self.slash.is_some() {
+        if typed != "/" || self.slash.is_some() || self.single_line {
             return;
         }
         let caret = self.model.caret();

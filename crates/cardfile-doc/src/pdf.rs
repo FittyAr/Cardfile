@@ -139,11 +139,25 @@ fn candidates(face: Face) -> Vec<PathBuf> {
         .collect()
 }
 
+/// The bundled font for a face, so PDFs look the same everywhere.
+fn bundled(face: Face) -> Option<&'static [u8]> {
+    use crate::fonts::*;
+    Some(match face {
+        Face::Regular => INTER_REGULAR,
+        Face::Bold => INTER_BOLD,
+        Face::Italic => INTER_ITALIC,
+        Face::BoldItalic => INTER_BOLD_ITALIC,
+        Face::Mono => MONO_REGULAR,
+        Face::Fallback => return None,
+    })
+}
+
 fn load(face: Face) -> Option<LoadedFont> {
-    for path in candidates(face) {
-        let Ok(bytes) = std::fs::read(&path) else {
-            continue;
-        };
+    let embedded = bundled(face).map(<[u8]>::to_vec);
+    let files = candidates(face)
+        .into_iter()
+        .filter_map(|p| std::fs::read(p).ok());
+    for bytes in embedded.into_iter().chain(files) {
         let Some(shaper) = harfrust::Font::new(bytes.clone(), 0) else {
             continue;
         };
@@ -867,7 +881,11 @@ pub fn to_pdf(doc: &Document, title: &str, blobs: &dyn BlobResolver) -> Result<V
                 }
                 // Editor widths are logical pixels (96 dpi) → points.
                 let mut iw = img.width.map_or(full, |px| px * 0.75).min(full - indent);
-                let mut ih = iw * ph as f32 / pw as f32;
+                let mut ih = match (img.width, img.height) {
+                    // Stretched in the editor: keep the same proportions it shows.
+                    (Some(w), Some(h)) if w > 0. => iw * h / w,
+                    _ => iw * ph as f32 / pw as f32,
+                };
                 let max_h = PAGE_H - 2. * MARGIN;
                 if ih > max_h {
                     iw *= max_h / ih;

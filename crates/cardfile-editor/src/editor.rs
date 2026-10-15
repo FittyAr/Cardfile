@@ -106,6 +106,7 @@ actions!(
         ImageSmaller,
         ImageLarger,
         ImageFit,
+        ImageKeepRatio,
         OpenLinkAtCaret,
         AddWordToDictionary,
         Find,
@@ -167,6 +168,8 @@ pub enum EditorEvent {
     SelectionChanged,
     /// The user tried to edit a read-only document.
     EditBlocked,
+    /// Enter was pressed in a single-line editor.
+    Submit,
     OpenAttachment {
         blob: String,
         file_name: String,
@@ -283,6 +286,14 @@ pub struct RichEditor {
     pub(crate) find: Option<crate::find::FindBar>,
     pub(crate) slash: Option<crate::slash::SlashMenu>,
     pub(crate) media: crate::media::MediaState,
+    /// An image being resized with its handles.
+    pub(crate) image_drag: Option<crate::image_resize::ImageDrag>,
+    /// Painted bounds of each image block, to start a resize from its real size.
+    pub(crate) image_bounds: std::rc::Rc<std::cell::RefCell<HashMap<usize, Bounds<Pixels>>>>,
+    /// One plain line of text (titles, chat input): Enter submits, no blocks.
+    pub(crate) single_line: bool,
+    /// Draw all text bold (titles).
+    pub(crate) strong: bool,
 }
 
 impl EventEmitter<EditorEvent> for RichEditor {}
@@ -319,7 +330,53 @@ impl RichEditor {
             find: None,
             slash: None,
             media: Default::default(),
+            image_drag: None,
+            image_bounds: Default::default(),
+            single_line: false,
+            strong: false,
         }
+    }
+
+    /// Make this a one-line text field: Enter emits [`EditorEvent::Submit`], pasted
+    /// line breaks become spaces, and Markdown shortcuts and the `/` menu are off.
+    /// Unlike the toolkit's inputs it lays out right-to-left text correctly.
+    pub fn set_single_line(&mut self, on: bool) {
+        self.single_line = on;
+        if on {
+            self.model.input_rules = false;
+        }
+    }
+
+    /// Draw all text bold.
+    pub fn set_strong(&mut self, on: bool, cx: &mut Context<Self>) {
+        self.strong = on;
+        cx.notify();
+    }
+
+    /// The text as one plain string.
+    pub fn text(&self) -> String {
+        cardfile_doc::to_plain_text(&self.model.doc)
+            .trim_end_matches('\n')
+            .to_owned()
+    }
+
+    /// Replace everything with one paragraph of plain text, caret at the end.
+    pub fn set_text(&mut self, text: &str, cx: &mut Context<Self>) {
+        let text = if self.single_line {
+            text.replace(['\n', '\r'], " ")
+        } else {
+            text.to_owned()
+        };
+        let len = text.len();
+        self.set_document(
+            Document {
+                version: cardfile_doc::DOC_VERSION,
+                blocks: vec![Block::paragraph(&text)],
+            },
+            cx,
+        );
+        self.model.set_caret(Pos::new(Slot::block(0), len));
+        self.revision += 1;
     }
 
     // ---------------------------------------------------------------------
@@ -898,6 +955,10 @@ impl RichEditor {
         self.edit(EditKind::Other, cx, Model::delete_forward);
     }
     fn enter(&mut self, _: &Enter, _: &mut Window, cx: &mut Context<Self>) {
+        if self.single_line {
+            cx.emit(EditorEvent::Submit);
+            return;
+        }
         if self.slash_key(crate::slash::SlashKey::Enter, cx) {
             return;
         }
@@ -905,9 +966,17 @@ impl RichEditor {
         self.edit(EditKind::Other, cx, Model::enter);
     }
     fn soft_break(&mut self, _: &SoftBreak, _: &mut Window, cx: &mut Context<Self>) {
+        if self.single_line {
+            cx.emit(EditorEvent::Submit);
+            return;
+        }
         self.edit(EditKind::Other, cx, Model::soft_break);
     }
-    fn tab(&mut self, _: &Tab, _: &mut Window, cx: &mut Context<Self>) {
+    fn tab(&mut self, _: &Tab, window: &mut Window, cx: &mut Context<Self>) {
+        if self.single_line {
+            window.focus_next(cx);
+            return;
+        }
         if self.slash_key(crate::slash::SlashKey::Enter, cx) {
             return;
         }
@@ -1028,6 +1097,15 @@ impl RichEditor {
         let Some(item) = cx.read_from_clipboard() else {
             return;
         };
+        if self.single_line {
+            let text = item
+                .text()
+                .unwrap_or_default()
+                .replace("\r\n", " ")
+                .replace(['\n', '\r'], " ");
+            self.edit(EditKind::Other, cx, |m| m.insert_text(&text));
+            return;
+        }
         if let Some(entry) = item.entries().first() {
             match entry {
                 ClipboardEntry::String(s) => {
@@ -1104,6 +1182,7 @@ impl RichEditor {
             blob: id,
             mime: mime.to_owned(),
             width: None,
+            height: None,
             alt: name.unwrap_or_default().to_owned(),
         };
         self.edit(EditKind::Other, cx, |m| {
@@ -1326,6 +1405,22 @@ impl RichEditor {
     }
     fn image_fit(&mut self, _: &ImageFit, _: &mut Window, cx: &mut Context<Self>) {
         self.resize_image(|_| None, cx);
+        self.set_image_height(None, cx);
+    }
+    fn image_keep_ratio(&mut self, _: &ImageKeepRatio, _: &mut Window, cx: &mut Context<Self>) {
+        self.set_image_height(None, cx);
+    }
+    fn set_image_height(&mut self, height: Option<f32>, cx: &mut Context<Self>) {
+        let block = self.model.caret().slot.block;
+        self.edit(EditKind::Other, cx, |m| {
+            if let Some(Block {
+                kind: BlockKind::Image(img),
+                ..
+            }) = m.doc.blocks.get_mut(block)
+            {
+                img.height = height;
+            }
+        });
     }
 
     fn insert_image(&mut self, _: &InsertImage, _: &mut Window, cx: &mut Context<Self>) {
@@ -1523,6 +1618,10 @@ impl RichEditor {
         _: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        if self.image_drag.is_some() {
+            self.update_image_drag(ev, cx);
+            return;
+        }
         if !self.selecting || ev.pressed_button != Some(MouseButton::Left) {
             return;
         }
@@ -1534,8 +1633,9 @@ impl RichEditor {
         }
     }
 
-    pub(crate) fn on_mouse_up(&mut self, _: &MouseUpEvent, _: &mut Window, _: &mut Context<Self>) {
+    pub(crate) fn on_mouse_up(&mut self, _: &MouseUpEvent, _: &mut Window, cx: &mut Context<Self>) {
         self.selecting = false;
+        self.finish_image_drag(cx);
     }
 
     fn link_at(&self, pos: Pos) -> Option<String> {
@@ -1701,6 +1801,7 @@ impl RichEditor {
             .on_action(cx.listener(Self::image_smaller))
             .on_action(cx.listener(Self::image_larger))
             .on_action(cx.listener(Self::image_fit))
+            .on_action(cx.listener(Self::image_keep_ratio))
             .on_action(cx.listener(Self::replace_word))
             .on_action(cx.listener(Self::add_word_to_dictionary))
             .on_action(cx.listener(Self::find_action))

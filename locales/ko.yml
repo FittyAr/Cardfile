@@ -65,6 +65,7 @@ editor:
     smaller: 작게
     larger: 크게
     fit: 너비에 맞춤
+    keep_ratio: "비율 복원"
   menu:
     cut: 잘라내기
     copy: 복사
@@ -321,6 +322,15 @@ updates:
   latest: 최신 버전을 사용 중입니다.
   failed: "업데이트를 확인할 수 없습니다: %{error}"
   managed: 이 설치본의 업데이트는 앱 스토어 또는 패키지 관리자에서 처리합니다.
+  dialog_title: "Cardfile %{version}을(를) 사용할 수 있습니다"
+  current: "현재 버전은 %{version}입니다."
+  install: "업데이트 후 다시 시작"
+  later: "나중에"
+  open_page: "릴리스 페이지"
+  downloading: "다운로드 중… %{mb} MB"
+  installing: "설치 중…"
+  installed_restart: "업데이트가 설치되었습니다. 사용하려면 Cardfile을 다시 시작하세요."
+  manual: "이 Cardfile 사본은 자동으로 업데이트할 수 없습니다. 릴리스 페이지에서 새 버전을 다운로드하세요."
 
 about:
   version: "버전 %{version}"
@@ -328,6 +338,18 @@ about:
   license: MIT 또는 Apache 2.0 라이선스의 자유 소프트웨어.
   website: 웹사이트
   third_party: 서드파티 라이선스
+  version_label: "버전"
+  channel: "채널"
+  channel_preview: "미리 보기(알파)"
+  channel_stable: "안정판"
+  platform: "플랫폼"
+  license_label: "라이선스"
+  copyright: "저작권"
+  built_with: "Rust와 GPUI로 제작되었습니다. 글꼴은 Inter와 JetBrains Mono(SIL Open Font License)를 사용합니다."
+  translations: "영어 이외의 번역은 AI로 만들어졌습니다. 오류를 발견하면 알려 주세요. 수정하겠습니다."
+  guide: "사용자 가이드"
+  report: "문제 신고"
+  changelog: "새로운 기능"
 
 settings:
   title: 설정
@@ -343,6 +365,9 @@ settings:
     users: 사용자
     data: 데이터
     ai: "AI"
+    ai_services: "AI 서비스"
+    ai_assistant: "어시스턴트"
+    mcp: "AI 앱(MCP)"
   general:
     theme: 테마
     language: 언어
@@ -407,6 +432,11 @@ settings:
     standard: 표준 모드입니다.
     export: 내보내기
     export_hint: 비공개 또는 암호화되지 않은 모든 카드를 내보냅니다.
+  group:
+    app: "앱"
+    privacy: "개인 정보 및 보안"
+    ai: "AI"
+    data: "데이터"
 
 share:
   button: "공유…"
@@ -498,6 +528,25 @@ ai:
   activity:
     title: "최근 AI 활동"
     empty: "AI가 아직 아무것도 변경하지 않았습니다."
+  services:
+    yours: "내 AI 서비스"
+    none: "아직 AI 서비스가 없습니다. 아래에서 하나를 선택하세요. 클라우드 서비스는 제공업체의 API 키가 필요하고, 로컬 서비스는 이 컴퓨터에서 무료로 실행됩니다."
+    ready: "준비됨"
+    ready_local: "준비됨(이 컴퓨터에서)"
+    add: "서비스 추가"
+    cloud_title: "클라우드 서비스"
+    cloud_hint: "제공업체가 운영하는 강력한 모델입니다. 계정과 API 키가 필요합니다."
+    local_title: "이 컴퓨터에서"
+    local_hint: "무료이며 비공개: 앱을 설치하고 모델을 다운로드하면 Cardfile이 연결합니다."
+    custom: "기타 호환 서비스"
+    custom_hint: "OpenAI 호환 URL이면 무엇이든 가능"
+    connect: "%{name} 연결"
+    edit: "%{name} 편집"
+    key_hint: "제공업체 웹사이트에서 키를 만들어 여기에 붙여 넣으세요. 키는 시스템의 자격 증명 관리자에 저장됩니다."
+    model_hint: "추천 모델로 시작하면 좋습니다. “연결 테스트”를 누르면 계정에서 사용할 수 있는 모델도 불러옵니다."
+    local_steps: "앱이 실행 중이고 모델이 하나 이상 다운로드되어 있는지 확인하세요. API 키는 필요하지 않습니다."
+    advanced: "고급(서버 URL 및 API 형식)"
+    no_keyring: "시스템의 자격 증명 관리자를 사용할 수 없어 API 키가 Cardfile 데이터베이스에 저장됩니다."
 
 chat:
   title: "어시스턴트"
@@ -528,3 +577,6 @@ chat:
     reorder_cards: "카드 순서 변경함"
     delete_card: "휴지통으로 이동함"
     restore_card: "카드 복원함"
+
+attachment:
+  no_app: "이 컴퓨터에는 “%{name}”을(를) 열 수 있는 애플리케이션이 없습니다. 이 파일 형식용 프로그램(동영상의 경우 VLC 같은 미디어 플레이어)을 설치한 후 다시 시도하세요."

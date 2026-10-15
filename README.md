@@ -25,7 +25,8 @@ the [Zed](https://zed.dev) editor.
   and more): search, rewrite, format, tag and reorder cards by chat. Hidden until you set it up.
 - Built-in MCP server and API keys, so AI apps like Claude or Cursor can use your cards; every AI
   change is attributed to the AI and can be undone.
-- Audio and video attachments play inside the card; drag images and files between cards.
+- Audio attachments play inside the card; video opens in your system player. Drag images and
+  files between cards.
 - Chinese, Japanese, Korean and right-to-left scripts (Hebrew, Arabic, Persian).
 - 21 interface languages.
 - No telemetry.

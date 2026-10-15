@@ -65,6 +65,7 @@ editor:
     smaller: 小さく
     larger: 大きく
     fit: 幅に合わせる
+    keep_ratio: "縦横比を元に戻す"
   menu:
     cut: 切り取り
     copy: コピー
@@ -321,6 +322,15 @@ updates:
   latest: 最新バージョンをお使いです。
   failed: "更新を確認できませんでした: %{error}"
   managed: このインストールの更新は、お使いのアプリストアまたはパッケージマネージャーが管理しています。
+  dialog_title: "Cardfile %{version} が利用可能です"
+  current: "現在のバージョンは %{version} です。"
+  install: "更新して再起動"
+  later: "後で"
+  open_page: "リリースページ"
+  downloading: "ダウンロード中… %{mb} MB"
+  installing: "インストール中…"
+  installed_restart: "更新がインストールされました。Cardfile を再起動すると使用できます。"
+  manual: "この Cardfile は自動で更新できません。リリースページから新しいバージョンをダウンロードしてください。"
 
 about:
   version: "バージョン %{version}"
@@ -328,6 +338,18 @@ about:
   license: MIT または Apache 2.0 ライセンスのフリーソフトウェアです。
   website: ウェブサイト
   third_party: サードパーティのライセンス
+  version_label: "バージョン"
+  channel: "チャンネル"
+  channel_preview: "プレビュー（アルファ版）"
+  channel_stable: "安定版"
+  platform: "プラットフォーム"
+  license_label: "ライセンス"
+  copyright: "著作権"
+  built_with: "Rust と GPUI で構築。文字は Inter と JetBrains Mono（SIL Open Font License）で表示しています。"
+  translations: "英語以外の翻訳は AI によって作成されました。誤りを見つけたらお知らせください。修正いたします。"
+  guide: "ユーザーガイド"
+  report: "問題を報告"
+  changelog: "新機能"
 
 settings:
   title: 設定
@@ -343,6 +365,9 @@ settings:
     users: ユーザー
     data: データ
     ai: "AI"
+    ai_services: "AI サービス"
+    ai_assistant: "アシスタント"
+    mcp: "AI アプリ（MCP）"
   general:
     theme: テーマ
     language: 言語
@@ -407,6 +432,11 @@ settings:
     standard: 標準モードです。
     export: エクスポート
     export_hint: プライベートまたは暗号化されていないすべてのカードをエクスポートします。
+  group:
+    app: "アプリ"
+    privacy: "プライバシーとセキュリティ"
+    ai: "AI"
+    data: "データ"
 
 share:
   button: "共有…"
@@ -498,6 +528,25 @@ ai:
   activity:
     title: "最近の AI アクティビティ"
     empty: "AI はまだ何も変更していません。"
+  services:
+    yours: "あなたの AI サービス"
+    none: "AI サービスはまだありません。下から選んでください。クラウドサービスにはプロバイダーの API キーが必要です。ローカルサービスはこのコンピューター上で無料で動作します。"
+    ready: "準備完了"
+    ready_local: "準備完了（このコンピューター上）"
+    add: "サービスを追加"
+    cloud_title: "クラウドサービス"
+    cloud_hint: "プロバイダーが運用する高性能なモデルです。アカウントと API キーが必要です。"
+    local_title: "このコンピューター上"
+    local_hint: "無料でプライベート: アプリをインストールしてモデルをダウンロードすれば、Cardfile が接続します。"
+    custom: "その他の互換サービス"
+    custom_hint: "OpenAI 互換の任意の URL"
+    connect: "%{name} に接続"
+    edit: "%{name} を編集"
+    key_hint: "プロバイダーのウェブサイトでキーを作成し、ここに貼り付けてください。キーはシステムの資格情報マネージャーに保存されます。"
+    model_hint: "提案されたモデルから始めるのがおすすめです。「接続をテスト」を押すと、お使いのアカウントで利用できるモデルも読み込まれます。"
+    local_steps: "アプリが起動していて、少なくとも 1 つのモデルがダウンロード済みであることを確認してください。API キーは不要です。"
+    advanced: "詳細設定（サーバー URL と API 形式）"
+    no_keyring: "システムの資格情報マネージャーを利用できないため、API キーは Cardfile のデータベースに保存されます。"
 
 chat:
   title: "アシスタント"
@@ -528,3 +577,6 @@ chat:
     reorder_cards: "カードを並べ替えました"
     delete_card: "ごみ箱に移動しました"
     restore_card: "カードを復元しました"
+
+attachment:
+  no_app: "このコンピューターには「%{name}」を開けるアプリケーションがありません。このファイル形式に対応したプログラム（動画の場合は VLC などのメディアプレーヤー）をインストールして、もう一度お試しください。"

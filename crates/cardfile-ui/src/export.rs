@@ -241,7 +241,15 @@ pub fn open_attachment(blob: String, file_name: String, window: &mut Window, cx:
         std::fs::create_dir_all(&dir)?;
         let path = dir.join(self::file_name(&file_name));
         std::fs::write(&path, data)?;
-        open::that_detached(&path)?;
+        // `that` (not `that_detached`) reports when no application is associated with
+        // the file type, e.g. a video format and no media player installed.
+        open::that(&path).map_err(|e| {
+            tracing::warn!("open {}: {e}", path.display());
+            anyhow::anyhow!(cardfile_i18n::t_args(
+                "attachment.no_app",
+                &[("name", &file_name)]
+            ))
+        })?;
         anyhow::Ok(())
     });
     window

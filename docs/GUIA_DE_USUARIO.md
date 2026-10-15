@@ -70,9 +70,9 @@ Escribí `/` en una línea vacía para abrir un menú de bloques: títulos, list
 - **Insert → Table** crea una tabla de 3×3.
   - `Tab` pasa a la celda siguiente; en la última celda agrega una fila.
   - Con clic derecho sobre la tabla podés agregar o quitar filas y columnas.
-- Con clic derecho sobre una imagen podés achicarla, agrandarla o ajustarla al ancho.
+- Hacé clic en una imagen para ver sus manijas: arrastrá la **esquina** para cambiar el tamaño manteniendo la proporción, o el borde **derecho** o **inferior** para estirarla. Con clic derecho podés achicarla, agrandarla, ajustarla al ancho o recuperar su proporción.
 - **Arrastrá una imagen o un adjunto** para moverlo dentro de la tarjeta. Soltalo sobre otra tarjeta de la lista para moverlo ahí; mantené `Ctrl` (o `Alt`) al soltar para copiarlo.
-- **El audio y el video se reproducen en la tarjeta.** El audio MP3, WAV, OGG, FLAC y AAC/M4A y el video MP4 (H.264) tienen un reproductor con play/pausa, barra de avance y silencio. Los demás formatos se abren con el reproductor del sistema.
+- **El audio se reproduce en la tarjeta.** El audio MP3, WAV, OGG y FLAC tiene un reproductor con play/pausa, barra de avance y silencio. El video, el AAC/M4A y los demás formatos se abren con el reproductor del sistema; si ninguna aplicación de tu computadora puede abrirlos, Cardfile te avisa.
 
 ### Otros idiomas y escrituras
 
@@ -130,6 +130,10 @@ Cardfile incluye un servidor MCP para que apps como Claude Desktop, Claude Code,
 1. En **Configuración → IA**, activá **Ejecutar el servidor MCP** (escucha solo en `127.0.0.1`; puerto por defecto 7337).
 2. En **API keys**, creá una clave. Elegí *Solo lectura* o *Permitir tarjetas privadas* si querés. Copiala: se muestra una sola vez, junto con la configuración lista para pegar en cada app.
 3. La app de IA ve exactamente lo que ves vos. Sus cambios quedan registrados como hechos por Cardfile AI a través de esa clave. **Revocá** una clave para cortar el acceso al instante. La lista muestra cuándo se usó cada clave por última vez y *Actividad reciente de la IA* muestra qué cambió.
+
+## Actualizaciones
+
+Cardfile busca versiones nuevas al iniciar (Configuración → General). Cuando hay una, hacé clic en el aviso, mirá las novedades y elegí **Actualizar y reiniciar**: Cardfile la descarga, verifica su firma y la instala. Las copias instaladas desde Microsoft Store o un gestor de paquetes de Linux se actualizan por esa vía.
 
 ## Exportar y respaldar
 

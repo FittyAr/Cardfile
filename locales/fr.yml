@@ -65,6 +65,7 @@ editor:
     smaller: Plus petite
     larger: Plus grande
     fit: Ajuster à la largeur
+    keep_ratio: "Rétablir les proportions"
   menu:
     cut: Couper
     copy: Copier
@@ -321,6 +322,15 @@ updates:
   latest: Vous disposez de la dernière version.
   failed: "Impossible de rechercher les mises à jour : %{error}"
   managed: Les mises à jour de cette installation sont gérées par votre boutique d'applications ou votre gestionnaire de paquets.
+  dialog_title: "Cardfile %{version} est disponible"
+  current: "Vous avez la version %{version}."
+  install: "Mettre à jour et redémarrer"
+  later: "Plus tard"
+  open_page: "Page de la version"
+  downloading: "Téléchargement… %{mb} Mo"
+  installing: "Installation…"
+  installed_restart: "La mise à jour est installée. Redémarrez Cardfile pour l'utiliser."
+  manual: "Cette copie de Cardfile ne peut pas se mettre à jour elle-même. Téléchargez la nouvelle version depuis la page de la version."
 
 about:
   version: "Version %{version}"
@@ -328,6 +338,18 @@ about:
   license: Logiciel libre sous licence MIT ou Apache 2.0.
   website: Site web
   third_party: Licences tierces
+  version_label: "Version"
+  channel: "Canal"
+  channel_preview: "Préversion (alpha)"
+  channel_stable: "Stable"
+  platform: "Plateforme"
+  license_label: "Licence"
+  copyright: "Copyright"
+  built_with: "Conçu avec Rust et GPUI. Textes composés en Inter et JetBrains Mono (SIL Open Font License)."
+  translations: "Les traductions autres que l'anglais ont été réalisées avec l'IA. Signalez-nous toute erreur pour que nous puissions la corriger."
+  guide: "Guide de l'utilisateur"
+  report: "Signaler un problème"
+  changelog: "Nouveautés"
 
 settings:
   title: Paramètres
@@ -343,6 +365,9 @@ settings:
     users: Utilisateurs
     data: Données
     ai: "IA"
+    ai_services: "Services d'IA"
+    ai_assistant: "Assistant"
+    mcp: "Applications d'IA (MCP)"
   general:
     theme: Thème
     language: Langue
@@ -407,6 +432,11 @@ settings:
     standard: Mode standard.
     export: Exporter
     export_hint: Exporte toutes les fiches qui ne sont ni privées ni chiffrées.
+  group:
+    app: "Application"
+    privacy: "Confidentialité et sécurité"
+    ai: "IA"
+    data: "Données"
 
 share:
   button: "Partager…"
@@ -498,6 +528,25 @@ ai:
   activity:
     title: "Activité récente de l'IA"
     empty: "L'IA n'a encore rien modifié."
+  services:
+    yours: "Vos services d'IA"
+    none: "Aucun service d'IA pour l'instant. Choisissez-en un ci-dessous : les services cloud nécessitent une clé d'API du fournisseur ; les services locaux fonctionnent gratuitement sur cet ordinateur."
+    ready: "Prêt"
+    ready_local: "Prêt (sur cet ordinateur)"
+    add: "Ajouter un service"
+    cloud_title: "Services cloud"
+    cloud_hint: "Des modèles puissants exécutés par le fournisseur. Il vous faut un compte et une clé d'API."
+    local_title: "Sur cet ordinateur"
+    local_hint: "Gratuit et privé : installez l'application, téléchargez un modèle, et Cardfile s'y connecte."
+    custom: "Autre service compatible"
+    custom_hint: "Toute URL compatible OpenAI"
+    connect: "Connecter %{name}"
+    edit: "Modifier %{name}"
+    key_hint: "Créez une clé sur le site du fournisseur et collez-la ici. Elle est stockée dans le gestionnaire d'identifiants de votre système."
+    model_hint: "Le modèle suggéré est un bon point de départ. « Tester la connexion » charge aussi les modèles accessibles à votre compte."
+    local_steps: "Vérifiez que l'application est lancée et qu'au moins un modèle est téléchargé. Aucune clé d'API n'est nécessaire."
+    advanced: "Avancé (URL du serveur et format d'API)"
+    no_keyring: "Le gestionnaire d'identifiants de votre système n'est pas disponible : les clés d'API sont donc stockées dans la base de données de Cardfile."
 
 chat:
   title: "Assistant"
@@ -528,3 +577,6 @@ chat:
     reorder_cards: "Fiches réordonnées"
     delete_card: "Mise à la corbeille"
     restore_card: "Fiche restaurée"
+
+attachment:
+  no_app: "Aucune application de cet ordinateur ne peut ouvrir « %{name} ». Installez un programme pour ce type de fichier (pour les vidéos, un lecteur multimédia comme VLC) et réessayez."

@@ -7,7 +7,7 @@ use gpui_kit::component::notification::Notification;
 use gpui_kit::component::{ActiveTheme as _, WindowExt as _};
 use gpui_kit::{
     AppContext as _, Context, Entity, Focusable as _, InteractiveElement as _, IntoElement,
-    ParentElement as _, Render, Styled as _, Subscription, Task, Window, div,
+    ParentElement as _, Render, Styled as _, Subscription, Task, Window, div, px,
 };
 
 use crate::keymap::*;
@@ -108,6 +108,8 @@ impl CardfileApp {
         AppState::get_mut(cx).session = Some(session);
         // The MCP server is installation-wide; start it once the database is open.
         crate::mcp_host::McpServer::sync(cx);
+        crate::ai_settings::load_keys(cx);
+        crate::updater::cleanup(cx);
         let ws = cx.new(|cx| Workspace::new(window, cx));
         self._screen_sub = Some(cx.subscribe_in(
             &ws,
@@ -267,21 +269,100 @@ impl Render for CardfileApp {
             Screen::Login(v) => v.clone().into_any_element(),
             Screen::Workspace(v) => v.clone().into_any_element(),
         };
-        div()
-            .id("cardfile")
+        let title_bar = self.render_title_bar(cx);
+        let body = gpui_kit::component::v_flex()
             .size_full()
-            .bg(cx.theme().background)
-            .text_color(cx.theme().foreground)
-            .font_family(cx.theme().font_family.clone())
-            .on_any_mouse_down(cx.listener(|this, _, _, _| this.last_activity = Instant::now()))
-            .on_action(cx.listener(Self::open_settings))
-            .on_action(cx.listener(Self::quit))
-            .on_action(cx.listener(Self::command_palette))
-            .on_action(cx.listener(Self::open_keymap))
-            .on_action(cx.listener(Self::open_data_folder))
-            .on_action(cx.listener(Self::backup_now))
-            .on_action(cx.listener(Self::check_updates))
-            .on_action(cx.listener(Self::about))
-            .child(content)
+            .child(title_bar)
+            .child(div().flex_1().min_h_0().child(content));
+        gpui_kit::component::window_border().child(
+            div()
+                .id("cardfile")
+                .size_full()
+                .bg(cx.theme().background)
+                .text_color(cx.theme().foreground)
+                .font_family(cx.theme().font_family.clone())
+                .on_any_mouse_down(cx.listener(|this, _, _, _| this.last_activity = Instant::now()))
+                .on_action(cx.listener(Self::open_settings))
+                .on_action(cx.listener(Self::quit))
+                .on_action(cx.listener(Self::command_palette))
+                .on_action(cx.listener(Self::open_keymap))
+                .on_action(cx.listener(Self::open_data_folder))
+                .on_action(cx.listener(Self::backup_now))
+                .on_action(cx.listener(Self::check_updates))
+                .on_action(cx.listener(Self::about))
+                .child(body),
+        )
+    }
+}
+
+impl CardfileApp {
+    /// Cardfile's own title bar: app menu and title on the left, window controls
+    /// (drawn by the toolkit on Windows and Linux) on the right.
+    fn render_title_bar(&self, cx: &mut Context<Self>) -> impl IntoElement {
+        use gpui_kit::component::button::{Button, ButtonVariants as _};
+        use gpui_kit::component::menu::DropdownMenu as _;
+        use gpui_kit::component::{Sizable as _, h_flex};
+
+        let signed_in = matches!(self.screen, Screen::Workspace(_));
+        let multi = AppState::get(cx).app.auth_mode != AuthMode::NoPassword;
+        let user = AppState::session(cx)
+            .filter(|_| signed_in && AppState::get(cx).app.auth_mode == AuthMode::MultiUser)
+            .map(|s| s.user.display_name.clone());
+        let title = match user {
+            Some(u) => format!("Cardfile — {u}"),
+            None => "Cardfile".to_owned(),
+        };
+        let menu = Button::new("app-menu")
+            .ghost()
+            .xsmall()
+            .icon(gpui_kit::assets::IconName::Menu)
+            .dropdown_menu(move |menu, _, _| {
+                let mut menu = if signed_in {
+                    menu.menu(cardfile_i18n::t("card.new"), Box::new(NewCard))
+                        .menu(
+                            cardfile_i18n::t("menu.command_palette"),
+                            Box::new(CommandPalette),
+                        )
+                        .separator()
+                        .menu(cardfile_i18n::t("menu.settings"), Box::new(OpenSettings))
+                        .menu(cardfile_i18n::t("menu.keymap"), Box::new(OpenKeymap))
+                        .separator()
+                        .menu(cardfile_i18n::t("menu.export_all"), Box::new(ExportAll))
+                        .menu(cardfile_i18n::t("menu.backup"), Box::new(BackupNow))
+                        .menu(
+                            cardfile_i18n::t("menu.open_data_folder"),
+                            Box::new(OpenDataFolder),
+                        )
+                        .separator()
+                } else {
+                    menu
+                };
+                menu = menu
+                    .menu(
+                        cardfile_i18n::t("menu.check_updates"),
+                        Box::new(CheckForUpdates),
+                    )
+                    .menu(cardfile_i18n::t("menu.about"), Box::new(About));
+                if signed_in && multi {
+                    menu = menu
+                        .separator()
+                        .menu(cardfile_i18n::t("menu.lock"), Box::new(LockApp))
+                        .menu(cardfile_i18n::t("menu.sign_out"), Box::new(SignOut));
+                }
+                menu.separator()
+                    .menu(cardfile_i18n::t("menu.quit"), Box::new(Quit))
+            });
+        gpui_kit::component::TitleBar::new().child(
+            h_flex()
+                .gap(px(6.))
+                .child(menu)
+                .child(gpui_kit::img("cardfile/icon.png").size(px(16.)))
+                .child(
+                    div()
+                        .text_size(px(13.))
+                        .text_color(cx.theme().muted_foreground)
+                        .child(title),
+                ),
+        )
     }
 }

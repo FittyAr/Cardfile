@@ -3,6 +3,28 @@
 All notable changes to this project are documented here. Generated with
 [git-cliff](https://git-cliff.org) from Conventional Commits (`cliff.toml`).
 
+## [2.0.0-alpha.3] - 2026-10-15
+
+### Features
+
+- In-app updates: Cardfile downloads the new version, verifies its SHA-256 and minisign
+  signature, installs it and restarts (installer, standalone, portable and AppImage installs;
+  Store and package-manager installs keep notifying).
+- Own title bar in the style of Zed, with the app menu and window controls.
+- New flat logo and regenerated icons for every platform.
+- Bundled Inter and JetBrains Mono fonts, so text looks the same everywhere (UI and PDF).
+- Resize images with handles: the corner keeps proportions, the edges stretch freely.
+- Settings redesigned with a grouped sidebar; AI split into Services, Assistant and AI apps (MCP).
+- Clearer "Add AI service": pick a cloud or local provider, then API key, model and name.
+- AI service API keys are stored in the system's credential manager.
+- Right-to-left text in the card title and the assistant input.
+- Improved About window.
+
+### Changes
+
+- Patent-encumbered codecs removed: inline audio plays MP3, WAV, OGG/Vorbis and FLAC; video and
+  AAC open in the system player, and Cardfile says so when no application can open a file.
+
 ## [2.0.0-alpha.2] - 2026-10-14
 
 ### Features

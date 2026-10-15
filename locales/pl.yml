@@ -65,6 +65,7 @@ editor:
     smaller: Mniejszy
     larger: Większy
     fit: Dopasuj do szerokości
+    keep_ratio: "Przywróć proporcje"
   menu:
     cut: Wytnij
     copy: Kopiuj
@@ -321,6 +322,15 @@ updates:
   latest: Masz najnowszą wersję.
   failed: "Nie udało się sprawdzić aktualizacji: %{error}"
   managed: Aktualizacjami tej instalacji zarządza Twój sklep z aplikacjami lub menedżer pakietów.
+  dialog_title: "Dostępny jest Cardfile %{version}"
+  current: "Masz wersję %{version}."
+  install: "Zaktualizuj i uruchom ponownie"
+  later: "Później"
+  open_page: "Strona wydania"
+  downloading: "Pobieranie… %{mb} MB"
+  installing: "Instalowanie…"
+  installed_restart: "Aktualizacja została zainstalowana. Uruchom ponownie Cardfile, aby z niej korzystać."
+  manual: "Ta kopia programu Cardfile nie może zaktualizować się sama. Pobierz nową wersję ze strony wydania."
 
 about:
   version: "Wersja %{version}"
@@ -328,6 +338,18 @@ about:
   license: Wolne oprogramowanie na licencji MIT lub Apache 2.0.
   website: Strona internetowa
   third_party: Licencje stron trzecich
+  version_label: "Wersja"
+  channel: "Kanał"
+  channel_preview: "Wersja zapoznawcza (alfa)"
+  channel_stable: "Stabilna"
+  platform: "Platforma"
+  license_label: "Licencja"
+  copyright: "Prawa autorskie"
+  built_with: "Zbudowano w Rust i GPUI. Tekst złożono krojami Inter i JetBrains Mono (SIL Open Font License)."
+  translations: "Tłumaczenia na języki inne niż angielski wykonano za pomocą AI. Zgłaszaj błędy, abyśmy mogli je poprawić."
+  guide: "Podręcznik użytkownika"
+  report: "Zgłoś problem"
+  changelog: "Co nowego"
 
 settings:
   title: Ustawienia
@@ -343,6 +365,9 @@ settings:
     users: Użytkownicy
     data: Dane
     ai: "AI"
+    ai_services: "Usługi AI"
+    ai_assistant: "Asystent"
+    mcp: "Aplikacje AI (MCP)"
   general:
     theme: Motyw
     language: Język
@@ -407,6 +432,11 @@ settings:
     standard: Tryb standardowy.
     export: Eksportuj
     export_hint: Eksportuje wszystkie karty, które nie są prywatne ani zaszyfrowane.
+  group:
+    app: "Aplikacja"
+    privacy: "Prywatność i bezpieczeństwo"
+    ai: "AI"
+    data: "Dane"
 
 share:
   button: "Udostępnij…"
@@ -498,6 +528,25 @@ ai:
   activity:
     title: "Ostatnia aktywność AI"
     empty: "AI jeszcze niczego nie zmieniła."
+  services:
+    yours: "Twoje usługi AI"
+    none: "Nie masz jeszcze żadnej usługi AI. Wybierz jedną poniżej: usługi w chmurze wymagają klucza API od dostawcy, a lokalne działają bezpłatnie na tym komputerze."
+    ready: "Gotowe"
+    ready_local: "Gotowe (na tym komputerze)"
+    add: "Dodaj usługę"
+    cloud_title: "Usługi w chmurze"
+    cloud_hint: "Wydajne modele uruchamiane przez dostawcę. Potrzebujesz konta i klucza API."
+    local_title: "Na tym komputerze"
+    local_hint: "Bezpłatnie i prywatnie: zainstaluj aplikację, pobierz model, a Cardfile się z nim połączy."
+    custom: "Inna zgodna usługa"
+    custom_hint: "Dowolny URL zgodny z OpenAI"
+    connect: "Połącz z %{name}"
+    edit: "Edytuj %{name}"
+    key_hint: "Utwórz klucz na stronie dostawcy i wklej go tutaj. Jest przechowywany w menedżerze poświadczeń Twojego systemu."
+    model_hint: "Sugerowany model to dobry początek. „Testuj połączenie” wczytuje też modele dostępne dla Twojego konta."
+    local_steps: "Upewnij się, że aplikacja jest uruchomiona i ma pobrany co najmniej jeden model. Klucz API nie jest potrzebny."
+    advanced: "Zaawansowane (URL serwera i format API)"
+    no_keyring: "Menedżer poświadczeń Twojego systemu jest niedostępny, więc klucze API są przechowywane w bazie danych Cardfile."
 
 chat:
   title: "Asystent"
@@ -528,3 +577,6 @@ chat:
     reorder_cards: "Zmieniono kolejność kart"
     delete_card: "Przeniesiono do kosza"
     restore_card: "Przywrócono kartę"
+
+attachment:
+  no_app: "Na tym komputerze nie ma aplikacji, która może otworzyć „%{name}”. Zainstaluj program dla tego typu plików (dla filmów odtwarzacz multimedialny, np. VLC) i spróbuj ponownie."

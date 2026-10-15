@@ -65,6 +65,7 @@ editor:
     smaller: Kleiner
     larger: Größer
     fit: An Breite anpassen
+    keep_ratio: "Seitenverhältnis wiederherstellen"
   menu:
     cut: Ausschneiden
     copy: Kopieren
@@ -321,6 +322,15 @@ updates:
   latest: Sie haben die neueste Version.
   failed: "Die Suche nach Updates ist fehlgeschlagen: %{error}"
   managed: Updates für diese Installation werden von Ihrem App-Store oder Paketmanager verwaltet.
+  dialog_title: "Cardfile %{version} ist verfügbar"
+  current: "Sie haben Version %{version}."
+  install: "Aktualisieren und neu starten"
+  later: "Später"
+  open_page: "Release-Seite"
+  downloading: "Wird heruntergeladen… %{mb} MB"
+  installing: "Wird installiert…"
+  installed_restart: "Das Update ist installiert. Starten Sie Cardfile neu, um es zu verwenden."
+  manual: "Diese Cardfile-Kopie kann sich nicht selbst aktualisieren. Laden Sie die neue Version von der Release-Seite herunter."
 
 about:
   version: "Version %{version}"
@@ -328,6 +338,18 @@ about:
   license: Freie Software unter der MIT- oder Apache-2.0-Lizenz.
   website: Webseite
   third_party: Lizenzen von Drittanbietern
+  version_label: "Version"
+  channel: "Kanal"
+  channel_preview: "Vorschau (Alpha)"
+  channel_stable: "Stabil"
+  platform: "Plattform"
+  license_label: "Lizenz"
+  copyright: "Copyright"
+  built_with: "Entwickelt mit Rust und GPUI. Gesetzt in Inter und JetBrains Mono (SIL Open Font License)."
+  translations: "Übersetzungen in andere Sprachen als Englisch wurden mit KI erstellt. Bitte melden Sie Fehler, damit wir sie beheben können."
+  guide: "Benutzerhandbuch"
+  report: "Problem melden"
+  changelog: "Neuigkeiten"
 
 settings:
   title: Einstellungen
@@ -343,6 +365,9 @@ settings:
     users: Benutzer
     data: Daten
     ai: "KI"
+    ai_services: "KI-Dienste"
+    ai_assistant: "Assistent"
+    mcp: "KI-Apps (MCP)"
   general:
     theme: Design
     language: Sprache
@@ -407,6 +432,11 @@ settings:
     standard: Standardmodus.
     export: Exportieren
     export_hint: Exportiert alle Karten, die weder privat noch verschlüsselt sind.
+  group:
+    app: "App"
+    privacy: "Datenschutz und Sicherheit"
+    ai: "KI"
+    data: "Daten"
 
 share:
   button: "Teilen…"
@@ -498,6 +528,25 @@ ai:
   activity:
     title: "Letzte KI-Aktivität"
     empty: "Die KI hat noch nichts geändert."
+  services:
+    yours: "Ihre KI-Dienste"
+    none: "Noch kein KI-Dienst. Wählen Sie unten einen aus: Cloud-Dienste benötigen einen API-Schlüssel des Anbieters; lokale Dienste laufen kostenlos auf diesem Computer."
+    ready: "Bereit"
+    ready_local: "Bereit (auf diesem Computer)"
+    add: "Dienst hinzufügen"
+    cloud_title: "Cloud-Dienste"
+    cloud_hint: "Leistungsstarke Modelle, die der Anbieter betreibt. Sie benötigen ein Konto und einen API-Schlüssel."
+    local_title: "Auf diesem Computer"
+    local_hint: "Kostenlos und privat: Installieren Sie die App, laden Sie ein Modell herunter, und Cardfile verbindet sich damit."
+    custom: "Anderer kompatibler Dienst"
+    custom_hint: "Beliebige OpenAI-kompatible URL"
+    connect: "%{name} verbinden"
+    edit: "%{name} bearbeiten"
+    key_hint: "Erstellen Sie auf der Website des Anbieters einen Schlüssel und fügen Sie ihn hier ein. Er wird in der Anmeldeinformationsverwaltung Ihres Systems gespeichert."
+    model_hint: "Das vorgeschlagene Modell ist ein guter Anfang. „Verbindung testen“ lädt außerdem die Modelle, die Ihr Konto nutzen kann."
+    local_steps: "Stellen Sie sicher, dass die App läuft und mindestens ein Modell heruntergeladen ist. Ein API-Schlüssel ist nicht nötig."
+    advanced: "Erweitert (Server-URL und API-Format)"
+    no_keyring: "Die Anmeldeinformationsverwaltung Ihres Systems ist nicht verfügbar, daher werden API-Schlüssel in der Cardfile-Datenbank gespeichert."
 
 chat:
   title: "Assistent"
@@ -528,3 +577,6 @@ chat:
     reorder_cards: "Karten neu angeordnet"
     delete_card: "In den Papierkorb verschoben"
     restore_card: "Karte wiederhergestellt"
+
+attachment:
+  no_app: "Keine Anwendung auf diesem Computer kann „%{name}“ öffnen. Installieren Sie ein Programm für diesen Dateityp (für Videos einen Mediaplayer wie VLC) und versuchen Sie es erneut."

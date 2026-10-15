@@ -12,13 +12,14 @@ use std::time::Duration;
 use cardfile_agent::Scope;
 use cardfile_ai::{AgentEvent, Message, ProviderConfig, ToolSpec};
 use cardfile_core::CardId;
+use cardfile_editor::{EditorEvent, RichEditor};
 use cardfile_i18n::t;
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
-use gpui_kit::component::input::{Input, InputEvent, InputState};
 use gpui_kit::component::menu::{DropdownMenu as _, PopupMenuItem};
 use gpui_kit::component::text::TextView;
 use gpui_kit::component::{ActiveTheme as _, Sizable as _, h_flex, v_flex};
+use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::{
     AnyElement, AppContext as _, Context, Entity, EventEmitter, Focusable as _,
     InteractiveElement as _, IntoElement, ParentElement as _, Render, ScrollHandle, SharedString,
@@ -59,7 +60,8 @@ enum Msg {
 pub struct ChatPanel {
     items: Vec<Item>,
     history: Vec<Message>,
-    input: Entity<InputState>,
+    /// One-line editor: unlike the toolkit's input it handles right-to-left text.
+    input: Entity<RichEditor>,
     cancel: Option<Arc<AtomicBool>>,
     poll: Option<Task<()>>,
     scroll: ScrollHandle,
@@ -70,14 +72,21 @@ impl EventEmitter<ChatEvent> for ChatPanel {}
 
 impl ChatPanel {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let input = cx.new(|cx| InputState::new(window, cx).placeholder(t("chat.placeholder")));
-        let subs = vec![
-            cx.subscribe_in(&input, window, |this, _, ev: &InputEvent, window, cx| {
-                if let InputEvent::PressEnter { .. } = ev {
-                    this.send(window, cx);
-                }
-            }),
-        ];
+        let input = cx.new(|cx| {
+            let mut e = RichEditor::new(cardfile_doc::Document::default(), cx);
+            e.set_single_line(true);
+            e.set_font_size(px(13.), cx);
+            e.set_placeholder(Some(cardfile_i18n::t_raw("chat.placeholder")));
+            e
+        });
+        let subs =
+            vec![
+                cx.subscribe_in(&input, window, |this, _, ev: &EditorEvent, window, cx| {
+                    if let EditorEvent::Submit = ev {
+                        this.send(window, cx);
+                    }
+                }),
+            ];
         Self {
             items: Vec::new(),
             history: Vec::new(),
@@ -118,7 +127,7 @@ impl ChatPanel {
         if self.running() {
             return;
         }
-        let text = self.input.read(cx).value().trim().to_string();
+        let text = self.input.read(cx).text().trim().to_string();
         if text.is_empty() {
             return;
         }
@@ -131,7 +140,7 @@ impl ChatPanel {
             return;
         };
         cx.emit(ChatEvent::BeforeRun);
-        self.input.update(cx, |s, cx| s.set_value("", window, cx));
+        self.input.update(cx, |e, cx| e.set_text("", cx));
         self.items.push(Item::User(text.clone().into()));
         self.history.push(Message::user(text));
         let db = AppState::db(cx);
@@ -453,7 +462,13 @@ impl Render for ChatPanel {
             .child(
                 div()
                     .flex_1()
-                    .child(Input::new(&self.input).disabled(running)),
+                    .h(px(30.))
+                    .px(px(8.))
+                    .rounded(px(6.))
+                    .border_1()
+                    .border_color(th.input)
+                    .when(running, |d| d.opacity(0.5))
+                    .child(self.input.clone()),
             )
             .child(if running {
                 Button::new("chat-stop")
