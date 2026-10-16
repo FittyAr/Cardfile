@@ -50,6 +50,15 @@ CARDS_DIR="$CARDS_VENDOR_DIR/Cardfile"
 PREVIOUS_CARDS_DIR="$DATA_HOME/cardfile"
 # Installed by the cargo-dist installer of 2.0.0-alpha.1 to 2.0.0-alpha.3.
 LEGACY_DIR="$HOME/.cardfile/bin"
+# That installer appended `. "$HOME/.cardfile/bin/env"` to the shell profiles
+# without checking that the file exists. Once ~/.cardfile is gone, every
+# `/bin/sh` that reads ~/.profile aborts there, and display managers (SDDM,
+# Plasma Login, GDM) do that before starting the desktop: the login ends in a
+# black screen. repair_shell_profiles guards or removes those lines.
+LEGACY_ENV_LINES='. "$HOME/.cardfile/bin/env"|source "$HOME/.cardfile/bin/env"'
+GUARDED_ENV_LINE='if [ -f "$HOME/.cardfile/bin/env" ]; then . "$HOME/.cardfile/bin/env"; fi'
+FISH_ENV_FILE="$HOME/.config/fish/conf.d/cardfile.env.fish"
+GUARDED_FISH_LINE='test -f "$HOME/.cardfile/bin/env.fish"; and source "$HOME/.cardfile/bin/env.fish"'
 ICON_SIZES="16 24 32 48 64 128 256 512"
 
 VERSION=""
@@ -189,6 +198,7 @@ uninstall() {
     done
     # Leave the shared FittyAr folder only while other apps use it.
     rmdir "$CARDS_VENDOR_DIR" 2> /dev/null || true
+    repair_shell_profiles
 }
 
 # ─── Install ─────────────────────────────────────────────────────────────────
@@ -391,6 +401,43 @@ install_files() {
     ln -sf "$LIB_DIR/cardfile" "$BIN_DIR/cardfile"
 }
 
+# repair_shell_profiles: while the legacy env file exists its lines are only
+# guarded (same PATH, safe if the folder disappears later); without it they
+# are removed. Files are rewritten in place (symlinks and permissions kept),
+# and only when something changes.
+repair_shell_profiles() {
+    if [ -f "$LEGACY_DIR/env" ]; then MODE=guard; else MODE=remove; fi
+    ZDOT="${ZDOTDIR:-$HOME}"
+    for rc in "$HOME/.profile" "$HOME/.bash_profile" "$HOME/.bash_login" "$HOME/.bashrc"         "$ZDOT/.zshrc" "$ZDOT/.zshenv" "$HOME/.zshrc" "$HOME/.zshenv"; do
+        [ -f "$rc" ] || continue
+        grep -qF '/.cardfile/bin/env' "$rc" 2> /dev/null || continue
+        NEW="${TEMP_DIR:-/tmp}/profile.$$"
+        awk -v mode="$MODE" -v legacy="$LEGACY_ENV_LINES" -v guarded="$GUARDED_ENV_LINE" '
+            BEGIN { n = split(legacy, raw, "|") }
+            {
+                line = $0
+                sub(/^[ 	]+/, "", line)
+                sub(/[ 	]+$/, "", line)
+                ours = (line == guarded)
+                for (i = 1; i <= n; i++) if (line == raw[i]) ours = 2
+                if (!ours) { print; next }
+                if (mode == "remove") next
+                if (ours == 2) { match($0, /^[ 	]*/); print substr($0, 1, RLENGTH) guarded } else print
+            }' "$rc" > "$NEW" || { rm -f "$NEW"; continue; }
+        if ! cmp -s "$NEW" "$rc"; then
+            cat "$NEW" > "$rc" && echo "Repaired the Cardfile line in $rc."
+        fi
+        rm -f "$NEW"
+    done
+    [ -f "$FISH_ENV_FILE" ] || return 0
+    if [ "$MODE" = "remove" ]; then
+        rm -f "$FISH_ENV_FILE" && echo "Removed $FISH_ENV_FILE."
+    elif [ "$(cat "$FISH_ENV_FILE")" != "$GUARDED_FISH_LINE" ]; then
+        printf '%s
+' "$GUARDED_FISH_LINE" > "$FISH_ENV_FILE"
+    fi
+}
+
 remove_legacy() {
     # The earlier layout of this same installer: replaced silently.
     if [ -f "$PREVIOUS_DIR/cardfile" ]; then
@@ -402,7 +449,7 @@ remove_legacy() {
     if ask "Remove it (your cards are kept)?"; then
         rm -rf "$LEGACY_DIR"
         rmdir "$(dirname "$LEGACY_DIR")" 2> /dev/null || true
-        echo "Removed. If your shell profile adds $LEGACY_DIR to PATH, you can delete that line."
+        echo "Removed."
     fi
 }
 
@@ -465,6 +512,7 @@ main() {
     install_files
     install_desktop_integration
     remove_legacy
+    repair_shell_profiles
     check_runtime
     print_summary
 }

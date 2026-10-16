@@ -3,6 +3,21 @@
 All notable changes to this project are documented here. Generated with
 [git-cliff](https://git-cliff.org) from Conventional Commits (`cliff.toml`).
 
+## [2.0.0-alpha.4] - 2026-10-16
+
+### Bug Fixes
+
+- Linux: removing the old `~/.cardfile` installation no longer breaks the graphical login (black
+  screen). The cargo-dist installer of alpha.1 to alpha.3 sourced `~/.cardfile/bin/env` from
+  `~/.profile`, `~/.bashrc`, `~/.zshrc` and fish without checking that it exists. `install.sh`
+  now removes those lines with the old installation (and guards them while it stays), and
+  Cardfile guards them on every start.
+
+### Features
+
+- One-line installers that always install the newest release, under a shared FittyAr folder;
+  the cards live in the FittyAr folder on Linux and macOS too.
+
 ## [2.0.0-alpha.3] - 2026-10-15
 
 ### Features

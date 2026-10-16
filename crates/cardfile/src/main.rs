@@ -2,6 +2,10 @@
 
 #![cfg_attr(all(windows, not(debug_assertions)), windows_subsystem = "windows")]
 
+// Only called on Linux; built everywhere so its tests run on every platform.
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
+mod shell_profiles;
+
 use std::path::PathBuf;
 
 use cardfile_ui::DataPaths;
@@ -86,5 +90,7 @@ fn main() {
         eprintln!("{info}");
     }));
     tracing::info!(version = env!("CARGO_PKG_VERSION"), data = %paths.root.display(), portable = paths.portable, "starting Cardfile");
+    #[cfg(target_os = "linux")]
+    shell_profiles::repair();
     cardfile_ui::run(paths);
 }
