@@ -41,7 +41,7 @@ dark ink so a single raster works on both UI themes.
 | `assets/logo_trasparente_1.png` | 458 × 462 | `icon.svg` (toolbar icon, Inno Setup small wizard image) |
 | `assets/logo_trasparente_2.png` | 563 × 129 | `wordmark.svg` |
 | `assets/logo.png` | 1254 × 1254, opaque | `logo-stacked.svg` on `#FFF6F1` |
-| `assets/icon.ico`, `packaging/windows/cardfile.ico` | 16, 24, 32, 48, 64, 128, 256 | `icon-small.svg` (≤ 32) + `icon.svg` |
+| `packaging/windows/cardfile.ico` | 16, 24, 32, 48, 64, 128, 256 | `icon-small.svg` (≤ 32) + `icon.svg` |
 | `packaging/linux/icons/<n>x<n>/ar.fittyar.Cardfile.png` | 16, 24, 32, 48, 64, 128, 256, 512 | same |
 | `packaging/windows/msix/Assets/*.png` | Store sizes (44, 50, 71, 150, 256, 310, 310 × 150, 620 × 300) | `icon.svg` |
 

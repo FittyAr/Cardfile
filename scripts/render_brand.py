@@ -302,7 +302,6 @@ def main() -> None:
     opaque = Image.new("RGBA", (1254, 1254), WARM_WHITE)
     opaque.alpha_composite(render(stacked, 900, 996), ((1254 - 900) // 2, (1254 - 996) // 2))
     save(opaque.convert("RGB"), "assets/logo.png")
-    save_ico("assets/icon.ico")
 
     # Linux hicolor icons.
     for s in (16, 24, 32, 48, 64, 128, 256, 512):
