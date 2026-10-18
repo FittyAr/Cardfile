@@ -360,23 +360,9 @@ mod tests {
     #[test]
     fn drops_only_the_release_notes_heading() {
         assert_eq!(
-            release_notes_body(
-                "## Release Notes
-
-### Bug Fixes
-- x
-"
-            ),
-            "### Bug Fixes
-- x"
+            release_notes_body("## Release Notes\n\n### Bug Fixes\n- x\n"),
+            "### Bug Fixes\n- x"
         );
-        assert_eq!(
-            release_notes_body(
-                "### Features
-- y"
-            ),
-            "### Features
-- y"
-        );
+        assert_eq!(release_notes_body("### Features\n- y"), "### Features\n- y");
     }
 }
