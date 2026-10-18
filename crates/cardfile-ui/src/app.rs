@@ -35,7 +35,16 @@ pub struct CardfileApp {
 impl CardfileApp {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         // Any keystroke counts as activity for the auto-lock timer.
-        let subs = vec![cx.observe_keystrokes(|this, _, _, _| this.last_activity = Instant::now())];
+        let subs = vec![
+            cx.observe_keystrokes(|this, _, _, _| this.last_activity = Instant::now()),
+            // Every quit path (menu, Ctrl+Q, the updater's restart) saves the open card.
+            cx.on_app_quit(|this, cx| {
+                if let Screen::Workspace(ws) = &this.screen {
+                    ws.update(cx, |ws, cx| ws.flush(cx));
+                }
+                async {}
+            }),
+        ];
         let mut app = Self {
             screen: Screen::Loading,
             last_activity: Instant::now(),
@@ -180,9 +189,7 @@ impl CardfileApp {
     }
 
     fn quit(&mut self, _: &Quit, _: &mut Window, cx: &mut Context<Self>) {
-        if let Screen::Workspace(ws) = &self.screen {
-            ws.update(cx, |ws, cx| ws.flush(cx));
-        }
+        // The open card is saved by the `on_app_quit` hook.
         cx.quit();
     }
 
