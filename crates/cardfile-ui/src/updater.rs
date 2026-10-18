@@ -122,20 +122,20 @@ pub fn show_dialog(release: Arc<Release>, window: &mut Window, cx: &mut App) {
     window.open_dialog(cx, move |dialog, _, cx| {
         let th = cx.theme();
         let phase = state.read(cx).phase.clone();
-        let notes = release.notes.trim().to_owned();
-        let mut body =
-            v_flex()
-                .gap(px(10.))
-                .w(px(520.))
-                .child(div().text_color(th.muted_foreground).child(t_args(
-                    "updates.current",
-                    &[("version", env!("CARGO_PKG_VERSION"))],
-                )));
+        let notes = release_notes_body(&release.notes);
+        let mut body = v_flex().gap(px(10.)).w_full().min_w_0().child(
+            div().text_color(th.muted_foreground).child(t_args(
+                "updates.current",
+                &[("version", env!("CARGO_PKG_VERSION"))],
+            )),
+        );
         if !notes.is_empty() {
             body = body.child(
                 div()
                     .id("release-notes")
-                    .max_h(px(300.))
+                    .w_full()
+                    .min_w_0()
+                    .max_h(px(320.))
                     .overflow_y_scroll()
                     .p(px(10.))
                     .rounded(px(6.))
@@ -186,6 +186,8 @@ pub fn show_dialog(release: Arc<Release>, window: &mut Window, cx: &mut App) {
             release.clone(),
         );
         dialog
+            // Fits the release notes; shrinks with small windows.
+            .w(px(600.))
             .title(t_args(
                 "updates.dialog_title",
                 &[("version", &release.version.to_string())],
@@ -232,6 +234,19 @@ pub fn show_dialog(release: Arc<Release>, window: &mut Window, cx: &mut App) {
                     }),
             )
     });
+}
+
+/// The release notes without their leading "Release Notes" heading, which only
+/// repeats the dialog title.
+fn release_notes_body(notes: &str) -> String {
+    let notes = notes.trim();
+    let first = notes.lines().next().unwrap_or_default();
+    let heading = first.trim_start_matches('#').trim();
+    if first.starts_with('#') && heading.eq_ignore_ascii_case("release notes") {
+        notes[first.len()..].trim().to_owned()
+    } else {
+        notes.to_owned()
+    }
 }
 
 fn start(release: Arc<Release>, state: Entity<UpdateState>, window: &mut Window, cx: &mut App) {
@@ -310,11 +325,11 @@ fn start(release: Arc<Release>, state: Entity<UpdateState>, window: &mut Window,
                         });
                         return;
                     }
-                    window.dispatch_action(Box::new(crate::keymap::Quit), cx);
+                    // Quit directly: a `Quit` action dispatched while the dialog has
+                    // focus never reaches the app view, which left the old version open.
+                    cx.quit();
                 }
-                Ok(InstallOutcome::QuitForInstaller) => {
-                    window.dispatch_action(Box::new(crate::keymap::Quit), cx);
-                }
+                Ok(InstallOutcome::QuitForInstaller) => cx.quit(),
                 Err(cardfile_updater::UpdateError::Cancelled) => {
                     state.update(cx, |s, cx| {
                         s.phase = Phase::Ready;
@@ -336,4 +351,18 @@ fn start(release: Arc<Release>, state: Entity<UpdateState>, window: &mut Window,
 #[allow(dead_code)]
 fn _sizable(b: Button) -> Button {
     b.xsmall()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::release_notes_body;
+
+    #[test]
+    fn drops_only_the_release_notes_heading() {
+        assert_eq!(
+            release_notes_body("## Release Notes\n\n### Bug Fixes\n- x\n"),
+            "### Bug Fixes\n- x"
+        );
+        assert_eq!(release_notes_body("### Features\n- y"), "### Features\n- y");
+    }
 }
