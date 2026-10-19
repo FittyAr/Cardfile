@@ -6,6 +6,7 @@ mod assets;
 mod card_pane;
 mod chat;
 mod dialogs;
+mod dictionaries;
 mod export;
 mod history;
 pub mod keymap;

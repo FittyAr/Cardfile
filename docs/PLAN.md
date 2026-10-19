@@ -96,7 +96,7 @@ registran en `Cargo.lock`. Valores verificados al 2026-10-14:
 | PDF (export) | `krilla` + `harfrust` (medición; fuentes del sistema) | última | MIT OR Apache-2.0 / MIT |
 | Resaltado de código | `syntect` + `two-face` (vía gpui-component) | última | MIT |
 | Imágenes | `image` | última | MIT OR Apache-2.0 |
-| Corrector | `spellbook` (Hunspell-compatible) + diccionario en_US de `wooorm/dictionaries` | última | MPL-2.0* / MIT-like |
+| Corrector | `spellbook` (Hunspell-compatible) + diccionarios en_US y es_ES de `wooorm/dictionaries` (el resto se descarga a pedido) | última | MPL-2.0* / MIT-like; es_ES bajo MPL-1.1 |
 | Audio (adjuntos) | `rodio` (salida vía `cpal`, sin decoders propios) + `symphonia` (MP3, WAV, OGG/Vorbis, FLAC; sin AAC ni MP4) | 0.23.0 / 0.6.1 | MIT OR Apache-2.0 / MPL-2.0* |
 | i18n | `rust-i18n` | última | MIT |
 | Directorios | `directories` | última | MIT OR Apache-2.0 |
@@ -429,6 +429,12 @@ Cada fase termina con PR(s) mergeados, CI verde y criterios de aceptación cumpl
 ### Fase 7 — Corrector ortográfico
 - `spellbook` + diccionario en_US, subrayado, sugerencias, "agregar al diccionario", activar/desactivar,
   diccionarios por idioma preparados para la traducción.
+- en_US y es_ES vienen en todos los paquetes. Los demás idiomas de la interfaz con diccionario
+  Hunspell (de, fa, fr, it, ko, nl, pl, pt-BR, ru, uk, vi) se descargan a pedido desde Ajustes, del
+  mismo commit fijado de `wooorm/dictionaries` y verificados con SHA-256, a la carpeta de datos del
+  usuario. No forman parte de la distribución de Cardfile (algunos son GPL; los baja el usuario).
+- Al cambiar el idioma de la interfaz se elige el diccionario de ese idioma si está instalado; se
+  puede elegir otro en Ajustes → Editor.
 
 ### Fase 8 — Empaquetado y distribución
 - `dist` + jobs extra: Inno Setup actualizado (branding actual, idiomas),

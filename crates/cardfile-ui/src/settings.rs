@@ -206,6 +206,10 @@ pub struct SettingsView {
     new_user_pw: Entity<InputState>,
     user_error: Option<SharedString>,
     auth_error: Option<SharedString>,
+    /// Installed spelling dictionaries; `None` until the folders were read.
+    dictionaries: Option<Vec<String>>,
+    /// The dictionary being downloaded.
+    installing_dictionary: Option<&'static str>,
 }
 
 const AUTO_LOCK: &[u32] = &[0, 60, 300, 900, 1800, 3600];
@@ -234,9 +238,91 @@ impl SettingsView {
             new_user_pw: masked(t("login.password"), window, cx),
             user_error: None,
             auth_error: None,
+            dictionaries: None,
+            installing_dictionary: None,
         };
         v.load_users(cx);
+        v.load_dictionaries(cx);
         v
+    }
+
+    fn load_dictionaries(&mut self, cx: &mut Context<Self>) {
+        let dirs = crate::spell::search_dirs(cx);
+        let task = cx.background_spawn(async move { crate::spell::languages_in(&dirs) });
+        cx.spawn(async move |this, cx| {
+            let langs = task.await;
+            let _ = this.update(cx, |this, cx| {
+                this.dictionaries = Some(langs);
+                cx.notify();
+            });
+        })
+        .detach();
+    }
+
+    fn has_dictionary(&self, code: &str) -> bool {
+        self.dictionaries
+            .as_ref()
+            .is_some_and(|d| d.iter().any(|l| l == code))
+    }
+
+    /// Follow the interface language with the spelling dictionary when one is installed.
+    /// A different dictionary can still be picked afterwards in Editor.
+    fn match_spell_language(&mut self, locale: &str, window: &mut Window, cx: &mut Context<Self>) {
+        if let Some(code) = crate::dictionaries::for_locale(locale)
+            && self.has_dictionary(code)
+            && AppState::user_settings(cx).spellcheck_language != code
+        {
+            self.set(window, cx, |s| s.spellcheck_language = code.into());
+        }
+    }
+
+    fn install_dictionary(
+        &mut self,
+        code: &'static str,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if self.installing_dictionary.is_some() {
+            return;
+        }
+        self.installing_dictionary = Some(code);
+        cx.notify();
+        let dest = AppState::get(cx).paths.dictionaries();
+        let task = cx.background_spawn(async move { crate::dictionaries::install(code, &dest) });
+        cx.spawn_in(window, async move |this, cx| {
+            let result = task.await;
+            let _ = this.update_in(cx, |this, window, cx| {
+                this.installing_dictionary = None;
+                match result {
+                    Ok(()) => {
+                        crate::spell::forget(code, cx);
+                        let list = this.dictionaries.get_or_insert_default();
+                        if !list.iter().any(|l| l == code) {
+                            list.push(code.to_owned());
+                            list.sort();
+                        }
+                        let locale = AppState::user_settings(cx).language;
+                        this.match_spell_language(&locale, window, cx);
+                        window.push_notification(
+                            Notification::success(t("settings.general.dictionary_installed")),
+                            cx,
+                        );
+                    }
+                    Err(e) => {
+                        tracing::warn!("installing dictionary {code}: {e:#}");
+                        window.push_notification(
+                            Notification::error(t_args(
+                                "settings.general.dictionary_failed",
+                                &[("error", &format!("{e:#}"))],
+                            )),
+                            cx,
+                        );
+                    }
+                }
+                cx.notify();
+            });
+        })
+        .detach();
     }
 
     fn select(&mut self, tab: Tab_, _window: &mut Window, cx: &mut Context<Self>) {
@@ -386,6 +472,13 @@ impl SettingsView {
         let langs = languages.clone();
         let v1 = view.clone();
         let v2 = view.clone();
+        // The interface language's dictionary, when it is not installed yet.
+        let missing_dictionary = crate::dictionaries::for_locale(&s.language).filter(|code| {
+            self.dictionaries.is_some()
+                && !self.has_dictionary(code)
+                && crate::dictionaries::is_downloadable(code)
+        });
+        let installing = self.installing_dictionary.is_some();
         v_flex()
             .child(Self::row(
                 t("settings.general.theme"),
@@ -410,12 +503,37 @@ impl SettingsView {
                     move |i, window, cx| {
                         let lang = langs[i].1.clone();
                         cardfile_i18n::set_locale(&lang);
-                        v2.update(cx, |v, cx| v.set(window, cx, |s| s.language = lang));
+                        v2.update(cx, |v, cx| {
+                            v.set(window, cx, |s| s.language = lang.clone());
+                            v.match_spell_language(&lang, window, cx);
+                        });
                         window.refresh();
                     },
                 ),
                 cx,
             ))
+            .when_some(missing_dictionary, |d, code| {
+                d.child(Self::row(
+                    t("settings.general.dictionary"),
+                    Some(t_args(
+                        "settings.general.dictionary_missing",
+                        &[("language", &language_name(&s.language))],
+                    )),
+                    Button::new("install-dictionary")
+                        .small()
+                        .outline()
+                        .loading(installing)
+                        .label(if installing {
+                            t("settings.general.installing_dictionary")
+                        } else {
+                            t("settings.general.install_dictionary")
+                        })
+                        .on_click(cx.listener(move |v, _, window, cx| {
+                            v.install_dictionary(code, window, cx);
+                        })),
+                    cx,
+                ))
+            })
             .child(Self::row(
                 t("settings.general.font_size"),
                 None,
@@ -499,7 +617,10 @@ impl SettingsView {
                 lock_options.push((m, t(&format!("lock.{}", m.as_str()))));
             }
         }
-        let dict_langs: Vec<(usize, String)> = crate::spell::available_languages(cx)
+        let dict_langs: Vec<(usize, String)> = self
+            .dictionaries
+            .clone()
+            .unwrap_or_default()
             .into_iter()
             .enumerate()
             .collect();

@@ -12,6 +12,7 @@ use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::input::{Input, InputEvent, InputState};
 use gpui_kit::component::menu::{ContextMenuExt as _, DropdownMenu as _, PopupMenuItem};
 use gpui_kit::component::notification::Notification;
+use gpui_kit::component::scroll::ScrollableElement as _;
 use gpui_kit::component::{ActiveTheme as _, Sizable as _, WindowExt as _, h_flex, v_flex};
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::{
@@ -918,10 +919,9 @@ impl Workspace {
                 div()
                     .id("tag-list")
                     .flex_1()
-                    .min_h_0()
                     .px(px(6.))
-                    .overflow_y_scroll()
-                    .child(tags),
+                    .child(tags)
+                    .overflow_y_scrollbar(),
             )
             .child(
                 h_flex()
@@ -1061,7 +1061,7 @@ impl Workspace {
                 })
                 .into_any_element()
         } else {
-            uniform_list(
+            let list = uniform_list(
                 "cards",
                 count,
                 cx.processor(move |this, range: std::ops::Range<usize>, _window, cx| {
@@ -1070,10 +1070,16 @@ impl Workspace {
                         .collect::<Vec<_>>()
                 }),
             )
-            .flex_1()
-            .w_full()
-            .track_scroll(&self.list_scroll)
-            .into_any_element()
+            .size_full()
+            .track_scroll(&self.list_scroll);
+            div()
+                .relative()
+                .flex_1()
+                .min_h_0()
+                .w_full()
+                .child(list)
+                .vertical_scrollbar(&self.list_scroll)
+                .into_any_element()
         };
         v_flex()
             .w(px(settings.list_width.clamp(220., 520.)))

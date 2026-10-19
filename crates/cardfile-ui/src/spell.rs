@@ -100,7 +100,8 @@ struct Dictionaries(HashMap<String, Option<Arc<Speller>>>);
 
 impl Global for Dictionaries {}
 
-fn search_dirs(cx: &App) -> Vec<PathBuf> {
+/// Folders dictionaries are looked up in, the user's data folder first.
+pub fn search_dirs(cx: &App) -> Vec<PathBuf> {
     let mut dirs = vec![crate::state::AppState::get(cx).paths.dictionaries()];
     if let Some(exe) = std::env::current_exe()
         .ok()
@@ -114,9 +115,10 @@ fn search_dirs(cx: &App) -> Vec<PathBuf> {
     dirs
 }
 
-/// Languages with an installed dictionary.
-pub fn available_languages(cx: &App) -> Vec<String> {
-    let mut langs: Vec<String> = search_dirs(cx)
+/// Languages with an installed dictionary in `dirs`. Reads the folders: call it off the
+/// UI thread.
+pub fn languages_in(dirs: &[PathBuf]) -> Vec<String> {
+    let mut langs: Vec<String> = dirs
         .iter()
         .filter_map(|d| std::fs::read_dir(d).ok())
         .flat_map(|it| it.flatten())
@@ -130,6 +132,13 @@ pub fn available_languages(cx: &App) -> Vec<String> {
     langs.sort();
     langs.dedup();
     langs
+}
+
+/// Drop the cached result for `lang`, e.g. after its dictionary was installed.
+pub fn forget(lang: &str, cx: &mut App) {
+    if cx.has_global::<Dictionaries>() {
+        cx.global_mut::<Dictionaries>().0.remove(lang);
+    }
 }
 
 /// The spell checker for the user's settings. The first use of a language reads and

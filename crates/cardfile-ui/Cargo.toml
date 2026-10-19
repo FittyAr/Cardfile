@@ -35,13 +35,14 @@ parking_lot.workspace = true
 semver.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+sha2.workspace = true
 spellbook.workspace = true
 tracing.workspace = true
+ureq.workspace = true
 zeroize.workspace = true
 open.workspace = true
 keyring.workspace = true
 image.workspace = true
 
 [dev-dependencies]
-ureq.workspace = true
 tempfile.workspace = true

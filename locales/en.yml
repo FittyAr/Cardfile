@@ -396,6 +396,12 @@ settings:
     check_updates_hint: Only checks GitHub for a newer version. No data is sent.
     keymap: Keyboard shortcuts
     keymap_hint: Edit keymap.json to change any shortcut. Restart to apply.
+    dictionary: Spelling dictionary
+    dictionary_missing: "The dictionary for %{language} is not installed. It is downloaded from github.com/wooorm/dictionaries."
+    install_dictionary: Install
+    installing_dictionary: Installing…
+    dictionary_installed: Spelling dictionary installed.
+    dictionary_failed: "Could not install the dictionary: %{error}"
   editor:
     markdown_shortcuts: Markdown shortcuts
     markdown_shortcuts_hint: "Typing # , - , [] , **bold** and similar formats text automatically."

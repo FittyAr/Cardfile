@@ -1,5 +1,6 @@
 //! Bundled and user themes.
 
+use gpui_kit::component::scroll::ScrollbarMode;
 use gpui_kit::component::{Theme, ThemeRegistry};
 use gpui_kit::{App, SharedString};
 
@@ -63,6 +64,8 @@ pub fn apply(name: &str, cx: &mut App) {
         Theme::update(cx, |t| {
             t.font_family = cardfile_doc::fonts::TEXT_FAMILY.into();
             t.mono_font_family = cardfile_doc::fonts::MONO_FAMILY.into();
+            // Scrollbars that only show while scrolling hide that a list or card goes on.
+            t.scrollbar_mode = ScrollbarMode::Always;
         });
     }
 }

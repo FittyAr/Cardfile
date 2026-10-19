@@ -53,6 +53,8 @@ its license ships with each release as `THIRD_PARTY_LICENSES.html` (`cargo about
 | Dictionary | Source | License |
 |------------|--------|---------|
 | English (en_US) Hunspell dictionary | [wooorm/dictionaries](https://github.com/wooorm/dictionaries) `dictionary-en` (SCOWL) | Shipped as `dictionaries/LICENSE-en_US` in every package |
+| Spanish (es_ES) Hunspell dictionary | [wooorm/dictionaries](https://github.com/wooorm/dictionaries) `dictionary-es` (RLA-ES) | MPL-1.1 (chosen from GPL-3.0 / LGPL-3.0 / MPL-1.1); shipped as `dictionaries/LICENSE-es_ES` |
+| Other languages | [wooorm/dictionaries](https://github.com/wooorm/dictionaries) | Not shipped: downloaded by the user from Settings, with their own license file |
 
 ## Inspiration
 

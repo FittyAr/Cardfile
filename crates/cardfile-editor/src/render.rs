@@ -3,6 +3,7 @@
 use cardfile_doc::{Align, Block, BlockKind, RichText, TextSize};
 use cardfile_i18n::t;
 use gpui_kit::component::menu::{ContextMenuExt as _, PopupMenu};
+use gpui_kit::component::scroll::ScrollableElement as _;
 use gpui_kit::component::{ActiveTheme as _, h_flex, v_flex};
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::{
@@ -627,6 +628,9 @@ impl Render for RichEditor {
                 this.insert_files(paths.paths().to_vec(), cx);
             }))
             .child(scroll)
+            .when(!self.single_line, |root| {
+                root.vertical_scrollbar(&self.scroll)
+            })
             .child(input_handler);
         let root = root.children(self.render_slash(cx));
         let editor = entity.clone();
