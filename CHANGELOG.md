@@ -3,6 +3,24 @@
 All notable changes to this project are documented here. Generated with
 [git-cliff](https://git-cliff.org) from Conventional Commits (`cliff.toml`).
 
+## [2.0.0-beta.1] - 2026-10-19
+
+First beta.
+
+### Features
+
+- The Spanish (es_ES) spelling dictionary ships with Cardfile, next to English.
+- Dictionaries for the other interface languages (German, Persian, French, Italian, Korean,
+  Dutch, Polish, Portuguese (Brazil), Russian, Ukrainian and Vietnamese) can be installed
+  from Settings → General, right below the language picker.
+- Changing the interface language switches spell checking to that language when its
+  dictionary is installed; another dictionary can still be chosen in Settings → Editor.
+
+### Bug Fixes
+
+- The tag list, the card list and the card editor show a scrollbar, and scrollbars stay
+  visible instead of appearing only while scrolling.
+
 ## [2.0.0-alpha.6] - 2026-10-19
 
 ### Bug Fixes
