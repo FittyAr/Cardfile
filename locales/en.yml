@@ -430,6 +430,7 @@ settings:
     location: Data folder
     portable: Portable mode is active.
     standard: Standard mode.
+    files: "Your cards and settings are in cardfile.db and your shortcuts in keymap.json, both in this folder. Copy or sync the whole folder to keep everything."
     export: Export
     export_hint: Export all cards that are not private or encrypted.
   group:

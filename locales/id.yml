@@ -430,6 +430,7 @@ settings:
     location: Folder data
     portable: Mode portabel aktif.
     standard: Mode standar.
+    files: "Kartu dan pengaturan Anda ada di cardfile.db dan pintasan Anda di keymap.json, keduanya di folder ini. Salin atau sinkronkan seluruh folder untuk menyimpan semuanya."
     export: Ekspor
     export_hint: Mengekspor semua kartu yang tidak pribadi atau terenkripsi.
   group:

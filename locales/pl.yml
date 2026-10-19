@@ -430,6 +430,7 @@ settings:
     location: Folder danych
     portable: Tryb przenośny jest aktywny.
     standard: Tryb standardowy.
+    files: "Twoje karty i ustawienia są w cardfile.db, a skróty w keymap.json, oba w tym folderze. Skopiuj lub synchronizuj cały folder, aby zachować wszystko."
     export: Eksportuj
     export_hint: Eksportuje wszystkie karty, które nie są prywatne ani zaszyfrowane.
   group:

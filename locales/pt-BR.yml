@@ -430,6 +430,7 @@ settings:
     location: Pasta de dados
     portable: O modo portátil está ativo.
     standard: Modo padrão.
+    files: "Suas fichas e configurações ficam em cardfile.db e seus atalhos em keymap.json, ambos nesta pasta. Copie ou sincronize a pasta inteira para manter tudo."
     export: Exportar
     export_hint: Exporta todos os cartões que não são privados nem criptografados.
   group:

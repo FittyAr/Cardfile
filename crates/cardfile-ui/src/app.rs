@@ -211,9 +211,18 @@ impl CardfileApp {
         }
     }
 
-    fn open_data_folder(&mut self, _: &OpenDataFolder, _: &mut Window, cx: &mut Context<Self>) {
+    fn open_data_folder(
+        &mut self,
+        _: &OpenDataFolder,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        // Open the folder itself: selecting the database in it (`reveal_path`) did
+        // nothing on some systems.
         let root = AppState::get(cx).paths.root.clone();
-        cx.reveal_path(&root.join("cardfile.db"));
+        if let Err(e) = std::fs::create_dir_all(&root).and_then(|()| open::that_detached(&root)) {
+            window.push_notification(Notification::error(e.to_string()), cx);
+        }
     }
 
     fn backup_now(&mut self, _: &BackupNow, window: &mut Window, cx: &mut Context<Self>) {

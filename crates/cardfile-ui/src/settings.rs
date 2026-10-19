@@ -120,7 +120,7 @@ fn about(cx: &App) -> AnyElement {
                 .child(link(
                     "about-site",
                     t("about.website"),
-                    "https://github.com/FittyAr/Cardfile",
+                    "https://cardfile.fitty.ar/",
                 ))
                 .child(link(
                     "about-guide",
@@ -293,6 +293,18 @@ impl SettingsView {
         let db = AppState::db(cx);
         run_db(cx, move |_| db.save_app_settings(&app)).detach_and_log_err(cx);
         cx.notify();
+    }
+
+    /// Click handler running `action` from the workspace. Actions dispatched from inside
+    /// this dialog bubble up to the window root, not through the workspace and the app
+    /// view where their handlers are, so they would do nothing.
+    fn dispatcher<A: gpui_kit::Action>(
+        &self,
+        action: A,
+        cx: &App,
+    ) -> impl Fn(&gpui_kit::ClickEvent, &mut Window, &mut App) + 'static {
+        let focus = gpui_kit::Focusable::focus_handle(self.workspace.read(cx), cx);
+        move |_, window, cx| focus.dispatch_action(&action, window, cx)
     }
 
     fn row(label: String, desc: Option<String>, control: impl IntoElement, cx: &App) -> AnyElement {
@@ -470,7 +482,7 @@ impl SettingsView {
                     .small()
                     .outline()
                     .label(t("settings.open"))
-                    .on_click(|_, window, cx| window.dispatch_action(Box::new(OpenKeymap), cx)),
+                    .on_click(self.dispatcher(OpenKeymap, cx)),
                 cx,
             ))
             .into_any_element()
@@ -1093,6 +1105,7 @@ impl SettingsView {
                 },
                 cx,
             ))
+            .child(hint(t("settings.data.files"), cx))
             .child(
                 h_flex()
                     .gap(px(8.))
@@ -1103,18 +1116,14 @@ impl SettingsView {
                             .small()
                             .outline()
                             .label(t("menu.open_data_folder"))
-                            .on_click(|_, window, cx| {
-                                window.dispatch_action(Box::new(OpenDataFolder), cx)
-                            }),
+                            .on_click(self.dispatcher(OpenDataFolder, cx)),
                     )
                     .child(
                         Button::new("backup")
                             .small()
                             .outline()
                             .label(t("menu.backup"))
-                            .on_click(|_, window, cx| {
-                                window.dispatch_action(Box::new(BackupNow), cx)
-                            }),
+                            .on_click(self.dispatcher(BackupNow, cx)),
                     ),
             )
             .child(section(t("settings.data.export"), cx))
@@ -1167,9 +1176,7 @@ impl SettingsView {
                         .small()
                         .danger()
                         .label(t("recycle.empty"))
-                        .on_click(|_, window, cx| {
-                            window.dispatch_action(Box::new(EmptyRecycleBin), cx)
-                        }),
+                        .on_click(self.dispatcher(EmptyRecycleBin, cx)),
                 ),
             )
             .into_any_element()

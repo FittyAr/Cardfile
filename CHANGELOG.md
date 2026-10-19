@@ -3,6 +3,23 @@
 All notable changes to this project are documented here. Generated with
 [git-cliff](https://git-cliff.org) from Conventional Commits (`cliff.toml`).
 
+## [2.0.0-alpha.5] - 2026-10-18
+
+### Features
+
+- Portable mode turns on by itself when a `data` folder with `cardfile.db` sits next to the
+  executable, so a Cardfile folder copied or synced (e.g. in OneDrive) keeps working without
+  `portable.flag`.
+- Settings → Data explains that the cards and every setting are in `cardfile.db` and the
+  shortcuts in `keymap.json`, both in the data folder.
+- About links to the project website, https://cardfile.fitty.ar/.
+
+### Bug Fixes
+
+- The "Open data folder", "Open" (keymap), "Back up now" and "Empty recycle bin" buttons in
+  Settings did nothing.
+- "Open data folder" opens the folder itself.
+
 ## [2.0.0-alpha.4] - 2026-10-16
 
 ### Bug Fixes

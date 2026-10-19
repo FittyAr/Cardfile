@@ -430,6 +430,7 @@ settings:
     location: Gegevensmap
     portable: De draagbare modus is actief.
     standard: Standaardmodus.
+    files: "Je kaarten en instellingen staan in cardfile.db en je sneltoetsen in keymap.json, allebei in deze map. Kopieer of synchroniseer de hele map om alles te bewaren."
     export: Exporteren
     export_hint: Exporteert alle kaarten die niet privé of versleuteld zijn.
   group:

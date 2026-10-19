@@ -25,10 +25,12 @@
     </ul>
   </description>
   <launchable type="desktop-id">ar.fittyar.Cardfile.desktop</launchable>
-  <url type="homepage">https://github.com/FittyAr/Cardfile</url>
+  <url type="homepage">https://cardfile.fitty.ar/</url>
+  <url type="vcs-browser">https://github.com/FittyAr/Cardfile</url>
   <url type="bugtracker">https://github.com/FittyAr/Cardfile/issues</url>
   <content_rating type="oars-1.1" />
   <releases>
+    <release version="2.0.0-alpha.5" date="2026-10-18" type="development" />
     <release version="2.0.0-alpha.4" date="2026-10-16" type="development" />
     <release version="2.0.0-alpha.3" date="2026-10-15" type="development" />
     <release version="2.0.0-alpha.2" date="2026-10-14" type="development" />

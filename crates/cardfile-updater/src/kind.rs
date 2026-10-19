@@ -32,7 +32,8 @@ pub enum InstallKind {
         /// The install folder is writable without elevation (a per-user install).
         per_user: bool,
     },
-    /// A portable copy (`portable.flag` next to the exe); the update replaces the files.
+    /// A portable copy (`portable.flag` or `data/cardfile.db` next to the exe); the update
+    /// replaces the files.
     Portable {
         /// The running executable.
         exe: PathBuf,
@@ -146,7 +147,8 @@ pub(crate) fn classify(
     if !fs.writable(dir) {
         return InstallKind::ReadOnly { exe };
     }
-    if fs.exists(&dir.join("portable.flag")) {
+    // Same rule as the data folder of cardfile-ui (`paths.rs`).
+    if fs.exists(&dir.join("portable.flag")) || fs.exists(&dir.join("data").join("cardfile.db")) {
         InstallKind::Portable { exe }
     } else {
         InstallKind::Standalone { exe }
@@ -406,6 +408,14 @@ mod tests {
                 exe,
                 &[],
                 &fs(&["C:/Users/u/.cardfile/bin/portable.flag"], &[dir])
+            ),
+            InstallKind::Portable { exe: exe.into() }
+        );
+        assert_eq!(
+            run(
+                exe,
+                &[],
+                &fs(&["C:/Users/u/.cardfile/bin/data/cardfile.db"], &[dir])
             ),
             InstallKind::Portable { exe: exe.into() }
         );

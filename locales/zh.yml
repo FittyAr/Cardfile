@@ -430,6 +430,7 @@ settings:
     location: 数据文件夹
     portable: 便携模式已启用。
     standard: 标准模式。
+    files: "你的卡片和设置保存在 cardfile.db 中，快捷键保存在 keymap.json 中，二者都在此文件夹内。复制或同步整个文件夹即可保留全部内容。"
     export: 导出
     export_hint: 导出所有非私密、非加密的卡片。
   group:

@@ -430,6 +430,7 @@ settings:
     location: 데이터 폴더
     portable: 휴대용 모드가 켜져 있습니다.
     standard: 표준 모드입니다.
+    files: "카드와 설정은 cardfile.db에, 단축키는 keymap.json에 있으며 둘 다 이 폴더에 있습니다. 모든 것을 유지하려면 폴더 전체를 복사하거나 동기화하세요."
     export: 내보내기
     export_hint: 비공개 또는 암호화되지 않은 모든 카드를 내보냅니다.
   group:

@@ -430,6 +430,7 @@ settings:
     location: Datenordner
     portable: Der portable Modus ist aktiv.
     standard: Standardmodus.
+    files: "Deine Karten und Einstellungen liegen in cardfile.db, deine Tastenkürzel in keymap.json, beide in diesem Ordner. Kopiere oder synchronisiere den ganzen Ordner, um alles zu behalten."
     export: Exportieren
     export_hint: Exportiert alle Karten, die weder privat noch verschlüsselt sind.
   group:

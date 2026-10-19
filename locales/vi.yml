@@ -430,6 +430,7 @@ settings:
     location: Thư mục dữ liệu
     portable: Chế độ di động đang bật.
     standard: Chế độ tiêu chuẩn.
+    files: "Thẻ và cài đặt của bạn nằm trong cardfile.db, phím tắt nằm trong keymap.json, cả hai đều ở thư mục này. Hãy sao chép hoặc đồng bộ toàn bộ thư mục để giữ lại mọi thứ."
     export: Xuất
     export_hint: Xuất tất cả thẻ không phải thẻ riêng tư hoặc đã mã hóa.
   group:

@@ -263,8 +263,10 @@ Se valida con un **spike temprano** (Fase 1) antes de construir el resto de la U
   `~/Library/Application Support/FittyAr/Cardfile`. La carpeta anterior (`$XDG_DATA_HOME/cardfile`,
   `ar.FittyAr.Cardfile` en macOS) se renombra al arrancar: nunca se borra ni se mezcla, y si no se
   puede mover se sigue usando.
-- Portable: si existe `portable.flag` (o `--portable`) junto al ejecutable, todo va en `./data`.
-- Archivos: `cardfile.db`, `settings.toml`, `keymap.json`, `themes/`, `logs/`, `backups/`.
+- Portable: si existe `portable.flag` (o `--portable`) junto al ejecutable, o ya hay un
+  `data/cardfile.db` junto a él (carpeta copiada o sincronizada, p. ej. en OneDrive), todo va en `./data`.
+- Archivos: `cardfile.db` (incluye toda la configuración: global en `app_settings`, preferencias en
+  cada usuario), `keymap.json`, `themes/`, `logs/`, `backups/`. No hay `settings.toml`.
 
 ---
 

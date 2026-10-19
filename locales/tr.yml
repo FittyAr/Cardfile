@@ -430,6 +430,7 @@ settings:
     location: Veri klasörü
     portable: Taşınabilir mod etkin.
     standard: Standart mod.
+    files: "Kartlarınız ve ayarlarınız cardfile.db içinde, kısayollarınız keymap.json içinde; ikisi de bu klasörde. Her şeyi korumak için klasörün tamamını kopyalayın veya eşitleyin."
     export: Dışa aktar
     export_hint: Özel veya şifreli olmayan tüm kartları dışa aktarır.
   group:

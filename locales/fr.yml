@@ -430,6 +430,7 @@ settings:
     location: Dossier de données
     portable: Le mode portable est actif.
     standard: Mode standard.
+    files: "Vos fiches et vos réglages sont dans cardfile.db et vos raccourcis dans keymap.json, tous deux dans ce dossier. Copiez ou synchronisez le dossier entier pour tout conserver."
     export: Exporter
     export_hint: Exporte toutes les fiches qui ne sont ni privées ni chiffrées.
   group:

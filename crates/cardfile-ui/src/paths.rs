@@ -8,7 +8,13 @@
 //!   is renamed into place on the first start: never deleted or merged, and kept
 //!   in use when it cannot be moved.
 //! - Portable mode: a `data` folder next to the executable, enabled by a
-//!   `portable.flag` file there or the `--portable` flag.
+//!   `portable.flag` file there, the `--portable` flag, or a `data/cardfile.db`
+//!   already next to the executable (a copied or synced folder, e.g. in OneDrive,
+//!   keeps working without the flag).
+//!
+//! Every setting lives in `cardfile.db` (installation settings in `app_settings`,
+//! preferences on each user row) next to `keymap.json`, so the folder is the whole
+//! state of Cardfile.
 
 use std::path::{Path, PathBuf};
 
@@ -49,10 +55,7 @@ impl DataPaths {
             };
         }
         let exe_dir = exe_dir();
-        let portable = force_portable
-            || exe_dir
-                .as_deref()
-                .is_some_and(|d| d.join(PORTABLE_FLAG).exists());
+        let portable = force_portable || exe_dir.as_deref().is_some_and(is_portable_dir);
         if portable && let Some(dir) = exe_dir {
             return Self::portable_at(&dir);
         }
@@ -149,6 +152,12 @@ fn adopt_previous(new: &Path, previous: &Path) -> PathBuf {
     }
 }
 
+/// Whether the executable folder `dir` holds a portable copy: the flag, or the
+/// database of an earlier portable run in `data/`.
+fn is_portable_dir(dir: &Path) -> bool {
+    dir.join(PORTABLE_FLAG).exists() || dir.join("data").join("cardfile.db").is_file()
+}
+
 fn exe_dir() -> Option<PathBuf> {
     // Inside an AppImage the executable lives in a temporary read-only mount; the
     // portable data belongs next to the `.AppImage` file itself.
@@ -167,6 +176,20 @@ mod tests {
         let p = DataPaths::resolve(Some(PathBuf::from("x")), true);
         assert_eq!(p.root, PathBuf::from("x"));
         assert_eq!(p.db(), PathBuf::from("x").join("cardfile.db"));
+    }
+
+    #[test]
+    fn a_data_folder_with_the_database_means_portable() {
+        let tmp = tempfile::tempdir().unwrap();
+        assert!(!is_portable_dir(tmp.path()));
+        // An empty `data` folder is not enough: it may belong to something else.
+        std::fs::create_dir(tmp.path().join("data")).unwrap();
+        assert!(!is_portable_dir(tmp.path()));
+        std::fs::write(tmp.path().join("data").join("cardfile.db"), b"").unwrap();
+        assert!(is_portable_dir(tmp.path()));
+        let flag_only = tempfile::tempdir().unwrap();
+        std::fs::write(flag_only.path().join(PORTABLE_FLAG), b"").unwrap();
+        assert!(is_portable_dir(flag_only.path()));
     }
 
     #[test]

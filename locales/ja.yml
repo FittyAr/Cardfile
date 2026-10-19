@@ -430,6 +430,7 @@ settings:
     location: データフォルダー
     portable: ポータブルモードが有効です。
     standard: 標準モードです。
+    files: "カードと設定は cardfile.db に、ショートカットは keymap.json に保存され、どちらもこのフォルダーにあります。すべてを残すにはフォルダーごとコピーまたは同期してください。"
     export: エクスポート
     export_hint: プライベートまたは暗号化されていないすべてのカードをエクスポートします。
   group:

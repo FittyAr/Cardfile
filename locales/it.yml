@@ -430,6 +430,7 @@ settings:
     location: Cartella dati
     portable: La modalità portatile è attiva.
     standard: Modalità standard.
+    files: "Le tue schede e le impostazioni sono in cardfile.db e le scorciatoie in keymap.json, entrambi in questa cartella. Copia o sincronizza l'intera cartella per conservare tutto."
     export: Esporta
     export_hint: Esporta tutte le schede che non sono private né crittografate.
   group:
