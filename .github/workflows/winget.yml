@@ -24,7 +24,7 @@ jobs:
     runs-on: windows-latest
     if: ${{ github.event_name == 'workflow_dispatch' || !fromJson(inputs.plan).announcement_is_prerelease }}
     steps:
-      - uses: vedantmgoyal9/winget-releaser@v2
+      - uses: vedantmgoyal9/winget-releaser@b7370d4d152efdce803a26cc6ca9eee58cb2ad54 # v2
         with:
           identifier: FittyAr.Cardfile
           installers-regex: 'Cardfile-.*-setup-(x64|arm64)\.exe$'

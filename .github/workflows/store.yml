@@ -3,6 +3,9 @@
 # Azure AD applications: PARTNER_CENTER_TENANT_ID, PARTNER_CENTER_CLIENT_ID,
 # PARTNER_CENTER_CLIENT_SECRET, PARTNER_CENTER_SELLER_ID; and the variable
 # STORE_PRODUCT_ID (the app's Store ID). The Store signs the package.
+#
+# Inputs and secrets reach the scripts only through `env:` (never `${{ }}` inside `run:`),
+# so a crafted tag cannot inject shell code.
 name: Microsoft Store
 
 on:
@@ -12,25 +15,45 @@ on:
         description: Release tag whose MSIX packages to submit (e.g. v2.0.0)
         required: true
 
+permissions:
+  contents: read
+
 jobs:
   submit:
     runs-on: windows-latest
     steps:
       - name: Download MSIX packages
+        shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release download "${{ inputs.tag }}" --repo "${{ github.repository }}" --pattern "*.msix" --dir msix
-      - uses: microsoft/setup-msstore-cli@v1
+          TAG: ${{ inputs.tag }}
+          REPO: ${{ github.repository }}
+        run: |
+          if ($env:TAG -notmatch '^v\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$') {
+            throw "invalid release tag: $env:TAG"
+          }
+          gh release download $env:TAG --repo $env:REPO --pattern '*.msix' --dir msix
+          if ($LASTEXITCODE -ne 0) { throw "gh release download failed" }
+      - uses: microsoft/setup-msstore-cli@cc9910a8d59f2eb55cbb83df0a3800cf3b5300e0 # v1.4
       - name: Configure Partner Center credentials
-        run: >
-          msstore reconfigure
-          --tenantId ${{ secrets.PARTNER_CENTER_TENANT_ID }}
-          --sellerId ${{ secrets.PARTNER_CENTER_SELLER_ID }}
-          --clientId ${{ secrets.PARTNER_CENTER_CLIENT_ID }}
-          --clientSecret ${{ secrets.PARTNER_CENTER_CLIENT_SECRET }}
+        shell: pwsh
+        # `msstore reconfigure` only takes the credentials as arguments (no environment
+        # variable or stdin option), so the secret is on its command line for the life of
+        # this short process on a single-use runner. GitHub masks secrets in the log.
+        env:
+          TENANT_ID: ${{ secrets.PARTNER_CENTER_TENANT_ID }}
+          SELLER_ID: ${{ secrets.PARTNER_CENTER_SELLER_ID }}
+          CLIENT_ID: ${{ secrets.PARTNER_CENTER_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.PARTNER_CENTER_CLIENT_SECRET }}
+        run: |
+          msstore reconfigure --tenantId $env:TENANT_ID --sellerId $env:SELLER_ID --clientId $env:CLIENT_ID --clientSecret $env:CLIENT_SECRET
+          if ($LASTEXITCODE -ne 0) { throw "msstore reconfigure failed" }
       - name: Submit
         shell: pwsh
+        env:
+          STORE_PRODUCT_ID: ${{ vars.STORE_PRODUCT_ID }}
         run: |
           Get-ChildItem msix -Filter *.msix | ForEach-Object {
-            msstore publish $_.FullName --appId ${{ vars.STORE_PRODUCT_ID }}
+            msstore publish $_.FullName --appId $env:STORE_PRODUCT_ID
+            if ($LASTEXITCODE -ne 0) { throw "msstore publish failed for $($_.Name)" }
           }
