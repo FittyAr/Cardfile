@@ -169,6 +169,14 @@ impl RichEditor {
         then: AfterLoad,
         cx: &mut Context<Self>,
     ) {
+        if p.is_failed() {
+            // It can't play any more: hand it to the system player.
+            if matches!(then, AfterLoad::Toggle) {
+                Self::open_externally(att, cx);
+            }
+            cx.notify();
+            return;
+        }
         match then {
             AfterLoad::Toggle => {
                 // One thing plays at a time.
@@ -246,7 +254,14 @@ impl RichEditor {
         entity: &Entity<Self>,
     ) -> AnyElement {
         let player = self.media.players.get(&att.blob).cloned();
-        let failed = self.media.failed.get(&att.blob).cloned();
+        // A player whose decoder crashed mid-file reports Ended for good: say so
+        // instead of showing a finished track.
+        let failed = self.media.failed.get(&att.blob).cloned().or_else(|| {
+            player
+                .as_ref()
+                .filter(|p| p.is_failed())
+                .map(|_| cardfile_i18n::t("editor.media.failed"))
+        });
         let state = player.as_ref().map(|p| p.state());
         let playing = state == Some(PlaybackState::Playing);
         let position = player.as_ref().map(|p| p.position()).unwrap_or_default();

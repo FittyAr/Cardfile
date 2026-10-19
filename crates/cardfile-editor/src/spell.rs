@@ -13,7 +13,7 @@ use cardfile_doc::BlockKind;
 use gpui_kit::{AppContext as _, Context};
 
 use crate::editor::{RichEditor, SpellChecker};
-use crate::pos::Slot;
+use crate::pos::{Slot, Slots as _};
 
 /// Blocks longer than this (bytes) are checked off the UI thread.
 const BACKGROUND_THRESHOLD: usize = 4 * 1024;
@@ -39,13 +39,27 @@ pub(crate) struct SpellState {
     /// Bumped when the dictionary or document changes, so results computed
     /// before are dropped.
     generation: u64,
+    /// Suggestions computed ahead of the context menu, by misspelled word.
+    suggestions: HashMap<String, Vec<String>>,
+    /// Words whose suggestions are being computed.
+    suggesting: HashSet<String>,
+    /// Bumped when the dictionary changes, so suggestions computed before are dropped.
+    dict_generation: u64,
 }
+
+/// Suggestions kept before the cache starts over.
+const MAX_SUGGESTIONS: usize = 64;
+/// Suggestions offered per word.
+const SUGGESTIONS_PER_WORD: usize = 6;
 
 impl SpellState {
     /// Forget everything (another checker, or a word was added to the dictionary).
     pub(crate) fn clear(&mut self) {
         self.clear_slots();
         lock(&self.words).0.clear();
+        self.suggestions.clear();
+        self.suggesting.clear();
+        self.dict_generation += 1;
     }
 
     /// Forget the per-slot results (another document is shown).
@@ -86,6 +100,88 @@ fn fits(text: &str, r: &Range<usize>) -> bool {
 }
 
 impl RichEditor {
+    /// The misspelled word at `pos`, from the last check of its slot.
+    fn misspelled_word_at(&self, pos: crate::pos::Pos) -> Option<String> {
+        let entry = self.spelling.entries.get(&pos.slot)?;
+        let text = self.model.doc.slot_text(pos.slot)?;
+        if entry.text != text.text {
+            return None;
+        }
+        let r = entry
+            .ranges
+            .iter()
+            .find(|r| r.start <= pos.offset && pos.offset <= r.end)?;
+        text.text.get(r.clone()).map(str::to_owned)
+    }
+
+    /// Compute the suggestions for the misspelled word at `pos` on the background
+    /// executor, so the context menu has them ready. Called when the pointer
+    /// hovers a word and when the caret moves; does nothing for correct words or
+    /// words already done.
+    pub(crate) fn prefetch_suggestions(&mut self, pos: crate::pos::Pos, cx: &mut Context<Self>) {
+        let Some(spell) = self.spell.clone() else {
+            return;
+        };
+        let Some(word) = self.misspelled_word_at(pos) else {
+            return;
+        };
+        let word = word.trim().to_owned();
+        if word.is_empty()
+            || self.spelling.suggestions.contains_key(&word)
+            || !self.spelling.suggesting.insert(word.clone())
+        {
+            return;
+        }
+        let generation = self.spelling.dict_generation;
+        let w = word.clone();
+        let task = cx.background_spawn(async move {
+            spell
+                .suggest(&w)
+                .into_iter()
+                .take(SUGGESTIONS_PER_WORD)
+                .collect::<Vec<_>>()
+        });
+        cx.spawn(async move |this, cx| {
+            let list = task.await;
+            let _ = this.update(cx, |this, _| {
+                let s = &mut this.spelling;
+                if s.dict_generation != generation || !s.suggesting.remove(&word) {
+                    return;
+                }
+                if s.suggestions.len() >= MAX_SUGGESTIONS {
+                    s.suggestions.clear();
+                }
+                s.suggestions.insert(word, list);
+            });
+        })
+        .detach();
+    }
+
+    /// Suggestions for the misspelled word at the caret, if it is misspelled.
+    ///
+    /// The context menu is built synchronously when it opens, so it can't wait for
+    /// a background task. The suggestions are normally ready, computed in the
+    /// background while the pointer hovered the word or when the caret reached it
+    /// ([`Self::prefetch_suggestions`]); only when they aren't (e.g. a right-click
+    /// without hovering first) are they computed here, as before.
+    pub(crate) fn spelling_suggestions(&self) -> Option<(String, Vec<String>)> {
+        let spell = self.spell.as_ref()?;
+        let word = self.word_at_caret()?;
+        if let Some(list) = self.spelling.suggestions.get(&word) {
+            return Some((word, list.clone()));
+        }
+        let known = lock(&self.spelling.words).0.get(&word).copied();
+        if known.unwrap_or_else(|| spell.check(&word)) {
+            return None;
+        }
+        let list = spell
+            .suggest(&word)
+            .into_iter()
+            .take(SUGGESTIONS_PER_WORD)
+            .collect();
+        Some((word, list))
+    }
+
     /// Misspelled ranges to underline in `slot`, whose current text is `text`.
     pub(crate) fn misspelled_in(&self, slot: Slot, text: &str) -> Vec<Range<usize>> {
         if self.spell.is_none()
