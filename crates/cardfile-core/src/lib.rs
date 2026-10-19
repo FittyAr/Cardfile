@@ -16,8 +16,8 @@ pub use error::{Error, Result};
 pub use ids::{ActivityId, ApiKeyId, BlobId, CardId, RevisionId, TagId, UserId};
 pub use model::{
     ActivityEntry, Actor, ApiKey, Blob, BlobMeta, Card, CardAccess, CardFilter, CardRevision,
-    CardShare, CardSummary, EncryptedPayload, LockMode, NewCard, SearchScope, SharePermission,
-    SortOrder, Tag, User, UserKind,
+    CardShare, CardSummary, EncryptedPayload, LockMode, NewCard, REDACTED, SearchScope,
+    SharePermission, SortOrder, Tag, User, UserKind,
 };
 pub use settings::{AppSettings, AuthMode, DEFAULT_MCP_PORT, UserSettings};
 pub use time::{Millis, now_millis};
@@ -46,5 +46,35 @@ mod tests {
         assert_eq!(mask_title("Secret plan", 2), "Se•••• ••••");
         assert_eq!(mask_title("ab", 5), "ab");
         assert_eq!(mask_title("", 3), "");
+    }
+
+    #[test]
+    fn user_debug_redacts_secrets() {
+        let user = User {
+            id: UserId::new(),
+            username: "alice".into(),
+            display_name: "Alice".into(),
+            password_hash: Some("argon-secret-hash".into()),
+            is_admin: false,
+            kind: UserKind::Human,
+            lock_hash: Some("argon-lock-hash".into()),
+            public_key: None,
+            secret_key: Some(EncryptedPayload {
+                v: 2,
+                salt: String::new(),
+                nonce: "the-nonce".into(),
+                m_cost: 0,
+                t_cost: 0,
+                p_cost: 0,
+                ciphertext: "sealed-ciphertext".into(),
+            }),
+            created_at: 0,
+            updated_at: 0,
+        };
+        let out = format!("{user:?}");
+        assert!(out.contains("alice"));
+        for secret in ["secret-hash", "lock-hash", "sealed-ciphertext", "the-nonce"] {
+            assert!(!out.contains(secret), "{out}");
+        }
     }
 }

@@ -111,11 +111,15 @@ impl Database {
     }
 }
 
+/// Per-connection settings. `secure_delete` zeroes deleted content instead of only
+/// marking it free, so plaintext replaced by encryption (or purged) cannot be read
+/// back from free pages of the file.
 fn configure(conn: &mut SqliteConnection) -> DbResult<()> {
     conn.batch_execute(
         "PRAGMA journal_mode = WAL;
          PRAGMA synchronous = NORMAL;
          PRAGMA foreign_keys = ON;
+         PRAGMA secure_delete = ON;
          PRAGMA busy_timeout = 5000;",
     )?;
     Ok(())

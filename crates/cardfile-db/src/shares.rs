@@ -1,4 +1,9 @@
 //! Sharing cards with other users and the per-user wrapped keys of encrypted cards.
+//!
+//! Shares are synced rows: ending one soft-deletes it (`deleted_at`, `rev`). Wrapped
+//! keys (`card_keys`) are the exception to the soft-delete rule: they are secrets,
+//! so a key that must stop working (unshare, decryption) is hard-deleted rather than
+//! left in the file for a revoked user.
 
 use cardfile_core::{Actor, CardAccess, CardId, CardShare, SharePermission, UserId, now_millis};
 use diesel::prelude::*;
@@ -7,7 +12,8 @@ use crate::rows::parse_id;
 use crate::schema::{card_keys, card_shares, cards};
 use crate::{Database, DbError, DbResult};
 
-/// `card_id`'s wrapped keys are replaced by `keys` (`(user, wrapped)`).
+/// `card_id`'s wrapped keys are replaced by `keys` (`(user, wrapped)`). Old keys are
+/// hard-deleted on purpose (see the module docs).
 pub(crate) fn replace_card_keys(
     conn: &mut SqliteConnection,
     card_id: &str,
@@ -46,10 +52,23 @@ pub(crate) fn access_of(
     }
     let perm: Option<String> = card_shares::table
         .find((card, user))
+        .filter(card_shares::deleted_at.is_null())
         .select(card_shares::permission)
         .first(conn)
         .optional()?;
     Ok(perm.map(|p| CardAccess::Shared(SharePermission::parse(&p))))
+}
+
+/// Record a sharing change on the card itself, so sync sees the card changed.
+fn bump_card(conn: &mut SqliteConnection, actor: &Actor, card_id: &str, now: i64) -> DbResult<()> {
+    diesel::update(cards::table.find(card_id))
+        .set((
+            cards::updated_at.eq(now),
+            cards::updated_by.eq(actor.user.to_string()),
+            cards::rev.eq(cards::rev + 1),
+        ))
+        .execute(conn)?;
+    Ok(())
 }
 
 impl Database {
@@ -63,6 +82,7 @@ impl Database {
         self.with(|conn| {
             let rows: Vec<(String, String, String, i64)> = card_shares::table
                 .filter(card_shares::card_id.eq(card.to_string()))
+                .filter(card_shares::deleted_at.is_null())
                 .order(card_shares::created_at.asc())
                 .select((
                     card_shares::card_id,
@@ -115,16 +135,25 @@ impl Database {
                 )
                 .into());
             }
+            let now = now_millis();
+            // Re-sharing revives a previously ended share.
             diesel::insert_into(card_shares::table)
                 .values((
                     card_shares::card_id.eq(&card_id),
                     card_shares::user_id.eq(user.to_string()),
                     card_shares::permission.eq(permission.as_str()),
-                    card_shares::created_at.eq(now_millis()),
+                    card_shares::created_at.eq(now),
+                    card_shares::updated_at.eq(now),
+                    card_shares::rev.eq(1),
                 ))
                 .on_conflict((card_shares::card_id, card_shares::user_id))
                 .do_update()
-                .set(card_shares::permission.eq(permission.as_str()))
+                .set((
+                    card_shares::permission.eq(permission.as_str()),
+                    card_shares::deleted_at.eq(None::<i64>),
+                    card_shares::updated_at.eq(now),
+                    card_shares::rev.eq(card_shares::rev + 1),
+                ))
                 .execute(conn)?;
             if let Some(wrapped) = wrapped_key {
                 diesel::replace_into(card_keys::table)
@@ -132,10 +161,11 @@ impl Database {
                         card_keys::card_id.eq(&card_id),
                         card_keys::user_id.eq(user.to_string()),
                         card_keys::wrapped.eq(wrapped),
-                        card_keys::created_at.eq(now_millis()),
+                        card_keys::created_at.eq(now),
                     ))
                     .execute(conn)?;
             }
+            bump_card(conn, actor, &card_id, now)?;
             crate::activity::log(conn, actor, Some(&card_id), "share", &title)
         })
     }
@@ -153,8 +183,24 @@ impl Database {
             if row.0 != me.to_string() && me != user {
                 return Err(DbError::Domain(cardfile_core::Error::PermissionDenied));
             }
-            diesel::delete(card_shares::table.find((&card_id, user.to_string()))).execute(conn)?;
+            let now = now_millis();
+            let n = diesel::update(
+                card_shares::table
+                    .find((&card_id, user.to_string()))
+                    .filter(card_shares::deleted_at.is_null()),
+            )
+            .set((
+                card_shares::deleted_at.eq(now),
+                card_shares::updated_at.eq(now),
+                card_shares::rev.eq(card_shares::rev + 1),
+            ))
+            .execute(conn)?;
+            // A secret: removed for real (see the module docs).
             diesel::delete(card_keys::table.find((&card_id, user.to_string()))).execute(conn)?;
+            if n == 0 {
+                return Ok(());
+            }
+            bump_card(conn, actor, &card_id, now)?;
             crate::activity::log(conn, actor, Some(&card_id), "unshare", &row.1)
         })
     }
@@ -236,6 +282,50 @@ mod tests {
         // A recipient may leave a share.
         db.unshare_card(&b, card.id, bob.id).unwrap();
         assert_eq!(db.card_access(card.id, bob.id).unwrap(), None);
+    }
+
+    #[test]
+    fn unsharing_is_a_soft_delete_that_bumps_the_card() {
+        use diesel::prelude::*;
+        let (db, alice) = db_with_user();
+        let bob = db.create_user("bob", "Bob", None, false).unwrap();
+        let a = Actor::user(alice.id);
+        let card = db.create_card(&a, NewCard::default()).unwrap();
+        db.share_card(&a, card.id, bob.id, SharePermission::Edit, None)
+            .unwrap();
+        let shared = db.card(card.id).unwrap();
+        assert_eq!(shared.rev, card.rev + 1);
+        db.unshare_card(&a, card.id, bob.id).unwrap();
+        let unshared = db.card(card.id).unwrap();
+        assert_eq!(unshared.rev, shared.rev + 1);
+        assert!(db.card_shares(card.id).unwrap().is_empty());
+        assert!(!db.list_cards(alice.id, &CardFilter::default()).unwrap()[0].is_shared);
+        let shared_with_bob = CardFilter {
+            shared_with_me: true,
+            ..Default::default()
+        };
+        assert!(db.list_cards(bob.id, &shared_with_bob).unwrap().is_empty());
+        // The row stays as a tombstone.
+        let (deleted, rev): (Option<i64>, i64) = db
+            .with(|conn| {
+                Ok(crate::schema::card_shares::table
+                    .select((
+                        crate::schema::card_shares::deleted_at,
+                        crate::schema::card_shares::rev,
+                    ))
+                    .first(conn)?)
+            })
+            .unwrap();
+        assert!(deleted.is_some());
+        assert_eq!(rev, 2);
+        // Sharing again revives it.
+        db.share_card(&a, card.id, bob.id, SharePermission::View, None)
+            .unwrap();
+        assert_eq!(
+            db.card_access(card.id, bob.id).unwrap(),
+            Some(CardAccess::Shared(SharePermission::View))
+        );
+        assert_eq!(db.list_cards(bob.id, &shared_with_bob).unwrap().len(), 1);
     }
 
     #[test]

@@ -58,10 +58,16 @@ pub fn run(paths: DataPaths) {
             // Open the database if it already exists; the wizard creates it otherwise.
             let (db, app_settings) = if paths.db().exists() {
                 match cardfile_db::Database::open(&paths.db(), Some(&paths.backups())) {
-                    Ok(db) => {
-                        let settings = db.app_settings().unwrap_or_default();
-                        (Some(db), settings)
-                    }
+                    Ok(db) => match db.app_settings() {
+                        Ok(settings) => (Some(db), settings),
+                        // Defaults would re-run the first-run wizard on existing data.
+                        Err(e) => {
+                            tracing::error!("cannot read settings: {e:#}");
+                            eprintln!("Cardfile: cannot read settings: {e}");
+                            cx.quit();
+                            return;
+                        }
+                    },
                     Err(e) => {
                         tracing::error!("cannot open database: {e:#}");
                         eprintln!(

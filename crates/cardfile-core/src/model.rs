@@ -28,7 +28,10 @@ impl UserKind {
 }
 
 /// A user account. In single-user and password-free modes there is exactly one person.
-#[derive(Clone, Debug, PartialEq, Eq)]
+///
+/// `Debug` redacts the password hashes and the sealed secret key so they never reach
+/// logs.
+#[derive(Clone, PartialEq, Eq)]
 pub struct User {
     pub id: UserId,
     pub username: String,
@@ -46,6 +49,28 @@ pub struct User {
     pub secret_key: Option<EncryptedPayload>,
     pub created_at: Millis,
     pub updated_at: Millis,
+}
+
+/// Placeholder printed instead of a secret by the hand-written `Debug` impls.
+pub const REDACTED: &str = "<redacted>";
+
+impl std::fmt::Debug for User {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let redact = |set: bool| if set { Some(REDACTED) } else { None };
+        f.debug_struct("User")
+            .field("id", &self.id)
+            .field("username", &self.username)
+            .field("display_name", &self.display_name)
+            .field("password_hash", &redact(self.password_hash.is_some()))
+            .field("is_admin", &self.is_admin)
+            .field("kind", &self.kind)
+            .field("lock_hash", &redact(self.lock_hash.is_some()))
+            .field("public_key", &self.public_key)
+            .field("secret_key", &redact(self.secret_key.is_some()))
+            .field("created_at", &self.created_at)
+            .field("updated_at", &self.updated_at)
+            .finish()
+    }
 }
 
 impl User {

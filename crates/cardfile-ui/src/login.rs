@@ -165,7 +165,7 @@ impl LoginView {
             {
                 user = updated;
             }
-            let settings = settings_db.user_settings(user.id).unwrap_or_default();
+            let settings = settings_db.user_settings(user.id)?;
             Ok(Some(Session { user, settings }))
         });
         cx.spawn(async move |this, cx| {
