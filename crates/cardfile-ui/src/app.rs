@@ -255,9 +255,17 @@ impl CardfileApp {
         // Open the folder itself: selecting the database in it (`reveal_path`) did
         // nothing on some systems.
         let root = AppState::get(cx).paths.root.clone();
-        if let Err(e) = std::fs::create_dir_all(&root).and_then(|()| open::that_detached(&root)) {
-            window.push_notification(Notification::error(e.to_string()), cx);
-        }
+        let task = cx.background_spawn(async move {
+            std::fs::create_dir_all(&root).and_then(|()| open::that_detached(&root))
+        });
+        cx.spawn_in(window, async move |_, cx| {
+            if let Err(e) = task.await {
+                let _ = cx.update(|window, cx| {
+                    window.push_notification(Notification::error(e.to_string()), cx);
+                });
+            }
+        })
+        .detach();
     }
 
     fn backup_now(&mut self, _: &BackupNow, window: &mut Window, cx: &mut Context<Self>) {

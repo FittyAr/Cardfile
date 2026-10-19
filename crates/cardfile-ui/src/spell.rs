@@ -7,6 +7,7 @@
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use cardfile_core::UserSettings;
 use cardfile_editor::SpellChecker;
@@ -17,6 +18,10 @@ pub struct Speller {
     dict: RwLock<spellbook::Dictionary>,
     personal: Mutex<HashSet<String>>,
     personal_path: PathBuf,
+    /// Bumped on every added word; a background write only lands if it is still the
+    /// newest, so an older snapshot never overwrites a newer one.
+    generation: Arc<AtomicU64>,
+    write_lock: Arc<Mutex<()>>,
 }
 
 impl Speller {
@@ -33,6 +38,8 @@ impl Speller {
             dict: RwLock::new(dict),
             personal: Mutex::new(personal),
             personal_path,
+            generation: Arc::new(AtomicU64::new(0)),
+            write_lock: Arc::new(Mutex::new(())),
         })
     }
 }
@@ -56,12 +63,23 @@ impl SpellChecker for Speller {
         let _ = self.dict.write().add(word);
         let mut words: Vec<String> = self.personal.lock().iter().cloned().collect();
         words.sort();
-        if let Some(dir) = self.personal_path.parent() {
-            let _ = std::fs::create_dir_all(dir);
-        }
-        if let Err(e) = std::fs::write(&self.personal_path, words.join("\n") + "\n") {
-            tracing::warn!("personal dictionary: {e}");
-        }
+        // Called from the UI thread: write the file on a helper thread.
+        let ticket = self.generation.fetch_add(1, Ordering::SeqCst) + 1;
+        let generation = self.generation.clone();
+        let write_lock = self.write_lock.clone();
+        let path = self.personal_path.clone();
+        std::thread::spawn(move || {
+            let _guard = write_lock.lock();
+            if generation.load(Ordering::SeqCst) != ticket {
+                return;
+            }
+            if let Some(dir) = path.parent() {
+                let _ = std::fs::create_dir_all(dir);
+            }
+            if let Err(e) = std::fs::write(&path, words.join("\n") + "\n") {
+                tracing::warn!("personal dictionary: {e}");
+            }
+        });
     }
 }
 

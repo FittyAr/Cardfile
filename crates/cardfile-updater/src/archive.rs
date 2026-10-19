@@ -88,7 +88,8 @@ pub(crate) fn extract_zip(reader: impl Read + Seek, dest: &Path) -> Result<(), U
 pub(crate) fn extract_tar_xz(reader: impl Read, dest: &Path) -> Result<(), UpdateError> {
     let xz = lzma_rust2::XzReader::new(reader, true);
     let mut tar = tar::Archive::new(xz);
-    tar.set_preserve_permissions(true);
+    // Keep the rwx bits but never setuid/setgid/sticky from an archive.
+    tar.set_preserve_permissions(false);
     for entry in tar.entries().map_err(archive_error)? {
         let mut entry = entry.map_err(archive_error)?;
         if entry.header().entry_type() != tar::EntryType::Regular {
