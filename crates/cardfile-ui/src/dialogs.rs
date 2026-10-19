@@ -1,7 +1,8 @@
 //! Reusable dialogs: confirmation and password prompts.
 
 use cardfile_i18n::t;
-use gpui_kit::component::dialog::DialogButtonProps;
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::dialog::{DialogAction, DialogButtonProps, DialogClose, DialogFooter};
 use gpui_kit::component::input::{Input, InputState};
 use gpui_kit::component::{WindowExt as _, v_flex};
 use gpui_kit::{
@@ -12,7 +13,20 @@ use zeroize::Zeroizing;
 
 use crate::state::AppState;
 
-/// Ask for confirmation; `on_confirm` runs when the user accepts.
+/// Cancel and OK buttons for a dialog. A plain gpui-component `Dialog` draws no
+/// buttons from `button_props` (those only back Enter and Escape), so every
+/// dialog needs this footer. OK dispatches the dialog's confirm action, so it runs
+/// the same `on_ok` as Enter.
+pub fn footer(ok_label: String, danger: bool) -> DialogFooter {
+    let ok = Button::new("dialog-ok").label(ok_label);
+    let ok = if danger { ok.danger() } else { ok.primary() };
+    DialogFooter::new()
+        .child(DialogClose::new().trigger(|button| button.label(t("common.cancel"))))
+        .child(DialogAction::new().child(ok))
+}
+
+/// Ask for confirmation of a destructive action; `on_confirm` runs when the user
+/// accepts.
 pub fn confirm(
     title: String,
     body: String,
@@ -33,6 +47,7 @@ pub fn confirm(
                     .cancel_text(t("common.cancel"))
                     .show_cancel(true),
             )
+            .footer(footer(ok_label.clone(), true))
             .on_ok(move |_, window, cx| {
                 f(window, cx);
                 true
@@ -80,6 +95,7 @@ pub fn ask_password<V: 'static>(
                     .cancel_text(t("common.cancel"))
                     .show_cancel(true),
             )
+            .footer(footer(t("common.ok"), false))
             .on_ok(move |_, window, cx| {
                 let pw = Zeroizing::new(input.read(cx).value().to_string());
                 let Some(hash) = AppState::lock_password_hash(cx) else {
