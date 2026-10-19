@@ -3,6 +3,30 @@
 All notable changes to this project are documented here. Generated with
 [git-cliff](https://git-cliff.org) from Conventional Commits (`cliff.toml`).
 
+## [2.0.0-alpha.6] - 2026-10-19
+
+### Bug Fixes
+
+- Confirmation and input dialogs (empty recycle bin, delete, lock password, tags, links) show
+  OK and Cancel buttons again.
+- Card saves are only marked as saved once written; a failed save keeps your edits, shows a
+  notification and is retried. Quitting and updating wait for the last save.
+- Auto-lock counts activity anywhere in the window, and locking closes open dialogs.
+- Decrypted attachments live in a temporary folder removed on lock and quit.
+- A database that cannot be opened is reported instead of failing silently.
+- Markdown export keeps line breaks, escapes text that looked like Markdown and round-trips
+  heading levels; right-to-left detection and the PDF quote bar are fixed.
+- The AI keeps heading levels when it edits cards, refuses to change read-only or recycled
+  cards and says when it stops at its step limit.
+- Pasting, dropping files, loading images and spell checking no longer freeze the editor.
+- A corrupt audio file stops its player instead of crashing the app.
+- Updates time out on stalled connections, can be cancelled, only install signed releases
+  and roll back completely if installing fails.
+- The Windows installer rolls back a failed install; the Linux `.desktop` entry works with
+  paths that contain spaces.
+- Deleting a user revokes their API keys, and leaving encryption or emptying the recycle bin
+  no longer leaves plaintext behind on disk.
+
 ## [2.0.0-alpha.5] - 2026-10-18
 
 ### Features
