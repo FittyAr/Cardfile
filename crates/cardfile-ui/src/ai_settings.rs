@@ -22,7 +22,7 @@ use gpui_kit::{
 
 use crate::mcp_host::{McpServer, Status};
 use crate::secrets::AiKeys;
-use crate::state::{AppState, TaskExt as _, run_db};
+use crate::state::{AppState, run_db};
 use crate::widgets::{error, field, hint, relative_time, section};
 
 /// The user's configured AI services, with their API keys from the credential store.
@@ -786,11 +786,8 @@ impl AiSettings {
     // -----------------------------------------------------------------
 
     fn set_app(cx: &mut App, f: impl FnOnce(&mut cardfile_core::AppSettings)) {
-        let state = AppState::get_mut(cx);
-        f(&mut state.app);
-        let app = state.app.clone();
-        let db = AppState::db(cx);
-        run_db(cx, move |_| db.save_app_settings(&app)).detach_and_log_err(cx);
+        f(&mut AppState::get_mut(cx).app);
+        AppState::save_app_settings(cx);
         McpServer::sync(cx);
     }
 

@@ -11,13 +11,14 @@ use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::input::{Input, InputEvent, InputState};
 use gpui_kit::component::menu::{ContextMenuExt as _, DropdownMenu as _, PopupMenuItem};
+use gpui_kit::component::notification::Notification;
 use gpui_kit::component::{ActiveTheme as _, Sizable as _, WindowExt as _, h_flex, v_flex};
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::{
     AnyElement, App, AppContext as _, Context, Entity, EventEmitter, FocusHandle, Focusable,
-    FontWeight, HighlightStyle, InteractiveElement as _, IntoElement, ParentElement as _, Render,
-    ScrollStrategy, SharedString, StatefulInteractiveElement as _, Styled as _, StyledText,
-    Subscription, Task, UniformListScrollHandle, Window, div, img, px, uniform_list,
+    FontWeight, Global, HighlightStyle, InteractiveElement as _, IntoElement, ParentElement as _,
+    Render, ScrollStrategy, SharedString, StatefulInteractiveElement as _, Styled as _, StyledText,
+    Subscription, Task, UniformListScrollHandle, WeakEntity, Window, div, img, px, uniform_list,
 };
 
 use crate::card_pane::{CardPane, CardPaneEvent};
@@ -87,6 +88,25 @@ pub struct Workspace {
 
 impl EventEmitter<WorkspaceEvent> for Workspace {}
 
+/// The signed-in workspace, so views that may outlive it (dialogs) look it up live
+/// instead of holding on to it.
+#[derive(Default)]
+struct CurrentWorkspace(Option<WeakEntity<Workspace>>);
+
+impl Global for CurrentWorkspace {}
+
+impl Workspace {
+    /// The workspace on screen, if someone is signed in.
+    pub(crate) fn current(cx: &App) -> Option<Entity<Self>> {
+        cx.try_global::<CurrentWorkspace>()?.0.as_ref()?.upgrade()
+    }
+
+    /// Record the workspace on screen (`None` when leaving it).
+    pub(crate) fn set_current(ws: Option<&Entity<Self>>, cx: &mut App) {
+        cx.set_global(CurrentWorkspace(ws.map(Entity::downgrade)));
+    }
+}
+
 impl Focusable for Workspace {
     fn focus_handle(&self, _: &App) -> FocusHandle {
         self.focus.clone()
@@ -124,8 +144,17 @@ impl Workspace {
             cx.subscribe_in(
                 &pane,
                 window,
-                |this, _, ev: &CardPaneEvent, window, cx| match ev {
-                    CardPaneEvent::Saved | CardPaneEvent::ListChanged => this.reload(window, cx),
+                |this, pane, ev: &CardPaneEvent, window, cx| match ev {
+                    CardPaneEvent::Saved => this.reload(window, cx),
+                    CardPaneEvent::ListChanged => {
+                        // The card may have been deleted, purged or closed.
+                        this.selected = pane.read(cx).card_id();
+                        this.reload(window, cx);
+                    }
+                    CardPaneEvent::SaveFailed(error) => window.push_notification(
+                        Notification::error(t_args("card.save_failed", &[("error", error)])),
+                        cx,
+                    ),
                 },
             ),
             cx.observe_global_in::<crate::tags::TagsChanged>(window, |this, window, cx| {
@@ -330,6 +359,10 @@ impl Workspace {
         cx.spawn_in(window, async move |this, cx| match task.await {
             Ok((card, access)) => {
                 let _ = this.update_in(cx, |this, window, cx| {
+                    // The user may have opened another card meanwhile.
+                    if this.pane.read(cx).card_id() != Some(id) {
+                        return;
+                    }
                     let deleted_elsewhere = card.is_deleted()
                         && !this.pane.read(cx).card().is_some_and(|c| c.is_deleted());
                     this.pane.update(cx, |p, cx| {
@@ -339,13 +372,20 @@ impl Workspace {
                             p.refresh_from(card, access, window, cx);
                         }
                     });
+                    if deleted_elsewhere {
+                        this.selected = None;
+                    }
                 });
             }
             Err(_) => {
                 // Purged or unshared meanwhile.
                 let _ = this.update_in(cx, |this, window, cx| {
+                    if this.pane.read(cx).card_id() != Some(id) {
+                        return;
+                    }
                     this.pane
                         .update(cx, |p, cx| p.open(None, CardAccess::Owner, window, cx));
+                    this.selected = None;
                 });
             }
         })
@@ -620,13 +660,28 @@ impl Workspace {
                 let ws = ws.clone();
                 window
                     .spawn(cx, async move |cx| {
-                        let _ = task.await;
+                        let result = task.await;
                         let _ = ws.update_in(cx, |ws, window, cx| {
-                            ws.pane.update(cx, |p, cx| {
-                                if p.card().is_some_and(|c| c.is_deleted()) {
+                            if let Err(e) = result {
+                                window.push_notification(
+                                    Notification::error(t_args(
+                                        "recycle.empty_failed",
+                                        &[("error", &format!("{e:#}"))],
+                                    )),
+                                    cx,
+                                );
+                            }
+                            // Close the open card if it was in the bin (now purged).
+                            let closed = ws.pane.update(cx, |p, cx| {
+                                let deleted = p.card().is_some_and(|c| c.is_deleted());
+                                if deleted {
                                     p.open(None, CardAccess::Owner, window, cx);
                                 }
+                                deleted
                             });
+                            if closed {
+                                ws.selected = None;
+                            }
                             ws.reload(window, cx);
                         });
                     })
@@ -635,8 +690,9 @@ impl Workspace {
         );
     }
 
-    pub fn flush(&mut self, cx: &mut Context<Self>) {
-        self.pane.update(cx, |p, cx| p.flush_save(cx));
+    /// Save the open card now; the task finishes once the write landed.
+    pub fn flush(&mut self, cx: &mut Context<Self>) -> Task<()> {
+        self.pane.update(cx, |p, cx| p.save_now(cx))
     }
 
     pub fn apply_settings(&mut self, window: &mut Window, cx: &mut Context<Self>) {

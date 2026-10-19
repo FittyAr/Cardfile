@@ -2,6 +2,8 @@ _version: 1
 
 app:
   name: Cardfile
+  db_error_title: Cardfile cannot open its database
+  db_error_body: "The database %{path} could not be opened: %{error}"
 test:
   greeting: "Hello, %{name}!"
 
@@ -245,6 +247,10 @@ card:
   deleted_banner: This card is in the recycle bin.
   saving: Saving…
   updated: "Saved %{date}"
+  save_failed: "Could not save the card: %{error}. Your changes are kept and saved again with your next edit."
+  not_unlocked: The encrypted card is not unlocked.
+  delete_failed: "Could not move the card to the recycle bin: %{error}"
+  restore_failed: "Could not restore the card: %{error}"
   words: "%{n} words"
   unlock:
     private: This card is private
@@ -262,10 +268,12 @@ card:
     encrypt_title: Encrypt card
     encrypt_body: Enter your password to encrypt this card. Without it the card cannot be opened.
     failed: "Could not change the protection: %{error}"
+    missing_password: A password is needed to encrypt the card.
   purge:
     title: Delete permanently
     body: This card will be deleted forever. This cannot be undone.
     confirm: Delete permanently
+    failed: "Could not delete the card: %{error}"
   updated_by: "Edited %{date} by %{name}"
 
 tags:
@@ -286,6 +294,7 @@ recycle:
   empty: Empty recycle bin
   empty_title: Empty recycle bin
   empty_body: All cards in the recycle bin will be deleted forever.
+  empty_failed: "Could not empty the recycle bin: %{error}"
 
 export:
   markdown: Export as Markdown
@@ -580,4 +589,5 @@ chat:
     restore_card: "Restored card"
 
 attachment:
+  not_found: The attachment was not found.
   no_app: "No application on this computer can open “%{name}”. Install a program for this file type (for videos, a media player such as VLC) and try again."
