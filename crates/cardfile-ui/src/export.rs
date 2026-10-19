@@ -70,6 +70,7 @@ fn render(
             let opts = MarkdownOptions {
                 html_for_extras: true,
                 image_links_relative: relative_images,
+                exact_heading_levels: false,
             };
             cardfile_doc::to_markdown(doc, Some(title), &opts, blobs).into_bytes()
         }

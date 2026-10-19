@@ -170,12 +170,12 @@ impl Builder {
             }
             Tag::Heading { level, .. } => {
                 self.flush();
-                // The exporter writes the card title as H1 and document headings
-                // one level deeper (Heading 1 → H2), so map them back the same way.
-                // An H1 (pasted from elsewhere) is also a top-level heading.
+                // Standard levels (`#` is Heading 1). File exports shift headings one
+                // level down under the card title; the AI tools export exact levels
+                // (`MarkdownOptions::exact_heading_levels`) so they round-trip.
                 let level = match level {
-                    HeadingLevel::H1 | HeadingLevel::H2 => 1,
-                    HeadingLevel::H3 => 2,
+                    HeadingLevel::H1 => 1,
+                    HeadingLevel::H2 => 2,
                     _ => 3,
                 };
                 self.current = Some(Block::heading(level, ""));
@@ -334,20 +334,18 @@ mod tests {
     fn markdown_roundtrip_through_export() {
         let md = "## Heading\n\nHello **world**\n\n- item\n";
         let doc = from_markdown(md);
-        let out = crate::to_markdown(
-            &doc,
-            None,
-            &crate::MarkdownOptions::default(),
-            &crate::NoBlobs,
-        );
-        // Document headings export one level deeper (the card title is H1) and
-        // import one level up, so a round trip keeps them.
+        let exact = crate::MarkdownOptions {
+            exact_heading_levels: true,
+            ..Default::default()
+        };
+        let out = crate::to_markdown(&doc, None, &exact, &crate::NoBlobs);
+        // With exact heading levels (as the AI tools use) a round trip keeps them.
         assert_eq!(out, md);
     }
 
     #[test]
     fn heading_levels_round_trip() {
-        let md = "## One\n\n### Two\n\n#### Three\n";
+        let md = "# One\n\n## Two\n\n### Three\n";
         let doc = from_markdown(md);
         let levels: Vec<_> = doc.blocks.iter().map(|b| b.kind.clone()).collect();
         assert_eq!(
@@ -358,13 +356,19 @@ mod tests {
                 BlockKind::Heading(3)
             ]
         );
-        let out = crate::to_markdown(
+        let exact = crate::MarkdownOptions {
+            exact_heading_levels: true,
+            ..Default::default()
+        };
+        assert_eq!(crate::to_markdown(&doc, None, &exact, &crate::NoBlobs), md);
+        // File exports put the card title in H1 and shift headings one level down.
+        let file = crate::to_markdown(
             &doc,
             None,
             &crate::MarkdownOptions::default(),
             &crate::NoBlobs,
         );
-        assert_eq!(out, md);
+        assert!(file.starts_with("## One"), "{file}");
         assert_eq!(from_markdown("# Top").blocks[0].kind, BlockKind::Heading(1));
     }
 

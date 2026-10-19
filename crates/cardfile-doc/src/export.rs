@@ -64,6 +64,10 @@ pub struct MarkdownOptions {
     pub html_for_extras: bool,
     /// Link images as `blobs/<id>` (for an export folder) instead of embedding data URIs.
     pub image_links_relative: bool,
+    /// Write headings at their own level (`##` for H2). By default they go one level
+    /// deeper because file exports put the card title in H1; the AI tools need the
+    /// exact levels so that reading and writing a card back keeps its headings.
+    pub exact_heading_levels: bool,
 }
 
 /// Export a document as GitHub Flavored Markdown.
@@ -100,10 +104,11 @@ pub fn to_markdown(
                 let _ = writeln!(out, "{}\n", text(""));
             }
             BlockKind::Heading(level) => {
-                // The card title is H1, so document headings start at H2 (the
-                // Markdown import maps them back, see `markdown_in`). A heading is
-                // a single line in Markdown, so its line breaks become spaces.
-                let hashes = "#".repeat((*level as usize + 1).min(6));
+                // In file exports the card title is H1, so document headings start at
+                // H2; the AI tools ask for exact levels. A heading is a single line in
+                // Markdown, so its line breaks become spaces.
+                let shift = usize::from(!opts.exact_heading_levels);
+                let hashes = "#".repeat((*level as usize + shift).clamp(1, 6));
                 let text = wrap_align(lines.join(" "), block.align, opts);
                 let _ = writeln!(out, "{hashes} {text}\n");
             }
