@@ -1,5 +1,7 @@
 //! Small dialogs opened by the editor.
 
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::dialog::{DialogAction, DialogClose, DialogFooter};
 use gpui_kit::component::input::{Input, InputState};
 use gpui_kit::component::{WindowExt as _, v_flex};
 use gpui_kit::{AppContext as _, Entity, ParentElement as _, Styled as _, Window, px};
@@ -38,6 +40,21 @@ pub fn open_link_dialog(
         dialog
             .title(cardfile_i18n::t("editor.link.title"))
             .child(body)
+            // A plain Dialog draws no buttons of its own; OK runs `on_ok` like Enter.
+            .footer(
+                DialogFooter::new()
+                    .child(
+                        DialogClose::new()
+                            .trigger(|button| button.label(cardfile_i18n::t("common.cancel"))),
+                    )
+                    .child(
+                        DialogAction::new().child(
+                            Button::new("link-ok")
+                                .primary()
+                                .label(cardfile_i18n::t("common.ok")),
+                        ),
+                    ),
+            )
             .on_ok(move |_, window, cx| {
                 let u = url_input.read(cx).value().to_string();
                 let t = needs_text.then(|| text_input.read(cx).value().to_string());

@@ -84,6 +84,7 @@ pub fn edit_tag_dialog(tag: Option<Tag>, window: &mut Window, cx: &mut App) {
                     .child(Input::new(&name))
                     .child(swatches),
             )
+            .footer(crate::dialogs::footer(t("common.save"), false))
             .on_ok(move |_, window, cx| {
                 let value = name.read(cx).value().trim().to_string();
                 if value.is_empty() {
