@@ -495,7 +495,8 @@ anuncia releases con `SHA256SUMS` firmado por la clave minisign incrustada; `car
 por `card_id`; búsqueda sin mayúsculas con plegado Unicode; Argon2, diccionarios y lecturas del
 login fuera del hilo de UI.
 
-Pendiente:
+Pendiente (el seguimiento vivo está en el tablero Cardscape "Cardfile 2"; ver `AGENTS.md` →
+"Task board"):
 
 - Primer release `v2.0.0-alpha.1`: secreto y variable minisign ya configurados; falta `WINGET_TOKEN`
   (`docs/RELEASING.md`), crear el tag y revisar
