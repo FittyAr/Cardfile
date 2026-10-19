@@ -22,6 +22,7 @@ pub struct Speller {
     /// newest, so an older snapshot never overwrites a newer one.
     generation: Arc<AtomicU64>,
     write_lock: Arc<Mutex<()>>,
+    last_write: Mutex<Option<std::thread::JoinHandle<()>>>,
 }
 
 impl Speller {
@@ -40,7 +41,16 @@ impl Speller {
             personal_path,
             generation: Arc::new(AtomicU64::new(0)),
             write_lock: Arc::new(Mutex::new(())),
+            last_write: Mutex::new(None),
         })
+    }
+
+    /// Wait until the newest personal-dictionary write has landed.
+    #[cfg(test)]
+    pub fn flush(&self) {
+        if let Some(handle) = self.last_write.lock().take() {
+            let _ = handle.join();
+        }
     }
 }
 
@@ -68,7 +78,7 @@ impl SpellChecker for Speller {
         let generation = self.generation.clone();
         let write_lock = self.write_lock.clone();
         let path = self.personal_path.clone();
-        std::thread::spawn(move || {
+        let handle = std::thread::spawn(move || {
             let _guard = write_lock.lock();
             if generation.load(Ordering::SeqCst) != ticket {
                 return;
@@ -80,6 +90,7 @@ impl SpellChecker for Speller {
                 tracing::warn!("personal dictionary: {e}");
             }
         });
+        *self.last_write.lock() = Some(handle);
     }
 }
 
@@ -189,6 +200,7 @@ mod tests {
         assert!(s.suggest("helo").contains(&"hello".to_owned()));
         s.add_word("Cardfile");
         assert!(s.check("Cardfile"));
+        s.flush();
         let again = Speller::new(AFF, DIC, personal).unwrap();
         assert!(again.check("Cardfile"));
     }
