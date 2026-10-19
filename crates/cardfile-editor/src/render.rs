@@ -132,7 +132,7 @@ impl RichEditor {
         number: Option<usize>,
         pal: &Palette,
         entity: &Entity<Self>,
-        _cx: &mut Context<Self>,
+        cx: &mut Context<Self>,
     ) -> AnyElement {
         let selected = self.is_atom_selected(ix);
         let mut style = self.slot_style(block, pal, false);
@@ -256,7 +256,7 @@ impl RichEditor {
             BlockKind::Image(image) => {
                 let ent = entity.clone();
                 let dragged = DraggedBlock::new(entity.entity_id(), ix, block);
-                let loaded = self.image_for(image);
+                let loaded = self.image_for(image, cx);
                 let (width, height) =
                     crate::image_resize::preview_size(self.image_drag.as_ref(), ix)
                         .map_or((image.width, image.height), |(w, h)| (Some(w), h));
@@ -537,10 +537,10 @@ impl RichEditor {
 
 impl Render for RichEditor {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        self.refresh_spelling();
+        self.refresh_spelling(cx);
         // Drop layouts of slots that no longer exist; paint refills the rest.
+        self.prune_layouts();
         let blocks = self.model.doc.blocks.clone();
-        self.layouts.retain(|s, _| s.block < blocks.len());
         let pal = Palette::from(cx);
         let entity = cx.entity();
 

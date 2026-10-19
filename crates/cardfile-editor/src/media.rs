@@ -5,18 +5,19 @@
 //! a short timer repaints the editor so the progress bar and video frames advance.
 
 use std::cell::Cell;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 use std::sync::Arc;
 use std::time::Duration;
 
 use cardfile_doc::Attachment;
-use cardfile_media::{MediaKind, PlaybackState, Player};
+use cardfile_media::{MediaError, MediaKind, PlaybackState, Player};
 use gpui_kit::component::{h_flex, v_flex};
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::{
-    AnyElement, Bounds, Context, CursorStyle, Entity, Hsla, InteractiveElement as _, IntoElement,
-    MouseButton, ParentElement as _, Pixels, Styled as _, Task, canvas, div, px,
+    AnyElement, AppContext as _, Bounds, Context, CursorStyle, Entity, Hsla,
+    InteractiveElement as _, IntoElement, MouseButton, ParentElement as _, Pixels, Styled as _,
+    Task, canvas, div, px,
 };
 
 use crate::editor::RichEditor;
@@ -25,8 +26,11 @@ use crate::editor::RichEditor;
 #[derive(Default)]
 pub(crate) struct MediaState {
     players: HashMap<String, Player>,
-    /// Blobs that failed to open (unsupported codec, missing data).
+    /// Blobs that failed to open (unsupported codec, malformed data), with a
+    /// localized message.
     failed: HashMap<String, String>,
+    /// Blobs whose player is being opened on the background executor.
+    loading: HashSet<String>,
     tick: Option<Task<()>>,
 }
 
@@ -38,6 +42,8 @@ impl MediaState {
         }
         self.players.clear();
         self.failed.clear();
+        // A load still in flight finds its blob gone from `loading` and is ignored.
+        self.loading.clear();
         self.tick = None;
     }
 
@@ -62,36 +68,109 @@ fn format_time(d: Duration) -> String {
     }
 }
 
+/// What to do with a player once it has loaded.
+#[derive(Clone, Copy)]
+enum AfterLoad {
+    Toggle,
+    Seek(f32),
+}
+
+/// A player-opening failure as a localized message for the UI.
+fn error_message(e: &MediaError) -> String {
+    let key = match e {
+        MediaError::Unsupported(_) => "editor.media.unsupported",
+        MediaError::Malformed(_) => "editor.media.malformed",
+        _ => "editor.media.failed",
+    };
+    cardfile_i18n::t(key)
+}
+
 impl RichEditor {
-    fn player_for(&mut self, att: &Attachment) -> Option<Player> {
+    /// The player for `att`, once loaded. When it isn't, loading starts (the blob
+    /// read and container parsing run on the background executor) and `then` is
+    /// applied when it is ready.
+    fn player_or_load(
+        &mut self,
+        att: &Attachment,
+        then: AfterLoad,
+        cx: &mut Context<Self>,
+    ) -> Option<Player> {
         if let Some(p) = self.media.players.get(&att.blob) {
             return Some(p.clone());
         }
         if self.media.failed.contains_key(&att.blob) {
+            // Unsupported inline: hand it to the system player.
+            if matches!(then, AfterLoad::Toggle) {
+                Self::open_externally(att, cx);
+            }
             return None;
         }
-        let (mime, bytes) = self.blobs.as_ref()?.get(&att.blob)?;
-        let mime = if mime == "application/octet-stream" {
-            att.mime.clone()
-        } else {
-            mime
-        };
-        match Player::open(Arc::from(bytes), &mime, Some(&att.file_name)) {
-            Ok(p) => {
-                self.media.players.insert(att.blob.clone(), p.clone());
-                Some(p)
-            }
-            Err(e) => {
-                tracing::warn!("cannot play {}: {e}", att.file_name);
-                self.media.failed.insert(att.blob.clone(), e.to_string());
-                None
-            }
+        if !self.media.loading.insert(att.blob.clone()) {
+            return None;
         }
+        let store = self.blobs.clone();
+        let blob = att.blob.clone();
+        let att_mime = att.mime.clone();
+        let file_name = att.file_name.clone();
+        let task = cx.background_spawn(async move {
+            let (mime, bytes) = store?.get(&blob)?;
+            let mime = if mime == "application/octet-stream" {
+                att_mime
+            } else {
+                mime
+            };
+            Some(Player::open(Arc::from(bytes), &mime, Some(&file_name)))
+        });
+        let att = att.clone();
+        cx.spawn(async move |this, cx| {
+            let result = task.await;
+            let _ = this.update(cx, |this, cx| {
+                if !this.media.loading.remove(&att.blob) {
+                    // Another document was shown meanwhile.
+                    return;
+                }
+                match result {
+                    Some(Ok(p)) => {
+                        this.media.players.insert(att.blob.clone(), p.clone());
+                        this.apply_after_load(&att, &p, then, cx);
+                    }
+                    Some(Err(e)) => {
+                        tracing::warn!("cannot play {}: {e}", att.file_name);
+                        this.media
+                            .failed
+                            .insert(att.blob.clone(), error_message(&e));
+                        if matches!(then, AfterLoad::Toggle) {
+                            Self::open_externally(&att, cx);
+                        }
+                    }
+                    // The data is missing: let the system try.
+                    None if matches!(then, AfterLoad::Toggle) => Self::open_externally(&att, cx),
+                    None => {}
+                }
+                cx.notify();
+            });
+        })
+        .detach();
+        cx.notify();
+        None
     }
 
-    pub(crate) fn media_toggle(&mut self, att: &Attachment, cx: &mut Context<Self>) {
-        match self.player_for(att) {
-            Some(p) => {
+    fn open_externally(att: &Attachment, cx: &mut Context<Self>) {
+        cx.emit(crate::editor::EditorEvent::OpenAttachment {
+            blob: att.blob.clone(),
+            file_name: att.file_name.clone(),
+        });
+    }
+
+    fn apply_after_load(
+        &mut self,
+        att: &Attachment,
+        p: &Player,
+        then: AfterLoad,
+        cx: &mut Context<Self>,
+    ) {
+        match then {
+            AfterLoad::Toggle => {
                 // One thing plays at a time.
                 for (blob, other) in &self.media.players {
                     if *blob != att.blob {
@@ -101,25 +180,26 @@ impl RichEditor {
                 p.toggle();
                 self.ensure_media_tick(cx);
             }
-            None => {
-                // Unsupported inline: hand it to the system player.
-                cx.emit(crate::editor::EditorEvent::OpenAttachment {
-                    blob: att.blob.clone(),
-                    file_name: att.file_name.clone(),
-                });
+            AfterLoad::Seek(fraction) => {
+                if let Some(total) = p.duration() {
+                    p.seek(total.mul_f32(fraction.clamp(0., 1.)));
+                    self.ensure_media_tick(cx);
+                }
             }
         }
         cx.notify();
     }
 
+    pub(crate) fn media_toggle(&mut self, att: &Attachment, cx: &mut Context<Self>) {
+        if let Some(p) = self.player_or_load(att, AfterLoad::Toggle, cx) {
+            self.apply_after_load(att, &p, AfterLoad::Toggle, cx);
+        }
+    }
+
     pub(crate) fn media_seek(&mut self, att: &Attachment, fraction: f32, cx: &mut Context<Self>) {
-        let Some(p) = self.player_for(att) else {
-            return;
-        };
-        if let Some(total) = p.duration() {
-            p.seek(total.mul_f32(fraction.clamp(0., 1.)));
-            self.ensure_media_tick(cx);
-            cx.notify();
+        let then = AfterLoad::Seek(fraction);
+        if let Some(p) = self.player_or_load(att, then, cx) {
+            self.apply_after_load(att, &p, then, cx);
         }
     }
 
@@ -236,6 +316,7 @@ impl RichEditor {
         let mute_att = att.clone();
         let ent = entity.clone();
         let time = match duration {
+            _ if self.media.loading.contains(&att.blob) => cardfile_i18n::t("editor.media.loading"),
             Some(d) => format!("{} / {}", format_time(position), format_time(d)),
             None => format_time(position),
         };

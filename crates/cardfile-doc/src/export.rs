@@ -88,36 +88,43 @@ pub fn to_markdown(
         if !matches!(block.kind, BlockKind::NumberedList) {
             numbers.truncate(block.indent as usize);
         }
-        let text = md_inline(&block.text, opts);
-        let text = wrap_align(text, block.align, opts);
+        // Line breaks inside a block become hard breaks (a trailing backslash); a
+        // continuation line is indented to stay inside its list item or quote.
+        let lines = md_lines(&block.text, opts);
+        let text = |cont: &str| {
+            let joined = lines.join(&format!("\\\n{cont}"));
+            wrap_align(joined, block.align, opts)
+        };
         match &block.kind {
             BlockKind::Paragraph => {
-                let _ = writeln!(out, "{text}\n");
+                let _ = writeln!(out, "{}\n", text(""));
             }
             BlockKind::Heading(level) => {
-                // The card title is H1, so document headings start at H2.
+                // The card title is H1, so document headings start at H2 (the
+                // Markdown import maps them back, see `markdown_in`). A heading is
+                // a single line in Markdown, so its line breaks become spaces.
                 let hashes = "#".repeat((*level as usize + 1).min(6));
+                let text = wrap_align(lines.join(" "), block.align, opts);
                 let _ = writeln!(out, "{hashes} {text}\n");
             }
             BlockKind::BulletList => {
-                let _ = writeln!(out, "{indent}- {text}");
+                let _ = writeln!(out, "{indent}- {}", text(&format!("{indent}  ")));
             }
             BlockKind::NumberedList => {
                 let level = block.indent as usize;
                 numbers.resize(level + 1, 0);
                 numbers.truncate(level + 1);
                 numbers[level] += 1;
-                let _ = writeln!(out, "{indent}{}. {text}", numbers[level]);
+                let marker = format!("{}. ", numbers[level]);
+                let cont = format!("{indent}{}", " ".repeat(marker.len()));
+                let _ = writeln!(out, "{indent}{marker}{}", text(&cont));
             }
             BlockKind::CheckList { checked } => {
                 let mark = if *checked { "x" } else { " " };
-                let _ = writeln!(out, "{indent}- [{mark}] {text}");
+                let _ = writeln!(out, "{indent}- [{mark}] {}", text(&format!("{indent}  ")));
             }
             BlockKind::Quote => {
-                for line in text.lines() {
-                    let _ = writeln!(out, "> {line}");
-                }
-                out.push('\n');
+                let _ = writeln!(out, "> {}\n", text("> "));
             }
             BlockKind::Code { language } => {
                 let fence = if block.text.text.contains("```") {
@@ -147,10 +154,7 @@ pub fn to_markdown(
             BlockKind::Table(table) => {
                 let cols = table.cols();
                 for (r, row) in table.rows.iter().enumerate() {
-                    let cells: Vec<String> = row
-                        .iter()
-                        .map(|c| md_inline(c, opts).replace('|', "\\|"))
-                        .collect();
+                    let cells: Vec<String> = row.iter().map(|c| md_cell(c, opts)).collect();
                     let _ = writeln!(out, "| {} |", cells.join(" | "));
                     if r == 0 {
                         let _ = writeln!(out, "|{}", " --- |".repeat(cols));
@@ -175,13 +179,17 @@ fn wrap_align(text: String, align: Align, opts: &MarkdownOptions) -> String {
     format!("<div align=\"{}\">{text}</div>", align_name(align))
 }
 
+/// Escape inline Markdown syntax in plain text.
 fn escape_md(s: &str) -> String {
     let mut out = String::with_capacity(s.len());
-    for ch in s.chars() {
-        if matches!(
-            ch,
-            '\\' | '*' | '_' | '`' | '[' | ']' | '<' | '>' | '#' | '~' | '|'
-        ) {
+    for (i, ch) in s.char_indices() {
+        let escape = match ch {
+            '\\' | '*' | '_' | '`' | '[' | ']' | '<' | '>' | '#' | '~' | '|' => true,
+            // `&amp;`, `&#38;`, `&#x26;` would be decoded as character references.
+            '&' => looks_like_entity(&s[i + 1..]),
+            _ => false,
+        };
+        if escape {
             out.push('\\');
         }
         out.push(ch);
@@ -189,7 +197,84 @@ fn escape_md(s: &str) -> String {
     out
 }
 
-fn md_inline(rt: &RichText, opts: &MarkdownOptions) -> String {
+/// Whether `rest` (the text after a `&`) starts like an HTML character reference.
+fn looks_like_entity(rest: &str) -> bool {
+    let Some(end) = rest.find(';') else {
+        return false;
+    };
+    let body = &rest[..end];
+    let valid = if let Some(num) = body.strip_prefix('#') {
+        if let Some(hex) = num.strip_prefix(['x', 'X']) {
+            !hex.is_empty() && hex.chars().all(|c| c.is_ascii_hexdigit())
+        } else {
+            !num.is_empty() && num.chars().all(|c| c.is_ascii_digit())
+        }
+    } else {
+        !body.is_empty() && body.chars().all(|c| c.is_ascii_alphanumeric())
+    };
+    valid && body.len() <= 32
+}
+
+/// Escape what would start a block when it begins a line of a paragraph: list
+/// markers, thematic breaks, setext underlines and indented code.
+fn escape_line_start(line: &str) -> String {
+    let mut chars = line.chars();
+    let Some(first) = chars.next() else {
+        return String::new();
+    };
+    let second = chars.next();
+    let blank_after = |c: Option<char>| matches!(c, None | Some(' ' | '\t'));
+    match first {
+        // Leading spaces would be dropped or turn the line into indented code; a
+        // character reference keeps them.
+        ' ' => return format!("&#32;{}", &line[1..]),
+        '\t' => return format!("&#9;{}", &line[1..]),
+        '-' | '+' if blank_after(second) => return format!("\\{line}"),
+        '-' | '=' => {
+            let t = line.trim_end();
+            let rule = first == '-'
+                && t.chars().all(|c| matches!(c, '-' | ' ' | '\t'))
+                && t.matches('-').count() >= 3;
+            let setext = first == '=' && t.chars().all(|c| c == '=');
+            if rule || setext {
+                return format!("\\{line}");
+            }
+        }
+        '0'..='9' => {
+            let digits = line.bytes().take_while(u8::is_ascii_digit).count();
+            let rest = &line[digits..];
+            let mut r = rest.chars();
+            if digits <= 9 && matches!(r.next(), Some('.' | ')')) && blank_after(r.next()) {
+                return format!("{}\\{rest}", &line[..digits]);
+            }
+        }
+        _ => {}
+    }
+    line.to_owned()
+}
+
+/// A block's inline Markdown split at its line breaks, each line escaped so it
+/// cannot start a new block. Trailing empty lines are dropped (Markdown can't keep
+/// them).
+fn md_lines(rt: &RichText, opts: &MarkdownOptions) -> Vec<String> {
+    let inline = md_inline(rt, opts, false);
+    let mut lines: Vec<&str> = inline.split('\n').collect();
+    while lines.len() > 1 && lines.last().is_some_and(|l| l.trim().is_empty()) {
+        lines.pop();
+    }
+    lines.into_iter().map(escape_line_start).collect()
+}
+
+/// A table cell: GFM cells are one line, so line breaks become `<br>`.
+fn md_cell(rt: &RichText, opts: &MarkdownOptions) -> String {
+    md_inline(rt, opts, true)
+        .split('\n')
+        .map(str::trim)
+        .collect::<Vec<_>>()
+        .join("<br>")
+}
+
+fn md_inline(rt: &RichText, opts: &MarkdownOptions, in_table: bool) -> String {
     let mut out = String::new();
     for (range, style) in rt.spans() {
         let raw = &rt.text[range];
@@ -206,7 +291,25 @@ fn md_inline(rt: &RichText, opts: &MarkdownOptions) -> String {
         }
         let mut s = if style.code {
             let ticks = if trimmed.contains('`') { "``" } else { "`" };
-            format!("{ticks}{trimmed}{ticks}")
+            // A code span can't hold a line break: one span per line.
+            trimmed
+                .split('\n')
+                .map(|part| {
+                    let part = part.trim();
+                    // In a table an unescaped `|` would end the cell, even in code.
+                    let part = if in_table {
+                        part.replace('|', "\\|")
+                    } else {
+                        part.to_owned()
+                    };
+                    if part.is_empty() {
+                        part
+                    } else {
+                        format!("{ticks}{part}{ticks}")
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join("\n")
         } else {
             escape_md(trimmed)
         };
@@ -569,6 +672,121 @@ mod tests {
         );
         let expected = "# Card\n\n## Intro\n\nHello **bold** world\n\n- one\n   - nested\n1. first\n2. second\n- [x] done\n\n```rust\nlet x = 1;\n```\n\n| A | B |\n| --- | --- |\n| 1 | 2 |\n";
         pretty_assertions::assert_eq!(md, expected);
+    }
+
+    fn md(doc: &Document) -> String {
+        to_markdown(doc, None, &MarkdownOptions::default(), &NoBlobs)
+    }
+
+    fn doc_of(blocks: Vec<Block>) -> Document {
+        Document {
+            version: crate::DOC_VERSION,
+            blocks,
+        }
+    }
+
+    #[test]
+    fn markdown_keeps_line_breaks() {
+        let mut table = Table::new(2, 1);
+        table.rows[0][0] = "H".into();
+        table.rows[1][0] = "one\ntwo".into();
+        let doc = doc_of(vec![
+            Block::paragraph("first\nsecond"),
+            Block::heading(1, "split\nheading"),
+            Block::new(BlockKind::BulletList, "item\nmore"),
+            Block::new(BlockKind::NumberedList, "num\nmore"),
+            Block::new(BlockKind::Quote, "q1\nq2"),
+            Block::new(BlockKind::Table(table), ""),
+        ]);
+        let expected = "first\\\nsecond\n\n## split heading\n\n- item\\\n  more\n1. num\\\n   more\n\n> q1\\\n> q2\n\n| H |\n| --- |\n| one<br>two |\n";
+        pretty_assertions::assert_eq!(md(&doc), expected);
+        // And back: every line break survives the round trip.
+        let back = crate::from_markdown(expected);
+        assert_eq!(back.blocks[0].text.text, "first\nsecond");
+        assert_eq!(back.blocks[2].text.text, "item\nmore");
+        assert_eq!(back.blocks[3].text.text, "num\nmore");
+        assert_eq!(back.blocks[4].text.text, "q1\nq2");
+        let BlockKind::Table(t) = &back.blocks[5].kind else {
+            panic!("table expected")
+        };
+        assert_eq!(t.rows[1][0].text, "one\ntwo");
+    }
+
+    #[test]
+    fn markdown_code_span_with_line_break() {
+        let mut p = Block::paragraph("a\nb");
+        p.text.toggle_mark(0..3, Mark::Code);
+        pretty_assertions::assert_eq!(md(&doc_of(vec![p])), "`a`\\\n`b`\n");
+    }
+
+    #[test]
+    fn markdown_escapes_block_starts() {
+        let texts = [
+            "- not a list",
+            "+ plus",
+            "* star",
+            "1. one",
+            "2) two",
+            "---",
+            "***",
+            "___",
+            "# hash",
+            "> quote",
+            "    four spaces",
+            "&amp; and &#38; and &#x26;",
+            "-",
+            "line\n===",
+            "line\n- dash",
+            "a & b; c",
+        ];
+        let doc = doc_of(texts.iter().map(|t| Block::paragraph(t)).collect());
+        let out = md(&doc);
+        let expected = "\\- not a list\n\n\\+ plus\n\n\\* star\n\n1\\. one\n\n2\\) two\n\n\\---\n\n\\*\\*\\*\n\n\\_\\_\\_\n\n\\# hash\n\n\\> quote\n\n&#32;   four spaces\n\n\\&amp; and \\&\\#38; and \\&\\#x26;\n\n\\-\n\nline\\\n\\===\n\nline\\\n\\- dash\n\na & b; c\n";
+        pretty_assertions::assert_eq!(out, expected);
+        // Every paragraph comes back as the same plain paragraph.
+        let back = crate::from_markdown(&out);
+        let got: Vec<_> = back
+            .blocks
+            .iter()
+            .map(|b| (b.kind.clone(), b.text.text.clone()))
+            .collect();
+        let want: Vec<_> = texts
+            .iter()
+            .map(|t| (BlockKind::Paragraph, (*t).to_owned()))
+            .collect();
+        pretty_assertions::assert_eq!(got, want);
+    }
+
+    #[test]
+    fn markdown_escapes_list_item_starts() {
+        let doc = doc_of(vec![Block::new(BlockKind::BulletList, "- nested?")]);
+        let out = md(&doc);
+        assert_eq!(out, "- \\- nested?\n");
+        let back = crate::from_markdown(&out);
+        assert_eq!(back.blocks.len(), 1);
+        assert_eq!(back.blocks[0].text.text, "- nested?");
+    }
+
+    #[test]
+    fn markdown_table_pipes_round_trip() {
+        let mut table = Table::new(2, 1);
+        table.rows[0][0] = "H".into();
+        table.rows[1][0] = "a|b".into();
+        let mut code = Table::new(2, 1);
+        code.rows[0][0] = "H".into();
+        code.rows[1][0] = "x|y".into();
+        code.rows[1][0].toggle_mark(0..3, Mark::Code);
+        let doc = doc_of(vec![
+            Block::new(BlockKind::Table(table), ""),
+            Block::new(BlockKind::Table(code), ""),
+        ]);
+        let back = crate::from_markdown(&md(&doc));
+        for (i, want) in ["a|b", "x|y"].into_iter().enumerate() {
+            let BlockKind::Table(t) = &back.blocks[i].kind else {
+                panic!("table expected")
+            };
+            assert_eq!(t.rows[1][0].text, want);
+        }
     }
 
     #[test]
