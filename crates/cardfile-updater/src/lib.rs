@@ -27,6 +27,9 @@ mod download;
 mod install;
 mod kind;
 
+use std::sync::OnceLock;
+use std::time::Duration;
+
 use minisign_verify::{PublicKey, Signature};
 use semver::Version;
 use serde::Deserialize;
@@ -103,6 +106,11 @@ pub struct Release {
 }
 
 impl Release {
+    /// Whether the signed checksum list and its signature are attached.
+    pub fn has_signature_files(&self) -> bool {
+        self.asset(CHECKSUMS).is_some() && self.asset(&format!("{CHECKSUMS}.minisig")).is_some()
+    }
+
     /// The attached file called `name`, if any.
     pub fn asset(&self, name: &str) -> Option<&Asset> {
         self.assets.iter().find(|a| a.name == name)
@@ -135,13 +143,13 @@ struct GhRelease {
     assets: Vec<Asset>,
 }
 
-/// Pick the newest release above `current` from a GitHub releases JSON array.
+/// Every release above `current` in a GitHub releases JSON array, newest first.
 /// Pre-releases are considered only when `current` is itself a pre-release.
-pub fn newest_from_json(json: &str, current: &Version) -> Result<Option<Release>, UpdateError> {
+fn candidates_from_json(json: &str, current: &Version) -> Result<Vec<Release>, UpdateError> {
     let releases: Vec<GhRelease> =
         serde_json::from_str(json).map_err(|e| UpdateError::Parse(e.to_string()))?;
     let allow_pre = !current.pre.is_empty();
-    Ok(releases
+    let mut candidates: Vec<Release> = releases
         .into_iter()
         .filter(|r| !r.draft && (allow_pre || !r.prerelease))
         .filter_map(|r| {
@@ -155,7 +163,28 @@ pub fn newest_from_json(json: &str, current: &Version) -> Result<Option<Release>
             })
         })
         .filter(|r| r.version > *current)
-        .max_by(|a, b| a.version.cmp(&b.version)))
+        .collect();
+    candidates.sort_by(|a, b| b.version.cmp(&a.version));
+    Ok(candidates)
+}
+
+/// Pick the newest release above `current` from a GitHub releases JSON array.
+/// Pre-releases are considered only when `current` is itself a pre-release.
+pub fn newest_from_json(json: &str, current: &Version) -> Result<Option<Release>, UpdateError> {
+    Ok(candidates_from_json(json, current)?.into_iter().next())
+}
+
+/// Pick the newest release above `current` that carries its signature files
+/// (`SHA256SUMS` and `SHA256SUMS.minisig`). A release whose signatures are not attached
+/// yet is skipped, so an older signed release can still be offered. Nothing is
+/// verified here; [`check`] verifies the pick.
+pub fn newest_signed_from_json(
+    json: &str,
+    current: &Version,
+) -> Result<Option<Release>, UpdateError> {
+    Ok(candidates_from_json(json, current)?
+        .into_iter()
+        .find(Release::has_signature_files))
 }
 
 /// Trusted comment `sign.yml` writes into the signature of `file`. Naming the tag
@@ -198,9 +227,38 @@ fn user_agent() -> &'static str {
     concat!("Cardfile/", env!("CARGO_PKG_VERSION"))
 }
 
+/// Time to resolve the host name and to connect (TCP + TLS).
+const CONNECT_TIMEOUT: Duration = Duration::from_secs(15);
+/// Time from sending a request to receiving the response headers.
+const RESPONSE_TIMEOUT: Duration = Duration::from_secs(30);
+/// Whole-request limit for the small requests (API JSON, checksums, signatures).
+const SMALL_REQUEST_TIMEOUT: Duration = Duration::from_secs(60);
+/// Hard limit for receiving a release asset. Stalls are caught much sooner by the
+/// download's own idle timeout; this only bounds the reader thread left behind.
+pub(crate) const DOWNLOAD_BODY_TIMEOUT: Duration = Duration::from_secs(2 * 60 * 60);
+
+/// The HTTP agent every request goes through. ureq has no timeouts by default, so a
+/// silent server would block a check or a download forever.
+pub(crate) fn agent() -> &'static ureq::Agent {
+    static AGENT: OnceLock<ureq::Agent> = OnceLock::new();
+    AGENT.get_or_init(|| {
+        ureq::Agent::config_builder()
+            .timeout_resolve(Some(CONNECT_TIMEOUT))
+            .timeout_connect(Some(CONNECT_TIMEOUT))
+            .timeout_send_request(Some(RESPONSE_TIMEOUT))
+            .timeout_recv_response(Some(RESPONSE_TIMEOUT))
+            .build()
+            .into()
+    })
+}
+
 /// GET a small resource (API JSON, checksums, signatures) into memory.
 fn get(url: &str, accept: &str) -> Result<Vec<u8>, UpdateError> {
-    let mut resp = ureq::get(url)
+    let mut resp = agent()
+        .get(url)
+        .config()
+        .timeout_global(Some(SMALL_REQUEST_TIMEOUT))
+        .build()
         .header("User-Agent", user_agent())
         .header("Accept", accept)
         .call()
@@ -230,13 +288,15 @@ fn fetch_signed_checksums(release: &Release) -> Result<Vec<u8>, UpdateError> {
     Ok(checksums)
 }
 
-/// Query GitHub for a release newer than `current` and verify its signature.
+/// Query GitHub for the newest signed release newer than `current` and verify its
+/// signature. A release still waiting for its signature files is skipped (an older
+/// signed one is offered instead, or nothing), so it is never reported as an error.
 /// Blocking: call off the UI thread.
 pub fn check(current: &Version) -> Result<Option<Release>, UpdateError> {
     let url = format!("https://api.github.com/repos/{REPOSITORY}/releases?per_page=20");
     let body = get(&url, "application/vnd.github+json")?;
     let body = String::from_utf8(body).map_err(|e| UpdateError::Parse(e.to_string()))?;
-    let Some(release) = newest_from_json(&body, current)? else {
+    let Some(release) = newest_signed_from_json(&body, current)? else {
         return Ok(None);
     };
     fetch_signed_checksums(&release)?;
@@ -321,6 +381,44 @@ y/rUw2y8/hOUYjZU71eHp/Wo1KZ40fGy2VJEDl34XMJM+TX48Ss/17u3IvIfbVR1FkZZSNCisQbuQY+b
             trusted_comment("v2.0.1", "cardfile-x86_64-unknown-linux-gnu.tar.xz"),
             "Cardfile v2.0.1 release file: cardfile-x86_64-unknown-linux-gnu.tar.xz"
         );
+    }
+
+    #[test]
+    fn unsigned_releases_are_skipped() {
+        let json = r#"[
+            {"tag_name":"v2.0.2","html_url":"new","assets":[
+                {"name":"cardfile-x86_64-pc-windows-msvc.zip","browser_download_url":"https://x/w.zip"}
+            ]},
+            {"tag_name":"v2.0.1","html_url":"signed","assets":[
+                {"name":"SHA256SUMS","browser_download_url":"https://x/SHA256SUMS"},
+                {"name":"SHA256SUMS.minisig","browser_download_url":"https://x/SHA256SUMS.minisig"}
+            ]},
+            {"tag_name":"v2.0.3","html_url":"half","assets":[
+                {"name":"SHA256SUMS","browser_download_url":"https://x/SHA256SUMS"}
+            ]}
+        ]"#;
+        let v = |s| Version::parse(s).unwrap();
+        // The newest overall is v2.0.3, but only v2.0.1 has both signature files.
+        let newest = newest_from_json(json, &v("2.0.0")).unwrap().unwrap();
+        assert_eq!(newest.tag, "v2.0.3");
+        assert!(!newest.has_signature_files());
+        let signed = newest_signed_from_json(json, &v("2.0.0")).unwrap().unwrap();
+        assert_eq!(signed.tag, "v2.0.1");
+        assert!(signed.has_signature_files());
+        // Already on the newest signed one: the unsigned v2.0.2/v2.0.3 are no update.
+        assert!(
+            newest_signed_from_json(json, &v("2.0.1"))
+                .unwrap()
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn agent_has_timeouts() {
+        let timeouts = agent().config().timeouts();
+        assert_eq!(timeouts.connect, Some(CONNECT_TIMEOUT));
+        assert_eq!(timeouts.resolve, Some(CONNECT_TIMEOUT));
+        assert_eq!(timeouts.recv_response, Some(RESPONSE_TIMEOUT));
     }
 
     #[test]

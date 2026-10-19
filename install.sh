@@ -344,8 +344,24 @@ download_release() {
     PKG_DIR=$(dirname "$BIN_SRC")
 }
 
+# $1 as one quoted Exec= argument (Desktop Entry spec, "The Exec key"): \, ", ` and $
+# are backslash-escaped inside double quotes, % is doubled, and then every backslash is
+# escaped again for the string value itself.
+desktop_exec_arg() {
+    printf '"%s"' "$(printf '%s' "$1" | sed -e 's/[\\"`$]/\\&/g' -e 's/%/%%/g' -e 's/\\/\\\\/g')"
+}
+
+# $1 as a Desktop Entry string value (only the backslash needs escaping here).
+desktop_string() {
+    printf '%s' "$1" | sed -e 's/\\/\\\\/g'
+}
+
 # Icons and the menu entry come from the repository at the installed tag.
 install_desktop_integration() {
+    case "$LIB_DIR" in
+        *"
+"*) die "The install folder name contains a line break." ;;
+    esac
     RAW="https://raw.githubusercontent.com/${REPO}/${VERSION}/packaging/linux"
     for size in $ICON_SIZES; do
         DEST="$ICONS_DIR/${size}x${size}/apps"
@@ -360,8 +376,8 @@ Type=Application
 Name=Cardfile
 GenericName=Card file
 Comment=A modern digital card file for your notes
-Exec=$LIB_DIR/cardfile
-TryExec=$LIB_DIR/cardfile
+Exec=$(desktop_exec_arg "$LIB_DIR/cardfile")
+TryExec=$(desktop_string "$LIB_DIR/cardfile")
 Icon=$APP_ID
 Terminal=false
 Categories=Office;
@@ -417,7 +433,8 @@ repair_shell_profiles() {
             {
                 line = $0
                 sub(/^[ 	]+/, "", line)
-                sub(/[ 	]+$/, "", line)
+                sub(/[ 	
+]+$/, "", line)
                 ours = (line == guarded)
                 for (i = 1; i <= n; i++) if (line == raw[i]) ours = 2
                 if (!ours) { print; next }

@@ -5,6 +5,8 @@ use std::fmt::Write as _;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::mpsc::{self, Receiver, RecvTimeoutError};
+use std::time::{Duration, Instant};
 
 use minisign_verify::{PublicKey, Signature, StreamVerifier};
 use sha2::{Digest, Sha256};
@@ -12,12 +14,16 @@ use tempfile::TempPath;
 
 use crate::kind::{Platform, TEMP_PREFIX, select_asset};
 use crate::{
-    Asset, InstallKind, PUBLIC_KEY, Release, UpdateError, check_trusted_comment,
-    fetch_signed_checksums, get_text, signature_error, user_agent,
+    Asset, DOWNLOAD_BODY_TIMEOUT, InstallKind, PUBLIC_KEY, Release, UpdateError, agent,
+    check_trusted_comment, fetch_signed_checksums, get_text, signature_error, user_agent,
 };
 
 /// Hard cap for an asset whose size GitHub did not report.
 const MAX_DOWNLOAD: u64 = 1024 * 1024 * 1024;
+/// A download that receives nothing for this long is abandoned as stalled.
+const STALL_TIMEOUT: Duration = Duration::from_secs(60);
+/// How often a waiting download looks at the cancel flag.
+const CANCEL_POLL: Duration = Duration::from_millis(200);
 
 /// A downloaded and verified update, ready for [`crate::install`].
 ///
@@ -132,7 +138,11 @@ pub fn download(
         .prefix(TEMP_PREFIX)
         .suffix(&format!("-{}", asset.name))
         .tempfile_in(&dir)?;
-    let resp = ureq::get(&asset.url)
+    let resp = agent()
+        .get(&asset.url)
+        .config()
+        .timeout_recv_body(Some(DOWNLOAD_BODY_TIMEOUT))
+        .build()
         .header("User-Agent", user_agent())
         .header("Accept", "application/octet-stream")
         .call()
@@ -146,7 +156,7 @@ pub fn download(
     } else {
         MAX_DOWNLOAD
     };
-    let mut reader = resp.into_body().into_reader();
+    let mut reader = StallGuard::spawn(resp.into_body().into_reader(), cancel, STALL_TIMEOUT)?;
     receive(
         &mut reader,
         file.as_file_mut(),
@@ -165,6 +175,109 @@ pub fn download(
         asset,
         path: file.into_temp_path(),
     })
+}
+
+/// Reads a blocking network stream on a helper thread, so the download can give up
+/// on a stalled connection (no data for `stall` -> [`std::io::ErrorKind::TimedOut`])
+/// and react to the cancel flag within [`CANCEL_POLL`] (reported as
+/// [`std::io::ErrorKind::Interrupted`]; [`receive`] then sees the flag and stops).
+///
+/// When the download is abandoned, the helper thread is left to finish its current
+/// read; the agent's body timeout bounds how long that can take.
+pub(crate) struct StallGuard<'a> {
+    rx: Receiver<std::io::Result<Vec<u8>>>,
+    pending: Vec<u8>,
+    pos: usize,
+    done: bool,
+    cancel: &'a AtomicBool,
+    stall: Duration,
+}
+
+impl<'a> StallGuard<'a> {
+    pub(crate) fn spawn(
+        mut inner: impl Read + Send + 'static,
+        cancel: &'a AtomicBool,
+        stall: Duration,
+    ) -> std::io::Result<Self> {
+        // A small bound keeps memory flat when the disk is slower than the network.
+        let (tx, rx) = mpsc::sync_channel(4);
+        std::thread::Builder::new()
+            .name("cardfile-update-download".into())
+            .spawn(move || {
+                let mut buf = vec![0u8; 64 * 1024];
+                loop {
+                    let msg = match inner.read(&mut buf) {
+                        Ok(n) => Ok(buf[..n].to_vec()),
+                        Err(e) if e.kind() == std::io::ErrorKind::Interrupted => continue,
+                        Err(e) => Err(e),
+                    };
+                    let last = !matches!(&msg, Ok(chunk) if !chunk.is_empty());
+                    // A closed channel means the download was abandoned.
+                    if tx.send(msg).is_err() || last {
+                        break;
+                    }
+                }
+            })?;
+        Ok(Self {
+            rx,
+            pending: Vec::new(),
+            pos: 0,
+            done: false,
+            cancel,
+            stall,
+        })
+    }
+}
+
+impl Read for StallGuard<'_> {
+    fn read(&mut self, out: &mut [u8]) -> std::io::Result<usize> {
+        use std::io::{Error, ErrorKind};
+        if self.pos < self.pending.len() {
+            let n = out.len().min(self.pending.len() - self.pos);
+            out[..n].copy_from_slice(&self.pending[self.pos..self.pos + n]);
+            self.pos += n;
+            return Ok(n);
+        }
+        if self.done {
+            return Ok(0);
+        }
+        let started = Instant::now();
+        loop {
+            if self.cancel.load(Ordering::Relaxed) {
+                return Err(Error::new(ErrorKind::Interrupted, "download cancelled"));
+            }
+            let waited = started.elapsed();
+            if waited >= self.stall {
+                return Err(Error::new(
+                    ErrorKind::TimedOut,
+                    format!("no data received for {} s", self.stall.as_secs()),
+                ));
+            }
+            match self.rx.recv_timeout(CANCEL_POLL.min(self.stall - waited)) {
+                Ok(Ok(chunk)) if chunk.is_empty() => {
+                    self.done = true;
+                    return Ok(0);
+                }
+                Ok(Ok(chunk)) => {
+                    self.pending = chunk;
+                    self.pos = 0;
+                    return self.read(out);
+                }
+                Ok(Err(e)) => {
+                    self.done = true;
+                    return Err(e);
+                }
+                Err(RecvTimeoutError::Timeout) => {}
+                Err(RecvTimeoutError::Disconnected) => {
+                    self.done = true;
+                    return Err(Error::new(
+                        ErrorKind::UnexpectedEof,
+                        "download reader stopped",
+                    ));
+                }
+            }
+        }
+    }
 }
 
 /// What the received bytes must match.
@@ -225,6 +338,7 @@ pub(crate) fn receive(
 mod tests {
     use super::*;
     use crate::tests::{TEST_KEY, TEST_SIG};
+    use std::io::Cursor;
 
     const TEST_SHA: &str = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08";
 
@@ -298,6 +412,67 @@ mod tests {
         let (result, out, _) = run(b"test", TEST_SHA, 4, true);
         assert!(matches!(result, Err(UpdateError::Cancelled)));
         assert!(out.is_empty());
+    }
+
+    /// A reader that never returns, like a server that stopped sending.
+    struct Stalled;
+
+    impl Read for Stalled {
+        fn read(&mut self, _: &mut [u8]) -> std::io::Result<usize> {
+            std::thread::sleep(Duration::from_secs(3600));
+            Ok(0)
+        }
+    }
+
+    #[test]
+    fn stall_guard_passes_data_through() {
+        let cancel = AtomicBool::new(false);
+        let data: Vec<u8> = (0..200_000u32).map(|i| i as u8).collect();
+        let mut guard =
+            StallGuard::spawn(Cursor::new(data.clone()), &cancel, Duration::from_secs(5)).unwrap();
+        let mut out = Vec::new();
+        guard.read_to_end(&mut out).unwrap();
+        assert_eq!(out, data);
+    }
+
+    #[test]
+    fn stalled_download_times_out() {
+        let cancel = AtomicBool::new(false);
+        let mut guard = StallGuard::spawn(Stalled, &cancel, Duration::from_millis(300)).unwrap();
+        let started = Instant::now();
+        let err = guard.read(&mut [0u8; 16]).unwrap_err();
+        assert_eq!(err.kind(), std::io::ErrorKind::TimedOut);
+        assert!(started.elapsed() < Duration::from_secs(5));
+    }
+
+    #[test]
+    fn cancel_stops_a_stalled_download() {
+        let cancel = AtomicBool::new(false);
+        let guard = StallGuard::spawn(Stalled, &cancel, Duration::from_secs(3600)).unwrap();
+        let key = PublicKey::from_base64(TEST_KEY).unwrap();
+        let sig = Signature::decode(TEST_SIG).unwrap();
+        let started = Instant::now();
+        let result = std::thread::scope(|s| {
+            s.spawn(|| {
+                std::thread::sleep(Duration::from_millis(100));
+                cancel.store(true, Ordering::Relaxed);
+            });
+            let mut guard = guard;
+            receive(
+                &mut guard,
+                &mut Vec::new(),
+                Expect {
+                    sha256: TEST_SHA,
+                    verifier: key.verify_stream(&sig).unwrap(),
+                    total: None,
+                    limit: 4,
+                },
+                &mut |_, _| {},
+                &cancel,
+            )
+        });
+        assert!(matches!(result, Err(UpdateError::Cancelled)));
+        assert!(started.elapsed() < Duration::from_secs(5));
     }
 
     #[test]

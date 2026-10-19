@@ -90,6 +90,10 @@ pub(crate) fn installer_args(per_user: bool) -> [&'static str; 6] {
 }
 
 /// Unpack `archive` next to `exe` and move its files into place, the executable last.
+///
+/// All or nothing: every installed file that is replaced is first moved into a backup
+/// folder, and if any step fails (including the executable swap) the new files are
+/// removed and the originals put back, so the installation is never left half-updated.
 pub(crate) fn install_archive(
     archive: &Path,
     format: ArchiveFormat,
@@ -112,6 +116,7 @@ pub(crate) fn install_archive(
             exe_name.to_string_lossy()
         ))
     })?;
+    let mut files = Vec::new();
     for rel in archive::list_files(&root)? {
         if rel.as_os_str() == exe_name {
             continue;
@@ -125,10 +130,78 @@ pub(crate) fn install_archive(
         if !dest.exists() && !in_shipped_dir {
             continue;
         }
-        fs::rename(root.join(&rel), &dest)?;
+        files.push(rel);
     }
-    replace_executable(&root.join(exe_name), exe)?;
+    let backup = tempfile::Builder::new()
+        .prefix(TEMP_PREFIX)
+        .tempdir_in(dir)?;
+    let new_exe = root.join(exe_name);
+    replace_files(&root, dir, backup.path(), &files, || {
+        replace_executable(&new_exe, exe)
+    })?;
     Ok(())
+}
+
+/// What [`replace_files`] did to one file, so it can be undone.
+enum Step {
+    /// The new file was moved in where there was none.
+    Added(PathBuf),
+    /// The installed file was moved into the backup folder (and maybe replaced).
+    BackedUp(PathBuf),
+}
+
+/// Move each `files` entry (relative paths) from `src` into `dir`, moving the files it
+/// replaces into `backup` first, then run `finish`. If anything fails, every change is
+/// undone (best effort) and the first error is returned.
+fn replace_files(
+    src: &Path,
+    dir: &Path,
+    backup: &Path,
+    files: &[PathBuf],
+    finish: impl FnOnce() -> io::Result<()>,
+) -> io::Result<()> {
+    let mut done = Vec::with_capacity(files.len());
+    let result = (|| {
+        for rel in files {
+            let dest = dir.join(rel);
+            if dest.symlink_metadata().is_ok() {
+                let saved = backup.join(rel);
+                if let Some(parent) = saved.parent() {
+                    fs::create_dir_all(parent)?;
+                }
+                fs::rename(&dest, &saved)?;
+                done.push(Step::BackedUp(rel.clone()));
+            } else {
+                done.push(Step::Added(rel.clone()));
+            }
+            if let Err(e) = fs::rename(src.join(rel), &dest) {
+                // Nothing was moved in for this entry: only the backup (if any) to undo.
+                if let Some(Step::Added(_)) = done.last() {
+                    done.pop();
+                }
+                return Err(e);
+            }
+        }
+        finish()
+    })();
+    if result.is_err() {
+        for step in done.iter().rev() {
+            match step {
+                Step::Added(rel) => {
+                    let _ = fs::remove_file(dir.join(rel));
+                }
+                Step::BackedUp(rel) => {
+                    let dest = dir.join(rel);
+                    let saved = backup.join(rel);
+                    if saved.symlink_metadata().is_ok() {
+                        let _ = fs::remove_file(&dest);
+                        let _ = fs::rename(&saved, &dest);
+                    }
+                }
+            }
+        }
+    }
+    result
 }
 
 /// Give `path` the executable bits (no-op on Windows).
@@ -397,6 +470,89 @@ mod tests {
         assert!(matches!(err, UpdateError::Archive(_)));
         assert_eq!(fs::read(&exe).unwrap(), b"old");
         assert!(!dir.path().join("README.md").exists());
+    }
+
+    /// A tree of `files` (relative path, contents) under `dir`.
+    fn tree(dir: &Path, files: &[(&str, &[u8])]) {
+        for (rel, data) in files {
+            let path = dir.join(rel);
+            fs::create_dir_all(path.parent().unwrap()).unwrap();
+            fs::write(path, data).unwrap();
+        }
+    }
+
+    fn read(dir: &Path, rel: &str) -> Option<Vec<u8>> {
+        fs::read(dir.join(rel)).ok()
+    }
+
+    #[test]
+    fn failed_executable_swap_restores_every_file() {
+        let base = tempfile::tempdir().unwrap();
+        let (src, dir, backup) = (
+            base.path().join("src"),
+            base.path().join("inst"),
+            base.path().join("bak"),
+        );
+        tree(
+            &src,
+            &[
+                ("LICENSE.html", b"new"),
+                ("dictionaries/en.dic", b"new dic"),
+                ("dictionaries/fr.dic", b"added"),
+            ],
+        );
+        tree(
+            &dir,
+            &[
+                ("LICENSE.html", b"old"),
+                ("dictionaries/en.dic", b"old dic"),
+                ("cards.db", b"data"),
+            ],
+        );
+        fs::create_dir(&backup).unwrap();
+        let files: Vec<PathBuf> = ["LICENSE.html", "dictionaries/en.dic", "dictionaries/fr.dic"]
+            .iter()
+            .map(PathBuf::from)
+            .collect();
+
+        let err = replace_files(&src, &dir, &backup, &files, || {
+            // The new files are in place when the executable is swapped...
+            assert_eq!(read(&dir, "LICENSE.html").unwrap(), b"new");
+            Err(io::Error::other("executable is locked"))
+        })
+        .unwrap_err();
+        assert_eq!(err.to_string(), "executable is locked");
+        // ...and all of them are rolled back when that fails.
+        assert_eq!(read(&dir, "LICENSE.html").unwrap(), b"old");
+        assert_eq!(read(&dir, "dictionaries/en.dic").unwrap(), b"old dic");
+        assert_eq!(read(&dir, "dictionaries/fr.dic"), None);
+        assert_eq!(read(&dir, "cards.db").unwrap(), b"data");
+    }
+
+    #[test]
+    fn failure_midway_restores_the_files_already_moved() {
+        let base = tempfile::tempdir().unwrap();
+        let (src, dir, backup) = (
+            base.path().join("src"),
+            base.path().join("inst"),
+            base.path().join("bak"),
+        );
+        tree(&src, &[("a.txt", b"new a")]);
+        tree(&dir, &[("a.txt", b"old a"), ("b.txt", b"old b")]);
+        fs::create_dir(&backup).unwrap();
+        // b.txt is missing from the staged files: its move fails after a.txt is done.
+        let files = vec![PathBuf::from("a.txt"), PathBuf::from("b.txt")];
+        let mut finished = false;
+        assert!(
+            replace_files(&src, &dir, &backup, &files, || {
+                finished = true;
+                Ok(())
+            })
+            .is_err()
+        );
+        assert!(!finished);
+        assert_eq!(read(&dir, "a.txt").unwrap(), b"old a");
+        assert_eq!(read(&dir, "b.txt").unwrap(), b"old b");
     }
 
     #[test]

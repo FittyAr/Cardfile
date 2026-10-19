@@ -300,7 +300,7 @@ Se valida con un **spike temprano** (Fase 1) antes de construir el resto de la U
 |----------|-----------|------|
 | `ci.yml` | PR y push a `main` | fmt, clippy, test (matriz Windows/Linux), `cargo deny`, título de PR semántico |
 | `release.yml` | tag `v*` | generado/ampliado desde `dist`: build por target, archivos, instaladores shell/PowerShell, Inno Setup, MSIX, `.deb`, `.rpm`, AppImage, `SHA256SUMS`, firma minisign, licencias de terceros, GitHub Release con changelog `git-cliff` |
-| `winget.yml` | llamado por `release.yml` (publish job) | `winget-releaser` → PR a `microsoft/winget-pkgs` para `FittyAr.Cardfile` (requiere PAT `WINGET_TOKEN`; la primera versión se envía a mano) |
+| `winget.yml` | llamado por `release.yml` (post-announce job, con la release ya publicada) | `winget-releaser` → PR a `microsoft/winget-pkgs` para `FittyAr.Cardfile` (requiere PAT `WINGET_TOKEN`; la primera versión se envía a mano) |
 | `store.yml` | manual / release estable | sube el MSIX a Partner Center (`msstore` CLI; secretos de Azure AD de Partner Center) |
 
 Targets: `x86_64-pc-windows-msvc`, `aarch64-pc-windows-msvc`, `x86_64-unknown-linux-gnu`,
