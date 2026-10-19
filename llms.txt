@@ -1,7 +1,7 @@
 # Cardfile
-> A modern digital card file for your notes, inspired by the classic Windows 3.1 Cardfile. Native, fast and private: written in Rust with GPUI. Windows and Linux.
+> A modern digital card file for your notes. Native, fast and private: written in Rust with GPUI. Windows and Linux.
 
-Cardfile 2 is a full rewrite (currently in alpha) of the Cardfile notes app. Notes live on cards edited in a WYSIWYG editor (users never see Markdown), stored in a local SQLite database. No telemetry.
+Cardfile 2 is a full rewrite (currently in beta) of the Cardfile notes app. Notes live on cards edited in a WYSIWYG editor (users never see Markdown), stored in a local SQLite database. No telemetry.
 
 ## Key Resources
 - [Website](https://cardfile.fitty.ar): Landing page and screenshots.
