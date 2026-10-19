@@ -41,11 +41,34 @@ pub fn t_raw(key: &str) -> String {
 
 /// Translate `key`, substitute `%{name}` placeholders and prepare it for display.
 pub fn t_args(key: &str, args: &[(&str, &str)]) -> String {
-    let mut s = t_raw(key);
-    for (name, value) in args {
-        s = s.replace(&format!("%{{{name}}}"), value);
+    for_display(substitute(&t_raw(key), args))
+}
+
+/// Replace every `%{name}` in `template` in a single pass. Values are inserted
+/// verbatim: a value that itself contains `%{other}` (a card title, a file name) is
+/// never expanded by a later argument.
+fn substitute(template: &str, args: &[(&str, &str)]) -> String {
+    let mut out = String::with_capacity(template.len());
+    let mut rest = template;
+    while let Some(start) = rest.find("%{") {
+        out.push_str(&rest[..start]);
+        let after = &rest[start + 2..];
+        let value = after
+            .find('}')
+            .and_then(|end| Some((args.iter().find(|(n, _)| *n == &after[..end])?.1, end)));
+        match value {
+            Some((value, end)) => {
+                out.push_str(value);
+                rest = &after[end + 1..];
+            }
+            None => {
+                out.push_str("%{");
+                rest = after;
+            }
+        }
     }
-    for_display(s)
+    out.push_str(rest);
+    out
 }
 
 /// Set the UI locale (e.g. `"en"`, `"es"`). Unknown locales fall back to English.
@@ -53,6 +76,7 @@ pub fn set_locale(locale: &str) {
     rust_i18n::set_locale(locale);
 }
 
+/// The current UI locale code (e.g. `"en"`).
 pub fn locale() -> String {
     rust_i18n::locale().to_string()
 }
@@ -78,5 +102,14 @@ mod tests {
         assert_eq!(t_args("test.greeting", &[("name", "Ada")]), "Hello, Ada!");
         assert!(available_locales().contains(&"en".to_owned()));
         assert!(!is_rtl_locale());
+    }
+
+    #[test]
+    fn substitution_is_single_pass() {
+        let args = [("title", "%{count} cards"), ("count", "3")];
+        assert_eq!(substitute("%{title}: %{count}", &args), "%{count} cards: 3");
+        // Unknown and unterminated placeholders stay as they are.
+        assert_eq!(substitute("%{nope} %{count", &args), "%{nope} %{count");
+        assert_eq!(substitute("100%{count}%", &args), "1003%");
     }
 }
