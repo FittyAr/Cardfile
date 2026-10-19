@@ -230,15 +230,68 @@ pub fn export_all(owner: UserId, format: Format, window: &mut Window, cx: &mut A
         .detach();
 }
 
+/// Parent of the per-session folders where attachments are written to be opened.
+fn attachments_root() -> PathBuf {
+    std::env::temp_dir().join("cardfile-attachments")
+}
+
+/// This process's folder under [`attachments_root`]: removing it never touches
+/// files another running Cardfile just opened.
+fn session_attachments() -> &'static Path {
+    static DIR: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
+    DIR.get_or_init(|| {
+        let started = jiff::Timestamp::now().as_millisecond();
+        attachments_root().join(format!("{}-{started}", std::process::id()))
+    })
+}
+
+/// Delete the attachments this session wrote to the temporary folder: they may be
+/// decrypted copies of encrypted cards. Files still open elsewhere (Windows) stay.
+/// Blocking: call on the background executor or while quitting.
+pub fn remove_session_attachments() {
+    remove_dir(session_attachments());
+}
+
+/// Delete what earlier runs left in the temporary attachments folder (e.g. after a
+/// crash). Runs in the background at startup.
+pub fn cleanup_stale_attachments(cx: &App) {
+    let own = session_attachments().to_owned();
+    cx.background_spawn(async move {
+        let Ok(entries) = std::fs::read_dir(attachments_root()) else {
+            return;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path == own {
+                continue;
+            }
+            if path.is_dir() {
+                remove_dir(&path);
+            } else if let Err(e) = std::fs::remove_file(&path) {
+                tracing::debug!("remove {}: {e}", path.display());
+            }
+        }
+    })
+    .detach();
+}
+
+fn remove_dir(dir: &Path) {
+    match std::fs::remove_dir_all(dir) {
+        Ok(()) => {}
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+        Err(e) => tracing::debug!("remove {}: {e}", dir.display()),
+    }
+}
+
 /// Save an attachment to a temporary folder and open it with the system handler.
 pub fn open_attachment(blob: String, file_name: String, window: &mut Window, cx: &mut App) {
     let blobs = DbBlobs::new(AppState::db(cx));
     let task = cx.background_spawn(async move {
         let (_, data) = blobs
             .read(&blob)?
-            .ok_or_else(|| anyhow::anyhow!("attachment not found"))?;
-        let dir = std::env::temp_dir().join("cardfile-attachments");
-        std::fs::create_dir_all(&dir)?;
+            .ok_or_else(|| anyhow::anyhow!(t("attachment.not_found")))?;
+        let dir = session_attachments();
+        std::fs::create_dir_all(dir)?;
         let path = dir.join(self::file_name(&file_name));
         std::fs::write(&path, data)?;
         // `that` (not `that_detached`) reports when no application is associated with

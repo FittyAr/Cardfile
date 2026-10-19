@@ -59,13 +59,21 @@ fn init_logging(paths: &DataPaths) -> Option<tracing_appender::non_blocking::Wor
         tracing_subscriber::fmt().with_env_filter(filter).init();
         return None;
     }
-    let appender = tracing_appender::rolling::Builder::new()
+    let appender = match tracing_appender::rolling::Builder::new()
         .rotation(tracing_appender::rolling::Rotation::DAILY)
         .filename_prefix("cardfile")
         .filename_suffix("log")
         .max_log_files(7)
         .build(&dir)
-        .ok()?;
+    {
+        Ok(a) => a,
+        Err(e) => {
+            // Without a log file, still log to stderr instead of nowhere.
+            tracing_subscriber::fmt().with_env_filter(filter).init();
+            tracing::warn!("cannot create the log file in {}: {e}", dir.display());
+            return None;
+        }
+    };
     let (writer, guard) = tracing_appender::non_blocking(appender);
     tracing_subscriber::fmt()
         .with_env_filter(filter)

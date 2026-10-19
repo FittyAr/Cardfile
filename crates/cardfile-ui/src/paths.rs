@@ -10,7 +10,8 @@
 //! - Portable mode: a `data` folder next to the executable, enabled by a
 //!   `portable.flag` file there, the `--portable` flag, or a `data/cardfile.db`
 //!   already next to the executable (a copied or synced folder, e.g. in OneDrive,
-//!   keeps working without the flag).
+//!   keeps working without the flag). Choosing the standard location in the
+//!   first-run wizard removes the flag, so that choice sticks.
 //!
 //! Every setting lives in `cardfile.db` (installation settings in `app_settings`,
 //! preferences on each user row) next to `keymap.json`, so the folder is the whole
@@ -62,6 +63,8 @@ impl DataPaths {
         Self::standard()
     }
 
+    /// The standard location. Blocking on Linux and macOS (it may move the folder of
+    /// the earlier layout into place): never call it while rendering.
     pub fn standard() -> Self {
         Self {
             root: standard_root().unwrap_or_else(|| PathBuf::from(".cardfile")),
@@ -86,7 +89,18 @@ impl DataPaths {
         Ok(Self::portable_at(&dir))
     }
 
+    /// Switch to standard mode (the user chose it, e.g. in the wizard of a copy that
+    /// started portable): remove the flag next to the executable, so the next start
+    /// does not go back to the empty portable folder. Blocking (file system).
+    pub fn make_standard() -> Self {
+        if let Some(dir) = exe_dir() {
+            remove_flag(&dir);
+        }
+        Self::standard()
+    }
+
     /// Whether the executable's folder is writable (portable mode needs it).
+    /// Blocking (writes a probe file): never call it while rendering.
     pub fn portable_available() -> bool {
         let Some(dir) = exe_dir() else { return false };
         let probe = dir.join(".cardfile-write-test");
@@ -152,6 +166,17 @@ fn adopt_previous(new: &Path, previous: &Path) -> PathBuf {
     }
 }
 
+/// Remove the portable flag from the executable folder `dir`, if it is there.
+fn remove_flag(dir: &Path) {
+    match std::fs::remove_file(dir.join(PORTABLE_FLAG)) {
+        Ok(()) => tracing::info!("standard mode chosen; removed {PORTABLE_FLAG}"),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+        // The next start is portable again and shows the wizard, which finds the
+        // standard database already set up and uses it.
+        Err(e) => tracing::warn!("cannot remove {PORTABLE_FLAG}: {e}"),
+    }
+}
+
 /// Whether the executable folder `dir` holds a portable copy: the flag, or the
 /// database of an earlier portable run in `data/`.
 fn is_portable_dir(dir: &Path) -> bool {
@@ -190,6 +215,17 @@ mod tests {
         let flag_only = tempfile::tempdir().unwrap();
         std::fs::write(flag_only.path().join(PORTABLE_FLAG), b"").unwrap();
         assert!(is_portable_dir(flag_only.path()));
+    }
+
+    #[test]
+    fn choosing_standard_removes_the_portable_flag() {
+        let tmp = tempfile::tempdir().unwrap();
+        std::fs::write(tmp.path().join(PORTABLE_FLAG), b"").unwrap();
+        assert!(is_portable_dir(tmp.path()));
+        remove_flag(tmp.path());
+        assert!(!is_portable_dir(tmp.path()));
+        // No flag: nothing to do.
+        remove_flag(tmp.path());
     }
 
     #[test]

@@ -20,7 +20,23 @@ use crate::state::{AppState, Session};
 use crate::widgets::{error, field, hint};
 
 pub enum WizardEvent {
-    Finished(Session),
+    Finished(Box<Session>),
+    /// The chosen location already holds a set-up database (now in [`AppState`]):
+    /// sign in to it instead of creating another account.
+    UseExisting,
+}
+
+/// What the storage step shows; found on the background executor (it touches the
+/// file system) when the wizard opens.
+struct StorageInfo {
+    portable_available: bool,
+    standard_path: String,
+}
+
+/// Where the wizard puts the database, decided in the background in [`Wizard::finish`].
+enum Location {
+    Created(DataPaths, Database, AppSettings, Box<Session>),
+    Existing(DataPaths, Database, AppSettings),
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -48,6 +64,8 @@ pub struct Wizard {
     confirm: Entity<InputState>,
     error: Option<SharedString>,
     busy: bool,
+    storage: Option<StorageInfo>,
+    _storage_task: Option<gpui_kit::Task<()>>,
 }
 
 impl EventEmitter<WizardEvent> for Wizard {}
@@ -74,6 +92,21 @@ impl Wizard {
                 })
             };
         let current_user = whoami_name();
+        let storage_task = ask_storage.then(|| {
+            let task = cx.background_spawn(async {
+                StorageInfo {
+                    portable_available: DataPaths::portable_available(),
+                    standard_path: DataPaths::standard().root.display().to_string(),
+                }
+            });
+            cx.spawn(async move |this, cx| {
+                let info = task.await;
+                let _ = this.update(cx, |this, cx| {
+                    this.storage = Some(info);
+                    cx.notify();
+                });
+            })
+        });
         Self {
             steps,
             step: 0,
@@ -97,6 +130,8 @@ impl Wizard {
             confirm: input(t("wizard.security.confirm"), true, window, cx),
             error: None,
             busy: false,
+            storage: None,
+            _storage_task: storage_task,
         }
     }
 
@@ -148,18 +183,8 @@ impl Wizard {
             return;
         }
         self.busy = true;
-        let paths = if self.portable && !AppState::get(cx).paths.portable {
-            match DataPaths::make_portable() {
-                Ok(p) => p,
-                Err(e) => {
-                    self.error = Some(format!("{}: {e}", t("wizard.error.portable")).into());
-                    self.busy = false;
-                    return;
-                }
-            }
-        } else {
-            AppState::get(cx).paths.clone()
-        };
+        let current = AppState::get(cx).paths.clone();
+        let (want_portable, asked) = (self.portable, self.steps.contains(&Step::Storage));
         let app = AppSettings {
             initialized: true,
             auth_mode: self.auth,
@@ -184,9 +209,31 @@ impl Wizard {
         };
         let existing_db = AppState::get(cx).db.clone();
         let task = cx.background_spawn(async move {
-            let db = match existing_db {
-                Some(db) => db,
-                None => Database::open(&paths.db(), Some(&paths.backups()))?,
+            let (paths, db) = match existing_db {
+                Some(db) => (current, db),
+                None => {
+                    // The storage choice wins over how this run started (`--portable`,
+                    // a `portable.flag` next to the executable).
+                    let paths = if !asked || want_portable == current.portable {
+                        current
+                    } else if want_portable {
+                        DataPaths::make_portable()
+                            .map_err(|e| anyhow::anyhow!("{}: {e}", t("wizard.error.portable")))?
+                    } else {
+                        DataPaths::make_standard()
+                    };
+                    let existed = paths.db().exists();
+                    let db = Database::open(&paths.db(), Some(&paths.backups()))?;
+                    if existed {
+                        // e.g. started portable, chose Standard, and Cardfile was
+                        // already set up there: use it, never add a second account.
+                        let app = db.app_settings()?;
+                        if app.initialized {
+                            return anyhow::Ok(Location::Existing(paths, db, app));
+                        }
+                    }
+                    (paths, db)
+                }
             };
             let settings = settings;
             let hash = if password.is_empty() {
@@ -222,14 +269,26 @@ impl Wizard {
                     lock_mode: LockMode::None,
                 },
             )?;
-            anyhow::Ok((paths, db, app, Session { user, settings }))
+            anyhow::Ok(Location::Created(
+                paths,
+                db,
+                app,
+                Box::new(Session { user, settings }),
+            ))
         });
         cx.spawn(async move |this, cx| {
             let result = task.await;
             let _ = this.update(cx, |this, cx| {
                 this.busy = false;
                 match result {
-                    Ok((paths, db, app, session)) => {
+                    Ok(Location::Existing(paths, db, app)) => {
+                        let state = AppState::get_mut(cx);
+                        state.paths = paths;
+                        state.db = Some(db);
+                        state.app = app;
+                        cx.emit(WizardEvent::UseExisting);
+                    }
+                    Ok(Location::Created(paths, db, app, session)) => {
                         let state = AppState::get_mut(cx);
                         state.paths = paths;
                         state.db = Some(db);
@@ -303,8 +362,14 @@ impl Wizard {
                 )
                 .into_any_element(),
             Step::Storage => {
-                let portable_ok = DataPaths::portable_available();
-                let standard_path = DataPaths::standard().root.display().to_string();
+                // Unknown for a moment while the wizard looks (in the background).
+                let loaded = self.storage.is_some();
+                let portable_ok = self.storage.as_ref().is_some_and(|s| s.portable_available);
+                let standard_path = self
+                    .storage
+                    .as_ref()
+                    .map(|s| s.standard_path.clone())
+                    .unwrap_or_default();
                 v_flex()
                     .gap(px(10.))
                     .child(Self::option_card(
@@ -325,7 +390,7 @@ impl Wizard {
                             |this, _| this.portable = true,
                         ))
                     })
-                    .when(!portable_ok, |d| {
+                    .when(loaded && !portable_ok, |d| {
                         d.child(hint(t("wizard.storage.portable_unavailable"), cx))
                     })
                     .into_any_element()

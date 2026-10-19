@@ -7,7 +7,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use cardfile_core::ApiKeyId;
 use cardfile_db::Database;
 use cardfile_mcp::{Handler, ServerConfig, ServerHandle, ServerInfo, Tool, ToolOutput};
-use gpui_kit::{App, Global};
+use gpui_kit::{App, AppContext as _, Global};
 
 /// Bumped whenever an AI client changes data, so open views can refresh.
 pub static DATA_VERSION: AtomicU64 = AtomicU64::new(0);
@@ -111,10 +111,20 @@ pub enum Status {
     Failed(String),
 }
 
+/// The running server, shared with the background task that starts and stops it.
+#[derive(Default)]
+struct Worker {
+    handle: Option<ServerHandle>,
+}
+
 #[derive(Default)]
 pub struct McpServer {
-    handle: Option<ServerHandle>,
-    pub status: Status,
+    /// Locked only on the background executor: stopping joins the server threads.
+    worker: Arc<parking_lot::Mutex<Worker>>,
+    /// Locked briefly from the UI (render) and the background task.
+    status: Arc<parking_lot::Mutex<Status>>,
+    /// Generation of the latest [`Self::sync`] request; older requests are skipped.
+    generation: Arc<AtomicU64>,
 }
 
 impl Global for McpServer {}
@@ -122,40 +132,62 @@ impl Global for McpServer {}
 impl McpServer {
     pub fn status(cx: &App) -> Status {
         cx.try_global::<Self>()
-            .map(|s| s.status.clone())
+            .map(|s| s.status.lock().clone())
             .unwrap_or_default()
     }
 
-    /// Start or stop the server to match the installation settings.
+    /// Start or stop the server to match the installation settings. The work
+    /// (binding, joining the old server's threads) runs on the background executor.
     pub fn sync(cx: &mut App) {
         let state = crate::state::AppState::get(cx);
         let (enabled, port, db) = (state.app.mcp_enabled, state.app.mcp_port, state.db.clone());
         if !cx.has_global::<Self>() {
             cx.set_global(Self::default());
         }
-        let server = cx.global_mut::<Self>();
-        let current_port = server.handle.as_ref().map(|h| h.local_addr().port());
-        if enabled && current_port == Some(port) {
-            return;
-        }
-        if let Some(handle) = server.handle.take() {
-            handle.stop();
-        }
-        server.status = Status::Stopped;
-        let (true, Some(db)) = (enabled, db) else {
-            return;
-        };
-        match start_server(db, port) {
-            Ok(handle) => {
-                tracing::info!(url = %handle.url(), "MCP server started");
-                server.status = Status::Running(handle.url());
-                server.handle = Some(handle);
+        let server = cx.global::<Self>();
+        let (worker, status, generation) = (
+            server.worker.clone(),
+            server.status.clone(),
+            server.generation.clone(),
+        );
+        let ticket = generation.fetch_add(1, Ordering::SeqCst) + 1;
+        let task = cx.background_spawn(async move {
+            let mut worker = worker.lock();
+            // A newer request is waiting for the lock and applies its own settings.
+            if generation.load(Ordering::SeqCst) != ticket {
+                return;
             }
-            Err(e) => {
-                tracing::error!("MCP server: {e}");
-                server.status = Status::Failed(e.to_string());
+            let current_port = worker.handle.as_ref().map(|h| h.local_addr().port());
+            if enabled && current_port == Some(port) {
+                return;
             }
-        }
+            if let Some(handle) = worker.handle.take() {
+                handle.stop();
+            }
+            *status.lock() = Status::Stopped;
+            let (true, Some(db)) = (enabled, db) else {
+                return;
+            };
+            let new_status = match start_server(db, port) {
+                Ok(handle) => {
+                    tracing::info!(url = %handle.url(), "MCP server started");
+                    let url = handle.url();
+                    worker.handle = Some(handle);
+                    Status::Running(url)
+                }
+                Err(e) => {
+                    tracing::error!("MCP server: {e}");
+                    Status::Failed(e.to_string())
+                }
+            };
+            *status.lock() = new_status;
+        });
+        // Show the new status (e.g. in Settings) once the server is up or failed.
+        cx.spawn(async move |cx| {
+            task.await;
+            cx.update(|cx| cx.refresh_windows());
+        })
+        .detach();
     }
 }
 
