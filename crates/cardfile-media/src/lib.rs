@@ -198,7 +198,12 @@ impl Player {
             .ok_or_else(|| MediaError::Unsupported(format!("type {mime:?}")))?;
         let ext = kind::extension(file_name);
 
-        let track = audio::open_track(data, mime, ext.as_deref())?;
+        // Probing runs third-party parsers over untrusted bytes: a panic there must
+        // not take the caller (the UI thread) down.
+        let track = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            audio::open_track(data, mime, ext.as_deref())
+        }))
+        .map_err(|_| MediaError::Malformed("the media parser crashed".to_owned()))??;
         let audio = Arc::new(AudioShared::new(track.rate, track.channels));
         let shared = Arc::new(Shared::new(kind, track.duration, audio.clone()));
 
@@ -226,8 +231,11 @@ impl Player {
     }
 
     /// Starts or resumes playback. From [`PlaybackState::Ended`] it restarts at
-    /// the beginning.
+    /// the beginning. Does nothing once the player [failed](Player::is_failed).
     pub fn play(&self) {
+        if self.shared().is_failed() {
+            return;
+        }
         if self.shared().is_ended() {
             self.seek(Duration::ZERO);
         }
@@ -256,8 +264,10 @@ impl Player {
             Some(d) => to.min(d),
             None => to,
         };
-        shared.clear_ended();
-        let generation = shared.audio.begin_seek(to);
+        if shared.is_failed() {
+            return;
+        }
+        let generation = shared.seek(to);
         let _ = self.handle.audio_tx.send(AudioCmd::Seek { generation, to });
     }
 
@@ -282,6 +292,13 @@ impl Player {
     /// Total duration, when the container declares it.
     pub fn duration(&self) -> Option<Duration> {
         self.shared().duration
+    }
+
+    /// Whether decoding failed for good (the decoder crashed on a corrupt file).
+    /// The state then stays [`PlaybackState::Ended`] and [`Player::play`] does
+    /// nothing; the UI can offer to open the file in the system player instead.
+    pub fn is_failed(&self) -> bool {
+        self.shared().is_failed()
     }
 
     /// Current playback state.
