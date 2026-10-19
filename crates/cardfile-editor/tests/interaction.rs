@@ -1,8 +1,11 @@
 //! Drives the editor through GPUI's test harness: real key bindings and text input.
 
-use cardfile_doc::{BlockKind, Document, Mark};
-use cardfile_editor::RichEditor;
-use gpui_kit::{Entity, Focusable as _, TestAppContext, VisualTestContext};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Arc, Mutex};
+
+use cardfile_doc::{Block, BlockKind, Document, Image, Mark};
+use cardfile_editor::{BlobStore, RichEditor};
+use gpui_kit::{ClipboardItem, Entity, Focusable as _, TestAppContext, VisualTestContext};
 
 fn setup(cx: &mut TestAppContext, doc: Document) -> (Entity<RichEditor>, &mut VisualTestContext) {
     cx.update(|cx| {
@@ -89,6 +92,92 @@ fn copy_paste_keeps_formatting(cx: &mut TestAppContext) {
     editor.read_with(cx, |e, _| {
         assert!(e.document().blocks[0].text.has_mark(0..4, Mark::Bold))
     });
+}
+
+/// Counts writes; hands back what was stored.
+#[derive(Default)]
+struct Store {
+    puts: AtomicUsize,
+    data: Mutex<Vec<(String, Vec<u8>)>>,
+}
+
+impl BlobStore for Store {
+    fn put(&self, data: &[u8], mime: &str, _: Option<&str>) -> Option<String> {
+        let n = self.puts.fetch_add(1, Ordering::SeqCst);
+        if let Ok(mut d) = self.data.lock() {
+            d.push((mime.to_owned(), data.to_vec()));
+        }
+        Some(format!("blob{n}"))
+    }
+    fn get(&self, id: &str) -> Option<(String, Vec<u8>)> {
+        let n: usize = id.strip_prefix("blob")?.parse().ok()?;
+        self.data.lock().ok()?.get(n).cloned()
+    }
+}
+
+#[gpui_kit::test]
+fn inserting_files_stores_in_the_background(cx: &mut TestAppContext) {
+    let (editor, cx) = setup(cx, Document::default());
+    let store = Arc::new(Store::default());
+    editor.update(cx, |e, cx| {
+        e.set_blob_store(store.clone());
+        e.insert_attachment_bytes(b"abc", "text/plain", "a.txt", cx);
+    });
+    cx.run_until_parked();
+    assert_eq!(store.puts.load(Ordering::SeqCst), 1);
+    editor.read_with(cx, |e, _| {
+        assert!(
+            e.document()
+                .blocks
+                .iter()
+                .any(|b| matches!(&b.kind, BlockKind::Attachment(a) if a.blob == "blob0"))
+        );
+    });
+}
+
+#[gpui_kit::test]
+fn read_only_writes_no_blobs(cx: &mut TestAppContext) {
+    let (editor, cx) = setup(cx, Document::from_plain_text("fixed"));
+    let store = Arc::new(Store::default());
+    editor.update(cx, |e, cx| {
+        e.set_blob_store(store.clone());
+        e.set_read_only(true, cx);
+        e.insert_image_bytes(b"png", "image/png", None, cx);
+        e.insert_attachment_bytes(b"abc", "text/plain", "a.txt", cx);
+    });
+    // A rich fragment with an image on the clipboard.
+    let mut frag = Document::from_plain_text("x");
+    frag.blocks.push(Block::new(
+        BlockKind::Image(Image {
+            blob: "blob0".into(),
+            mime: "image/png".into(),
+            width: None,
+            height: None,
+            alt: String::new(),
+        }),
+        "",
+    ));
+    cx.write_to_clipboard(ClipboardItem::new_string_with_json_metadata(
+        "x".into(),
+        frag,
+    ));
+    cx.simulate_keystrokes("ctrl-v");
+    cx.run_until_parked();
+    assert_eq!(store.puts.load(Ordering::SeqCst), 0);
+    assert_eq!(texts(&editor, cx), ["fixed"]);
+}
+
+#[gpui_kit::test]
+fn markdown_pasted_into_code_block_stays_verbatim(cx: &mut TestAppContext) {
+    let mut doc = Document::from_plain_text("");
+    doc.blocks[0].kind = BlockKind::Code {
+        language: String::new(),
+    };
+    let (editor, cx) = setup(cx, doc);
+    let md = "# title\n- **item**";
+    cx.write_to_clipboard(ClipboardItem::new_string(md.into()));
+    cx.simulate_keystrokes("ctrl-v");
+    assert_eq!(texts(&editor, cx), [md]);
 }
 
 #[gpui_kit::test]

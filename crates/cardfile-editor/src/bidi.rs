@@ -12,7 +12,7 @@
 use std::sync::Arc;
 
 use gpui_kit::{LineLayout, Pixels, WrappedLine, WrappedLineLayout, px};
-use unicode_bidi::{BidiInfo, Direction, Level};
+use unicode_bidi::{BidiInfo, Level};
 
 /// Whether `text` contains any right-to-left character.
 pub fn has_rtl(text: &str) -> bool {

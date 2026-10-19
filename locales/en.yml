@@ -91,6 +91,15 @@ editor:
     replace_all: Replace all
   media:
     open_external: "Open in the system player"
+    unsupported: "This format can't play here"
+    malformed: "This file seems damaged"
+    failed: "Playback couldn't start"
+    loading: "Loading…"
+  size_units:
+    bytes: "%{n} B"
+    kb: "%{n} KB"
+    mb: "%{n} MB"
+    gb: "%{n} GB"
 
 common:
   back: Back

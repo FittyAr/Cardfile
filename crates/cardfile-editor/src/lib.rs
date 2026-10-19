@@ -17,6 +17,7 @@ pub mod model;
 pub mod pos;
 mod render;
 mod slash;
+mod spell;
 pub mod toolbar;
 pub mod util;
 
