@@ -676,6 +676,9 @@ impl RichEditor {
     }
 
     fn after_move(&mut self, cx: &mut Context<Self>) {
+        if self.spell.is_some() {
+            self.prefetch_suggestions(self.model.caret(), cx);
+        }
         self.autoscroll = true;
         self.reset_blink(cx);
         cx.emit(EditorEvent::SelectionChanged);
@@ -1575,19 +1578,6 @@ impl RichEditor {
         (!w.is_empty() && w.chars().any(char::is_alphabetic)).then(|| w.to_owned())
     }
 
-    /// Suggestions for the misspelled word at the caret, if it is misspelled.
-    pub(crate) fn spelling_suggestions(&self) -> Option<(String, Vec<String>)> {
-        let spell = self.spell.as_ref()?;
-        let word = self.word_at_caret()?;
-        if spell.check(&word) {
-            return None;
-        }
-        Some((
-            word.clone(),
-            spell.suggest(&word).into_iter().take(6).collect(),
-        ))
-    }
-
     // ---------------------------------------------------------------------
     // Mouse
     // ---------------------------------------------------------------------
@@ -1659,6 +1649,13 @@ impl RichEditor {
             return;
         }
         if !self.selecting || ev.pressed_button != Some(MouseButton::Left) {
+            // Hovering a misspelled word: get its suggestions ready for a right-click.
+            if self.spell.is_some()
+                && ev.pressed_button.is_none()
+                && let Some(pos) = self.pos_for_point(ev.position)
+            {
+                self.prefetch_suggestions(pos, cx);
+            }
             return;
         }
         if let Some(pos) = self.pos_for_point(ev.position)
@@ -2106,7 +2103,7 @@ impl EntityInputHandler for RichEditor {
 
 /// Copy a fragment's images and attachments through `store` (blocking: call it on
 /// the background executor).
-fn adopt_fragment_blobs(store: &dyn BlobStore, frag: &mut Document) {
+pub(crate) fn adopt_fragment_blobs(store: &dyn BlobStore, frag: &mut Document) {
     for block in &mut frag.blocks {
         let (blob, mime, file_name) = match &mut block.kind {
             BlockKind::Image(img) => (&mut img.blob, img.mime.clone(), None),

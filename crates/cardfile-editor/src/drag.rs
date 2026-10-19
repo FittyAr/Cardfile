@@ -1,11 +1,11 @@
 //! Dragging images and attachments: within a card to move them, or onto another
 //! card in the list (handled by the host, which receives [`DraggedBlock`]).
 
-use cardfile_doc::{Block, BlockKind};
+use cardfile_doc::{Block, BlockKind, Document};
 use gpui_kit::component::ActiveTheme as _;
 use gpui_kit::{
-    Context, EntityId, IntoElement, ParentElement as _, Render, SharedString, Styled as _, Window,
-    div, px,
+    AppContext as _, Context, EntityId, IntoElement, ParentElement as _, Render, SharedString,
+    Styled as _, Window, div, px,
 };
 
 use crate::editor::{EditorEvent, RichEditor};
@@ -69,12 +69,20 @@ impl RichEditor {
         copy: bool,
         cx: &mut Context<Self>,
     ) {
+        if self.is_read_only() {
+            cx.emit(EditorEvent::EditBlocked);
+            return;
+        }
         let own = dragged.source == cx.entity_id();
         let index = dragged.index;
         if own && !copy && (target == index || target == index + 1) {
             return;
         }
         let block = dragged.block.clone();
+        if !own {
+            self.drop_foreign_block(block, target, cx);
+            return;
+        }
         self.edit_blocks(cx, move |blocks| {
             let mut at = target.min(blocks.len());
             if own && !copy {
@@ -89,6 +97,47 @@ impl RichEditor {
             blocks.insert(at, block);
             Some(at)
         });
+    }
+
+    /// Insert a block dragged from another editor (another card). Its image or
+    /// attachment is stored again through this editor's store on the background
+    /// executor, like a paste, so a sealed blob of an encrypted card never ends up
+    /// referenced from this one. The source editor is left untouched (a drop from
+    /// another editor only copies), so the blob it reads stays available.
+    fn drop_foreign_block(&mut self, block: Block, target: usize, cx: &mut Context<Self>) {
+        let insert = move |this: &mut Self, block: Block, cx: &mut Context<Self>| {
+            this.edit_blocks(cx, move |blocks| {
+                let at = target.min(blocks.len());
+                blocks.insert(at, block);
+                Some(at)
+            });
+        };
+        let Some(store) = self.blobs.clone() else {
+            insert(self, block, cx);
+            return;
+        };
+        let task = cx.background_spawn(async move {
+            let mut frag = Document {
+                version: cardfile_doc::DOC_VERSION,
+                blocks: vec![block],
+            };
+            crate::editor::adopt_fragment_blobs(store.as_ref(), &mut frag);
+            frag.blocks.pop()
+        });
+        cx.spawn(async move |this, cx| {
+            let Some(block) = task.await else {
+                return;
+            };
+            let _ = this.update(cx, |this, cx| {
+                // The card may have been locked while the blob was copied.
+                if this.is_read_only() {
+                    cx.emit(EditorEvent::EditBlocked);
+                    return;
+                }
+                insert(this, block, cx);
+            });
+        })
+        .detach();
     }
 
     /// Remove the block at `index` if it is still `expected` (it was moved to another
