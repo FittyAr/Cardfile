@@ -58,6 +58,5 @@ its license ships with each release as `THIRD_PARTY_LICENSES.html` (`cargo about
 
 ## Inspiration
 
-- Microsoft Cardfile (Windows 3.x), for the original concept.
 - Cardfile 1.x (Python/Flet), whose 9 themes were ported to Cardfile 2.
 - [Zed](https://zed.dev), for keymap and theme design (concepts only, no code).

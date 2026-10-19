@@ -2,11 +2,11 @@
 
 # Cardfile
 
-A modern digital card file for your notes, inspired by the classic Windows 3.1 Cardfile.
+A modern digital card file for your notes.
 Native, fast and private: written in Rust with [GPUI](https://gpui.rs), the UI framework behind
 the [Zed](https://zed.dev) editor.
 
-> **Status:** Cardfile 2 is a full rewrite and is in **alpha**. Español: [README.es.md](README.es.md)
+> **Status:** Cardfile 2 is a full rewrite and is in **beta**. Español: [README.es.md](README.es.md)
 
 ## Features
 
