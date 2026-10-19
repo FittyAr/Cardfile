@@ -9,11 +9,15 @@
 //! Encrypted cards are never available to the AI; private cards only when the scope
 //! allows it.
 //!
+//! Every write is refused on cards locked as read-only and on cards in the recycle
+//! bin (except `restore_card`). Cards in the recycle bin can still be read, so the AI
+//! can tell the user what is there before restoring it.
+//!
 //! All functions are blocking (database access): call them off the UI thread.
 
 pub mod content;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use cardfile_core::{
     Actor, Card, CardAccess, CardFilter, CardId, CardSummary, LockMode, NewCard, SearchScope,
@@ -91,7 +95,8 @@ Use search_cards to find cards and get_card to read one before changing it. \
 Prefer edit_card_text for small corrections because it keeps formatting such as colours; \
 use update_card to rewrite or reformat a whole card. Lines like ⟦file 2: photo.png⟧ stand for \
 images and attachments: keep them where they belong when rewriting. \
-Card ids are UUIDs; never invent them. Deleted cards go to the recycle bin and can be restored. \
+Card ids are UUIDs; never invent them. Deleted cards go to the recycle bin and can be restored; \
+cards in the recycle bin and cards locked as read-only cannot be changed. \
 Encrypted cards are never readable by you. Answer in the user's language and be concise.";
 
 fn schema(props: Value, required: &[&str]) -> Value {
@@ -206,7 +211,7 @@ pub fn all_tools() -> Vec<ToolDef> {
         ToolDef {
             name: "tag_card",
             description: "Change a card's tags by name. mode `add` (default), `remove` or `replace`. \
-                Missing tags are created.",
+                `add` and `replace` create missing tags; `remove` ignores unknown ones.",
             schema: schema(
                 json!({
                     "id": {"type": "string"},
@@ -382,20 +387,29 @@ impl Ctx<'_> {
             }
             _ => {}
         }
-        if write && !access.can_edit() {
-            return Err("the card is shared with the user as view-only".into());
+        if write {
+            if !access.can_edit() {
+                return Err("the card is shared with the user as view-only".into());
+            }
+            writable(&card)?;
         }
         Ok((card, access))
+    }
+
+    /// The title as the scope may see it: masked for private cards the scope
+    /// cannot open (the same rule as the app's card list).
+    fn visible_title(&self, title: &str, lock_mode: LockMode) -> String {
+        if lock_mode == LockMode::Private && !self.scope.allow_private {
+            mask_title(title, MASK_VISIBLE)
+        } else {
+            title.to_owned()
+        }
     }
 
     fn summary_json(&self, c: &CardSummary, tags: &[Tag]) -> Value {
         let hidden = c.lock_mode == LockMode::Encrypted
             || (c.lock_mode == LockMode::Private && !self.scope.allow_private);
-        let title = if hidden && c.lock_mode == LockMode::Private {
-            mask_title(&c.title, 3)
-        } else {
-            c.title.clone()
-        };
+        let title = self.visible_title(&c.title, c.lock_mode);
         let mut v = json!({
             "id": c.id.to_string(),
             "title": title,
@@ -523,12 +537,32 @@ impl Ctx<'_> {
                 .or_insert_with(|| self.db.user(id).map(|u| u.display_name).unwrap_or_default())
                 .clone()
         };
+        // The summary is the card title at the time of the change: mask it like the
+        // card list does, using the card's current protection. Cards the user can no
+        // longer see (unshared or purged) are masked too, since their protection is
+        // unknown.
+        let mut locks: HashMap<CardId, Option<LockMode>> = HashMap::new();
+        let mut lock_of = |id: CardId| {
+            *locks.entry(id).or_insert_with(|| {
+                match self.db.card_access(id, self.scope.principal) {
+                    Ok(Some(_)) => self.db.card(id).ok().map(|c| c.lock_mode),
+                    _ => None,
+                }
+            })
+        };
         let items: Vec<Value> = entries
             .into_iter()
             .map(|e| {
+                let title = match e.card_id {
+                    None => e.summary.clone(),
+                    Some(id) => match lock_of(id) {
+                        Some(mode) => self.visible_title(&e.summary, mode),
+                        None => mask_title(&e.summary, MASK_VISIBLE),
+                    },
+                };
                 json!({
                     "action": e.action,
-                    "card_title": e.summary,
+                    "card_title": title,
                     "card_id": e.card_id.map(|c| c.to_string()),
                     "by": name(e.actor_id),
                     "via": e.via,
@@ -537,6 +571,16 @@ impl Ctx<'_> {
             })
             .collect();
         Ok(Outcome::read(json!({ "activity": items })))
+    }
+
+    /// Find existing tags by name; unknown names are ignored.
+    fn existing_tags(&self, names: &[String]) -> Result<Vec<TagId>, String> {
+        let tags = self.tags()?;
+        Ok(names
+            .iter()
+            .filter_map(|n| tags.iter().find(|t| t.name.eq_ignore_ascii_case(n)))
+            .map(|t| t.id)
+            .collect())
     }
 
     /// Find tags by name, creating missing ones.
@@ -639,6 +683,9 @@ impl Ctx<'_> {
     fn edit_text(&self) -> Result<Outcome, String> {
         let (card, _) = self.card(self.id()?, true)?;
         let find = self.str("find").ok_or("missing `find`")?;
+        if find.is_empty() {
+            return Err("`find` must not be empty".into());
+        }
         let replace = self.str("replace").ok_or("missing `replace`")?;
         let all = self.bool("all").unwrap_or(true);
         let mut doc = Document::from_json(&card.content).map_err(err)?;
@@ -674,8 +721,17 @@ impl Ctx<'_> {
         Ok(Outcome::wrote(json!({"ok": true}), Some(card.id)))
     }
 
+    /// A card the user owns, for metadata changes. Refused on read-only cards and
+    /// cards in the recycle bin.
     fn owned_card(&self) -> Result<Card, String> {
-        let (card, access) = self.card_meta(self.id()?)?;
+        let card = self.owned_card_any(self.id()?)?;
+        writable(&card)?;
+        Ok(card)
+    }
+
+    /// A card the user owns, whatever its state (for `restore_card`).
+    fn owned_card_any(&self, id: CardId) -> Result<Card, String> {
+        let (card, access) = self.card_meta(id)?;
         if !access.is_owner() {
             return Err("only the card's owner can do that".into());
         }
@@ -683,7 +739,8 @@ impl Ctx<'_> {
     }
 
     /// Load a card for metadata changes (tags, flags, order, recycle bin), which do
-    /// not reveal content and so work on protected cards too.
+    /// not reveal content and so work on private and encrypted cards too. Callers
+    /// that write must also check [`writable`].
     fn card_meta(&self, id: CardId) -> Result<(Card, CardAccess), String> {
         let access = self
             .db
@@ -695,13 +752,17 @@ impl Ctx<'_> {
 
     fn tag(&self) -> Result<Outcome, String> {
         let card = self.owned_card()?;
-        let ids = self.resolve_tags(&self.strings("tags"))?;
+        let names = self.strings("tags");
         let mut tags = card.tags.clone();
         match self.str("mode").unwrap_or("add") {
-            "replace" => tags = ids,
-            "remove" => tags.retain(|t| !ids.contains(t)),
+            "replace" => tags = self.resolve_tags(&names)?,
+            // Removing never creates tags: unknown names are simply not on the card.
+            "remove" => {
+                let ids = self.existing_tags(&names)?;
+                tags.retain(|t| !ids.contains(t));
+            }
             _ => {
-                for id in ids {
+                for id in self.resolve_tags(&names)? {
                     if !tags.contains(&id) {
                         tags.push(id);
                     }
@@ -754,40 +815,57 @@ impl Ctx<'_> {
     }
 
     fn reorder(&self) -> Result<Outcome, String> {
-        let ids: Vec<CardId> = self
-            .strings("ids")
+        let raw = self.strings("ids");
+        if raw.len() > MAX_REORDER {
+            return Err(format!("give at most {MAX_REORDER} card ids at a time"));
+        }
+        let ids: Vec<CardId> = raw
             .iter()
             .map(|s| s.parse().map_err(|_| format!("`{s}` is not a card id")))
             .collect::<Result<_, _>>()?;
         if ids.len() < 2 {
             return Err("give at least two card ids".into());
         }
+        let mut seen = HashSet::new();
+        if let Some(dup) = ids.iter().find(|id| !seen.insert(**id)) {
+            return Err(format!("card `{dup}` is listed more than once"));
+        }
+        // The live manual order, loaded once and then kept in step with each move.
+        let mut order: Vec<CardId> = self
+            .db
+            .list_cards(self.scope.principal, &CardFilter::default())
+            .map_err(err)?
+            .into_iter()
+            .map(|c| c.id)
+            .collect();
+        let live: HashSet<CardId> = order.iter().copied().collect();
         for id in &ids {
-            if !self.card_meta(*id)?.1.is_owner() {
+            if !live.contains(id) {
+                return Err(format!(
+                    "card `{id}` is not in the user's card list (it may be in the recycle bin)"
+                ));
+            }
+            let (card, access) = self.card_meta(*id)?;
+            if !access.is_owner() {
                 return Err("only the user's own cards can be reordered".into());
             }
+            writable(&card)?;
         }
         let actor = self.scope.actor();
-        let manual = CardFilter::default();
         for pair in ids.windows(2) {
             let (prev, id) = (pair[0], pair[1]);
-            // Neighbours in the current order: right after `prev`.
-            let order: Vec<CardId> = self
-                .db
-                .list_cards(self.scope.principal, &manual)
-                .map_err(err)?
-                .into_iter()
-                .map(|c| c.id)
-                .filter(|c| *c != id)
-                .collect();
-            let next = order
+            // Place `id` right after `prev`, before whatever follows `prev` now.
+            order.retain(|c| *c != id);
+            let at = order
                 .iter()
                 .position(|c| *c == prev)
-                .and_then(|i| order.get(i + 1))
-                .copied();
+                .ok_or("the card list changed while reordering")?
+                + 1;
+            let next = order.get(at).copied();
             self.db
                 .move_card(&actor, id, Some(prev), next)
                 .map_err(err)?;
+            order.insert(at, id);
         }
         Ok(Outcome::wrote(json!({"ok": true}), None))
     }
@@ -804,12 +882,32 @@ impl Ctx<'_> {
     }
 
     fn restore(&self) -> Result<Outcome, String> {
-        let card = self.owned_card()?;
+        let card = self.owned_card_any(self.id()?)?;
+        if !card.is_deleted() {
+            return Err("the card is not in the recycle bin".into());
+        }
         self.db
             .restore_card(&self.scope.actor(), card.id)
             .map_err(err)?;
         Ok(Outcome::wrote(json!({"ok": true}), Some(card.id)))
     }
+}
+
+/// Characters left visible when a private card's title is masked (the app's default).
+const MASK_VISIBLE: usize = 3;
+
+/// Most cards `reorder_cards` accepts in one call.
+const MAX_REORDER: usize = 200;
+
+/// Refuse changes to cards the user protected or threw away.
+fn writable(card: &Card) -> Result<(), String> {
+    if card.is_deleted() {
+        return Err("the card is in the recycle bin; restore it before changing it".into());
+    }
+    if card.lock_mode == LockMode::ReadOnly {
+        return Err("the card is locked as read-only; only the user can unlock it".into());
+    }
+    Ok(())
 }
 
 /// Colours for tags the AI creates.
@@ -926,5 +1024,208 @@ mod tests {
             .map(|c| c["title"].as_str().unwrap())
             .collect();
         assert_eq!(titles, ["a", "b", "c"]);
+    }
+
+    fn user_card(db: &Database, scope: &Scope, title: &str, lock_mode: LockMode) -> String {
+        db.create_card(
+            &Actor::user(scope.principal),
+            NewCard {
+                title: title.into(),
+                content: Document::default().to_json(),
+                lock_mode,
+                ..Default::default()
+            },
+        )
+        .unwrap()
+        .id
+        .to_string()
+    }
+
+    fn write_calls(id: &str) -> Vec<(&'static str, Value)> {
+        vec![
+            ("update_card", json!({"id": id, "title": "x"})),
+            (
+                "edit_card_text",
+                json!({"id": id, "find": "Notes", "replace": "x"}),
+            ),
+            ("append_to_card", json!({"id": id, "markdown": "x"})),
+            ("tag_card", json!({"id": id, "tags": ["t"]})),
+            ("set_card_flags", json!({"id": id, "favorite": true})),
+            ("delete_card", json!({"id": id})),
+        ]
+    }
+
+    #[test]
+    fn read_only_cards_refuse_every_write() {
+        let (db, scope) = setup(false, true);
+        let id = user_card(&db, &scope, "Notes", LockMode::ReadOnly);
+        let other = user_card(&db, &scope, "Other", LockMode::None);
+        for (tool, args) in write_calls(&id) {
+            let e = run(&db, &scope, tool, args).unwrap_err();
+            assert!(e.contains("read-only"), "{tool}: {e}");
+        }
+        let e = run(&db, &scope, "reorder_cards", json!({"ids": [other, id]})).unwrap_err();
+        assert!(e.contains("read-only"), "{e}");
+        let card = db.card(id.parse().unwrap()).unwrap();
+        assert_eq!(card.title, "Notes");
+        assert!(!card.is_deleted() && !card.is_favorite && card.tags.is_empty());
+        assert!(run(&db, &scope, "get_card", json!({"id": id})).is_ok());
+    }
+
+    #[test]
+    fn recycled_cards_refuse_writes_but_can_be_read_and_restored() {
+        let (db, scope) = setup(false, false);
+        let id = user_card(&db, &scope, "Notes", LockMode::None);
+        run(&db, &scope, "delete_card", json!({"id": id})).unwrap();
+        for (tool, args) in write_calls(&id) {
+            let e = run(&db, &scope, tool, args).unwrap_err();
+            assert!(e.contains("recycle bin"), "{tool}: {e}");
+        }
+        let card = run(&db, &scope, "get_card", json!({"id": id})).unwrap();
+        assert_eq!(card["in_recycle_bin"], true);
+        run(&db, &scope, "restore_card", json!({"id": id})).unwrap();
+        assert!(run(&db, &scope, "restore_card", json!({"id": id})).is_err());
+        run(
+            &db,
+            &scope,
+            "update_card",
+            json!({"id": id, "title": "New"}),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn edit_text_rejects_empty_find() {
+        let (db, scope) = setup(false, false);
+        let id = user_card(&db, &scope, "Title", LockMode::None);
+        let e = run(
+            &db,
+            &scope,
+            "edit_card_text",
+            json!({"id": id, "find": "", "replace": "x"}),
+        )
+        .unwrap_err();
+        assert!(e.contains("empty"), "{e}");
+        assert_eq!(db.card(id.parse().unwrap()).unwrap().title, "Title");
+    }
+
+    #[test]
+    fn removing_tags_never_creates_them() {
+        let (db, scope) = setup(false, false);
+        let id = run(
+            &db,
+            &scope,
+            "create_card",
+            json!({"title": "a", "tags": ["Keep", "Drop"]}),
+        )
+        .unwrap()["id"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        let v = run(
+            &db,
+            &scope,
+            "tag_card",
+            json!({"id": id, "tags": ["drop", "Ghost"], "mode": "remove"}),
+        )
+        .unwrap();
+        assert_eq!(v["tags"], json!(["Keep"]));
+        let names: Vec<String> = db
+            .list_tags(scope.principal)
+            .unwrap()
+            .into_iter()
+            .map(|t| t.name)
+            .collect();
+        assert!(!names.iter().any(|n| n == "Ghost"), "{names:?}");
+    }
+
+    #[test]
+    fn activity_masks_private_titles() {
+        let (db, scope) = setup(false, false);
+        let id = user_card(&db, &scope, "Open", LockMode::None);
+        // An AI edit on behalf of the user, then the user makes the card private.
+        run(
+            &db,
+            &scope,
+            "update_card",
+            json!({"id": id, "title": "Diary entry"}),
+        )
+        .unwrap();
+        let cid: CardId = id.parse().unwrap();
+        let card = db.card(cid).unwrap();
+        db.set_card_lock(
+            &Actor::user(scope.principal),
+            cid,
+            LockMode::Private,
+            &card.content,
+            "",
+            None,
+            &[],
+            &[],
+        )
+        .unwrap();
+        let log = run(&db, &scope, "recent_activity", json!({})).unwrap();
+        let titles: Vec<&str> = log["activity"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(|e| e["card_title"].as_str())
+            .collect();
+        assert!(!titles.is_empty());
+        assert!(titles.iter().all(|t| !t.contains("entry")), "{titles:?}");
+        let allowed = Scope {
+            allow_private: true,
+            ..scope.clone()
+        };
+        let log = run(&db, &allowed, "recent_activity", json!({})).unwrap();
+        assert!(log.to_string().contains("Diary entry"));
+    }
+
+    #[test]
+    fn reorder_validates_ids() {
+        let (db, scope) = setup(false, false);
+        let ids: Vec<String> = ["a", "b", "c"]
+            .iter()
+            .map(|t| user_card(&db, &scope, t, LockMode::None))
+            .collect();
+        let dup = json!({"ids": [ids[0], ids[1], ids[0]]});
+        assert!(
+            run(&db, &scope, "reorder_cards", dup)
+                .unwrap_err()
+                .contains("more than once")
+        );
+        run(&db, &scope, "delete_card", json!({"id": ids[2]})).unwrap();
+        let recycled = json!({"ids": [ids[0], ids[2]]});
+        assert!(
+            run(&db, &scope, "reorder_cards", recycled)
+                .unwrap_err()
+                .contains("recycle bin")
+        );
+        let many: Vec<String> = (0..=MAX_REORDER).map(|_| ids[0].clone()).collect();
+        assert!(
+            run(&db, &scope, "reorder_cards", json!({"ids": many}))
+                .unwrap_err()
+                .contains("at most")
+        );
+    }
+
+    #[test]
+    fn reorder_places_cards_together_after_the_first() {
+        let (db, scope) = setup(false, false);
+        let mut ids = Vec::new();
+        for t in ["a", "b", "c", "d", "e"] {
+            ids.push(user_card(&db, &scope, t, LockMode::None));
+        }
+        // Current order: e, d, c, b, a. Ask for d, a, c.
+        let ask = json!({"ids": [ids[3], ids[0], ids[2]]});
+        run(&db, &scope, "reorder_cards", ask).unwrap();
+        let list = run(&db, &scope, "search_cards", json!({})).unwrap();
+        let titles: Vec<&str> = list["cards"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|c| c["title"].as_str().unwrap())
+            .collect();
+        assert_eq!(titles, ["e", "d", "a", "c", "b"]);
     }
 }
