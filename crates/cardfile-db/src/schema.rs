@@ -65,6 +65,9 @@ diesel::table! {
         user_id -> Text,
         permission -> Text,
         created_at -> BigInt,
+        updated_at -> BigInt,
+        deleted_at -> Nullable<BigInt>,
+        rev -> BigInt,
     }
 }
 
@@ -122,6 +125,10 @@ diesel::table! {
     card_tags (card_id, tag_id) {
         card_id -> Text,
         tag_id -> Text,
+        created_at -> BigInt,
+        updated_at -> BigInt,
+        deleted_at -> Nullable<BigInt>,
+        rev -> BigInt,
     }
 }
 

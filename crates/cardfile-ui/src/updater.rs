@@ -3,8 +3,8 @@
 //! version, then restart. Store and package-manager installs only get a notice.
 //! Everything can be disabled at compile time (feature `update-check`).
 
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, OnceLock};
 
 use cardfile_i18n::{t, t_args};
 use cardfile_updater::{InstallKind, InstallOutcome, Release};
@@ -21,15 +21,39 @@ use gpui_kit::{
 
 use crate::state::AppState;
 
+/// How Cardfile was installed. Detecting it touches the file system (it creates a
+/// probe file), so it runs once, on the background executor (see [`detect_kind`]).
+static KIND: OnceLock<InstallKind> = OnceLock::new();
+
+/// The install kind, detecting it on first use. Blocking: background executor only.
+fn kind() -> &'static InstallKind {
+    KIND.get_or_init(InstallKind::detect)
+}
+
+/// Detect the install kind in the background at startup, so views can ask
+/// [`enabled`] without touching the file system.
+pub fn detect_kind(cx: &App) {
+    cx.background_spawn(async {
+        kind();
+    })
+    .detach();
+}
+
+/// Whether updates are handled by Cardfile. Never blocks: `false` until the
+/// install kind is known (see [`detect_kind`]).
 pub fn enabled() -> bool {
-    cfg!(feature = "update-check") && !managed_install()
+    KIND.get().is_some_and(updates_by_us)
+}
+
+fn updates_by_us(kind: &InstallKind) -> bool {
+    cfg!(feature = "update-check") && !managed_install(kind)
 }
 
 /// Installed by the Microsoft Store (MSIX) or a Linux package manager, which update
 /// the app themselves.
-fn managed_install() -> bool {
+fn managed_install(kind: &InstallKind) -> bool {
     matches!(
-        InstallKind::detect(),
+        kind,
         InstallKind::Store | InstallKind::PackageManager | InstallKind::Flatpak | InstallKind::Snap
     )
 }
@@ -52,25 +76,43 @@ pub fn cleanup(cx: &App) {
 
 /// Check in the background after sign-in if the user allows it.
 pub fn check_on_startup(window: &mut Window, cx: &mut App) {
-    if enabled() && AppState::user_settings(cx).check_for_updates {
+    if AppState::user_settings(cx).check_for_updates {
         run(false, window, cx);
     }
 }
 
 /// Check now and always report the result.
 pub fn check_now(window: &mut Window, cx: &mut App) {
-    if !enabled() {
-        window.push_notification(Notification::info(t("updates.managed")), cx);
-        return;
-    }
     run(true, window, cx);
 }
 
+/// Result of [`run`]'s background work.
+enum Check {
+    /// Store or package-manager install: it updates the app itself.
+    Managed,
+    Done(Result<Option<Release>, cardfile_updater::UpdateError>),
+}
+
 fn run(verbose: bool, window: &mut Window, cx: &mut App) {
-    let task = cx.background_spawn(async move { cardfile_updater::check(&current()) });
+    let task = cx.background_spawn(async move {
+        if !updates_by_us(kind()) {
+            return Check::Managed;
+        }
+        Check::Done(cardfile_updater::check(&current()))
+    });
     window
         .spawn(cx, async move |cx| {
-            let result = task.await;
+            let result = match task.await {
+                Check::Managed => {
+                    if verbose {
+                        let _ = cx.update(|window, cx| {
+                            window.push_notification(Notification::info(t("updates.managed")), cx)
+                        });
+                    }
+                    return;
+                }
+                Check::Done(result) => result,
+            };
             let _ = cx.update(|window, cx| match result {
                 Ok(Some(release)) => {
                     let version = release.version.to_string();
@@ -113,8 +155,8 @@ struct UpdateState {
 
 /// The "new version" dialog: release notes, and Update / Later.
 pub fn show_dialog(release: Arc<Release>, window: &mut Window, cx: &mut App) {
-    let kind = InstallKind::detect();
-    let can_install = kind.is_self_updatable();
+    // Known by now: the check that offered this release detected it.
+    let can_install = KIND.get().is_some_and(InstallKind::is_self_updatable);
     let state = cx.new(|_| UpdateState {
         phase: Phase::Ready,
         cancel: Arc::new(AtomicBool::new(false)),
@@ -263,10 +305,9 @@ fn start(release: Arc<Release>, state: Entity<UpdateState>, window: &mut Window,
     let progress = Arc::new(parking_lot::Mutex::new((0u64, None::<u64>)));
     let progress_dl = progress.clone();
     let task = cx.background_spawn(async move {
-        let kind = InstallKind::detect();
         let downloaded = cardfile_updater::download(
             &release,
-            &kind,
+            kind(),
             |done, total| *progress_dl.lock() = (done, total),
             &cancel,
         )?;
@@ -311,6 +352,15 @@ fn start(release: Arc<Release>, state: Entity<UpdateState>, window: &mut Window,
     window
         .spawn(cx, async move |cx| {
             let result = task.await;
+            // Save the open card before the new version starts (it would read the
+            // database while the old one is still writing) or the installer runs.
+            if matches!(
+                result,
+                Ok(InstallOutcome::Restart { .. } | InstallOutcome::QuitForInstaller)
+            ) && let Ok(saved) = cx.update(|_, cx| crate::app::flush_all(cx))
+            {
+                saved.await;
+            }
             let _ = cx.update(|window, cx| match result {
                 Ok(InstallOutcome::Restart { exe }) => {
                     if let Err(e) = cardfile_updater::restart(&exe) {

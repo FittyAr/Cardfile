@@ -1,0 +1,10 @@
+INSERT INTO cards_fts (cards_fts, rank) VALUES ('secure-delete', 0);
+DELETE FROM card_tags WHERE deleted_at IS NOT NULL;
+ALTER TABLE card_tags DROP COLUMN rev;
+ALTER TABLE card_tags DROP COLUMN deleted_at;
+ALTER TABLE card_tags DROP COLUMN updated_at;
+ALTER TABLE card_tags DROP COLUMN created_at;
+DELETE FROM card_shares WHERE deleted_at IS NOT NULL;
+ALTER TABLE card_shares DROP COLUMN rev;
+ALTER TABLE card_shares DROP COLUMN deleted_at;
+ALTER TABLE card_shares DROP COLUMN updated_at;

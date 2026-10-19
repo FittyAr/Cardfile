@@ -202,8 +202,13 @@ impl AudioShared {
         base + Duration::from_secs_f64(frames as f64 / f64::from(self.rate))
     }
 
-    pub(crate) fn is_drained(&self) -> bool {
-        self.drained.load(Ordering::Acquire)
+    /// Runs `f` if the output has drained the current generation, holding the ring
+    /// lock so a concurrent [`AudioShared::begin_seek`] cannot interleave.
+    pub(crate) fn if_drained(&self, f: impl FnOnce()) {
+        let _ring = self.ring.lock();
+        if self.drained.load(Ordering::Acquire) {
+            f();
+        }
     }
 
     pub(crate) fn set_playing(&self, playing: bool) {
@@ -218,9 +223,10 @@ impl AudioShared {
         f32::from_bits(self.volume.load(Ordering::Acquire))
     }
 
-    /// Drops everything queued and restarts the clock at `to`. Returns the new
-    /// generation, which the decoder thread must tag its chunks with.
-    pub(crate) fn begin_seek(&self, to: Duration) -> u64 {
+    /// Drops everything queued and restarts the clock at `to`, then runs `locked`
+    /// while still holding the ring lock. Returns the new generation, which the
+    /// decoder thread must tag its chunks with.
+    pub(crate) fn begin_seek(&self, to: Duration, locked: impl FnOnce()) -> u64 {
         let mut ring = self.ring.lock();
         let generation = ring.generation.wrapping_add(1);
         ring.generation = generation;
@@ -234,6 +240,7 @@ impl AudioShared {
         self.played.store(0, Ordering::Release);
         self.drained.store(false, Ordering::Release);
         self.generation.store(generation, Ordering::Release);
+        locked();
         generation
     }
 
@@ -419,8 +426,31 @@ fn open_device() -> Option<MixerDeviceSink> {
     }
 }
 
-/// Decoder thread body.
+/// Decoder thread body. A panic anywhere in it (symphonia on a corrupt file, a cpal
+/// backend) ends playback for good with [`Shared::is_failed`] set instead of
+/// unwinding out of the thread; release builds use `panic = "unwind"` for this.
 pub(crate) fn run(
+    shared: Arc<Shared>,
+    audio: Arc<AudioShared>,
+    track: AudioTrack,
+    rx: Receiver<AudioCmd>,
+    output_mode: AudioOutput,
+) {
+    let worker = shared.clone();
+    guarded(&shared, move || {
+        run_inner(worker, audio, track, rx, output_mode)
+    });
+}
+
+/// Runs `body`, turning a panic into the failed state of `shared`.
+pub(crate) fn guarded(shared: &Shared, body: impl FnOnce()) {
+    if std::panic::catch_unwind(AssertUnwindSafe(body)).is_err() {
+        tracing::error!("audio decoder panicked; playback stopped");
+        shared.mark_failed();
+    }
+}
+
+fn run_inner(
     shared: Arc<Shared>,
     audio: Arc<AudioShared>,
     mut track: AudioTrack,
@@ -516,9 +546,7 @@ pub(crate) fn run(
             }
         }
 
-        if audio.is_drained() && !shared.is_ended() {
-            shared.mark_ended();
-        }
+        shared.mark_ended_if_drained();
 
         let busy = !eof && audio.has_room();
         if !busy {
@@ -659,5 +687,43 @@ impl AudioTrack {
             }
         }
         Step::Chunk(chunk)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::MediaKind;
+
+    fn shared() -> Shared {
+        Shared::new(MediaKind::Audio, None, Arc::new(AudioShared::new(8000, 1)))
+    }
+
+    #[test]
+    fn a_decoder_panic_ends_playback_instead_of_unwinding() {
+        let shared = shared();
+        shared.set_playing(true);
+        guarded(&shared, || panic!("simulated decoder bug"));
+        assert!(shared.is_failed());
+        assert!(shared.is_ended());
+        assert!(!shared.is_playing());
+        assert!(shared.audio.closed.load(Ordering::Acquire));
+        // A body that returns normally leaves the state alone.
+        let ok = self::tests::shared();
+        guarded(&ok, || {});
+        assert!(!ok.is_failed() && !ok.is_ended());
+    }
+
+    #[test]
+    fn seek_resets_drained_before_clearing_ended() {
+        let shared = shared();
+        shared.audio.drained.store(true, Ordering::Release);
+        shared.mark_ended_if_drained();
+        assert!(shared.is_ended());
+        // After the seek the old generation's drain must not end playback again.
+        shared.seek(Duration::ZERO);
+        assert!(!shared.is_ended());
+        shared.mark_ended_if_drained();
+        assert!(!shared.is_ended());
     }
 }

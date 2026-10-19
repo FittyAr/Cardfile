@@ -45,6 +45,14 @@ impl Model {
         self.pending_style = None;
     }
 
+    /// Select a range that is about to be replaced as part of the same input (an IME
+    /// composition), keeping the pending style so the composed text gets it.
+    pub fn select_for_replace(&mut self, sel: Selection) {
+        let pending = self.pending_style.take();
+        self.set_selection(sel);
+        self.pending_style = pending;
+    }
+
     pub fn set_caret(&mut self, pos: Pos) {
         self.set_selection(Selection::caret(pos));
     }
@@ -78,15 +86,39 @@ impl Model {
             .unwrap_or_default()
     }
 
-    /// Whether `mark` is active for the toolbar.
+    /// Whether `mark` is active for the toolbar (and so whether toggling removes it).
+    ///
+    /// With a selection the mark is on only when every selected character that can
+    /// carry marks has it, across all selected slots; code blocks and atoms, which
+    /// [`Self::update_style`] skips, don't count.
     pub fn has_mark(&self, mark: Mark) -> bool {
-        if self.sel.is_empty() || !self.sel.is_single_slot() {
+        if self.sel.is_empty() {
             return mark.get(&self.caret_style());
         }
-        let (s, e) = (self.sel.start(), self.sel.end());
-        self.doc
-            .slot_text(s.slot)
-            .is_some_and(|t| t.has_mark(s.offset..e.offset, mark))
+        let (start, end) = (self.sel.start(), self.sel.end());
+        let mut any = false;
+        for slot in self.doc.slots_between(start.slot, end.slot) {
+            if matches!(self.block_kind(slot.block), Some(BlockKind::Code { .. })) {
+                continue;
+            }
+            let Some(t) = self.doc.slot_text(slot) else {
+                continue;
+            };
+            let s = if slot == start.slot { start.offset } else { 0 };
+            let e = if slot == end.slot {
+                end.offset
+            } else {
+                t.len()
+            };
+            if s >= e {
+                continue;
+            }
+            any = true;
+            if !t.has_mark(s..e, mark) {
+                return false;
+            }
+        }
+        any || mark.get(&self.caret_style())
     }
 
     // ---------------------------------------------------------------------
@@ -386,9 +418,14 @@ impl Model {
             _ => {}
         }
         if pos.offset == 0 && !new.text.is_empty() {
-            // Caret at start: the current block becomes the empty one above.
-            let kind = self.doc.blocks[pos.slot.block].kind.clone();
-            new.kind = kind;
+            // Caret at start: the content moves down with its block's kind (a checked
+            // item stays checked) and the current block becomes the empty one above,
+            // which starts unchecked like any new item.
+            let current = &mut self.doc.blocks[pos.slot.block];
+            new.kind = current.kind.clone();
+            if let BlockKind::CheckList { checked } = &mut current.kind {
+                *checked = false;
+            }
         }
         let at = pos.slot.block + 1;
         self.doc.blocks.insert(at, new);
@@ -935,19 +972,36 @@ impl Model {
             .unwrap_or_default()
     }
 
+    /// Whether the caret is in a code block, where pasted text is kept verbatim (no
+    /// Markdown conversion).
+    pub fn in_code_block(&self) -> bool {
+        let slot = self.sel.head.slot;
+        !self.doc.is_cell(slot)
+            && matches!(self.block_kind(slot.block), Some(BlockKind::Code { .. }))
+    }
+
+    /// Whether the caret is in a slot that holds only plain text (a code block or a
+    /// table cell): fragments pasted there lose their block structure.
+    fn in_plain_slot(&self) -> bool {
+        self.doc.is_cell(self.sel.head.slot) || self.in_code_block()
+    }
+
     /// Paste a document fragment at the selection.
     pub fn insert_fragment(&mut self, frag: &Document) {
         if frag.blocks.is_empty() {
             return;
         }
         self.delete_selection();
-        let pos = self.sel.head;
-        let into_plain_slot = self.doc.is_cell(pos.slot)
-            || matches!(
-                self.block_kind(pos.slot.block),
-                Some(BlockKind::Code { .. })
-            );
         let single_inline = frag.blocks.len() == 1 && frag.blocks[0].kind.is_textual();
+        if single_inline && self.doc.is_atom(self.sel.head.slot) {
+            // Pasting text on a selected atom: continue in a new paragraph after it,
+            // like typing does.
+            let at = self.sel.head.slot.block + 1;
+            self.doc.blocks.insert(at, Block::paragraph(""));
+            self.sel = Selection::caret(Pos::new(Slot::block(at), 0));
+        }
+        let pos = self.sel.head;
+        let into_plain_slot = self.in_plain_slot();
         if into_plain_slot || single_inline {
             if single_inline && !into_plain_slot {
                 let text = frag.blocks[0].text.clone();
@@ -1387,6 +1441,98 @@ mod tests {
         assert_eq!(m.link_at_caret().as_deref(), Some("https://a.b"));
         m.set_link(None, None);
         assert_eq!(m.link_at_caret(), None);
+    }
+
+    #[test]
+    fn mark_toggle_over_several_blocks_uses_the_selection() {
+        // The character before the selection is bold, the selection is not.
+        let mut m = model(&["Xab", "cd"]);
+        m.doc.blocks[0].text.toggle_mark(0..1, Mark::Bold);
+        m.set_selection(Selection {
+            anchor: at(0, 1),
+            head: at(1, 2),
+        });
+        assert!(!m.has_mark(Mark::Bold));
+        m.toggle_mark(Mark::Bold);
+        assert!(m.doc.blocks[0].text.has_mark(1..3, Mark::Bold));
+        assert!(m.doc.blocks[1].text.has_mark(0..2, Mark::Bold));
+        assert!(m.has_mark(Mark::Bold));
+        // Toggling again removes it everywhere.
+        m.toggle_mark(Mark::Bold);
+        assert!(!m.doc.blocks[0].text.has_mark(1..3, Mark::Bold));
+        assert!(!m.doc.blocks[1].text.has_mark(0..2, Mark::Bold));
+        // Partly bold: the mark counts as off and toggling sets it on all.
+        m.doc.blocks[1].text.toggle_mark(0..1, Mark::Bold);
+        assert!(!m.has_mark(Mark::Bold));
+        m.toggle_mark(Mark::Bold);
+        assert!(m.doc.blocks[1].text.has_mark(0..2, Mark::Bold));
+    }
+
+    #[test]
+    fn pasting_text_on_a_selected_atom_adds_a_paragraph() {
+        let mut m = model(&["a"]);
+        m.doc.blocks.push(Block::new(BlockKind::Divider, ""));
+        m.doc.blocks.push(Block::paragraph("b"));
+        m.set_caret(at(1, 0));
+        m.insert_fragment(&Document::from_plain_text("x"));
+        assert_eq!(m.doc.blocks[1].kind, BlockKind::Divider);
+        assert_eq!(texts(&m), ["a", "", "x", "b"]);
+        assert_eq!(m.caret(), at(2, 1));
+    }
+
+    #[test]
+    fn paste_into_code_block_is_verbatim() {
+        let mut m = model(&[""]);
+        m.doc.blocks[0].kind = BlockKind::Code {
+            language: String::new(),
+        };
+        m.set_caret(at(0, 0));
+        assert!(m.in_code_block());
+        let md = "# not a heading\n- **x**";
+        m.insert_text(md);
+        assert_eq!(texts(&m), [md]);
+        assert_eq!(m.doc.blocks.len(), 1);
+    }
+
+    #[test]
+    fn composition_keeps_pending_style() {
+        let mut m = model(&["xy"]);
+        m.set_caret(at(0, 1));
+        m.toggle_mark(Mark::Bold);
+        // An IME first inserts the marked text, then replaces it as it composes.
+        m.insert_text("a");
+        m.select_for_replace(Selection {
+            anchor: at(0, 1),
+            head: at(0, 2),
+        });
+        m.insert_text("ab");
+        assert_eq!(texts(&m), ["xaby"]);
+        assert!(m.doc.blocks[0].text.has_mark(1..3, Mark::Bold));
+        assert!(!m.doc.blocks[0].text.has_mark(0..1, Mark::Bold));
+    }
+
+    #[test]
+    fn enter_at_start_of_checked_item() {
+        let mut m = model(&["task"]);
+        m.doc.blocks[0].kind = BlockKind::CheckList { checked: true };
+        m.set_caret(at(0, 0));
+        m.enter();
+        assert_eq!(texts(&m), ["", "task"]);
+        // The new empty item above is unchecked; the content keeps its state.
+        assert_eq!(
+            m.doc.blocks[0].kind,
+            BlockKind::CheckList { checked: false }
+        );
+        assert_eq!(m.doc.blocks[1].kind, BlockKind::CheckList { checked: true });
+        // Splitting in the middle: the new item below starts unchecked.
+        m.set_caret(at(1, 2));
+        m.enter();
+        assert_eq!(texts(&m), ["", "ta", "sk"]);
+        assert_eq!(m.doc.blocks[1].kind, BlockKind::CheckList { checked: true });
+        assert_eq!(
+            m.doc.blocks[2].kind,
+            BlockKind::CheckList { checked: false }
+        );
     }
 
     #[test]

@@ -23,7 +23,7 @@ use gpui_kit::{
 };
 use zeroize::Zeroizing;
 
-use crate::state::{AppState, DbBlobs, run_db};
+use crate::state::{AppState, DbBlobs, Latch, SnapshotWriter, run_db};
 use crate::widgets::{error, format_date};
 
 /// Delay between the last edit and the automatic save.
@@ -34,6 +34,9 @@ const SNAPSHOT_EVERY_MS: i64 = 5 * 60 * 1000;
 pub enum CardPaneEvent {
     /// The card's title, content or flags changed and were saved.
     Saved,
+    /// Writing the card failed; the edits stay in the editor and are saved again
+    /// with the next change. Carries the error, for the user.
+    SaveFailed(String),
     /// The card moved to or out of the recycle bin, or was purged.
     ListChanged,
 }
@@ -76,8 +79,19 @@ pub struct CardPane {
     updated_by: Option<SharedString>,
     owner_name: Option<SharedString>,
     names_task: Option<Task<()>>,
+    /// Editor revision and title generation last confirmed written to the database.
     saved_revision: u64,
-    title_dirty: bool,
+    saved_title_gen: u64,
+    /// Bumped on every edit of the title.
+    title_gen: u64,
+    /// Bumped whenever the editor gets a new document (its revision restarts).
+    doc_epoch: u64,
+    /// Saves started and not yet finished, oldest first.
+    pending: Vec<PendingSave>,
+    /// Ticket of the newest save confirmed for the open document.
+    confirmed_ticket: u64,
+    /// Orders the background writes of this pane's cards.
+    writer: Arc<SnapshotWriter<CardId>>,
     save_task: Option<Task<()>>,
     relock_task: Option<Task<()>>,
     /// Loads the spelling dictionary; replaced when the settings change again.
@@ -87,6 +101,17 @@ pub struct CardPane {
     lock_change: Option<CardId>,
     suppress_title_event: bool,
     _subs: Vec<Subscription>,
+}
+
+/// A save on its way to the database.
+struct PendingSave {
+    card: CardId,
+    ticket: u64,
+    epoch: u64,
+    revision: u64,
+    title_gen: u64,
+    /// Released when the write finished (or was skipped).
+    done: Latch,
 }
 
 impl EventEmitter<CardPaneEvent> for CardPane {}
@@ -122,7 +147,7 @@ impl CardPane {
                 window,
                 |this, _, ev: &EditorEvent, window, cx| match ev {
                     EditorEvent::Changed if !this.suppress_title_event => {
-                        this.title_dirty = true;
+                        this.title_gen += 1;
                         this.schedule_save(cx);
                     }
                     EditorEvent::Submit => {
@@ -158,7 +183,12 @@ impl CardPane {
             owner_name: None,
             names_task: None,
             saved_revision: 0,
-            title_dirty: false,
+            saved_title_gen: 0,
+            title_gen: 0,
+            doc_epoch: 0,
+            pending: Vec::new(),
+            confirmed_ticket: 0,
+            writer: Arc::default(),
             save_task: None,
             relock_task: None,
             suppress_title_event: false,
@@ -187,9 +217,10 @@ impl CardPane {
 
     /// Whether the open card has unsaved changes.
     pub fn has_unsaved_changes(&self, cx: &gpui_kit::App) -> bool {
+        let open = self.card_id();
         self.save_task.is_some()
-            || self.title_dirty
-            || self.editor.read(cx).revision() != self.saved_revision
+            || self.pending.iter().any(|p| Some(p.card) == open)
+            || self.is_dirty(cx)
     }
 
     /// Show a newer version of the open card saved elsewhere (another user, the AI),
@@ -366,7 +397,7 @@ impl CardPane {
             e.set_read_only(disabled, cx);
         });
         self.suppress_title_event = false;
-        self.title_dirty = false;
+        self.saved_title_gen = self.title_gen;
     }
 
     fn set_editor_doc(&mut self, doc: Document, read_only: bool, cx: &mut Context<Self>) {
@@ -374,6 +405,7 @@ impl CardPane {
             e.set_document(doc, cx);
             e.set_read_only(read_only, cx);
         });
+        self.doc_epoch += 1;
         self.saved_revision = self.editor.read(cx).revision();
     }
 
@@ -409,8 +441,19 @@ impl CardPane {
     // Saving
     // ---------------------------------------------------------------------
 
-    fn is_dirty(&self, cx: &Context<Self>) -> bool {
-        self.title_dirty || self.editor.read(cx).revision() != self.saved_revision
+    /// Whether the editor holds changes that no finished or running save covers.
+    fn is_dirty(&self, cx: &gpui_kit::App) -> bool {
+        let open = self.card_id();
+        // The newest running save of the shown document, else the last confirmed one.
+        let (revision, title_gen) = self
+            .pending
+            .iter()
+            .rev()
+            .find(|p| Some(p.card) == open && p.epoch == self.doc_epoch)
+            .map_or((self.saved_revision, self.saved_title_gen), |p| {
+                (p.revision, p.title_gen)
+            });
+        self.title_gen != title_gen || self.editor.read(cx).revision() != revision
     }
 
     fn schedule_save(&mut self, cx: &mut Context<Self>) {
@@ -425,9 +468,25 @@ impl CardPane {
 
     /// Save immediately if there are pending changes (e.g. before switching cards).
     pub fn flush_save(&mut self, cx: &mut Context<Self>) {
+        // Nobody waits for the write here; dropping the waiter does not cancel it.
+        drop(self.save_now(cx));
+    }
+
+    /// Like [`Self::flush_save`]; the returned task finishes once every save started
+    /// so far has been written (awaited when quitting or before rewriting the card).
+    pub fn save_now(&mut self, cx: &mut Context<Self>) -> Task<()> {
         if self.save_task.take().is_some() || self.is_dirty(cx) {
             self.save(cx);
         }
+        let latches: Vec<Latch> = self.pending.iter().map(|p| p.done.clone()).collect();
+        if latches.is_empty() {
+            return Task::ready(());
+        }
+        cx.background_spawn(async move {
+            for latch in latches {
+                latch.block();
+            }
+        })
     }
 
     fn save(&mut self, cx: &mut Context<Self>) {
@@ -455,13 +514,25 @@ impl CardPane {
             title
         };
         let revision = self.editor.read(cx).revision();
+        let (epoch, title_gen) = (self.doc_epoch, self.title_gen);
         let key = self.card_key.clone();
         let keep = AppState::user_settings(cx).max_revisions;
         let db = AppState::db(cx);
-        let task = cx.background_spawn(async move {
+        let writer = self.writer.clone();
+        let ticket = writer.ticket();
+        let done = Latch::default();
+        self.pending.push(PendingSave {
+            card: id,
+            ticket,
+            epoch,
+            revision,
+            title_gen,
+            done: done.clone(),
+        });
+        let write = move || {
             let json = doc.to_json();
             let update = if encrypted {
-                let key = key.ok_or_else(|| anyhow::anyhow!("encrypted card is not unlocked"))?;
+                let key = key.ok_or_else(|| anyhow::anyhow!(t("card.not_unlocked")))?;
                 let payload =
                     cardfile_crypto::encrypt_with_key(&json, &key, id.to_string().as_bytes())?;
                 ContentUpdate {
@@ -480,14 +551,38 @@ impl CardPane {
                 }
             };
             anyhow::Ok(db.update_card_content(&actor, id, update, keep, SNAPSHOT_EVERY_MS)?)
+        };
+        let task = cx.background_spawn(async move {
+            // Skipped (`None`) when a newer snapshot of the card was already written.
+            let result = writer.write(id, ticket, write);
+            done.release();
+            result
         });
-        self.saved_revision = revision;
-        self.title_dirty = false;
         cx.spawn(async move |this, cx| {
-            match task.await {
-                Ok(saved) => {
-                    let _ = this.update(cx, |this, cx| {
-                        if let Some(card) = this.card.as_mut().filter(|c| c.id == saved.id) {
+            let result = task.await;
+            let _ = this.update(cx, |this, cx| {
+                this.pending.retain(|p| p.ticket != ticket);
+                // Edits stay unsaved until the write succeeded.
+                let confirm = |this: &mut Self| {
+                    if this.card_id() == Some(id)
+                        && this.doc_epoch == epoch
+                        && ticket > this.confirmed_ticket
+                    {
+                        this.confirmed_ticket = ticket;
+                        this.saved_revision = revision;
+                        this.saved_title_gen = title_gen;
+                    }
+                };
+                match result {
+                    // A newer save of the card wrote this content and more.
+                    None => confirm(this),
+                    Some(Ok(saved)) => {
+                        confirm(this);
+                        if let Some(card) = this
+                            .card
+                            .as_mut()
+                            .filter(|c| c.id == saved.id && saved.rev > c.rev)
+                        {
                             // Keep the decrypted content out of the cached card.
                             card.title = saved.title;
                             card.updated_at = saved.updated_at;
@@ -500,11 +595,15 @@ impl CardPane {
                             }
                         }
                         cx.emit(CardPaneEvent::Saved);
-                        cx.notify();
-                    });
+                    }
+                    Some(Err(e)) => {
+                        // Still dirty: the next edit (or flush) writes it again.
+                        tracing::error!("save card: {e:#}");
+                        cx.emit(CardPaneEvent::SaveFailed(format!("{e:#}")));
+                    }
                 }
-                Err(e) => tracing::error!("save card: {e:#}"),
-            }
+                cx.notify();
+            });
         })
         .detach();
     }
@@ -664,7 +763,8 @@ impl CardPane {
         let Some(user) = AppState::session(cx).map(|s| s.user.clone()) else {
             return;
         };
-        self.flush_save(cx);
+        // The protection change rewrites the card: let the last content save land first.
+        let flushed = self.save_now(cx);
         let doc = self.editor.read(cx).document().clone();
         let existing_key = self.card_key.clone();
         let password = self.pending_password.take();
@@ -679,6 +779,7 @@ impl CardPane {
         let card_id = card.id;
         self.lock_change = Some(card_id);
         let task = cx.background_spawn(async move {
+            flushed.await;
             if mode == LockMode::Encrypted {
                 // Re-store plaintext images sealed; the old copies are dropped below.
                 content_doc.map_blob_refs(|r| {
@@ -704,7 +805,9 @@ impl CardPane {
                         let (user, _) = crate::locks::unlock_user(&db, &user, &pw)?;
                         (CardKey::generate()?, Some(user))
                     }
-                    (None, None) => return Err(anyhow::anyhow!("missing password")),
+                    (None, None) => {
+                        return Err(anyhow::anyhow!(t("card.protect.missing_password")));
+                    }
                 };
                 let keys = crate::locks::wrap_for_all(&db, card.id, card.owner_id, &key)?;
                 let payload =
@@ -883,20 +986,34 @@ impl CardPane {
         let Some(card) = self.card.clone() else {
             return;
         };
-        self.flush_save(cx);
+        let flushed = self.save_now(cx);
         let Some(actor) = AppState::actor(cx) else {
             return;
         };
         let db = AppState::db(cx);
         let id = card.id;
-        let task = run_db(cx, move |_| db.delete_card(&actor, id));
+        let task = cx.background_spawn(async move {
+            // The last edits land before the card moves to the recycle bin.
+            flushed.await;
+            db.delete_card(&actor, id).map_err(anyhow::Error::from)
+        });
         cx.spawn_in(window, async move |this, cx| {
-            if task.await.is_ok() {
-                let _ = this.update_in(cx, |this, window, cx| {
-                    this.open(None, CardAccess::Owner, window, cx);
+            let result = task.await;
+            let _ = this.update_in(cx, |this, window, cx| match result {
+                Ok(_) => {
+                    if this.card_id() == Some(id) {
+                        this.open(None, CardAccess::Owner, window, cx);
+                    }
                     cx.emit(CardPaneEvent::ListChanged);
-                });
-            }
+                }
+                Err(e) => window.push_notification(
+                    Notification::error(t_args(
+                        "card.delete_failed",
+                        &[("error", &format!("{e:#}"))],
+                    )),
+                    cx,
+                ),
+            });
         })
         .detach();
     }
@@ -912,12 +1029,22 @@ impl CardPane {
             db.card(id)
         });
         cx.spawn_in(window, async move |this, cx| {
-            if let Ok(card) = task.await {
-                let _ = this.update_in(cx, |this, window, cx| {
-                    this.open(Some(card), CardAccess::Owner, window, cx);
+            let result = task.await;
+            let _ = this.update_in(cx, |this, window, cx| match result {
+                Ok(card) => {
+                    if this.card_id() == Some(card.id) {
+                        this.open(Some(card), CardAccess::Owner, window, cx);
+                    }
                     cx.emit(CardPaneEvent::ListChanged);
-                });
-            }
+                }
+                Err(e) => window.push_notification(
+                    Notification::error(t_args(
+                        "card.restore_failed",
+                        &[("error", &format!("{e:#}"))],
+                    )),
+                    cx,
+                ),
+            });
         })
         .detach();
     }
@@ -932,17 +1059,30 @@ impl CardPane {
             window,
             cx,
             move |window, cx| {
+                let Some(actor) = AppState::actor(cx) else {
+                    return;
+                };
                 let db = AppState::db(cx);
-                let task = run_db(cx, move |_| db.purge_card(id));
+                let task = run_db(cx, move |_| db.purge_card(&actor, id));
                 let pane = pane.clone();
                 window
                     .spawn(cx, async move |cx| {
-                        if task.await.is_ok() {
-                            let _ = pane.update_in(cx, |this, window, cx| {
-                                this.open(None, CardAccess::Owner, window, cx);
+                        let result = task.await;
+                        let _ = pane.update_in(cx, |this, window, cx| match result {
+                            Ok(()) => {
+                                if this.card_id() == Some(id) {
+                                    this.open(None, CardAccess::Owner, window, cx);
+                                }
                                 cx.emit(CardPaneEvent::ListChanged);
-                            });
-                        }
+                            }
+                            Err(e) => window.push_notification(
+                                Notification::error(t_args(
+                                    "card.purge.failed",
+                                    &[("error", &format!("{e:#}"))],
+                                )),
+                                cx,
+                            ),
+                        });
                     })
                     .detach();
             },
@@ -998,6 +1138,7 @@ impl CardPane {
             e.set_document(doc, cx);
         });
         // A fresh document resets the editor revision; force a save.
+        self.doc_epoch += 1;
         self.saved_revision = u64::MAX;
         self.set_title_value(&title, window, cx);
         self.save(cx);
@@ -1008,7 +1149,7 @@ impl CardPane {
         let _ = window;
         self.title.update(cx, |e, cx| e.set_text(title, cx));
         self.suppress_title_event = false;
-        self.title_dirty = true;
+        self.title_gen += 1;
     }
 
     pub fn export(
@@ -1384,7 +1525,8 @@ impl CardPane {
         } else {
             0
         };
-        let saving = self.save_task.is_some();
+        let open = self.card_id();
+        let saving = self.save_task.is_some() || self.pending.iter().any(|p| Some(p.card) == open);
         h_flex()
             .justify_between()
             .px(px(16.))

@@ -16,7 +16,7 @@ mod preset;
 mod types;
 mod wire;
 
-pub use agent::{AgentEvent, run_agent};
+pub use agent::{AgentEvent, AgentOutcome, run_agent};
 pub use config::ProviderConfig;
 pub use error::AiError;
 pub use preset::{ApiKind, CUSTOM_PRESET_ID, PRESETS, Preset, preset};

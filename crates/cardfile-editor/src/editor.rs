@@ -1,16 +1,16 @@
 //! The [`RichEditor`] GPUI entity: input handling on top of [`Model`].
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::ops::Range;
 use std::sync::Arc;
 use std::time::Duration;
 
 use cardfile_doc::{Align, Attachment, Block, BlockKind, Document, Image, Mark, TextSize};
 use gpui_kit::{
-    Action, App, Bounds, ClipboardEntry, ClipboardItem, Context, EntityInputHandler, EventEmitter,
-    FocusHandle, Focusable, Global, KeyBinding, MouseButton, MouseDownEvent, MouseMoveEvent,
-    MouseUpEvent, PathPromptOptions, Pixels, Point, ScrollHandle, Task, UTF16Selection, Window,
-    actions, point, px,
+    Action, App, AppContext as _, Bounds, ClipboardEntry, ClipboardItem, Context,
+    EntityInputHandler, EventEmitter, FocusHandle, Focusable, Global, KeyBinding, MouseButton,
+    MouseDownEvent, MouseMoveEvent, MouseUpEvent, PathPromptOptions, Pixels, Point, ScrollHandle,
+    Task, UTF16Selection, Window, actions, point, px,
 };
 
 use crate::history::{EditKind, History};
@@ -278,8 +278,13 @@ pub struct RichEditor {
     _blink_task: Option<Task<()>>,
     pub(crate) blobs: Option<Arc<dyn BlobStore>>,
     pub(crate) image_cache: HashMap<String, Arc<gpui_kit::Image>>,
-    spell: Option<Arc<dyn SpellChecker>>,
-    spell_cache: HashMap<String, Vec<Range<usize>>>,
+    /// Images being read from the blob store on the background executor.
+    image_loading: HashSet<String>,
+    /// Images whose blob is missing or not a known image format (not retried until
+    /// another document or store is set).
+    image_unavailable: HashSet<String>,
+    pub(crate) spell: Option<Arc<dyn SpellChecker>>,
+    pub(crate) spelling: crate::spell::SpellState,
     pub(crate) base_font_size: Pixels,
     pub(crate) placeholder: Option<String>,
     revision: u64,
@@ -322,8 +327,10 @@ impl RichEditor {
             _blink_task: None,
             blobs: None,
             image_cache: HashMap::new(),
+            image_loading: HashSet::new(),
+            image_unavailable: HashSet::new(),
             spell: None,
-            spell_cache: HashMap::new(),
+            spelling: Default::default(),
             base_font_size: px(15.),
             placeholder: None,
             revision: 0,
@@ -395,6 +402,8 @@ impl RichEditor {
         };
         self.history.clear();
         self.layouts.clear();
+        self.image_unavailable.clear();
+        self.spelling.clear_slots();
         self.marked = None;
         self.slash = None;
         self.media.clear();
@@ -420,6 +429,8 @@ impl RichEditor {
     pub fn set_blob_store(&mut self, store: Arc<dyn BlobStore>) {
         self.blobs = Some(store);
         self.image_cache.clear();
+        self.image_loading.clear();
+        self.image_unavailable.clear();
     }
 
     pub fn set_spell_checker(
@@ -428,7 +439,7 @@ impl RichEditor {
         cx: &mut Context<Self>,
     ) {
         self.spell = spell;
-        self.spell_cache.clear();
+        self.spelling.clear();
         cx.notify();
     }
 
@@ -553,57 +564,6 @@ impl RichEditor {
             .flatten()
     }
 
-    pub(crate) fn misspelled_in(&self, slot: Slot, text: &str) -> Vec<Range<usize>> {
-        if self.spell.is_none()
-            || self
-                .model
-                .doc
-                .blocks
-                .get(slot.block)
-                .is_some_and(|b| matches!(b.kind, BlockKind::Code { .. }))
-        {
-            return Vec::new();
-        }
-        let mut ranges = self.spell_cache.get(text).cloned().unwrap_or_default();
-        // Don't flag the word being typed.
-        let caret = self.model.caret();
-        if caret.slot == slot {
-            ranges.retain(|r| !(r.start <= caret.offset && caret.offset <= r.end));
-        }
-        ranges
-    }
-
-    /// Spell-check visible slots whose text changed (called from render).
-    pub(crate) fn refresh_spelling(&mut self) {
-        let Some(spell) = self.spell.clone() else {
-            return;
-        };
-        let mut texts: Vec<String> = Vec::new();
-        for (bi, block) in self.model.doc.blocks.iter().enumerate() {
-            if matches!(block.kind, BlockKind::Code { .. }) {
-                continue;
-            }
-            let _ = bi;
-            match &block.kind {
-                BlockKind::Table(t) => {
-                    texts.extend(t.rows.iter().flatten().map(|c| c.text.clone()))
-                }
-                k if k.is_textual() => texts.push(block.text.text.clone()),
-                _ => {}
-            }
-        }
-        for text in texts {
-            if self.spell_cache.contains_key(&text) {
-                continue;
-            }
-            let ranges = crate::util::misspelled_ranges(&text, |w| spell.check(w));
-            self.spell_cache.insert(text, ranges);
-        }
-        if self.spell_cache.len() > 2000 {
-            self.spell_cache.clear();
-        }
-    }
-
     pub(crate) fn caret_visible(&self) -> bool {
         self.blink_on
     }
@@ -652,6 +612,7 @@ impl RichEditor {
         let sel = self.model.sel;
         f(&mut self.model);
         if self.model.doc != before {
+            self.invalidate_layouts(&before);
             self.history.record(&before, sel, kind);
             self.revision += 1;
             cx.emit(EditorEvent::Changed);
@@ -661,6 +622,45 @@ impl RichEditor {
         }
         self.validate_slash();
         self.after_move(cx);
+    }
+
+    /// Drop the layouts of slots the document no longer has (deleted rows, columns,
+    /// tables or blocks, or a block whose kind changed), so hit-testing never lands
+    /// on stale geometry. Paint refills the layouts of the slots that remain.
+    pub(crate) fn prune_layouts(&mut self) {
+        let doc = &self.model.doc;
+        self.layouts.retain(|s, _| doc.has_text_slot(*s));
+    }
+
+    /// After the document changed from `before`: also drop layouts whose slot still
+    /// exists but now belongs to a different block (blocks were inserted or removed
+    /// above it) or to a block whose kind or table shape changed.
+    fn invalidate_layouts(&mut self, before: &Document) {
+        fn shape(b: &Block) -> (std::mem::Discriminant<BlockKind>, usize, usize) {
+            let (rows, cols) = match &b.kind {
+                BlockKind::Table(t) => (t.rows.len(), t.cols()),
+                _ => (0, 0),
+            };
+            (std::mem::discriminant(&b.kind), rows, cols)
+        }
+        let now = &self.model.doc.blocks;
+        let first_diff = before
+            .blocks
+            .iter()
+            .zip(now)
+            .position(|(a, b)| shape(a) != shape(b))
+            .unwrap_or(before.blocks.len().min(now.len()));
+        let shifted = before.blocks.len() != now.len();
+        self.layouts.retain(|s, _| {
+            if shifted {
+                s.block < first_diff
+            } else {
+                now.get(s.block)
+                    .zip(before.blocks.get(s.block))
+                    .is_some_and(|(a, b)| shape(a) == shape(b))
+            }
+        });
+        self.prune_layouts();
     }
 
     pub(crate) fn edit_with(&mut self, cx: &mut Context<Self>, f: impl FnOnce(&mut Model)) {
@@ -676,6 +676,9 @@ impl RichEditor {
     }
 
     fn after_move(&mut self, cx: &mut Context<Self>) {
+        if self.spell.is_some() {
+            self.prefetch_suggestions(self.model.caret(), cx);
+        }
         self.autoscroll = true;
         self.reset_blink(cx);
         cx.emit(EditorEvent::SelectionChanged);
@@ -762,7 +765,7 @@ impl RichEditor {
     pub(crate) fn pos_for_point(&self, p: Point<Pixels>) -> Option<Pos> {
         let mut best: Option<(Slot, f32)> = None;
         for (slot, layout) in &self.layouts {
-            if slot.block >= self.model.doc.blocks.len() {
+            if !self.model.doc.has_text_slot(*slot) {
                 continue;
             }
             let b = layout.bounds;
@@ -1028,8 +1031,9 @@ impl RichEditor {
 
     /// Swap in a document from history; offsets cached against the old one are stale.
     fn restore_snapshot(&mut self, doc: Document, sel: Selection, cx: &mut Context<Self>) {
-        self.model.doc = doc;
+        let before = std::mem::replace(&mut self.model.doc, doc);
         self.model.set_selection(sel);
+        self.invalidate_layouts(&before);
         self.marked = None;
         self.revision += 1;
         cx.emit(EditorEvent::Changed);
@@ -1058,22 +1062,29 @@ impl RichEditor {
     /// Store a pasted fragment's images and attachments again through this editor's
     /// store, so they follow the target card's protection (sealed in an encrypted
     /// card, plain elsewhere) instead of keeping the source card's references.
-    fn adopt_fragment_blobs(&self, frag: &mut Document) {
-        let Some(store) = &self.blobs else { return };
-        for block in &mut frag.blocks {
-            let (blob, mime, file_name) = match &mut block.kind {
-                BlockKind::Image(img) => (&mut img.blob, img.mime.clone(), None),
-                BlockKind::Attachment(att) => {
-                    (&mut att.blob, att.mime.clone(), Some(att.file_name.clone()))
-                }
-                _ => continue,
-            };
-            if let Some((_, data)) = store.get(blob)
-                && let Some(new) = store.put(&data, &mime, file_name.as_deref())
-            {
-                *blob = new;
-            }
-        }
+    ///
+    /// The blob copies run on the background executor; the fragment is inserted at
+    /// the caret when they are done. Fragments without blobs are inserted at once.
+    fn paste_fragment(&mut self, mut frag: Document, cx: &mut Context<Self>) {
+        let has_blobs = frag
+            .blocks
+            .iter()
+            .any(|b| matches!(b.kind, BlockKind::Image(_) | BlockKind::Attachment(_)));
+        let Some(store) = self.blobs.clone().filter(|_| has_blobs) else {
+            self.edit(EditKind::Other, cx, |m| m.insert_fragment(&frag));
+            return;
+        };
+        let task = cx.background_spawn(async move {
+            adopt_fragment_blobs(store.as_ref(), &mut frag);
+            frag
+        });
+        cx.spawn(async move |this, cx| {
+            let frag = task.await;
+            let _ = this.update(cx, |e, cx| {
+                e.edit(EditKind::Other, cx, |m| m.insert_fragment(&frag));
+            });
+        })
+        .detach();
     }
     fn cut(&mut self, a: &Cut, window: &mut Window, cx: &mut Context<Self>) {
         if self.read_only {
@@ -1094,6 +1105,12 @@ impl RichEditor {
     }
 
     fn paste_impl(&mut self, plain: bool, cx: &mut Context<Self>) {
+        // Check first: pasting images or files would otherwise store blobs before
+        // the edit itself is refused.
+        if self.read_only {
+            cx.emit(EditorEvent::EditBlocked);
+            return;
+        }
         let Some(item) = cx.read_from_clipboard() else {
             return;
         };
@@ -1119,12 +1136,16 @@ impl RichEditor {
                         }
                         // Clipboard JSON comes from outside; restore the model's invariants.
                         frag.normalize();
-                        self.adopt_fragment_blobs(&mut frag);
-                        self.edit(EditKind::Other, cx, |m| m.insert_fragment(&frag));
+                        self.paste_fragment(frag, cx);
                         return;
                     }
                     let text = s.text().to_owned();
-                    if !plain && cardfile_doc::looks_like_markdown(&text) && !self.model.in_table()
+                    // Code blocks and table cells take the text verbatim: converting
+                    // Markdown there would strip its syntax.
+                    if !plain
+                        && cardfile_doc::looks_like_markdown(&text)
+                        && !self.model.in_table()
+                        && !self.model.in_code_block()
                     {
                         let frag = cardfile_doc::from_markdown(&text);
                         self.edit(EditKind::Other, cx, |m| m.insert_fragment(&frag));
@@ -1134,8 +1155,7 @@ impl RichEditor {
                 }
                 ClipboardEntry::Image(img) => {
                     let mime = img.format.mime_type().to_owned();
-                    let bytes = img.bytes.clone();
-                    self.insert_image_bytes(&bytes, &mime, None, cx);
+                    self.insert_image_bytes(&img.bytes, &mime, None, cx);
                 }
                 ClipboardEntry::ExternalPaths(paths) => {
                     let paths: Vec<_> = paths.paths().to_vec();
@@ -1147,24 +1167,43 @@ impl RichEditor {
 
     /// Insert dropped or pasted files: images inline, anything else as attachments.
     pub fn insert_files(&mut self, paths: Vec<std::path::PathBuf>, cx: &mut Context<Self>) {
+        // Read the files only when they can be stored and inserted.
         if self.read_only {
             cx.emit(EditorEvent::EditBlocked);
             return;
         }
-        for path in paths {
-            let Ok(bytes) = std::fs::read(&path) else {
-                continue;
-            };
-            let name = path.file_name().map(|n| n.to_string_lossy().into_owned());
-            let mime = crate::util::mime_for_path(&path);
-            if mime.starts_with("image/") {
-                self.insert_image_bytes(&bytes, &mime, name.as_deref(), cx);
-            } else {
-                self.insert_attachment_bytes(&bytes, &mime, name.as_deref().unwrap_or("file"), cx);
-            }
-        }
+        let Some(store) = self.blobs.clone() else {
+            return;
+        };
+        let task = cx.background_spawn(async move {
+            paths
+                .iter()
+                .filter_map(|path| NewFile::read(path))
+                .filter_map(|file| {
+                    let as_image = file.mime.starts_with("image/");
+                    file.store(store.as_ref(), as_image)
+                })
+                .collect::<Vec<_>>()
+        });
+        self.insert_stored_blocks(task, cx);
     }
 
+    /// Insert blocks built on the background executor once they are ready, one undo
+    /// step each, at the caret as it is then.
+    fn insert_stored_blocks(&mut self, task: Task<Vec<Block>>, cx: &mut Context<Self>) {
+        cx.spawn(async move |this, cx| {
+            let blocks = task.await;
+            let _ = this.update(cx, |e, cx| {
+                for block in blocks {
+                    e.edit(EditKind::Other, cx, |m| m.insert_block(block));
+                }
+            });
+        })
+        .detach();
+    }
+
+    /// Store `bytes` as an image and insert it at the caret. The blob is written on
+    /// the background executor.
     pub fn insert_image_bytes(
         &mut self,
         bytes: &[u8],
@@ -1172,24 +1211,11 @@ impl RichEditor {
         name: Option<&str>,
         cx: &mut Context<Self>,
     ) {
-        let Some(store) = self.blobs.clone() else {
-            return;
-        };
-        let Some(id) = store.put(bytes, mime, name) else {
-            return;
-        };
-        let image = Image {
-            blob: id,
-            mime: mime.to_owned(),
-            width: None,
-            height: None,
-            alt: name.unwrap_or_default().to_owned(),
-        };
-        self.edit(EditKind::Other, cx, |m| {
-            m.insert_block(Block::new(BlockKind::Image(image), ""))
-        });
+        self.insert_bytes(bytes, mime, name, true, cx);
     }
 
+    /// Store `bytes` as an attachment named `name` and insert it at the caret. The
+    /// blob is written on the background executor.
     pub fn insert_attachment_bytes(
         &mut self,
         bytes: &[u8],
@@ -1197,21 +1223,34 @@ impl RichEditor {
         name: &str,
         cx: &mut Context<Self>,
     ) {
+        self.insert_bytes(bytes, mime, Some(name), false, cx);
+    }
+
+    fn insert_bytes(
+        &mut self,
+        bytes: &[u8],
+        mime: &str,
+        name: Option<&str>,
+        as_image: bool,
+        cx: &mut Context<Self>,
+    ) {
+        // Refuse before anything is written to the store.
+        if self.read_only {
+            cx.emit(EditorEvent::EditBlocked);
+            return;
+        }
         let Some(store) = self.blobs.clone() else {
             return;
         };
-        let Some(id) = store.put(bytes, mime, Some(name)) else {
-            return;
-        };
-        let att = Attachment {
-            blob: id,
-            file_name: name.to_owned(),
+        let file = NewFile {
+            bytes: bytes.to_vec(),
             mime: mime.to_owned(),
-            size: bytes.len() as u64,
+            name: name.map(str::to_owned),
         };
-        self.edit(EditKind::Other, cx, |m| {
-            m.insert_block(Block::new(BlockKind::Attachment(att), ""))
+        let task = cx.background_spawn(async move {
+            file.store(store.as_ref(), as_image).into_iter().collect()
         });
+        self.insert_stored_blocks(task, cx);
     }
 
     fn mark(&mut self, mark: Mark, cx: &mut Context<Self>) {
@@ -1526,7 +1565,7 @@ impl RichEditor {
     ) {
         if let (Some(spell), Some(word)) = (self.spell.clone(), self.word_at_caret()) {
             spell.add_word(&word);
-            self.spell_cache.clear();
+            self.spelling.clear();
             cx.notify();
         }
     }
@@ -1537,19 +1576,6 @@ impl RichEditor {
         let r = word_range(&text.text, pos.offset);
         let w = text.text.get(r)?.trim();
         (!w.is_empty() && w.chars().any(char::is_alphabetic)).then(|| w.to_owned())
-    }
-
-    /// Suggestions for the misspelled word at the caret, if it is misspelled.
-    pub(crate) fn spelling_suggestions(&self) -> Option<(String, Vec<String>)> {
-        let spell = self.spell.as_ref()?;
-        let word = self.word_at_caret()?;
-        if spell.check(&word) {
-            return None;
-        }
-        Some((
-            word.clone(),
-            spell.suggest(&word).into_iter().take(6).collect(),
-        ))
     }
 
     // ---------------------------------------------------------------------
@@ -1623,6 +1649,13 @@ impl RichEditor {
             return;
         }
         if !self.selecting || ev.pressed_button != Some(MouseButton::Left) {
+            // Hovering a misspelled word: get its suggestions ready for a right-click.
+            if self.spell.is_some()
+                && ev.pressed_button.is_none()
+                && let Some(pos) = self.pos_for_point(ev.position)
+            {
+                self.prefetch_suggestions(pos, cx);
+            }
             return;
         }
         if let Some(pos) = self.pos_for_point(ev.position)
@@ -1669,16 +1702,53 @@ impl RichEditor {
         }
     }
 
-    pub(crate) fn image_for(&mut self, img: &Image) -> Option<Arc<gpui_kit::Image>> {
+    /// The image data for an image block, or `None` while it loads (the caller shows
+    /// a placeholder). The blob is read on the background executor and the editor
+    /// repaints when it arrives.
+    pub(crate) fn image_for(
+        &mut self,
+        img: &Image,
+        cx: &mut Context<Self>,
+    ) -> Option<Arc<gpui_kit::Image>> {
         if let Some(i) = self.image_cache.get(&img.blob) {
             return Some(i.clone());
         }
-        let (mime, bytes) = self.blobs.as_ref()?.get(&img.blob)?;
-        let format = gpui_kit::ImageFormat::from_mime_type(&mime)
-            .or_else(|| gpui_kit::ImageFormat::from_mime_type(&img.mime))?;
-        let image = Arc::new(gpui_kit::Image::from_bytes(format, bytes));
-        self.image_cache.insert(img.blob.clone(), image.clone());
-        Some(image)
+        if self.image_unavailable.contains(&img.blob) {
+            return None;
+        }
+        let store = self.blobs.clone()?;
+        if !self.image_loading.insert(img.blob.clone()) {
+            return None;
+        }
+        let blob = img.blob.clone();
+        let fallback_mime = img.mime.clone();
+        let task = cx.background_spawn(async move {
+            let (mime, bytes) = store.get(&blob)?;
+            let format = gpui_kit::ImageFormat::from_mime_type(&mime)
+                .or_else(|| gpui_kit::ImageFormat::from_mime_type(&fallback_mime))?;
+            Some(Arc::new(gpui_kit::Image::from_bytes(format, bytes)))
+        });
+        let blob = img.blob.clone();
+        cx.spawn(async move |this, cx| {
+            let image = task.await;
+            let _ = this.update(cx, |this, cx| {
+                if !this.image_loading.remove(&blob) {
+                    // The store changed meanwhile; this result is stale.
+                    return;
+                }
+                match image {
+                    Some(image) => {
+                        this.image_cache.insert(blob, image);
+                    }
+                    None => {
+                        this.image_unavailable.insert(blob);
+                    }
+                }
+                cx.notify();
+            });
+        })
+        .detach();
+        None
     }
 
     fn find_action(&mut self, _: &Find, window: &mut Window, cx: &mut Context<Self>) {
@@ -1914,7 +1984,7 @@ impl EntityInputHandler for RichEditor {
             })
             .or_else(|| self.marked.clone());
         if let Some(r) = replace {
-            self.model.set_selection(Selection {
+            self.model.select_for_replace(Selection {
                 anchor: Pos::new(slot, r.start),
                 head: Pos::new(slot, r.end),
             });
@@ -1960,7 +2030,7 @@ impl EntityInputHandler for RichEditor {
             })
             .or_else(|| self.marked.clone());
         if let Some(r) = replace {
-            self.model.set_selection(Selection {
+            self.model.select_for_replace(Selection {
                 anchor: Pos::new(slot, r.start),
                 head: Pos::new(slot, r.end),
             });
@@ -2028,6 +2098,74 @@ impl EntityInputHandler for RichEditor {
                 .map_or("", |t| t.text.as_str());
             utf8_to_utf16(text, pos.offset)
         })
+    }
+}
+
+/// Copy a fragment's images and attachments through `store` (blocking: call it on
+/// the background executor).
+pub(crate) fn adopt_fragment_blobs(store: &dyn BlobStore, frag: &mut Document) {
+    for block in &mut frag.blocks {
+        let (blob, mime, file_name) = match &mut block.kind {
+            BlockKind::Image(img) => (&mut img.blob, img.mime.clone(), None),
+            BlockKind::Attachment(att) => {
+                (&mut att.blob, att.mime.clone(), Some(att.file_name.clone()))
+            }
+            _ => continue,
+        };
+        if let Some((_, data)) = store.get(blob)
+            && let Some(new) = store.put(&data, &mime, file_name.as_deref())
+        {
+            *blob = new;
+        }
+    }
+}
+
+/// A file to add to the card as an image or attachment block.
+struct NewFile {
+    bytes: Vec<u8>,
+    mime: String,
+    name: Option<String>,
+}
+
+impl NewFile {
+    /// Read a dropped or picked file (blocking: call it on the background executor).
+    fn read(path: &std::path::Path) -> Option<Self> {
+        let bytes = std::fs::read(path).ok()?;
+        Some(Self {
+            bytes,
+            mime: crate::util::mime_for_path(path),
+            name: path.file_name().map(|n| n.to_string_lossy().into_owned()),
+        })
+    }
+
+    /// Store the bytes and build the block: an inline image for image types, an
+    /// attachment otherwise (blocking: call it on the background executor).
+    fn store(self, store: &dyn BlobStore, as_image: bool) -> Option<Block> {
+        if as_image {
+            let id = store.put(&self.bytes, &self.mime, self.name.as_deref())?;
+            Some(Block::new(
+                BlockKind::Image(Image {
+                    blob: id,
+                    mime: self.mime,
+                    width: None,
+                    height: None,
+                    alt: self.name.unwrap_or_default(),
+                }),
+                "",
+            ))
+        } else {
+            let name = self.name.unwrap_or_else(|| "file".to_owned());
+            let id = store.put(&self.bytes, &self.mime, Some(&name))?;
+            Some(Block::new(
+                BlockKind::Attachment(Attachment {
+                    blob: id,
+                    file_name: name,
+                    mime: self.mime,
+                    size: self.bytes.len() as u64,
+                }),
+                "",
+            ))
+        }
     }
 }
 

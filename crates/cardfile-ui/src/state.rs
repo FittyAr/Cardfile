@@ -1,7 +1,9 @@
 //! Application-wide state shared by every view.
 
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::collections::HashMap;
+use std::hash::Hash;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::{Arc, LazyLock};
 
 use anyhow::Result;
 use cardfile_core::{
@@ -86,7 +88,95 @@ impl AppState {
         f(&mut session.settings);
         let (id, settings) = (session.user.id, session.settings.clone());
         let db = Self::db(cx);
-        run_db(cx, move |_| db.save_user_settings(id, &settings)).detach_and_log_err(cx);
+        // Each change writes the whole settings; the writer keeps an older snapshot
+        // from landing after a newer one.
+        static WRITER: LazyLock<SnapshotWriter<UserId>> = LazyLock::new(SnapshotWriter::default);
+        let ticket = WRITER.ticket();
+        run_db(cx, move |_| {
+            WRITER
+                .write(id, ticket, || db.save_user_settings(id, &settings))
+                .unwrap_or(Ok(()))
+        })
+        .detach_and_log_err(cx);
+    }
+
+    /// Persist the installation settings ([`Self::app`]) in the background, in order.
+    pub fn save_app_settings(cx: &App) {
+        static WRITER: LazyLock<SnapshotWriter<()>> = LazyLock::new(SnapshotWriter::default);
+        let app = Self::get(cx).app.clone();
+        let db = Self::db(cx);
+        let ticket = WRITER.ticket();
+        run_db(cx, move |_| {
+            WRITER
+                .write((), ticket, || db.save_app_settings(&app))
+                .unwrap_or(Ok(()))
+        })
+        .detach_and_log_err(cx);
+    }
+}
+
+/// Orders background writes of whole snapshots (settings, a card's content): writes
+/// run one at a time, and a snapshot is skipped when a newer one of the same key was
+/// already written, so an older state can never overwrite a newer one.
+pub struct SnapshotWriter<K> {
+    next: AtomicU64,
+    written: parking_lot::Mutex<HashMap<K, u64>>,
+}
+
+impl<K> Default for SnapshotWriter<K> {
+    fn default() -> Self {
+        Self {
+            next: AtomicU64::new(0),
+            written: parking_lot::Mutex::new(HashMap::new()),
+        }
+    }
+}
+
+impl<K: Eq + Hash> SnapshotWriter<K> {
+    /// A ticket for a snapshot taken now; later tickets are newer.
+    pub fn ticket(&self) -> u64 {
+        self.next.fetch_add(1, Ordering::Relaxed) + 1
+    }
+
+    /// Run `write` (blocking; call it on the background executor) unless a newer
+    /// snapshot of `key` was already written. `None` means it was skipped.
+    pub fn write<T, E>(
+        &self,
+        key: K,
+        ticket: u64,
+        write: impl FnOnce() -> Result<T, E>,
+    ) -> Option<Result<T, E>> {
+        let mut written = self.written.lock();
+        if written.get(&key).is_some_and(|w| *w > ticket) {
+            return None;
+        }
+        let result = write();
+        if result.is_ok() {
+            written.insert(key, ticket);
+        }
+        Some(result)
+    }
+}
+
+/// Released once some background work finished; lets another task wait for it
+/// without awaiting the work's own task (which its owner awaits).
+#[derive(Clone, Default)]
+pub struct Latch(Arc<(parking_lot::Mutex<bool>, parking_lot::Condvar)>);
+
+impl Latch {
+    pub fn release(&self) {
+        let (done, cvar) = &*self.0;
+        *done.lock() = true;
+        cvar.notify_all();
+    }
+
+    /// Block until the latch is released. Background executor only.
+    pub fn block(&self) {
+        let (done, cvar) = &*self.0;
+        let mut done = done.lock();
+        while !*done {
+            cvar.wait(&mut done);
+        }
     }
 }
 
@@ -205,5 +295,55 @@ impl<T: 'static> TaskExt for Task<Result<T>> {
                 }
             })
             .detach();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn an_older_snapshot_never_overwrites_a_newer_one() {
+        let writer = SnapshotWriter::<u8>::default();
+        let (old, new) = (writer.ticket(), writer.ticket());
+        let mut stored = 0;
+        assert_eq!(
+            writer.write(1, new, || {
+                stored = new;
+                Ok::<_, ()>(())
+            }),
+            Some(Ok(()))
+        );
+        assert_eq!(
+            writer.write(1, old, || {
+                stored = old;
+                Ok::<_, ()>(())
+            }),
+            None
+        );
+        assert_eq!(stored, new);
+        // Other keys are independent.
+        assert!(writer.write(2, old, || Ok::<_, ()>(())).is_some());
+    }
+
+    #[test]
+    fn a_failed_write_does_not_block_older_retries() {
+        let writer = SnapshotWriter::<u8>::default();
+        let (old, new) = (writer.ticket(), writer.ticket());
+        assert_eq!(
+            writer.write(1, new, || Err::<(), _>("disk full")),
+            Some(Err("disk full"))
+        );
+        assert!(writer.write(1, old, || Ok::<_, ()>(())).is_some());
+    }
+
+    #[test]
+    fn a_latch_releases_waiters() {
+        let latch = Latch::default();
+        let waiter = latch.clone();
+        let thread = std::thread::spawn(move || waiter.block());
+        latch.release();
+        thread.join().unwrap();
+        latch.block();
     }
 }

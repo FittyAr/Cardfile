@@ -184,3 +184,86 @@ fn video_and_patent_encumbered_types_are_unsupported() {
         );
     }
 }
+
+/// Plays `player` (if it opened) until it ends; it must end, never hang or crash.
+fn plays_out(res: Result<Player, MediaError>, what: &str) {
+    let Ok(player) = res else { return };
+    player.play();
+    assert!(
+        wait_for(|| player.state() == PlaybackState::Ended),
+        "{what}: never ended"
+    );
+}
+
+/// Truncated and corrupted files end playback (or fail to open); they never
+/// panic or hang the decoder thread.
+#[test]
+fn truncated_and_garbage_audio_ends_cleanly() {
+    let good = wav(0.3, 8000);
+    // Header plus half the samples.
+    let truncated: Arc<[u8]> = good[..good.len() / 2].into();
+    plays_out(
+        Player::open_with(truncated, "audio/wav", Some("cut.wav"), null()),
+        "truncated wav",
+    );
+    // Valid header, garbage payload (xorshift noise).
+    let mut garbage = good.to_vec();
+    let mut x = 0x2545_f491_u32;
+    for b in &mut garbage[44..] {
+        x ^= x << 13;
+        x ^= x >> 17;
+        x ^= x << 5;
+        *b = x as u8;
+    }
+    plays_out(
+        Player::open_with(
+            garbage.clone().into(),
+            "audio/wav",
+            Some("noise.wav"),
+            null(),
+        ),
+        "garbage wav",
+    );
+    // Pure noise claimed as each supported format.
+    let noise: Arc<[u8]> = garbage[44..].into();
+    for (mime, name) in [
+        ("audio/mpeg", "a.mp3"),
+        ("audio/ogg", "a.ogg"),
+        ("audio/flac", "a.flac"),
+        ("audio/wav", "a.wav"),
+    ] {
+        plays_out(
+            Player::open_with(noise.clone(), mime, Some(name), null()),
+            name,
+        );
+    }
+    // Every header byte flipped in turn: still no panic.
+    for i in 0..44 {
+        let mut bytes = good.to_vec();
+        bytes[i] ^= 0xff;
+        plays_out(
+            Player::open_with(bytes.into(), "audio/wav", Some("flip.wav"), null()),
+            "flipped header",
+        );
+    }
+}
+
+/// `play` from `Ended` must never come back as `Ended` because the worker saw the
+/// previous run's drained output in the middle of the restart.
+#[test]
+fn restart_after_end_is_not_reported_ended() {
+    let player = Player::open_with(wav(0.05, 8000), "audio/wav", None, null()).expect("open");
+    for _ in 0..20 {
+        player.play();
+        assert!(wait_for(|| player.state() == PlaybackState::Ended));
+        player.play();
+        let state = player.state();
+        assert!(
+            state == PlaybackState::Playing
+                || (state == PlaybackState::Ended && player.position() > Duration::ZERO),
+            "restart reported {state:?} at {:?}",
+            player.position()
+        );
+        assert!(!player.is_failed());
+    }
+}

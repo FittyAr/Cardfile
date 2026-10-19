@@ -13,7 +13,7 @@ generates `.github/workflows/release.yml`. Don't edit that file by hand: change
 | `Cardfile-<version>-setup-<arch>.exe` | `package.yml` | Inno Setup installer, also used by winget |
 | `Cardfile-<version>-<arch>.msix` | `package.yml` | For Microsoft Store submission (the Store signs it) |
 | `.deb`, `.rpm`, `.AppImage` | `package.yml` | Linux packages for x86_64 and aarch64 |
-| `SHA256SUMS`, `*.minisig` | `sign.yml` | Checksums and minisign signatures of every file above, attached once the release exists |
+| `SHA256SUMS`, `*.minisig` | `sign.yml` | Checksums and minisign signatures of every file above, attached together with them when the release is created |
 
 ### In-app updates depend on these files
 
@@ -23,7 +23,28 @@ stable: `cardfile-<arch>-pc-windows-msvc.zip`, `cardfile-<arch>-unknown-linux-gn
 It installs a file only if its SHA-256 is in the signed `SHA256SUMS` **and** its own
 `<file>.minisig` verifies with `PUBLIC_KEY` and carries the trusted comment
 `Cardfile <tag> release file: <file>` (written by `sign.yml`). A release without signatures is
-never offered. The Inno Setup installer must keep the `/RELAUNCH` `[Run]` entry in
+never offered: the updater skips it and offers the newest *signed* release instead (or nothing).
+
+### Order of the release jobs
+
+`dist-workspace.toml` sets `github-release = "announce"`, so the GitHub Release is created only
+in the final `announce` job, after every build, package and publish job:
+
+1. `plan`, builds, `package.yml` (native installers).
+2. `sign.yml` (`publish-jobs`): checksums and minisign signatures, handed over as the
+   `artifacts-sign` workflow artifact. It **fails** when `MINISIGN_SECRET_KEY` or
+   `MINISIGN_PUBLIC_KEY` is missing or a signature does not verify.
+3. `announce`: creates the release with every file **and** its signatures in one step. If
+   signing failed, no release is published at all.
+4. `winget.yml` (`post-announce-jobs`): needs the published release; skips pre-releases.
+
+### Pinned third-party code
+
+Actions are pinned to full commit SHAs (with the tag in a comment). For `release.yml` the pins
+live in `github-action-commits` in `dist-workspace.toml`; regenerate with `dist generate`.
+`package.yml` downloads a fixed `linuxdeploy` release and checks its SHA-256, and
+`scripts/fetch-dictionaries.sh` fetches the dictionaries from a fixed commit and checks their
+SHA-256. Update the hashes together with the pins. The Inno Setup installer must keep the `/RELAUNCH` `[Run]` entry in
 `installer.iss`: the app quits and the silent installer starts it again.
 
 ## One-time setup
@@ -53,7 +74,7 @@ minisign -G -W -p minisign.pub -s minisign.key
    wingetcreate new https://github.com/FittyAr/Cardfile/releases/download/v2.0.0/Cardfile-2.0.0-setup-x64.exe
    ```
    Use the identifier `FittyAr.Cardfile`.
-4. After that, `.github/workflows/winget.yml` (called by `release.yml`) opens a pull request for every stable release. Pre-releases are skipped.
+4. After that, `.github/workflows/winget.yml` (called by `release.yml` after the release is published) opens a pull request for every stable release. Pre-releases are skipped.
 
 ### 3. Microsoft Store
 
@@ -86,7 +107,7 @@ The MSIX build detects that it runs from `WindowsApps` and turns off Cardfile's 
    git push origin v2.0.0
    ```
 5. Wait for **Release** to finish, then check the GitHub release page.
-6. Stable releases run **winget** automatically (a `publish-jobs` step of `release.yml`; it can also be run by hand with a tag). Run **Microsoft Store** manually.
+6. Stable releases run **winget** automatically (a `post-announce-jobs` step of `release.yml`; it can also be run by hand with a tag). Run **Microsoft Store** manually.
 
 Tags with a pre-release suffix (`v2.0.0-alpha.1`) are published as GitHub pre-releases.
 

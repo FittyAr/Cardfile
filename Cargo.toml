@@ -119,7 +119,10 @@ opt-level = 2
 lto = "thin"
 codegen-units = 1
 strip = true
-panic = "abort"
+# Unwind (the default), not abort: worker threads (audio decoding, MCP tools) catch
+# panics from third-party parsers/backends with `catch_unwind` so a corrupt attachment
+# cannot take the whole app (and unsaved edits) down. `profile.dist` inherits this.
+panic = "unwind"
 
 # The profile that 'dist' builds with
 [profile.dist]

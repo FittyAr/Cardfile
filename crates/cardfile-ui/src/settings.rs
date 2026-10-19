@@ -21,12 +21,12 @@ use cardfile_db::CredentialUpdate;
 use zeroize::Zeroizing;
 
 use crate::keymap::*;
-use crate::state::{AppState, TaskExt as _, run_db};
+use crate::state::{AppState, run_db};
 use crate::widgets::{error, field, hint, section};
 use crate::workspace::Workspace;
 
-pub fn open(workspace: Entity<Workspace>, window: &mut Window, cx: &mut App) {
-    let view = cx.new(|cx| SettingsView::new(workspace, window, cx));
+pub fn open(window: &mut Window, cx: &mut App) {
+    let view = cx.new(|cx| SettingsView::new(window, cx));
     // Large enough for the sidebar layout, never wider than the window.
     let width = (window.viewport_size().width * 0.9).clamp(px(640.), px(1080.));
     window.open_dialog(cx, move |dialog, _, _| {
@@ -190,7 +190,6 @@ enum Secret {
 }
 
 pub struct SettingsView {
-    workspace: Entity<Workspace>,
     tab: Tab_,
     current_pw: Entity<InputState>,
     new_pw: Entity<InputState>,
@@ -214,12 +213,11 @@ const RELOCK: &[u32] = &[0, 30, 60, 300, 900];
 const HISTORY: &[u32] = &[0, 10, 25, 50, 100, 250];
 
 impl SettingsView {
-    fn new(workspace: Entity<Workspace>, window: &mut Window, cx: &mut Context<Self>) -> Self {
+    fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let masked = |p: String, window: &mut Window, cx: &mut Context<Self>| {
             cx.new(|cx| InputState::new(window, cx).masked(true).placeholder(p))
         };
         let mut v = Self {
-            workspace,
             tab: Tab_::General,
             current_pw: masked(t("settings.security.current_password"), window, cx),
             new_pw: masked(t("settings.security.new_password"), window, cx),
@@ -281,17 +279,16 @@ impl SettingsView {
         f: impl FnOnce(&mut cardfile_core::UserSettings),
     ) {
         AppState::update_user_settings(cx, f);
-        self.workspace
-            .update(cx, |ws, cx| ws.apply_settings(window, cx));
+        // Looked up live: the dialog may outlive a sign-out or lock.
+        if let Some(ws) = Workspace::current(cx) {
+            ws.update(cx, |ws, cx| ws.apply_settings(window, cx));
+        }
         cx.notify();
     }
 
     fn set_app(&mut self, cx: &mut Context<Self>, f: impl FnOnce(&mut cardfile_core::AppSettings)) {
-        let state = AppState::get_mut(cx);
-        f(&mut state.app);
-        let app = state.app.clone();
-        let db = AppState::db(cx);
-        run_db(cx, move |_| db.save_app_settings(&app)).detach_and_log_err(cx);
+        f(&mut AppState::get_mut(cx).app);
+        AppState::save_app_settings(cx);
         cx.notify();
     }
 
@@ -301,10 +298,14 @@ impl SettingsView {
     fn dispatcher<A: gpui_kit::Action>(
         &self,
         action: A,
-        cx: &App,
+        _cx: &App,
     ) -> impl Fn(&gpui_kit::ClickEvent, &mut Window, &mut App) + 'static {
-        let focus = gpui_kit::Focusable::focus_handle(self.workspace.read(cx), cx);
-        move |_, window, cx| focus.dispatch_action(&action, window, cx)
+        move |_, window, cx| {
+            if let Some(ws) = Workspace::current(cx) {
+                let focus = gpui_kit::Focusable::focus_handle(ws.read(cx), cx);
+                focus.dispatch_action(&action, window, cx);
+            }
+        }
     }
 
     fn row(label: String, desc: Option<String>, control: impl IntoElement, cx: &App) -> AnyElement {

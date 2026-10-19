@@ -1,13 +1,16 @@
 //! The root view: chooses between the wizard, sign-in and the workspace.
 
+use std::cell::Cell;
+use std::rc::Rc;
 use std::time::{Duration, Instant};
 
 use cardfile_core::{AuthMode, User};
 use gpui_kit::component::notification::Notification;
 use gpui_kit::component::{ActiveTheme as _, WindowExt as _};
 use gpui_kit::{
-    AppContext as _, Context, Entity, Focusable as _, InteractiveElement as _, IntoElement,
-    ParentElement as _, Render, Styled as _, Subscription, Task, Window, div, px,
+    App, AppContext as _, Context, Entity, Focusable as _, InteractiveElement as _, IntoElement,
+    KeyDownEvent, MouseDownEvent, ParentElement as _, Render, ScrollWheelEvent, Styled as _,
+    Subscription, Task, Window, canvas, div, px,
 };
 
 use crate::keymap::*;
@@ -26,7 +29,8 @@ enum Screen {
 
 pub struct CardfileApp {
     screen: Screen,
-    last_activity: Instant,
+    /// Last keystroke, click or scroll anywhere in the window (dialogs included).
+    last_activity: Rc<Cell<Instant>>,
     _idle_task: Option<Task<()>>,
     _subs: Vec<Subscription>,
     _screen_sub: Option<Subscription>,
@@ -36,18 +40,26 @@ impl CardfileApp {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         // Any keystroke counts as activity for the auto-lock timer.
         let subs = vec![
-            cx.observe_keystrokes(|this, _, _, _| this.last_activity = Instant::now()),
-            // Every quit path (menu, Ctrl+Q, the updater's restart) saves the open card.
+            cx.observe_keystrokes(|this, _, _, _| this.last_activity.set(Instant::now())),
+            // Every quit path (menu, Ctrl+Q, the updater's restart) saves the open card
+            // and waits (within the toolkit's shutdown timeout) for the write.
             cx.on_app_quit(|this, cx| {
-                if let Screen::Workspace(ws) = &this.screen {
-                    ws.update(cx, |ws, cx| ws.flush(cx));
+                let saved = match &this.screen {
+                    Screen::Workspace(ws) => ws.update(cx, |ws, cx| ws.flush(cx)),
+                    _ => Task::ready(()),
+                };
+                let cleaned = cx.background_spawn(async {
+                    crate::export::remove_session_attachments();
+                });
+                async move {
+                    saved.await;
+                    cleaned.await;
                 }
-                async {}
             }),
         ];
         let mut app = Self {
             screen: Screen::Loading,
-            last_activity: Instant::now(),
+            last_activity: Rc::new(Cell::new(Instant::now())),
             _idle_task: None,
             _subs: subs,
             _screen_sub: None,
@@ -67,7 +79,10 @@ impl CardfileApp {
                 &wizard,
                 window,
                 |this, _, ev: &WizardEvent, window, cx| match ev {
-                    WizardEvent::Finished(session) => this.sign_in(session.clone(), window, cx),
+                    WizardEvent::Finished(session) => {
+                        this.sign_in(Session::clone(session), window, cx)
+                    }
+                    WizardEvent::UseExisting => this.route(window, cx),
                 },
             ));
             self.screen = Screen::Wizard(wizard);
@@ -98,7 +113,26 @@ impl CardfileApp {
         }
     }
 
+    /// Leaving the workspace (lock, sign-out): close what it opened over the window,
+    /// so no dialog (settings, history, share…) stays usable behind the sign-in.
+    fn leave_workspace(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if !matches!(self.screen, Screen::Workspace(_)) {
+            return;
+        }
+        Workspace::set_current(None, cx);
+        window.close_all_dialogs(cx);
+        if window.has_active_sheet(cx) {
+            window.close_sheet(cx);
+        }
+        // Decrypted attachments opened during the session.
+        cx.background_spawn(async {
+            crate::export::remove_session_attachments();
+        })
+        .detach();
+    }
+
     fn show_login(&mut self, locked: Option<User>, window: &mut Window, cx: &mut Context<Self>) {
+        self.leave_workspace(window, cx);
         let login = cx.new(|cx| LoginView::new(locked, window, cx));
         self._screen_sub = Some(cx.subscribe_in(
             &login,
@@ -125,12 +159,12 @@ impl CardfileApp {
             window,
             |this, ws, ev: &WorkspaceEvent, window, cx| match ev {
                 WorkspaceEvent::Lock => {
-                    ws.update(cx, |ws, cx| ws.flush(cx));
+                    drop(ws.update(cx, |ws, cx| ws.flush(cx)));
                     let user = AppState::session(cx).map(|s| s.user.clone());
                     this.show_login(user, window, cx);
                 }
                 WorkspaceEvent::SignOut => {
-                    ws.update(cx, |ws, cx| ws.flush(cx));
+                    drop(ws.update(cx, |ws, cx| ws.flush(cx)));
                     AppState::get_mut(cx).session = None;
                     this.show_login(None, window, cx);
                 }
@@ -138,8 +172,9 @@ impl CardfileApp {
         ));
         let focus = ws.focus_handle(cx);
         focus.focus(window, cx);
+        Workspace::set_current(Some(&ws), cx);
         self.screen = Screen::Workspace(ws);
-        self.last_activity = Instant::now();
+        self.last_activity.set(Instant::now());
         // `sign_in` also runs after every auto-lock unlock; check once per process.
         static UPDATE_CHECKED: std::sync::atomic::AtomicBool =
             std::sync::atomic::AtomicBool::new(false);
@@ -173,7 +208,7 @@ impl CardfileApp {
             .session
             .as_ref()
             .map_or(0, |s| s.settings.auto_lock_secs);
-        if secs > 0 && self.last_activity.elapsed() >= Duration::from_secs(u64::from(secs)) {
+        if secs > 0 && self.last_activity.get().elapsed() >= Duration::from_secs(u64::from(secs)) {
             ws.update(cx, |ws, cx| ws.dispatch_lock(cx));
         }
     }
@@ -183,8 +218,8 @@ impl CardfileApp {
     // ---------------------------------------------------------------------
 
     fn open_settings(&mut self, _: &OpenSettings, window: &mut Window, cx: &mut Context<Self>) {
-        if let Screen::Workspace(ws) = &self.screen {
-            crate::settings::open(ws.clone(), window, cx);
+        if matches!(self.screen, Screen::Workspace(_)) {
+            crate::settings::open(window, cx);
         }
     }
 
@@ -220,9 +255,17 @@ impl CardfileApp {
         // Open the folder itself: selecting the database in it (`reveal_path`) did
         // nothing on some systems.
         let root = AppState::get(cx).paths.root.clone();
-        if let Err(e) = std::fs::create_dir_all(&root).and_then(|()| open::that_detached(&root)) {
-            window.push_notification(Notification::error(e.to_string()), cx);
-        }
+        let task = cx.background_spawn(async move {
+            std::fs::create_dir_all(&root).and_then(|()| open::that_detached(&root))
+        });
+        cx.spawn_in(window, async move |_, cx| {
+            if let Err(e) = task.await {
+                let _ = cx.update(|window, cx| {
+                    window.push_notification(Notification::error(e.to_string()), cx);
+                });
+            }
+        })
+        .detach();
     }
 
     fn backup_now(&mut self, _: &BackupNow, window: &mut Window, cx: &mut Context<Self>) {
@@ -256,8 +299,17 @@ impl CardfileApp {
 
 impl Workspace {
     pub(crate) fn dispatch_lock(&mut self, cx: &mut Context<Self>) {
-        self.flush(cx);
+        drop(self.flush(cx));
         cx.emit(WorkspaceEvent::Lock);
+    }
+}
+
+/// Save the open card, if any; the task finishes once the write landed (e.g. before
+/// the updater starts the new version).
+pub(crate) fn flush_all(cx: &mut App) -> Task<()> {
+    match Workspace::current(cx) {
+        Some(ws) => ws.update(cx, |ws, cx| ws.flush(cx)),
+        None => Task::ready(()),
     }
 }
 
@@ -290,6 +342,23 @@ impl Render for CardfileApp {
             .size_full()
             .child(title_bar)
             .child(div().flex_1().min_h_0().child(content));
+        // Activity anywhere in the window, including dialogs and sheets drawn over
+        // this view, keeps the auto-lock timer from firing. Window-level listeners
+        // are registered again on every paint.
+        let activity = self.last_activity.clone();
+        let watcher = canvas(
+            |_, _, _| {},
+            move |_, _, window, _| {
+                let a = activity.clone();
+                window.on_mouse_event(move |_: &MouseDownEvent, _, _, _| a.set(Instant::now()));
+                let a = activity.clone();
+                window.on_mouse_event(move |_: &ScrollWheelEvent, _, _, _| a.set(Instant::now()));
+                let a = activity;
+                window.on_key_event(move |_: &KeyDownEvent, _, _, _| a.set(Instant::now()));
+            },
+        )
+        .absolute()
+        .size_full();
         gpui_kit::component::window_border().child(
             div()
                 .id("cardfile")
@@ -297,7 +366,7 @@ impl Render for CardfileApp {
                 .bg(cx.theme().background)
                 .text_color(cx.theme().foreground)
                 .font_family(cx.theme().font_family.clone())
-                .on_any_mouse_down(cx.listener(|this, _, _, _| this.last_activity = Instant::now()))
+                .child(watcher)
                 .on_action(cx.listener(Self::open_settings))
                 .on_action(cx.listener(Self::quit))
                 .on_action(cx.listener(Self::command_palette))

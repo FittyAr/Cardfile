@@ -37,6 +37,16 @@ pub fn looks_like_markdown(text: &str) -> bool {
         || text.contains("](")
 }
 
+/// Whether an inline HTML tag is a line break (`<br>`, `<br/>`, `<br />`).
+fn is_br(html: &str) -> bool {
+    let t: String = html
+        .chars()
+        .filter(|c| !c.is_whitespace())
+        .collect::<String>()
+        .to_ascii_lowercase();
+    matches!(t.as_str(), "<br>" | "<br/>")
+}
+
 #[derive(Default)]
 struct Builder {
     blocks: Vec<Block>,
@@ -130,6 +140,8 @@ impl Builder {
                     block.kind = BlockKind::CheckList { checked };
                 }
             }
+            // `<br>` is how line breaks travel in table cells (see the exporter).
+            Event::InlineHtml(h) if is_br(&h) => self.text("\n"),
             Event::Html(h) | Event::InlineHtml(h) => self.text(&h),
             _ => {}
         }
@@ -158,6 +170,9 @@ impl Builder {
             }
             Tag::Heading { level, .. } => {
                 self.flush();
+                // Standard levels (`#` is Heading 1). File exports shift headings one
+                // level down under the card title; the AI tools export exact levels
+                // (`MarkdownOptions::exact_heading_levels`) so they round-trip.
                 let level = match level {
                     HeadingLevel::H1 => 1,
                     HeadingLevel::H2 => 2,
@@ -319,14 +334,51 @@ mod tests {
     fn markdown_roundtrip_through_export() {
         let md = "## Heading\n\nHello **world**\n\n- item\n";
         let doc = from_markdown(md);
-        let out = crate::to_markdown(
+        let exact = crate::MarkdownOptions {
+            exact_heading_levels: true,
+            ..Default::default()
+        };
+        let out = crate::to_markdown(&doc, None, &exact, &crate::NoBlobs);
+        // With exact heading levels (as the AI tools use) a round trip keeps them.
+        assert_eq!(out, md);
+    }
+
+    #[test]
+    fn heading_levels_round_trip() {
+        let md = "# One\n\n## Two\n\n### Three\n";
+        let doc = from_markdown(md);
+        let levels: Vec<_> = doc.blocks.iter().map(|b| b.kind.clone()).collect();
+        assert_eq!(
+            levels,
+            [
+                BlockKind::Heading(1),
+                BlockKind::Heading(2),
+                BlockKind::Heading(3)
+            ]
+        );
+        let exact = crate::MarkdownOptions {
+            exact_heading_levels: true,
+            ..Default::default()
+        };
+        assert_eq!(crate::to_markdown(&doc, None, &exact, &crate::NoBlobs), md);
+        // File exports put the card title in H1 and shift headings one level down.
+        let file = crate::to_markdown(
             &doc,
             None,
             &crate::MarkdownOptions::default(),
             &crate::NoBlobs,
         );
-        // Document headings export one level deeper (the card title is H1).
-        assert_eq!(out, "### Heading\n\nHello **world**\n\n- item\n");
+        assert!(file.starts_with("## One"), "{file}");
+        assert_eq!(from_markdown("# Top").blocks[0].kind, BlockKind::Heading(1));
+    }
+
+    #[test]
+    fn br_in_table_cells_is_a_line_break() {
+        let doc = from_markdown("| A |\n| --- |\n| one<br>two |\n");
+        let BlockKind::Table(t) = &doc.blocks[0].kind else {
+            panic!("table expected")
+        };
+        assert_eq!(t.rows[1][0].text, "one\ntwo");
     }
 
     #[test]

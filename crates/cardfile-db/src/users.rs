@@ -2,7 +2,7 @@ use cardfile_core::{CardId, EncryptedPayload, RevisionId, User, UserId, UserKind
 use diesel::prelude::*;
 
 use crate::rows::{UserRow, payload_json};
-use crate::schema::{card_keys, card_revisions, cards, users};
+use crate::schema::{api_keys, card_keys, card_revisions, cards, users};
 use crate::{Database, DbError, DbResult};
 
 /// Username of the built-in AI account. It can never sign in.
@@ -19,14 +19,27 @@ pub struct Rekey {
 }
 
 /// Changes to a user's secrets, written atomically by [`Database::update_credentials`].
-/// `None` leaves a field unchanged; `Some(None)` clears it.
-#[derive(Clone, Debug, Default)]
+/// `None` leaves a field unchanged; `Some(None)` clears it. `Debug` redacts the hashes
+/// and the sealed secret key.
+#[derive(Clone, Default)]
 pub struct CredentialUpdate {
     pub password_hash: Option<Option<String>>,
     pub lock_hash: Option<Option<String>>,
     /// Public key and sealed secret key.
     pub keys: Option<(String, EncryptedPayload)>,
     pub rekey: Rekey,
+}
+
+impl std::fmt::Debug for CredentialUpdate {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let redact = |set: bool| set.then_some(cardfile_core::REDACTED);
+        f.debug_struct("CredentialUpdate")
+            .field("password_hash", &redact(self.password_hash.is_some()))
+            .field("lock_hash", &redact(self.lock_hash.is_some()))
+            .field("keys", &redact(self.keys.is_some()))
+            .field("rekey", &self.rekey)
+            .finish()
+    }
 }
 
 /// Usernames compare case-insensitively across all of Unicode. SQLite's `lower()` and
@@ -105,6 +118,8 @@ impl Database {
         })
     }
 
+    /// Any account by id, including soft-deleted ones (needed to show who wrote old
+    /// changes). Authentication paths must use the live lookups instead.
     pub fn user(&self, id: UserId) -> DbResult<User> {
         self.with(|conn| {
             users::table
@@ -240,10 +255,11 @@ impl Database {
         })
     }
 
-    /// Soft-delete an account (its cards stay in the database).
+    /// Soft-delete an account (its cards stay in the database) and revoke its API
+    /// keys in the same transaction, so no AI client keeps acting for it.
     pub fn delete_user(&self, id: UserId) -> DbResult<()> {
         let now = now_millis();
-        self.with(|conn| {
+        self.tx(|conn| {
             diesel::update(users::table.find(id.to_string()))
                 .set((
                     users::deleted_at.eq(now),
@@ -251,6 +267,13 @@ impl Database {
                     users::rev.eq(users::rev + 1),
                 ))
                 .execute(conn)?;
+            diesel::update(
+                api_keys::table
+                    .filter(api_keys::user_id.eq(id.to_string()))
+                    .filter(api_keys::revoked_at.is_null()),
+            )
+            .set(api_keys::revoked_at.eq(now))
+            .execute(conn)?;
             Ok(())
         })
     }

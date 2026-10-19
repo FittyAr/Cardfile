@@ -299,19 +299,61 @@ function Register-Uninstall([string]$version) {
 
 # Copies the package into $installDir. A running Cardfile cannot be
 # overwritten, but it can be renamed aside (it deletes `*.old` itself later).
+# Every installed file the package replaces is moved aside first; if anything
+# fails, the previous installation is put back as it was.
 function Install-Files([string]$package) {
     Write-Host "Installing to $installDir..."
     New-Item -ItemType Directory -Force -Path $installDir | Out-Null
-    if (Test-Path $exePath) {
-        $old = "$exePath.old"
-        Remove-Item -Force $old -ErrorAction SilentlyContinue
-        try {
-            Rename-Item -Path $exePath -NewName "cardfile.exe.old" -ErrorAction Stop
-        } catch {
-            throw "Cardfile is running and could not be replaced. Close it and try again."
+    $package = (Resolve-Path -LiteralPath $package).Path.TrimEnd('\', '/')
+    $backup = Join-Path $installDir ".install-backup"
+    Remove-Item -Recurse -Force -LiteralPath $backup -ErrorAction SilentlyContinue
+    $old = "$exePath.old"
+    $renamedExe = $false
+    $moved = @()
+    $added = @()
+    try {
+        if (Test-Path -LiteralPath $exePath) {
+            Remove-Item -Force -LiteralPath $old -ErrorAction SilentlyContinue
+            try {
+                Rename-Item -LiteralPath $exePath -NewName "cardfile.exe.old" -ErrorAction Stop
+            } catch {
+                throw "Cardfile is running and could not be replaced. Close it and try again."
+            }
+            $renamedExe = $true
         }
+        foreach ($item in Get-ChildItem -LiteralPath $package -Recurse -File) {
+            $rel = $item.FullName.Substring($package.Length).TrimStart('\', '/')
+            if ($rel -eq "cardfile.exe") { continue }
+            $dest = Join-Path $installDir $rel
+            if (Test-Path -LiteralPath $dest -PathType Leaf) {
+                $bak = Join-Path $backup $rel
+                New-Item -ItemType Directory -Force -Path (Split-Path $bak) | Out-Null
+                Move-Item -LiteralPath $dest -Destination $bak -Force -ErrorAction Stop
+                $moved += $rel
+            } else {
+                $added += $rel
+            }
+        }
+        Copy-Item -Path (Join-Path $package "*") -Destination $installDir -Recurse -Force -ErrorAction Stop
+    } catch {
+        $failure = $_
+        if ($renamedExe -or $moved.Count -gt 0) {
+            Write-Host "Installation failed; restoring the previous version..." -ForegroundColor Yellow
+        }
+        foreach ($rel in $added) {
+            Remove-Item -Force -LiteralPath (Join-Path $installDir $rel) -ErrorAction SilentlyContinue
+        }
+        foreach ($rel in $moved) {
+            Move-Item -LiteralPath (Join-Path $backup $rel) -Destination (Join-Path $installDir $rel) -Force -ErrorAction SilentlyContinue
+        }
+        if ($renamedExe) {
+            Remove-Item -Force -LiteralPath $exePath -ErrorAction SilentlyContinue
+            Rename-Item -LiteralPath $old -NewName "cardfile.exe" -ErrorAction SilentlyContinue
+        }
+        Remove-Item -Recurse -Force -LiteralPath $backup -ErrorAction SilentlyContinue
+        throw $failure
     }
-    Copy-Item -Path (Join-Path $package "*") -Destination $installDir -Recurse -Force
+    Remove-Item -Recurse -Force -LiteralPath $backup -ErrorAction SilentlyContinue
 }
 
 function Remove-Legacy {

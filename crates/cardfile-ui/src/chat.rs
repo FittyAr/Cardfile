@@ -202,7 +202,10 @@ impl ChatPanel {
                     &cancel,
                 );
                 let error = match result {
-                    Ok(()) => None,
+                    Ok(cardfile_ai::AgentOutcome::Finished) => None,
+                    // The model still wanted to work: say so instead of stopping
+                    // silently, so the user knows to ask it to continue.
+                    Ok(cardfile_ai::AgentOutcome::StepLimit) => Some(t("chat.step_limit")),
                     Err(cardfile_ai::AiError::Cancelled) => None,
                     Err(e) => Some(e.to_string()),
                 };

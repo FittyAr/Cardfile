@@ -27,7 +27,12 @@ mod widgets;
 mod wizard;
 mod workspace;
 
-use gpui_kit::{AppContext as _, Bounds, TitlebarOptions, WindowBounds, WindowOptions, px, size};
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::{ActiveTheme as _, h_flex, v_flex};
+use gpui_kit::{
+    App, AppContext as _, Bounds, Context, IntoElement, ParentElement as _, Render, SharedString,
+    Styled as _, TitlebarOptions, Window, WindowBounds, WindowOptions, div, px, size,
+};
 
 pub use paths::DataPaths;
 
@@ -53,23 +58,42 @@ pub fn run(paths: DataPaths) {
             // Open the database if it already exists; the wizard creates it otherwise.
             let (db, app_settings) = if paths.db().exists() {
                 match cardfile_db::Database::open(&paths.db(), Some(&paths.backups())) {
-                    Ok(db) => {
-                        let settings = db.app_settings().unwrap_or_default();
-                        (Some(db), settings)
-                    }
+                    Ok(db) => match db.app_settings() {
+                        Ok(settings) => (Some(db), settings),
+                        // Defaults would re-run the first-run wizard on existing data.
+                        Err(e) => {
+                            tracing::error!("cannot read settings: {e:#}");
+                            eprintln!("Cardfile: cannot read settings: {e}");
+                            cx.quit();
+                            return;
+                        }
+                    },
                     Err(e) => {
                         tracing::error!("cannot open database: {e:#}");
                         eprintln!(
                             "Cardfile: cannot open database {}: {e}",
                             paths.db().display()
                         );
-                        cx.quit();
+                        // Release builds on Windows have no console: say it in a window.
+                        show_startup_error(
+                            cardfile_i18n::t_args(
+                                "app.db_error_body",
+                                &[
+                                    ("path", &paths.db().display().to_string()),
+                                    ("error", &format!("{e:#}")),
+                                ],
+                            ),
+                            cx,
+                        );
                         return;
                     }
                 }
             } else {
                 (None, Default::default())
             };
+            // Background work that must not run on the UI thread later (render).
+            updater::detect_kind(cx);
+            export::cleanup_stale_attachments(cx);
             cx.set_global(state::AppState {
                 paths: paths.clone(),
                 db,
@@ -106,4 +130,70 @@ pub fn run(paths: DataPaths) {
             .detach();
             cx.activate(true);
         });
+}
+
+/// A window explaining why Cardfile cannot start; quitting closes the app.
+struct StartupError {
+    message: SharedString,
+}
+
+impl Render for StartupError {
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let th = cx.theme();
+        v_flex()
+            .size_full()
+            .p(px(20.))
+            .gap(px(12.))
+            .bg(th.background)
+            .text_color(th.foreground)
+            .font_family(th.font_family.clone())
+            .child(
+                div()
+                    .font_weight(gpui_kit::FontWeight::SEMIBOLD)
+                    .child(cardfile_i18n::t("app.db_error_title")),
+            )
+            .child(
+                div()
+                    .flex_1()
+                    .text_size(px(13.))
+                    .child(self.message.clone()),
+            )
+            .child(
+                h_flex().justify_end().child(
+                    Button::new("startup-error-quit")
+                        .primary()
+                        .label(cardfile_i18n::t("menu.quit"))
+                        .on_click(|_, _, cx| cx.quit()),
+                ),
+            )
+    }
+}
+
+/// Show `message` in a small window and quit when it is closed.
+fn show_startup_error(message: String, cx: &mut App) {
+    let bounds = Bounds::centered(None, size(px(560.), px(240.)), cx);
+    let options = WindowOptions {
+        window_bounds: Some(WindowBounds::Windowed(bounds)),
+        titlebar: Some(TitlebarOptions {
+            title: Some("Cardfile".into()),
+            ..Default::default()
+        }),
+        app_id: Some("ar.fittyar.Cardfile".into()),
+        icon: window_icon(),
+        ..Default::default()
+    };
+    let message = SharedString::from(message);
+    if let Err(e) = gpui_kit::open_window(options, cx, |_, cx| cx.new(|_| StartupError { message }))
+    {
+        tracing::error!("open error window: {e:#}");
+        cx.quit();
+        return;
+    }
+    cx.on_window_closed(|cx, _| {
+        if cx.windows().is_empty() {
+            cx.quit();
+        }
+    })
+    .detach();
+    cx.activate(true);
 }

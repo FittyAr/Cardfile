@@ -93,7 +93,7 @@ pub fn edit_tag_dialog(tag: Option<Tag>, window: &mut Window, cx: &mut App) {
                 let c = color.read(cx).clone();
                 let db = AppState::db(cx);
                 let task = run_db(cx, move |_| match editing {
-                    Some(id) => db.update_tag(id, &value, &c),
+                    Some(id) => db.update_tag(owner, id, &value, &c),
                     None => db.create_tag(owner, &value, &c).map(|_| ()),
                 });
                 window

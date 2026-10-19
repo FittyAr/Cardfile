@@ -84,6 +84,9 @@ pub trait Slots {
     fn slot_len(&self, slot: Slot) -> usize;
     fn is_atom(&self, slot: Slot) -> bool;
     fn is_cell(&self, slot: Slot) -> bool;
+    /// Whether `slot` names a text slot of this document exactly: an existing cell
+    /// of a table, or a non-table textual block (row and column 0).
+    fn has_text_slot(&self, slot: Slot) -> bool;
     fn first_slot(&self, block: usize) -> Slot;
     fn last_slot(&self, block: usize) -> Slot;
     fn next_slot(&self, slot: Slot) -> Option<Slot>;
@@ -130,6 +133,14 @@ impl Slots for Document {
         self.blocks
             .get(slot.block)
             .is_some_and(|b| matches!(b.kind, BlockKind::Table(_)))
+    }
+
+    fn has_text_slot(&self, slot: Slot) -> bool {
+        match self.blocks.get(slot.block).map(|b| &b.kind) {
+            Some(BlockKind::Table(t)) => t.rows.get(slot.row).is_some_and(|r| slot.col < r.len()),
+            Some(k) => k.is_textual() && slot.row == 0 && slot.col == 0,
+            None => false,
+        }
     }
 
     fn first_slot(&self, block: usize) -> Slot {

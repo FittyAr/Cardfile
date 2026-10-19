@@ -9,7 +9,7 @@ use std::sync::atomic::AtomicBool;
 use std::thread;
 
 use cardfile_ai::{
-    AgentEvent, AiError, Message, ProviderConfig, Role, ToolSpec, preset, run_agent,
+    AgentEvent, AgentOutcome, AiError, Message, ProviderConfig, Role, ToolSpec, preset, run_agent,
 };
 use serde_json::{Value, json};
 
@@ -107,7 +107,7 @@ fn run_agent_round_trips_one_tool_call() {
         Ok::<_, String>("3".to_owned())
     };
     let cancel = AtomicBool::new(false);
-    run_agent(
+    let outcome = run_agent(
         &cfg,
         "You manage cards.",
         &mut history,
@@ -118,6 +118,7 @@ fn run_agent_round_trips_one_tool_call() {
         &cancel,
     )
     .unwrap();
+    assert_eq!(outcome, AgentOutcome::Finished);
 
     let roles: Vec<Role> = history.iter().map(|m| m.role).collect();
     assert_eq!(
@@ -165,6 +166,42 @@ fn run_agent_round_trips_one_tool_call() {
         second[3],
         json!({"role":"tool","tool_call_id":"call_1","content":"3"})
     );
+}
+
+#[test]
+fn step_limit_is_reported() {
+    let tool_reply = |id: &str| {
+        json!({"choices":[{"finish_reason":"tool_calls","message":{"role":"assistant","content":null,
+            "tool_calls":[{"id":id,"type":"function",
+                "function":{"name":"count_cards","arguments":"{}"}}]}}]})
+    };
+    let (url, server) = serve(vec![
+        (200, tool_reply("call_1")),
+        (200, tool_reply("call_2")),
+    ]);
+    let cfg = config(url);
+    let tools = [ToolSpec::new(
+        "count_cards",
+        "Count cards",
+        json!({"type":"object","properties":{}}),
+    )];
+    let mut history = vec![Message::user("Count forever")];
+    let cancel = AtomicBool::new(false);
+    let outcome = run_agent(
+        &cfg,
+        "",
+        &mut history,
+        &tools,
+        &mut |_| Ok("1".to_owned()),
+        &mut |_| {},
+        2,
+        &cancel,
+    )
+    .unwrap();
+    assert_eq!(outcome, AgentOutcome::StepLimit);
+    // Every tool call still got its result.
+    assert_eq!(history.last().map(|m| m.role), Some(Role::Tool));
+    assert_eq!(server.join().unwrap().len(), 2);
 }
 
 #[test]
