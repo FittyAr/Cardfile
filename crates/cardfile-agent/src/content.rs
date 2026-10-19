@@ -21,6 +21,9 @@ fn placeholder(index: usize, block: &Block) -> Option<String> {
 }
 
 /// The document as Markdown for the AI, without the card title.
+///
+/// Headings keep their exact level (`##` is H2), so Markdown the AI reads and sends
+/// back through [`from_markdown`] does not push them one level deeper each time.
 pub fn to_markdown(doc: &Document) -> String {
     let mut copy = doc.clone();
     for (i, block) in copy.blocks.iter_mut().enumerate() {
@@ -28,7 +31,11 @@ pub fn to_markdown(doc: &Document) -> String {
             *block = Block::paragraph(&text);
         }
     }
-    cardfile_doc::to_markdown(&copy, None, &MarkdownOptions::default(), &NoBlobs)
+    let opts = MarkdownOptions {
+        exact_heading_levels: true,
+        ..MarkdownOptions::default()
+    };
+    cardfile_doc::to_markdown(&copy, None, &opts, &NoBlobs)
         .trim_end()
         .to_owned()
 }
@@ -140,6 +147,40 @@ mod tests {
         // Dropping the placeholder removes the attachment.
         let without = from_markdown("## Trip\n\nNothing else.", Some(&doc));
         assert!(without.blob_ids().is_empty());
+    }
+
+    #[test]
+    fn headings_round_trip_at_their_own_level() {
+        let doc = Document {
+            version: cardfile_doc::DOC_VERSION,
+            blocks: vec![
+                Block::heading(1, "One"),
+                Block::paragraph("a"),
+                Block::heading(2, "Two"),
+                Block::paragraph("b"),
+                Block::heading(3, "Three"),
+                Block::paragraph("c"),
+            ],
+        };
+        let md = to_markdown(&doc);
+        assert!(
+            md.starts_with(
+                "# One
+
+a
+
+## Two
+
+b
+
+### Three"
+            ),
+            "{md}"
+        );
+        assert_eq!(from_markdown(&md, Some(&doc)), doc);
+        // Repeated read/write cycles leave the levels alone.
+        let again = from_markdown(&to_markdown(&from_markdown(&md, None)), None);
+        assert_eq!(again, doc);
     }
 
     #[test]

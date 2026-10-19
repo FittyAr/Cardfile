@@ -927,4 +927,34 @@ mod tests {
             .collect();
         assert_eq!(titles, ["a", "b", "c"]);
     }
+
+    #[test]
+    fn get_card_returns_the_markdown_update_card_received() {
+        let (db, scope) = setup(false, false);
+        let created = run(&db, &scope, "create_card", json!({"title": "Notes"})).unwrap();
+        let id = created["id"].as_str().unwrap().to_owned();
+        let md = "## A
+
+### B";
+        run(
+            &db,
+            &scope,
+            "update_card",
+            json!({"id": id, "markdown": md}),
+        )
+        .unwrap();
+        let card = run(&db, &scope, "get_card", json!({"id": id})).unwrap();
+        assert_eq!(card["markdown"], md);
+        // Writing back what was read changes nothing.
+        let read = card["markdown"].as_str().unwrap().to_owned();
+        run(
+            &db,
+            &scope,
+            "update_card",
+            json!({"id": id, "markdown": read}),
+        )
+        .unwrap();
+        let card = run(&db, &scope, "get_card", json!({"id": id})).unwrap();
+        assert_eq!(card["markdown"], md);
+    }
 }
