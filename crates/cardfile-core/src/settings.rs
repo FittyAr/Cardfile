@@ -1,4 +1,5 @@
-use serde::{Deserialize, Serialize};
+use serde::de::DeserializeOwned;
+use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::{LockMode, SearchScope, SortOrder};
 
@@ -22,7 +23,9 @@ pub struct AppSettings {
     /// `false` until the first-run wizard completes.
     pub initialized: bool,
     pub auth_mode: AuthMode,
-    /// Lock modes users may choose from.
+    /// Lock modes users may choose from. Unknown names (e.g. from a newer version)
+    /// are skipped instead of discarding the whole list.
+    #[serde(deserialize_with = "known_lock_modes")]
     pub enabled_lock_modes: Vec<LockMode>,
     /// Allow anyone at the login screen to create an account (multi-user only).
     pub allow_registration: bool,
@@ -49,7 +52,59 @@ impl Default for AppSettings {
     }
 }
 
+/// Keep the lock modes this version knows.
+fn known_lock_modes<'de, D: Deserializer<'de>>(d: D) -> Result<Vec<LockMode>, D::Error> {
+    let raw = Vec::<serde_json::Value>::deserialize(d)?;
+    Ok(raw
+        .into_iter()
+        .filter_map(|v| serde_json::from_value(v).ok())
+        .collect())
+}
+
+/// Parse settings stored as a JSON object, field by field.
+///
+/// A field that does not parse (a value from a newer version, a `null` written for
+/// a NaN float, …) falls back to its default instead of discarding every other
+/// field: losing `initialized` would re-run the first-run wizard on an existing
+/// database, and losing `ai_providers` would erase them on the next save. Only input
+/// that is not a JSON object at all is an error.
+fn parse_lenient<T>(json: &str) -> Result<T, serde_json::Error>
+where
+    T: Serialize + DeserializeOwned + Default,
+{
+    let serde_json::Value::Object(input) = serde_json::from_str::<serde_json::Value>(json)? else {
+        return Err(serde::de::Error::custom("settings are not a JSON object"));
+    };
+    let serde_json::Value::Object(mut merged) = serde_json::to_value(T::default())? else {
+        return Err(serde::de::Error::custom(
+            "settings do not serialize to an object",
+        ));
+    };
+    for (key, value) in input {
+        let previous = merged.insert(key.clone(), value);
+        if serde_json::from_value::<T>(serde_json::Value::Object(merged.clone())).is_err() {
+            // Restore the default (or drop a field this version does not know).
+            match previous {
+                Some(p) => merged.insert(key, p),
+                None => merged.remove(&key),
+            };
+        }
+    }
+    serde_json::from_value(serde_json::Value::Object(merged))
+}
+
+/// `value` when it is a finite number, `default` otherwise.
+fn finite(value: f32, default: f32) -> f32 {
+    if value.is_finite() { value } else { default }
+}
+
 impl AppSettings {
+    /// Parse stored settings, tolerating unknown or invalid fields (see
+    /// `parse_lenient`). Fails only when `json` is not a JSON object.
+    pub fn from_json(json: &str) -> Result<Self, serde_json::Error> {
+        parse_lenient(json)
+    }
+
     pub fn lock_mode_enabled(&self, mode: LockMode) -> bool {
         mode == LockMode::None || self.enabled_lock_modes.contains(&mode)
     }
@@ -94,6 +149,27 @@ pub struct UserSettings {
     pub ai_panel_width: f32,
 }
 
+impl UserSettings {
+    /// Parse stored settings, tolerating unknown or invalid fields (see
+    /// `parse_lenient`). Fails only when `json` is not a JSON object.
+    pub fn from_json(json: &str) -> Result<Self, serde_json::Error> {
+        parse_lenient(json)
+    }
+
+    /// A copy with non-finite sizes replaced by their defaults. JSON has no NaN or
+    /// infinity (serde_json writes `null`), so they must not reach storage.
+    pub fn sanitized(&self) -> Self {
+        let d = Self::default();
+        Self {
+            ui_font_size: finite(self.ui_font_size, d.ui_font_size),
+            editor_font_size: finite(self.editor_font_size, d.editor_font_size),
+            list_width: finite(self.list_width, d.list_width),
+            ai_panel_width: finite(self.ai_panel_width, d.ai_panel_width),
+            ..self.clone()
+        }
+    }
+}
+
 impl Default for UserSettings {
     fn default() -> Self {
         Self {
@@ -132,6 +208,40 @@ mod tests {
         let s: UserSettings = serde_json::from_str(r#"{"theme":"Forest"}"#).unwrap();
         assert_eq!(s.theme, "Forest");
         assert_eq!(s.max_revisions, 50);
+    }
+
+    #[test]
+    fn one_bad_field_keeps_the_others() {
+        let json = r#"{"initialized":true,"auth_mode":"from_the_future","mcp_port":"x",
+            "enabled_lock_modes":["private","quantum"],"unknown":1}"#;
+        let s = AppSettings::from_json(json).unwrap();
+        assert!(s.initialized);
+        assert_eq!(s.auth_mode, AuthMode::default());
+        assert_eq!(s.mcp_port, DEFAULT_MCP_PORT);
+        assert_eq!(s.enabled_lock_modes, [LockMode::Private]);
+
+        let json = r#"{"ui_font_size":null,"ai_providers":[{"id":"p"}],"theme":"Forest"}"#;
+        let u = UserSettings::from_json(json).unwrap();
+        assert_eq!(u.ui_font_size, 14.0);
+        assert_eq!(u.ai_providers.len(), 1);
+        assert_eq!(u.theme, "Forest");
+
+        assert!(AppSettings::from_json("not json").is_err());
+        assert!(UserSettings::from_json("[1]").is_err());
+    }
+
+    #[test]
+    fn nan_sizes_are_sanitized() {
+        let s = UserSettings {
+            ui_font_size: f32::NAN,
+            list_width: f32::INFINITY,
+            ..Default::default()
+        }
+        .sanitized();
+        assert_eq!(s.ui_font_size, 14.0);
+        assert_eq!(s.list_width, 300.0);
+        let json = serde_json::to_string(&s).unwrap();
+        assert_eq!(UserSettings::from_json(&json).unwrap(), s);
     }
 
     #[test]

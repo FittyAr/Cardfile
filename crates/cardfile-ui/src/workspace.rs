@@ -733,8 +733,11 @@ impl Workspace {
                                     window,
                                     cx,
                                     move |_, cx| {
+                                        let Some(owner) = Self::owner(cx) else {
+                                            return;
+                                        };
                                         let db = AppState::db(cx);
-                                        run_db(cx, move |_| db.delete_tag(id))
+                                        run_db(cx, move |_| db.delete_tag(owner, id))
                                             .detach_and_log_err(cx);
                                         cx.set_global(crate::tags::TagsChanged);
                                     },

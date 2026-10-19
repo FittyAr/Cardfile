@@ -75,9 +75,11 @@ impl Database {
             let mut sql = String::from(
                 "SELECT c.id, c.title, c.plain_text, c.lock_mode, c.is_pinned, c.is_favorite, \
                  c.sort_key, c.updated_at, c.deleted_at, c.owner_id, \
-                 (SELECT s.permission FROM card_shares s WHERE s.card_id = c.id AND s.user_id = ?1) \
+                 (SELECT s.permission FROM card_shares s WHERE s.card_id = c.id AND s.user_id = ?1 \
+                 AND s.deleted_at IS NULL) \
                  AS permission, \
-                 EXISTS (SELECT 1 FROM card_shares s WHERE s.card_id = c.id) AS is_shared, ",
+                 EXISTS (SELECT 1 FROM card_shares s WHERE s.card_id = c.id AND s.deleted_at IS NULL) \
+                 AS is_shared, ",
             );
             if fts.is_some() {
                 sql.push_str(
@@ -90,7 +92,8 @@ impl Database {
             if shared {
                 sql.push_str(
                     "WHERE c.owner_id <> ?1 AND EXISTS \
-                     (SELECT 1 FROM card_shares s WHERE s.card_id = c.id AND s.user_id = ?1) ",
+                     (SELECT 1 FROM card_shares s WHERE s.card_id = c.id AND s.user_id = ?1 \
+                     AND s.deleted_at IS NULL) ",
                 );
             } else {
                 sql.push_str("WHERE c.owner_id = ?1 ");
@@ -110,7 +113,8 @@ impl Database {
             }
             if filter.tag.is_some() {
                 sql.push_str(
-                    "AND EXISTS (SELECT 1 FROM card_tags t WHERE t.card_id = c.id AND t.tag_id = ?3) ",
+                    "AND EXISTS (SELECT 1 FROM card_tags t WHERE t.card_id = c.id AND t.tag_id = ?3 \
+                     AND t.deleted_at IS NULL) ",
                 );
             }
             sql.push_str("ORDER BY ");
@@ -279,7 +283,7 @@ mod tests {
             .unwrap();
         // Leave a hole in the rowids, then let VACUUM renumber them.
         db.delete_card(&Actor::user(user.id), a.id).unwrap();
-        db.purge_card(a.id).unwrap();
+        db.purge_card(&Actor::user(user.id), a.id).unwrap();
         db.with(|conn| {
             diesel::connection::SimpleConnection::batch_execute(conn, "VACUUM;")?;
             Ok(())

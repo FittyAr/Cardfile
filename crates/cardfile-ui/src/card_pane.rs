@@ -932,8 +932,11 @@ impl CardPane {
             window,
             cx,
             move |window, cx| {
+                let Some(actor) = AppState::actor(cx) else {
+                    return;
+                };
                 let db = AppState::db(cx);
-                let task = run_db(cx, move |_| db.purge_card(id));
+                let task = run_db(cx, move |_| db.purge_card(&actor, id));
                 let pane = pane.clone();
                 window
                     .spawn(cx, async move |cx| {

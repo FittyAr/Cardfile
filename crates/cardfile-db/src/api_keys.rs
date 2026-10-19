@@ -4,7 +4,7 @@ use cardfile_core::{ApiKey, ApiKeyId, UserId, now_millis};
 use diesel::prelude::*;
 
 use crate::rows::parse_id;
-use crate::schema::api_keys;
+use crate::schema::{api_keys, users};
 use crate::{Database, DbResult};
 
 #[derive(Queryable, Selectable, Insertable, Debug)]
@@ -88,12 +88,17 @@ impl Database {
         })
     }
 
-    /// Find a live key by the hash of its secret and record that it was used.
+    /// Find a live key by the hash of its secret and record that it was used. Keys
+    /// of deleted accounts never authenticate, even if they were not revoked.
     pub fn use_api_key(&self, key_hash: &str) -> DbResult<Option<ApiKey>> {
         self.with(|conn| {
+            let live_users = users::table
+                .filter(users::deleted_at.is_null())
+                .select(users::id);
             let row: Option<ApiKeyRow> = api_keys::table
                 .filter(api_keys::key_hash.eq(key_hash))
                 .filter(api_keys::revoked_at.is_null())
+                .filter(api_keys::user_id.eq_any(live_users))
                 .select(ApiKeyRow::as_select())
                 .first(conn)
                 .optional()?;
@@ -143,5 +148,31 @@ mod tests {
         db.revoke_api_key(alice.id, key.id).unwrap();
         assert!(db.use_api_key("hash1").unwrap().is_none());
         assert!(db.list_api_keys(alice.id).unwrap().is_empty());
+    }
+
+    #[test]
+    fn deleted_users_keys_stop_working() {
+        let (db, alice) = db_with_user();
+        db.create_api_key(alice.id, "Claude", "cf_abcd", "hash1", false, false)
+            .unwrap();
+        assert!(db.use_api_key("hash1").unwrap().is_some());
+        db.delete_user(alice.id).unwrap();
+        assert!(db.use_api_key("hash1").unwrap().is_none());
+        assert!(db.list_api_keys(alice.id).unwrap().is_empty());
+    }
+
+    #[test]
+    fn keys_of_a_deleted_owner_are_refused_even_unrevoked() {
+        use diesel::prelude::*;
+        let (db, alice) = db_with_user();
+        db.create_api_key(alice.id, "Claude", "cf_abcd", "hash1", false, false)
+            .unwrap();
+        // Simulate an account deleted by an older version that did not revoke keys.
+        db.with(|conn| {
+            diesel::sql_query("UPDATE users SET deleted_at = 1").execute(conn)?;
+            Ok(())
+        })
+        .unwrap();
+        assert!(db.use_api_key("hash1").unwrap().is_none());
     }
 }

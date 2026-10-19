@@ -13,6 +13,11 @@ pub enum Error {
     WrongPassword,
     #[error("permission denied")]
     PermissionDenied,
+    /// A save does not match the card's current protection (plain content for an
+    /// encrypted card, or ciphertext for one that is not), e.g. because the card was
+    /// encrypted or decrypted after the editor loaded it.
+    #[error("the card's protection changed; reopen it before saving")]
+    LockModeMismatch,
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;

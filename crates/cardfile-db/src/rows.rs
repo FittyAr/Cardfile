@@ -23,7 +23,8 @@ pub(crate) fn payload_json(p: Option<&EncryptedPayload>) -> Option<String> {
     p.and_then(|p| serde_json::to_string(p).ok())
 }
 
-#[derive(Queryable, Selectable, Insertable, Debug)]
+/// `Debug` is written by hand to redact the hashes and the sealed secret key.
+#[derive(Queryable, Selectable, Insertable)]
 #[diesel(table_name = users)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 pub(crate) struct UserRow {
@@ -41,6 +42,27 @@ pub(crate) struct UserRow {
     pub lock_hash: Option<String>,
     pub public_key: Option<String>,
     pub secret_key: Option<String>,
+}
+
+impl std::fmt::Debug for UserRow {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let redact = |set: bool| set.then_some(cardfile_core::REDACTED);
+        f.debug_struct("UserRow")
+            .field("id", &self.id)
+            .field("username", &self.username)
+            .field("display_name", &self.display_name)
+            .field("password_hash", &redact(self.password_hash.is_some()))
+            .field("is_admin", &self.is_admin)
+            .field("created_at", &self.created_at)
+            .field("updated_at", &self.updated_at)
+            .field("deleted_at", &self.deleted_at)
+            .field("rev", &self.rev)
+            .field("kind", &self.kind)
+            .field("lock_hash", &redact(self.lock_hash.is_some()))
+            .field("public_key", &self.public_key)
+            .field("secret_key", &redact(self.secret_key.is_some()))
+            .finish_non_exhaustive()
+    }
 }
 
 impl TryFrom<UserRow> for User {

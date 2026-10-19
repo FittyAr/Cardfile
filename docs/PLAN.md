@@ -195,7 +195,7 @@ Preparada para sincronización futura: PK `UUIDv7` (texto/blob), `created_at`, `
 | `cards` | id, owner_id, title, content_json, plain_text, lock_mode (`none`/`read_only`/`private`/`encrypted`), encrypted_payload, crypto_meta, is_pinned, is_favorite, sort_key (fraccional), created/updated/deleted, rev |
 | `card_revisions` | id, card_id, content_json (o cifrado), title, created_at — historial con límite configurable |
 | `tags` | id, owner_id, name, color |
-| `card_tags` | card_id, tag_id |
+| `card_tags` | card_id, tag_id, created/updated/deleted, rev |
 | `blobs` | id (blake3), mime, size, data (BLOB) — imágenes y adjuntos, deduplicados |
 | `card_blobs` | card_id, blob_id |
 | `app_settings` | key, value_json — config global (modo de auth, etc.) |
@@ -203,11 +203,20 @@ Preparada para sincronización futura: PK `UUIDv7` (texto/blob), `created_at`, `
 
 - Migraciones embebidas (`embed_migrations!`) aplicadas al arrancar, con backup automático previo.
 - Acceso a DB en hilo de fondo (`cx.background_executor()`), nunca en el hilo de UI.
-- Pragmas: `journal_mode=WAL`, `foreign_keys=ON`, `busy_timeout`.
+- Pragmas: `journal_mode=WAL`, `foreign_keys=ON`, `secure_delete=ON`, `busy_timeout`.
+  Al cifrar una tarjeta se hace `wal_checkpoint(TRUNCATE)`; `cards_fts` usa la opción FTS5
+  `secure-delete`, así el texto plano reemplazado no queda en páginas libres, el WAL ni el índice.
 - Las tarjetas cifradas no se indexan en FTS (solo título si no es privada).
 - Migración `2026-10-15-000000_ai_sharing`: `users.kind/lock_hash/public_key/secret_key`,
   `cards.updated_by`, `card_revisions.author_id`, tablas `card_shares`, `card_keys`, `api_keys`
   y `activity`.
+- Migración `2026-10-19-000000_sync_links`: `card_shares` y `card_tags` ganan
+  `updated_at`/`deleted_at`/`rev` (y `card_tags.created_at`); quitar un tag o dejar de compartir
+  es un soft delete y volver a agregarlo revive la fila.
+- **Excepciones al soft delete** (no son entidades sincronizadas o son secretos):
+  `card_keys` (claves envueltas: se borran de verdad al dejar de compartir o descifrar),
+  `card_revisions` (historial local: se podan, se borran al cifrar/descifrar y al limpiar el
+  historial), y el purgado de la papelera (que además vacía el `summary` de su `activity`).
 
 ### 3.4 Autenticación y bloqueo
 
