@@ -24,6 +24,17 @@ pub enum AgentEvent {
     },
 }
 
+/// How a [`run_agent`] run ended (cancellation and failures are errors).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AgentOutcome {
+    /// The model answered without asking for more tools.
+    Finished,
+    /// `max_steps` model calls were made and the model still wanted to call
+    /// tools: the task is probably unfinished. The last tool results are in
+    /// the history, so the user can ask the model to continue.
+    StepLimit,
+}
+
 /// Text sent back for calls skipped because the run was cancelled, so the
 /// history stays valid (every tool call needs a result).
 const CANCELLED_RESULT: &str = "Cancelled by the user.";
@@ -34,8 +45,10 @@ const CANCELLED_RESULT: &str = "Cancelled by the user.";
 /// `history`, then runs every requested tool through `exec` and appends the
 /// results. `exec` returns `Ok(output)` or `Err(error message)`; both are
 /// passed to the model. The loop stops when the model makes no tool calls or
-/// after `max_steps` model calls (returning `Ok`, with the last tool results
-/// in `history`).
+/// after `max_steps` model calls. It returns [`AgentOutcome::Finished`] when the
+/// model answered, and [`AgentOutcome::StepLimit`] when the step budget ran out
+/// while the model was still calling tools (the last tool results are then in
+/// `history`).
 ///
 /// `cancel` is checked before each model call, after it returns (the reply is
 /// then discarded) and before each tool runs. On cancellation the function
@@ -53,7 +66,7 @@ pub fn run_agent(
     on_event: &mut dyn FnMut(AgentEvent),
     max_steps: usize,
     cancel: &AtomicBool,
-) -> Result<(), AiError> {
+) -> Result<AgentOutcome, AiError> {
     let cancelled = || cancel.load(Ordering::Relaxed);
     for _ in 0..max_steps {
         if cancelled() {
@@ -70,7 +83,7 @@ pub fn run_agent(
         }
         history.push(message);
         if calls.is_empty() {
-            return Ok(());
+            return Ok(AgentOutcome::Finished);
         }
         let mut stopped = false;
         for call in calls {
@@ -95,5 +108,5 @@ pub fn run_agent(
             return Err(AiError::Cancelled);
         }
     }
-    Ok(())
+    Ok(AgentOutcome::StepLimit)
 }
