@@ -605,6 +605,29 @@ impl<'a> Writer<'a> {
     }
 }
 
+impl Writer<'_> {
+    /// Emit a quote: its text indented past a bar on the left. The bar is drawn one
+    /// segment per line, after the page break that line may cause, so every segment
+    /// sits next to its text on the same page.
+    fn quote(&mut self, lines: &[Line], x: f32, width: f32, align: Align, lh: f32) {
+        let empty = [Line {
+            pieces: Vec::new(),
+            width: 0.,
+        }];
+        let lines = if lines.is_empty() { &empty[..] } else { lines };
+        for line in lines {
+            self.ensure(lh);
+            if let Some(r) = Rect::from_xywh(x, self.y, 3., lh) {
+                self.ops.push(Op::Rect {
+                    rect: r,
+                    color: RULE,
+                });
+            }
+            self.lines(std::slice::from_ref(line), x + 14., width - 14., align, lh);
+        }
+    }
+}
+
 fn draw(s: &mut Surface<'_>, fonts: &Fonts, op: Op) {
     match op {
         Op::Text { x, baseline, piece } => {
@@ -819,20 +842,7 @@ pub fn to_pdf(doc: &Document, title: &str, blobs: &dyn BlobResolver) -> Result<V
             }
             BlockKind::Quote => {
                 let lines = layout_text(&fonts, &block.text, &bs, full - indent - 14.);
-                let top = w.y;
-                w.lines(
-                    &lines,
-                    MARGIN + indent + 14.,
-                    full - indent - 14.,
-                    block.align,
-                    lh,
-                );
-                if let Some(r) = Rect::from_xywh(MARGIN + indent, top, 3., (w.y - top).max(lh)) {
-                    w.ops.push(Op::Rect {
-                        rect: r,
-                        color: RULE,
-                    });
-                }
+                w.quote(&lines, MARGIN + indent, full - indent, block.align, lh);
                 w.y += 6.;
             }
             BlockKind::Code { .. } => {
@@ -1000,6 +1010,49 @@ mod tests {
         };
         let pdf = to_pdf(&doc, "多语言", &crate::NoBlobs).unwrap();
         assert!(pdf.starts_with(b"%PDF"));
+    }
+
+    #[test]
+    fn quote_bar_follows_its_lines_across_a_page_break() {
+        let Ok(fonts) = Fonts::load() else {
+            return;
+        };
+        let mut w = Writer::new(&fonts, "T");
+        let lh = BODY * 1.45;
+        // Room for one line on this page; the next two go to the next page.
+        w.y = PAGE_H - MARGIN - lh * 1.5;
+        let line = |t: &str| Line {
+            pieces: vec![Piece {
+                text: t.into(),
+                face: Face::Regular,
+                size: BODY,
+                color: TEXT,
+                background: None,
+                underline: false,
+                strike: false,
+                width: 10.,
+            }],
+            width: 10.,
+        };
+        w.quote(
+            &[line("a"), line("b"), line("c")],
+            MARGIN,
+            300.,
+            Align::Left,
+            lh,
+        );
+        // Only the new page's ops remain: two bar segments starting at the top margin.
+        let bars: Vec<f32> = w
+            .ops
+            .iter()
+            .filter_map(|op| match op {
+                Op::Rect { rect, .. } => Some(rect.top()),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(bars.len(), 2);
+        assert!((bars[0] - MARGIN).abs() < 0.01, "{bars:?}");
+        assert!((bars[1] - (MARGIN + lh)).abs() < 0.01, "{bars:?}");
     }
 
     #[test]

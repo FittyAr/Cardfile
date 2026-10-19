@@ -22,7 +22,8 @@ pub fn has_rtl(text: &str) -> bool {
 /// Whether a paragraph's first strong character is right-to-left (it should be
 /// aligned to the right).
 pub fn is_rtl_paragraph(text: &str) -> bool {
-    has_rtl(text) && unicode_bidi::get_base_direction(text) == Direction::Rtl
+    // Same rule as the exporters, so a card reads the same on screen and on paper.
+    cardfile_doc::bidi::is_rtl_paragraph(text)
 }
 
 /// The paragraph's base level: right-to-left when its first strong character is.
