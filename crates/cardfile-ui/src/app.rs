@@ -359,24 +359,24 @@ impl Render for CardfileApp {
         )
         .absolute()
         .size_full();
-        gpui_kit::component::window_border().child(
-            div()
-                .id("cardfile")
-                .size_full()
-                .bg(cx.theme().background)
-                .text_color(cx.theme().foreground)
-                .font_family(cx.theme().font_family.clone())
-                .child(watcher)
-                .on_action(cx.listener(Self::open_settings))
-                .on_action(cx.listener(Self::quit))
-                .on_action(cx.listener(Self::command_palette))
-                .on_action(cx.listener(Self::open_keymap))
-                .on_action(cx.listener(Self::open_data_folder))
-                .on_action(cx.listener(Self::backup_now))
-                .on_action(cx.listener(Self::check_updates))
-                .on_action(cx.listener(Self::about))
-                .child(body),
-        )
+        // The toolkit's Root already wraps the window in `window_border()` (Linux
+        // client-side frame and shadow); a second one here drew a double frame.
+        div()
+            .id("cardfile")
+            .size_full()
+            .bg(cx.theme().background)
+            .text_color(cx.theme().foreground)
+            .font_family(cx.theme().font_family.clone())
+            .child(watcher)
+            .on_action(cx.listener(Self::open_settings))
+            .on_action(cx.listener(Self::quit))
+            .on_action(cx.listener(Self::command_palette))
+            .on_action(cx.listener(Self::open_keymap))
+            .on_action(cx.listener(Self::open_data_folder))
+            .on_action(cx.listener(Self::backup_now))
+            .on_action(cx.listener(Self::check_updates))
+            .on_action(cx.listener(Self::about))
+            .child(body)
     }
 }
 

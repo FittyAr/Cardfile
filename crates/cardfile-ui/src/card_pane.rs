@@ -1018,7 +1018,7 @@ impl CardPane {
         .detach();
     }
 
-    fn restore(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+    pub fn restore(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let Some(id) = self.card_id() else { return };
         let Some(actor) = AppState::actor(cx) else {
             return;
@@ -1049,7 +1049,7 @@ impl CardPane {
         .detach();
     }
 
-    fn purge(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+    pub fn purge(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let Some(id) = self.card_id() else { return };
         let pane = cx.entity();
         crate::dialogs::confirm(

@@ -10,7 +10,7 @@ use cardfile_i18n::{t, t_args};
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::input::{Input, InputEvent, InputState};
-use gpui_kit::component::menu::{ContextMenuExt as _, DropdownMenu as _, PopupMenuItem};
+use gpui_kit::component::menu::{ContextMenuExt as _, DropdownMenu as _, PopupMenu, PopupMenuItem};
 use gpui_kit::component::notification::Notification;
 use gpui_kit::component::scroll::ScrollableElement as _;
 use gpui_kit::component::{ActiveTheme as _, Sizable as _, WindowExt as _, h_flex, v_flex};
@@ -323,7 +323,20 @@ impl Workspace {
     }
 
     pub fn select(&mut self, id: CardId, window: &mut Window, cx: &mut Context<Self>) {
+        self.select_then(id, |_, _, _| {}, window, cx);
+    }
+
+    /// Select card `id` and run `then` on the pane once that card is open in it,
+    /// so per-card commands (context menu) act on the card that was clicked.
+    fn select_then(
+        &mut self,
+        id: CardId,
+        then: impl FnOnce(&mut CardPane, &mut Window, &mut Context<CardPane>) + 'static,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         if self.selected == Some(id) && self.pane.read(cx).card_id() == Some(id) {
+            self.pane.update(cx, |p, cx| then(p, window, cx));
             return;
         }
         self.selected = Some(id);
@@ -337,8 +350,10 @@ impl Workspace {
             if let Ok((card, access)) = task.await {
                 let _ = this.update_in(cx, |this, window, cx| {
                     if this.selected == Some(card.id) {
-                        this.pane
-                            .update(cx, |p, cx| p.open(Some(card), access, window, cx));
+                        this.pane.update(cx, |p, cx| {
+                            p.open(Some(card), access, window, cx);
+                            then(p, window, cx);
+                        });
                     }
                 });
             }
@@ -1271,7 +1286,96 @@ impl Workspace {
                     this.move_card(d.id, ix, window, cx)
                 }));
         }
-        item.into_any_element()
+        let menu = CardMenu {
+            ws: cx.entity(),
+            id,
+            deleted: matches!(self.view, View::RecycleBin),
+            owner: card.access.is_owner(),
+            pinned: card.is_pinned,
+            favorite: card.is_favorite,
+            can_share: card.access.is_owner()
+                && AppState::get(cx).app.auth_mode == AuthMode::MultiUser,
+        };
+        item.context_menu(move |m, _, _| menu.build(m))
+            .into_any_element()
+    }
+}
+
+/// What the right-click menu of a card in the list needs to know.
+#[derive(Clone)]
+struct CardMenu {
+    ws: Entity<Workspace>,
+    id: CardId,
+    deleted: bool,
+    owner: bool,
+    pinned: bool,
+    favorite: bool,
+    can_share: bool,
+}
+
+impl CardMenu {
+    /// A menu item that selects the card and then runs `f` on the card pane.
+    fn item(
+        &self,
+        label: impl Into<SharedString>,
+        f: impl Fn(&mut CardPane, &mut Window, &mut Context<CardPane>) + Clone + 'static,
+    ) -> PopupMenuItem {
+        let (ws, id) = (self.ws.clone(), self.id);
+        PopupMenuItem::new(label).on_click(move |_, window, cx| {
+            let f = f.clone();
+            ws.update(cx, |ws, cx| ws.select_then(id, f, window, cx));
+        })
+    }
+
+    fn build(&self, menu: PopupMenu) -> PopupMenu {
+        use crate::export::Format;
+        if self.deleted {
+            return menu
+                .item(self.item(t("card.restore"), |p, w, cx| p.restore(w, cx)))
+                .separator()
+                .item(self.item(t("card.purge.title"), |p, w, cx| p.purge(w, cx)));
+        }
+        let menu = if self.owner {
+            menu.item(self.item(
+                t(if self.pinned {
+                    "card.unpin"
+                } else {
+                    "card.pin"
+                }),
+                |p, _, cx| p.toggle_pin(cx),
+            ))
+            .item(self.item(
+                t(if self.favorite {
+                    "card.unfavorite"
+                } else {
+                    "card.favorite"
+                }),
+                |p, _, cx| p.toggle_favorite(cx),
+            ))
+            .separator()
+        } else {
+            menu
+        };
+        let menu = if self.can_share {
+            menu.item(self.item(t("share.button"), |p, w, cx| p.share(w, cx)))
+        } else {
+            menu
+        };
+        let menu = menu
+            .item(self.item(t("card.history"), |p, w, cx| p.show_history(w, cx)))
+            .separator()
+            .item(self.item(t("export.markdown"), |p, w, cx| {
+                p.export(Format::Markdown, w, cx)
+            }))
+            .item(self.item(t("export.html"), |p, w, cx| p.export(Format::Html, w, cx)))
+            .item(self.item(t("export.pdf"), |p, w, cx| p.export(Format::Pdf, w, cx)))
+            .item(self.item(t("export.json"), |p, w, cx| p.export(Format::Json, w, cx)));
+        if self.owner {
+            menu.separator()
+                .item(self.item(t("card.delete"), |p, w, cx| p.delete(w, cx)))
+        } else {
+            menu
+        }
     }
 }
 
