@@ -3,6 +3,17 @@
 All notable changes to this project are documented here. Generated with
 [git-cliff](https://git-cliff.org) from Conventional Commits (`cliff.toml`).
 
+## [2.0.0-beta.2] - 2026-10-27
+
+### Features
+
+- Cards in the list have a right-click menu: pin, favorite, share, history, export and
+  delete (restore or delete permanently in the recycle bin).
+
+### Bug Fixes
+
+- Linux: the window has a single frame again instead of a dark band around it.
+- Linux: text keeps subpixel antialiasing (the window background stays opaque).
 ## [2.0.0-beta.1] - 2026-10-19
 
 First beta.
