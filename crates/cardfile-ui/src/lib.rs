@@ -111,14 +111,11 @@ pub fn run(paths: DataPaths) {
                     ..gpui_kit::component::TitleBar::title_bar_options()
                 }),
                 window_decorations: Some(gpui_kit::WindowDecorations::Client),
-                // On Linux the client-side frame leaves a margin around the window for
-                // the shadow and resize handles. X11 only renders it see-through when
-                // the surface is transparent; with an opaque one it shows as a dark band.
-                window_background: if cfg!(target_os = "linux") {
-                    gpui_kit::WindowBackgroundAppearance::Transparent
-                } else {
-                    gpui_kit::WindowBackgroundAppearance::Opaque
-                },
+                // Opaque like Zed: the Linux client-side shadow margin is still drawn
+                // see-through (Wayland always composites client-decorated surfaces with
+                // alpha, X11 uses an ARGB visual), and a non-opaque window would turn
+                // off subpixel text rendering.
+                window_background: gpui_kit::WindowBackgroundAppearance::Opaque,
                 app_id: Some("ar.fittyar.Cardfile".into()),
                 window_min_size: Some(size(px(760.), px(480.))),
                 // Used by X11; Windows takes the icon from the executable's resources.
