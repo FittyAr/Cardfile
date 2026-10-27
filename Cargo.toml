@@ -84,7 +84,7 @@ minisign-verify = "0.3.0"
 sha2 = { version = "0.11.1", default-features = false }
 zip = { version = "9.0.3", default-features = false, features = ["deflate-flate2-zlib-rs"] }
 tar = { version = "0.4.46", default-features = false }
-lzma-rust2 = { version = "0.22.0", default-features = false, features = ["std", "xz"] }
+lzma-rust2 = { version = "0.23.0", default-features = false, features = ["std", "xz"] }
 
 # Observability
 tracing = "0.1.44"
