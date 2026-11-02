@@ -29,7 +29,7 @@ cardfile-ui = { path = "crates/cardfile-ui" }
 cardfile-updater = { path = "crates/cardfile-updater" }
 
 # UI
-gpui-kit = "0.7.3"
+gpui-kit = "0.8.0"
 
 # Data
 diesel = { version = "2.3.14", default-features = false, features = ["sqlite", "returning_clauses_for_sqlite_3_35"] }
