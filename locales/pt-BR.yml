@@ -2,6 +2,8 @@ _version: 1
 
 app:
   name: Cardfile
+  db_error_body: "Não foi possível abrir o banco de dados %{path}: %{error}"
+  db_error_title: "O Cardfile não consegue abrir seu banco de dados"
 test:
   greeting: "Olá, %{name}!"
 
@@ -92,6 +94,15 @@ editor:
   media:
     open_external: "Abrir no player do sistema"
 
+    failed: "Não foi possível iniciar a reprodução"
+    loading: "Carregando…"
+    malformed: "Este arquivo parece danificado"
+    unsupported: "Este formato não pode ser reproduzido aqui"
+  size_units:
+    bytes: "%{n} B"
+    kb: "%{n} KB"
+    mb: "%{n} MB"
+    gb: "%{n} GB"
 common:
   back: Voltar
   next: Avançar
@@ -262,12 +273,18 @@ card:
     encrypt_title: Criptografar cartão
     encrypt_body: Digite sua senha para criptografar este cartão. Sem ela, o cartão não poderá ser aberto.
     failed: "Não foi possível alterar a proteção: %{error}"
+    missing_password: "É necessária uma senha para criptografar o cartão."
   purge:
     title: Excluir permanentemente
     body: Este cartão será excluído para sempre. Isso não pode ser desfeito.
     confirm: Excluir permanentemente
+    failed: "Não foi possível excluir o cartão: %{error}"
   updated_by: "Editado %{date} por %{name}"
 
+  delete_failed: "Não foi possível mover o cartão para a lixeira: %{error}"
+  not_unlocked: "O cartão criptografado não está desbloqueado."
+  restore_failed: "Não foi possível restaurar o cartão: %{error}"
+  save_failed: "Não foi possível salvar o cartão: %{error}. As alterações são mantidas e serão salvas novamente na próxima edição."
 tags:
   new: Nova etiqueta…
   edit: Editar etiqueta
@@ -287,6 +304,7 @@ recycle:
   empty_title: Esvaziar lixeira
   empty_body: Todos os cartões da lixeira serão excluídos para sempre.
 
+  empty_failed: "Não foi possível esvaziar a lixeira: %{error}"
 export:
   markdown: Exportar como Markdown
   html: Exportar como HTML
@@ -378,6 +396,16 @@ settings:
     check_updates_hint: Apenas consulta o GitHub por uma versão mais recente. Nenhum dado é enviado.
     keymap: Atalhos de teclado
     keymap_hint: Edite keymap.json para alterar qualquer atalho. Reinicie para aplicar.
+    dictionary: "Dicionário ortográfico"
+    dictionary_failed: "Não foi possível instalar o dicionário: %{error}"
+    dictionary_installed: "Dicionário ortográfico instalado."
+    dictionary_missing: "O dicionário de %{language} não está instalado. Ele é baixado de github.com/wooorm/dictionaries."
+    install_dictionary: "Instalar"
+    installing_dictionary: "Instalando…"
+    update_channel: "Canal de atualizações"
+    update_channel_hint: "Escolha versões recomendadas ou inclua versões de teste que ainda podem conter erros. Trocar de canal nunca instala uma versão anterior."
+    update_latest: "Recomendadas (Latest)"
+    update_prerelease: "De teste (Prerelease)"
   editor:
     markdown_shortcuts: Atalhos de Markdown
     markdown_shortcuts_hint: "Digitar # , - , [] , **negrito** e similares formata o texto automaticamente."
@@ -579,5 +607,30 @@ chat:
     delete_card: "Moveu para a lixeira"
     restore_card: "Restaurou cartão"
 
+  step_limit: "O assistente parou após muitas etapas sem concluir. Peça para continuar, se necessário."
 attachment:
   no_app: "Nenhum aplicativo neste computador consegue abrir «%{name}». Instale um programa para este tipo de arquivo (para vídeos, um reprodutor de mídia como o VLC) e tente novamente."
+  not_found: "O anexo não foi encontrado."
+data_operations:
+  admin_required: "Somente um administrador pode fazer backup de toda a coleção."
+  backups: "Backups do banco de dados"
+  busy: "Preparando sua coleção. Aguarde…"
+  choose_backup: "Escolher pasta de backups"
+  choose_portable: "Escolher a pasta que conterá Cardfile portable"
+  choose_restore: "Escolher um backup do banco de dados do Cardfile"
+  contents: "Os backups incluem todos os usuários, anexos e cartões criptografados. Preservam a criptografia existente, mas não criptografam conteúdo sem criptografia. Não incluem chaves de IA guardadas no cofre de credenciais do sistema."
+  daily: "Backup diário automático"
+  daily_hint: "Com o Cardfile aberto, faz um backup a cada 24 horas. Backups pendentes são feitos ao entrar; destinos indisponíveis são verificados a cada hora."
+  default_backup: "Usar pasta padrão"
+  destination_exists: "O destino já existe. Escolha outra pasta; os dados existentes não serão sobrescritos."
+  failed: "A operação falhou: %{error}"
+  invalid_destination: "O destino não é uma pasta válida."
+  nested_destination: "Escolha um destino fora da pasta de dados ativa e dos dicionários do programa."
+  open_backup: "Abrir pasta de backups"
+  portable: "Criar cópia portátil"
+  portable_confirm: "Criar uma cópia de todos os usuários, cartões e anexos em uma nova pasta 'Cardfile portable'? O MCP e os backups automáticos serão desativados na cópia. Em outro computador, insira novamente as chaves de IA guardadas no cofre do sistema. Feche o Cardfile e aguarde a sincronização do OneDrive antes de trocar de computador."
+  portable_unsupported: "Baixe o arquivo portátil em https://github.com/FittyAr/Cardfile/releases para copiar esta instalação de loja ou gerenciador de pacotes."
+  protection_busy: "Aguarde o término da alteração de proteção do cartão e tente novamente."
+  restore: "Restaurar backup"
+  restore_confirm: "Substituir TODOS os usuários, cartões, anexos e permissões por este backup? O Cardfile criará uma cópia de segurança e reiniciará. Entre com as contas e senhas restauradas. As coleções não serão mescladas."
+  retention: "Cópias automáticas a manter"

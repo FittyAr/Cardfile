@@ -34,6 +34,8 @@ pub fn section(title: impl Into<SharedString>, cx: &App) -> AnyElement {
 /// Secondary explanatory text.
 pub fn hint(text: impl Into<SharedString>, cx: &App) -> AnyElement {
     div()
+        .min_w_0()
+        .whitespace_normal()
         .text_size(px(12.))
         .text_color(cx.theme().muted_foreground)
         .child(text.into())

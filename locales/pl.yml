@@ -2,6 +2,8 @@ _version: 1
 
 app:
   name: Cardfile
+  db_error_body: "Nie można otworzyć bazy danych %{path}: %{error}"
+  db_error_title: "Cardfile nie może otworzyć swojej bazy danych"
 test:
   greeting: "Cześć, %{name}!"
 
@@ -92,6 +94,15 @@ editor:
   media:
     open_external: "Otwórz w odtwarzaczu systemowym"
 
+    failed: "Nie można rozpocząć odtwarzania"
+    loading: "Wczytywanie…"
+    malformed: "Ten plik wygląda na uszkodzony"
+    unsupported: "Tego formatu nie można tutaj odtworzyć"
+  size_units:
+    bytes: "%{n} B"
+    kb: "%{n} KB"
+    mb: "%{n} MB"
+    gb: "%{n} GB"
 common:
   back: Wstecz
   next: Dalej
@@ -262,12 +273,18 @@ card:
     encrypt_title: Zaszyfruj kartę
     encrypt_body: Podaj hasło, aby zaszyfrować tę kartę. Bez niego karty nie będzie można otworzyć.
     failed: "Nie udało się zmienić ochrony: %{error}"
+    missing_password: "Do zaszyfrowania karty potrzebne jest hasło."
   purge:
     title: Usuń trwale
     body: Ta karta zostanie usunięta na zawsze. Tej operacji nie można cofnąć.
     confirm: Usuń trwale
+    failed: "Nie można usunąć karty: %{error}"
   updated_by: "Edytowano %{date} przez: %{name}"
 
+  delete_failed: "Nie można przenieść karty do kosza: %{error}"
+  not_unlocked: "Zaszyfrowana karta nie jest odblokowana."
+  restore_failed: "Nie można przywrócić karty: %{error}"
+  save_failed: "Nie można zapisać karty: %{error}. Zmiany są zachowane; zapis zostanie ponowiony przy następnej edycji."
 tags:
   new: Nowy tag…
   edit: Edytuj tag
@@ -287,6 +304,7 @@ recycle:
   empty_title: Opróżnij kosz
   empty_body: Wszystkie karty w koszu zostaną usunięte na zawsze.
 
+  empty_failed: "Nie można opróżnić kosza: %{error}"
 export:
   markdown: Eksportuj jako Markdown
   html: Eksportuj jako HTML
@@ -378,6 +396,16 @@ settings:
     check_updates_hint: Sprawdza tylko w serwisie GitHub, czy jest nowsza wersja. Nie są wysyłane żadne dane.
     keymap: Skróty klawiszowe
     keymap_hint: Edytuj plik keymap.json, aby zmienić dowolny skrót. Uruchom ponownie, aby zastosować.
+    dictionary: "Słownik ortograficzny"
+    dictionary_failed: "Nie można zainstalować słownika: %{error}"
+    dictionary_installed: "Zainstalowano słownik ortograficzny."
+    dictionary_missing: "Słownik dla %{language} nie jest zainstalowany. Zostanie pobrany z github.com/wooorm/dictionaries."
+    install_dictionary: "Zainstaluj"
+    installing_dictionary: "Instalowanie…"
+    update_channel: "Kanał aktualizacji"
+    update_channel_hint: "Wybierz zalecane wydania lub uwzględnij wersje testowe, które mogą zawierać błędy. Zmiana kanału nigdy nie instaluje starszej wersji."
+    update_latest: "Zalecane (Latest)"
+    update_prerelease: "Testowe (Prerelease)"
   editor:
     markdown_shortcuts: Skróty Markdown
     markdown_shortcuts_hint: "Wpisanie # , - , [] , **pogrubienie** i podobnych automatycznie formatuje tekst."
@@ -579,5 +607,30 @@ chat:
     delete_card: "Przeniesiono do kosza"
     restore_card: "Przywrócono kartę"
 
+  step_limit: "Asystent zatrzymał się po zbyt wielu krokach bez zakończenia. W razie potrzeby poproś o kontynuację."
 attachment:
   no_app: "Na tym komputerze nie ma aplikacji, która może otworzyć „%{name}”. Zainstaluj program dla tego typu plików (dla filmów odtwarzacz multimedialny, np. VLC) i spróbuj ponownie."
+  not_found: "Nie znaleziono załącznika."
+data_operations:
+  admin_required: "Tylko administrator może wykonać kopię całej kolekcji."
+  backups: "Kopie zapasowe bazy danych"
+  busy: "Przygotowywanie kolekcji. Proszę czekać…"
+  choose_backup: "Wybierz folder kopii zapasowych"
+  choose_portable: "Wybierz folder nadrzędny dla Cardfile portable"
+  choose_restore: "Wybierz kopię bazy danych Cardfile"
+  contents: "Kopie zawierają wszystkich użytkowników, załączniki i zaszyfrowane karty. Zachowują istniejące szyfrowanie, ale nie szyfrują niezaszyfrowanej treści. Nie zawierają kluczy AI z systemowego magazynu poświadczeń."
+  daily: "Automatyczna kopia codzienna"
+  daily_hint: "Gdy Cardfile jest otwarty, kopia powstaje co 24 godziny. Zaległe kopie są wykonywane po zalogowaniu; niedostępne miejsca docelowe są sprawdzane co godzinę."
+  default_backup: "Użyj folderu domyślnego"
+  destination_exists: "Miejsce docelowe już istnieje. Wybierz inny folder nadrzędny; istniejące dane nie zostaną nadpisane."
+  failed: "Operacja nie powiodła się: %{error}"
+  invalid_destination: "Miejsce docelowe nie jest prawidłowym folderem."
+  nested_destination: "Wybierz miejsce poza aktywnym folderem danych i słownikami programu."
+  open_backup: "Otwórz folder kopii zapasowych"
+  portable: "Utwórz kopię przenośną"
+  portable_confirm: "Skopiować wszystkich użytkowników, karty i załączniki do nowego folderu 'Cardfile portable'? MCP i automatyczne kopie zostaną w niej wyłączone. Na innym komputerze trzeba ponownie wpisać klucze AI z magazynu systemowego. Zamknij Cardfile i poczekaj na zakończenie synchronizacji OneDrive przed zmianą komputera."
+  portable_unsupported: "Pobierz archiwum przenośne z https://github.com/FittyAr/Cardfile/releases, aby skopiować tę instalację ze sklepu lub menedżera pakietów."
+  protection_busy: "Poczekaj na zakończenie zmiany ochrony karty i spróbuj ponownie."
+  restore: "Przywróć kopię zapasową"
+  restore_confirm: "Zastąpić WSZYSTKICH użytkowników, karty, załączniki i uprawnienia tą kopią? Cardfile utworzy kopię bezpieczeństwa i uruchomi się ponownie. Zaloguj się przywróconymi kontami i hasłami. Kolekcje nie zostaną scalone."
+  retention: "Liczba zachowywanych kopii automatycznych"

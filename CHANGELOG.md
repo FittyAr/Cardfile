@@ -3,6 +3,18 @@
 All notable changes to this project are documented here. Generated with
 [git-cliff](https://git-cliff.org) from Conventional Commits (`cliff.toml`).
 
+## [2.0.0-beta.4] - 2026-11-04
+
+### Fixes
+
+- Keep the update-channel dropdown visible in narrow windows and wrap explanatory
+  text. Label the channels Recommended (Latest) and Preview (Prerelease), with a
+  clearer description of preview releases and downgrade protection.
+- Complete 51 missing messages in all 20 translated locales, including backups,
+  restoration, portable copies, dictionaries and update channels. Translate the
+  new installation-mode messages in every supported installer language.
+- Check translation coverage and interpolation variables in CI.
+
 ## [2.0.0-beta.3] - 2026-11-04
 
 Testing release. The maintainer will promote it to Latest after validation.

@@ -402,10 +402,11 @@ impl SettingsView {
             .child(
                 v_flex()
                     .flex_1()
+                    .min_w_0()
                     .child(div().text_size(px(14.)).child(label))
                     .children(desc.map(|d| hint(d, cx))),
             )
-            .child(control)
+            .child(div().flex_shrink_0().child(control))
             .into_any_element()
     }
 
@@ -594,31 +595,40 @@ impl SettingsView {
                         })),
                     cx,
                 ))
-                .child(Self::row(
-                    t("settings.general.update_channel"),
-                    Some(t("settings.general.update_channel_hint")),
-                    Self::choice(
-                        "update-channel",
-                        usize::from(s.update_channel == cardfile_core::UpdateChannel::Prerelease),
-                        vec![
-                            (0, t("settings.general.update_latest")),
-                            (1, t("settings.general.update_prerelease")),
-                        ],
-                        move |i, window, cx| {
-                            channel_view.update(cx, |v, cx| {
-                                v.set(window, cx, |s| {
-                                    s.update_channel = if i == 0 {
-                                        cardfile_core::UpdateChannel::Latest
-                                    } else {
-                                        cardfile_core::UpdateChannel::Prerelease
-                                    };
-                                })
-                            });
-                            crate::updater::check_now(window, cx);
-                        },
-                    ),
-                    cx,
-                ))
+                .child(
+                    v_flex()
+                        .min_w_0()
+                        .gap(px(6.))
+                        .py(px(6.))
+                        .child(
+                            div()
+                                .text_size(px(14.))
+                                .child(t("settings.general.update_channel")),
+                        )
+                        .child(h_flex().child(Self::choice(
+                            "update-channel",
+                            usize::from(
+                                s.update_channel == cardfile_core::UpdateChannel::Prerelease,
+                            ),
+                            vec![
+                                (0, t("settings.general.update_latest")),
+                                (1, t("settings.general.update_prerelease")),
+                            ],
+                            move |i, window, cx| {
+                                channel_view.update(cx, |v, cx| {
+                                    v.set(window, cx, |s| {
+                                        s.update_channel = if i == 0 {
+                                            cardfile_core::UpdateChannel::Latest
+                                        } else {
+                                            cardfile_core::UpdateChannel::Prerelease
+                                        };
+                                    })
+                                });
+                                crate::updater::check_now(window, cx);
+                            },
+                        )))
+                        .child(hint(t("settings.general.update_channel_hint"), cx)),
+                )
             })
             .child(Self::row(
                 t("settings.general.keymap"),

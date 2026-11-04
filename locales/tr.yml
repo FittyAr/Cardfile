@@ -2,6 +2,8 @@ _version: 1
 
 app:
   name: Cardfile
+  db_error_body: "%{path} veritabanı açılamadı: %{error}"
+  db_error_title: "Cardfile veritabanını açamıyor"
 test:
   greeting: "Merhaba, %{name}!"
 
@@ -92,6 +94,15 @@ editor:
   media:
     open_external: "Sistem oynatıcısında aç"
 
+    failed: "Oynatma başlatılamadı"
+    loading: "Yükleniyor…"
+    malformed: "Bu dosya hasarlı görünüyor"
+    unsupported: "Bu biçim burada oynatılamaz"
+  size_units:
+    bytes: "%{n} B"
+    kb: "%{n} KB"
+    mb: "%{n} MB"
+    gb: "%{n} GB"
 common:
   back: Geri
   next: İleri
@@ -262,12 +273,18 @@ card:
     encrypt_title: Kartı şifrele
     encrypt_body: Bu kartı şifrelemek için parolanızı girin. Parola olmadan kart açılamaz.
     failed: "Koruma değiştirilemedi: %{error}"
+    missing_password: "Kartı şifrelemek için parola gerekiyor."
   purge:
     title: Kalıcı olarak sil
     body: Bu kart sonsuza dek silinecek. Bu işlem geri alınamaz.
     confirm: Kalıcı olarak sil
+    failed: "Kart silinemedi: %{error}"
   updated_by: "%{date} tarihinde %{name} tarafından düzenlendi"
 
+  delete_failed: "Kart çöp kutusuna taşınamadı: %{error}"
+  not_unlocked: "Şifrelenmiş kartın kilidi açılmamış."
+  restore_failed: "Kart geri yüklenemedi: %{error}"
+  save_failed: "Kart kaydedilemedi: %{error}. Değişiklikler korunur ve bir sonraki düzenlemede yeniden kaydedilir."
 tags:
   new: Yeni etiket…
   edit: Etiketi düzenle
@@ -287,6 +304,7 @@ recycle:
   empty_title: Geri dönüşüm kutusunu boşalt
   empty_body: Geri dönüşüm kutusundaki tüm kartlar sonsuza dek silinecek.
 
+  empty_failed: "Çöp kutusu boşaltılamadı: %{error}"
 export:
   markdown: Markdown olarak dışa aktar
   html: HTML olarak dışa aktar
@@ -378,6 +396,16 @@ settings:
     check_updates_hint: Yalnızca GitHub'da daha yeni bir sürüm olup olmadığına bakar. Hiçbir veri gönderilmez.
     keymap: Klavye kısayolları
     keymap_hint: Herhangi bir kısayolu değiştirmek için keymap.json dosyasını düzenleyin. Uygulamak için yeniden başlatın.
+    dictionary: "Yazım sözlüğü"
+    dictionary_failed: "Sözlük yüklenemedi: %{error}"
+    dictionary_installed: "Yazım sözlüğü yüklendi."
+    dictionary_missing: "%{language} sözlüğü yüklü değil. github.com/wooorm/dictionaries adresinden indirilir."
+    install_dictionary: "Yükle"
+    installing_dictionary: "Yükleniyor…"
+    update_channel: "Güncelleme kanalı"
+    update_channel_hint: "Önerilen sürümleri seçin veya hâlâ hatalar içerebilen test sürümlerini dahil edin. Kanal değiştirmek daha eski bir sürüm yüklemez."
+    update_latest: "Önerilen (Latest)"
+    update_prerelease: "Test (Prerelease)"
   editor:
     markdown_shortcuts: Markdown kısayolları
     markdown_shortcuts_hint: "# , - , [] , **kalın** gibi ifadeleri yazmak metni otomatik olarak biçimlendirir."
@@ -579,5 +607,30 @@ chat:
     delete_card: "Geri dönüşüm kutusuna taşındı"
     restore_card: "Kart geri yüklendi"
 
+  step_limit: "Asistan, işi bitirmeden çok fazla adımdan sonra durdu. Gerekirse devam etmesini isteyin."
 attachment:
   no_app: "Bu bilgisayarda “%{name}” dosyasını açabilecek bir uygulama yok. Bu dosya türü için bir program kurun (videolar için VLC gibi bir medya oynatıcı) ve yeniden deneyin."
+  not_found: "Ek bulunamadı."
+data_operations:
+  admin_required: "Koleksiyonun tamamını yalnızca bir yönetici yedekleyebilir."
+  backups: "Veritabanı yedekleri"
+  busy: "Koleksiyonunuz hazırlanıyor. Lütfen bekleyin…"
+  choose_backup: "Yedek klasörünü seç"
+  choose_portable: "Cardfile portable için üst klasörü seç"
+  choose_restore: "Bir Cardfile veritabanı yedeği seç"
+  contents: "Yedekler tüm kullanıcıları, ekleri ve şifrelenmiş kartları içerir. Mevcut şifreleme korunur ancak şifrelenmemiş içerik şifrelenmez. Sistemin kimlik bilgisi deposundaki yapay zekâ anahtarları dahil edilmez."
+  daily: "Otomatik günlük yedekleme"
+  daily_hint: "Cardfile açıkken her 24 saatte bir yedek alınır. Kaçırılan yedekler girişte oluşturulur; kullanılamayan hedefler her saat yeniden denenir."
+  default_backup: "Varsayılan klasörü kullan"
+  destination_exists: "Hedef zaten var. Başka bir üst klasör seçin; mevcut verilerin üzerine yazılmaz."
+  failed: "İşlem başarısız oldu: %{error}"
+  invalid_destination: "Hedef geçerli bir klasör değil."
+  nested_destination: "Etkin veri klasörünün ve program sözlüklerinin dışında bir hedef seçin."
+  open_backup: "Yedek klasörünü aç"
+  portable: "Taşınabilir kopya oluştur"
+  portable_confirm: "Tüm kullanıcılar, kartlar ve ekler yeni bir 'Cardfile portable' klasörüne kopyalansın mı? Kopyada MCP ve otomatik yedekleme kapatılır. Başka bir bilgisayarda sistem deposundaki yapay zekâ anahtarlarını yeniden girin. Bilgisayar değiştirmeden önce Cardfile’ı kapatın ve OneDrive eşitlemesinin tamamlanmasını bekleyin."
+  portable_unsupported: "Bu mağaza veya paket yöneticisi kurulumunu kopyalamak için https://github.com/FittyAr/Cardfile/releases adresinden taşınabilir arşivi indirin."
+  protection_busy: "Kart koruması değişikliği tamamlanana kadar bekleyip yeniden deneyin."
+  restore: "Yedeği geri yükle"
+  restore_confirm: "TÜM kullanıcılar, kartlar, ekler ve izinler bu yedekle değiştirilsin mi? Cardfile bir güvenlik kopyası oluşturup yeniden başlar. Geri yüklenen hesap ve parolalarla giriş yapın. Koleksiyonlar birleştirilmez."
+  retention: "Saklanacak otomatik kopya sayısı"

@@ -105,3 +105,28 @@ verified portable Inno Setup 7.1.1. `scripts/compile-windows-installer.ps1` now 
 the same pinned compiler to CI and release packaging. Only the compiler bootstrap was
 executed in its documented portable mode; generated Cardfile installers and payloads
 were never executed. The current Cardfile installation was not accessed.
+
+## beta.4 translation and settings correction
+
+Root cause: the long channel description shared a horizontal row with the dropdown.
+The text column had no minimum-width override, so its intrinsic width displaced the
+control. The selector now has a separate row, hints wrap, and shared settings rows
+allow labels to shrink while preserving control width.
+
+All 20 non-English locales now include the 51 missing keys. The full locale check
+validates 525 messages per language and interpolation variables; CI runs it with
+`--all`. New installer messages are translated in Spanish, Brazilian Portuguese,
+French and German, with English fallback. x64 and ARM64 installer smoke compilation
+passed with a disposable payload; neither generated installer was executed.
+
+Native visual acceptance remains pending: the desktop automation tool's app-access
+approval timed out before it could capture the fixture window. The fixture used
+`--data-dir D:/GitHub/Cardfile/target/channel-visual-fixture` with seeded demo data
+and a 760-pixel window. Only that explicitly identified process was closed afterward.
+The maintainer's collection was never opened or modified.
+
+Final beta.4 local validation: fmt, workspace clippy with `-D warnings`, full
+workspace tests and deny passed. HTTP mock tests required execution outside the
+sandbox because it blocks loopback sockets (10013); the same tests then passed.
+Locale coverage/variables and duplicate-key checks passed. cargo-dist plan selects
+`v2.0.0-beta.4` as a prerelease. Native visual acceptance is still outstanding.

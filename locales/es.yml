@@ -2,6 +2,8 @@ _version: 1
 
 app:
   name: Cardfile
+  db_error_body: "No se pudo abrir la base de datos %{path}: %{error}"
+  db_error_title: "Cardfile no puede abrir su base de datos"
 test:
   greeting: "¡Hola, %{name}!"
 
@@ -92,6 +94,15 @@ editor:
   media:
     open_external: "Abrir en el reproductor del sistema"
 
+    failed: "No se pudo iniciar la reproducción"
+    loading: "Cargando…"
+    malformed: "Este archivo parece dañado"
+    unsupported: "Este formato no se puede reproducir aquí"
+  size_units:
+    bytes: "%{n} B"
+    kb: "%{n} KB"
+    mb: "%{n} MB"
+    gb: "%{n} GB"
 common:
   back: Atrás
   next: Siguiente
@@ -262,12 +273,18 @@ card:
     encrypt_title: Cifrar ficha
     encrypt_body: Introduce tu contraseña para cifrar esta ficha. Sin ella no se podrá abrir.
     failed: "No se pudo cambiar la protección: %{error}"
+    missing_password: "Se necesita una contraseña para cifrar la ficha."
   purge:
     title: Eliminar definitivamente
     body: Esta ficha se eliminará para siempre. No se puede deshacer.
     confirm: Eliminar definitivamente
+    failed: "No se pudo eliminar la ficha: %{error}"
   updated_by: "Editada %{date} por %{name}"
 
+  delete_failed: "No se pudo mover la ficha a la papelera: %{error}"
+  not_unlocked: "La ficha cifrada no está desbloqueada."
+  restore_failed: "No se pudo restaurar la ficha: %{error}"
+  save_failed: "No se pudo guardar la ficha: %{error}. Los cambios se conservan y se intentarán guardar con la próxima edición."
 tags:
   new: Nueva etiqueta…
   edit: Editar etiqueta
@@ -287,6 +304,7 @@ recycle:
   empty_title: Vaciar papelera
   empty_body: Todas las fichas de la papelera se eliminarán para siempre.
 
+  empty_failed: "No se pudo vaciar la papelera: %{error}"
 export:
   markdown: Exportar como Markdown
   html: Exportar como HTML
@@ -378,6 +396,16 @@ settings:
     check_updates_hint: Solo consulta GitHub para ver si hay una versión más reciente. No se envían datos.
     keymap: Atajos de teclado
     keymap_hint: Edita keymap.json para cambiar cualquier atajo. Reinicia para aplicar.
+    dictionary: "Diccionario ortográfico"
+    dictionary_failed: "No se pudo instalar el diccionario: %{error}"
+    dictionary_installed: "Diccionario ortográfico instalado."
+    dictionary_missing: "El diccionario de %{language} no está instalado. Se descarga desde github.com/wooorm/dictionaries."
+    install_dictionary: "Instalar"
+    installing_dictionary: "Instalando…"
+    update_channel: "Canal de actualizaciones"
+    update_channel_hint: "Elegí las versiones recomendadas o incluí versiones de prueba que todavía pueden tener errores. Cambiar de canal nunca instala una versión anterior."
+    update_latest: "Recomendadas (Latest)"
+    update_prerelease: "De prueba (Prerelease)"
   editor:
     markdown_shortcuts: Atajos de Markdown
     markdown_shortcuts_hint: "Al escribir # , - , [] , **negrita** y similares, el texto se formatea automáticamente."
@@ -579,5 +607,30 @@ chat:
     delete_card: "Movida a la papelera"
     restore_card: "Ficha restaurada"
 
+  step_limit: "El asistente se detuvo tras demasiados pasos sin terminar. Pedile que continúe si hace falta."
 attachment:
   no_app: "Ninguna aplicación de este equipo puede abrir «%{name}». Instala un programa para este tipo de archivo (para vídeos, un reproductor como VLC) y vuelve a intentarlo."
+  not_found: "No se encontró el adjunto."
+data_operations:
+  admin_required: "Solo un administrador puede respaldar toda la colección."
+  backups: "Respaldos de la base de datos"
+  busy: "Preparando la colección. Esperá…"
+  choose_backup: "Elegir carpeta de respaldos"
+  choose_portable: "Elegir la carpeta contenedora de Cardfile portable"
+  choose_restore: "Elegir un respaldo de la base de datos de Cardfile"
+  contents: "Los respaldos incluyen todos los usuarios, adjuntos y fichas cifradas. Conservan el cifrado existente, pero no cifran el contenido que estaba sin cifrar. No incluyen las claves de IA guardadas en el almacén de credenciales del sistema."
+  daily: "Respaldo diario automático"
+  daily_hint: "Con Cardfile abierto, se crea una copia cada 24 horas. Las copias pendientes se hacen al iniciar sesión; si el destino no está disponible, se reintenta cada hora."
+  default_backup: "Usar la carpeta predeterminada"
+  destination_exists: "El destino ya existe. Elegí otra carpeta contenedora; no se sobrescribirán los datos existentes."
+  failed: "La operación falló: %{error}"
+  invalid_destination: "El destino no es una carpeta válida."
+  nested_destination: "Elegí un destino fuera de la carpeta de datos activa y de los diccionarios del programa."
+  open_backup: "Abrir carpeta de respaldos"
+  portable: "Crear copia portable"
+  portable_confirm: "¿Crear una copia de todos los usuarios, fichas y adjuntos en una carpeta nueva llamada 'Cardfile portable'? MCP y los respaldos automáticos quedarán desactivados en la copia. En otro equipo tendrás que volver a ingresar las claves de IA guardadas en el almacén del sistema. Cerrá Cardfile y esperá a que OneDrive termine de sincronizar antes de cambiar de equipo."
+  portable_unsupported: "Descargá el archivo portable desde https://github.com/FittyAr/Cardfile/releases para crear una copia de esta instalación de tienda o gestor de paquetes."
+  protection_busy: "Esperá a que termine el cambio de protección de la ficha y volvé a intentarlo."
+  restore: "Restaurar respaldo"
+  restore_confirm: "¿Reemplazar TODOS los usuarios, fichas, adjuntos y permisos con este respaldo? Cardfile creará una copia de seguridad y se reiniciará. Ingresá con las cuentas y contraseñas restauradas. Las colecciones no se combinan."
+  retention: "Copias automáticas que se conservarán"

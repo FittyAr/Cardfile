@@ -929,7 +929,7 @@ dependencies = [
 
 [[package]]
 name = "cardfile"
-version = "2.0.0-beta.3"
+version = "2.0.0-beta.4"
 dependencies = [
  "cardfile-ui",
  "tracing",
@@ -940,7 +940,7 @@ dependencies = [
 
 [[package]]
 name = "cardfile-agent"
-version = "2.0.0-beta.3"
+version = "2.0.0-beta.4"
 dependencies = [
  "cardfile-core",
  "cardfile-db",
@@ -952,7 +952,7 @@ dependencies = [
 
 [[package]]
 name = "cardfile-ai"
-version = "2.0.0-beta.3"
+version = "2.0.0-beta.4"
 dependencies = [
  "serde",
  "serde_json",
@@ -963,7 +963,7 @@ dependencies = [
 
 [[package]]
 name = "cardfile-core"
-version = "2.0.0-beta.3"
+version = "2.0.0-beta.4"
 dependencies = [
  "jiff",
  "serde",
@@ -974,7 +974,7 @@ dependencies = [
 
 [[package]]
 name = "cardfile-crypto"
-version = "2.0.0-beta.3"
+version = "2.0.0-beta.4"
 dependencies = [
  "argon2",
  "base64 0.23.1",
@@ -990,7 +990,7 @@ dependencies = [
 
 [[package]]
 name = "cardfile-db"
-version = "2.0.0-beta.3"
+version = "2.0.0-beta.4"
 dependencies = [
  "blake3",
  "cardfile-core",
@@ -1009,7 +1009,7 @@ dependencies = [
 
 [[package]]
 name = "cardfile-doc"
-version = "2.0.0-beta.3"
+version = "2.0.0-beta.4"
 dependencies = [
  "base64 0.23.1",
  "cardfile-core",
@@ -1025,7 +1025,7 @@ dependencies = [
 
 [[package]]
 name = "cardfile-editor"
-version = "2.0.0-beta.3"
+version = "2.0.0-beta.4"
 dependencies = [
  "cardfile-doc",
  "cardfile-i18n",
@@ -1041,7 +1041,7 @@ dependencies = [
 
 [[package]]
 name = "cardfile-i18n"
-version = "2.0.0-beta.3"
+version = "2.0.0-beta.4"
 dependencies = [
  "ar-reshaper",
  "rust-i18n",
@@ -1050,7 +1050,7 @@ dependencies = [
 
 [[package]]
 name = "cardfile-mcp"
-version = "2.0.0-beta.3"
+version = "2.0.0-beta.4"
 dependencies = [
  "base64 0.23.1",
  "getrandom 0.4.3",
@@ -1063,7 +1063,7 @@ dependencies = [
 
 [[package]]
 name = "cardfile-media"
-version = "2.0.0-beta.3"
+version = "2.0.0-beta.4"
 dependencies = [
  "hound",
  "parking_lot 0.13.0",
@@ -1075,7 +1075,7 @@ dependencies = [
 
 [[package]]
 name = "cardfile-ui"
-version = "2.0.0-beta.3"
+version = "2.0.0-beta.4"
 dependencies = [
  "anyhow",
  "cardfile-agent",
@@ -1110,7 +1110,7 @@ dependencies = [
 
 [[package]]
 name = "cardfile-updater"
-version = "2.0.0-beta.3"
+version = "2.0.0-beta.4"
 dependencies = [
  "cardfile-core",
  "lzma-rust2",
