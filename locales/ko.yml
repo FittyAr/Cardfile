@@ -2,6 +2,8 @@ _version: 1
 
 app:
   name: Cardfile
+  db_error_body: "데이터베이스 %{path}을(를) 열 수 없습니다: %{error}"
+  db_error_title: "Cardfile에서 데이터베이스를 열 수 없습니다"
 test:
   greeting: "안녕하세요, %{name}님!"
 
@@ -92,6 +94,15 @@ editor:
   media:
     open_external: "시스템 플레이어에서 열기"
 
+    failed: "재생을 시작할 수 없습니다"
+    loading: "불러오는 중…"
+    malformed: "이 파일은 손상된 것 같습니다"
+    unsupported: "이 형식은 여기서 재생할 수 없습니다"
+  size_units:
+    bytes: "%{n} B"
+    kb: "%{n} KB"
+    mb: "%{n} MB"
+    gb: "%{n} GB"
 common:
   back: 뒤로
   next: 다음
@@ -262,12 +273,18 @@ card:
     encrypt_title: 카드 암호화
     encrypt_body: 이 카드를 암호화하려면 비밀번호를 입력하세요. 비밀번호가 없으면 카드를 열 수 없습니다.
     failed: "보호 설정을 변경할 수 없습니다: %{error}"
+    missing_password: "카드를 암호화하려면 비밀번호가 필요합니다."
   purge:
     title: 영구 삭제
     body: 이 카드는 영구적으로 삭제됩니다. 되돌릴 수 없습니다.
     confirm: 영구 삭제
+    failed: "카드를 삭제할 수 없습니다: %{error}"
   updated_by: "%{date}에 %{name}님이 편집함"
 
+  delete_failed: "카드를 휴지통으로 옮길 수 없습니다: %{error}"
+  not_unlocked: "암호화된 카드가 잠금 해제되지 않았습니다."
+  restore_failed: "카드를 복원할 수 없습니다: %{error}"
+  save_failed: "카드를 저장할 수 없습니다: %{error}. 변경 사항은 유지되며 다음 편집 시 다시 저장합니다."
 tags:
   new: 새 태그…
   edit: 태그 편집
@@ -287,6 +304,7 @@ recycle:
   empty_title: 휴지통 비우기
   empty_body: 휴지통의 모든 카드가 영구적으로 삭제됩니다.
 
+  empty_failed: "휴지통을 비울 수 없습니다: %{error}"
 export:
   markdown: Markdown으로 내보내기
   html: HTML로 내보내기
@@ -378,6 +396,16 @@ settings:
     check_updates_hint: GitHub에서 새 버전이 있는지만 확인합니다. 어떤 데이터도 전송되지 않습니다.
     keymap: 키보드 단축키
     keymap_hint: keymap.json을 편집하면 단축키를 바꿀 수 있습니다. 적용하려면 다시 시작하세요.
+    dictionary: "맞춤법 사전"
+    dictionary_failed: "사전을 설치할 수 없습니다: %{error}"
+    dictionary_installed: "맞춤법 사전을 설치했습니다."
+    dictionary_missing: "%{language} 사전이 설치되지 않았습니다. github.com/wooorm/dictionaries에서 다운로드합니다."
+    install_dictionary: "설치"
+    installing_dictionary: "설치 중…"
+    update_channel: "업데이트 채널"
+    update_channel_hint: "권장 버전을 선택하거나 아직 오류가 있을 수 있는 미리 보기 버전도 포함하세요. 채널을 바꿔도 이전 버전을 설치하지 않습니다."
+    update_latest: "권장 버전 (Latest)"
+    update_prerelease: "미리 보기 (Prerelease)"
   editor:
     markdown_shortcuts: Markdown 단축 입력
     markdown_shortcuts_hint: "# , - , [] , **굵게** 등을 입력하면 텍스트 서식이 자동으로 적용됩니다."
@@ -579,5 +607,30 @@ chat:
     delete_card: "휴지통으로 이동함"
     restore_card: "카드 복원함"
 
+  step_limit: "너무 많은 단계를 거쳐 완료하지 못해 도우미가 중지되었습니다. 필요하면 계속하도록 요청하세요."
 attachment:
   no_app: "이 컴퓨터에는 “%{name}”을(를) 열 수 있는 애플리케이션이 없습니다. 이 파일 형식용 프로그램(동영상의 경우 VLC 같은 미디어 플레이어)을 설치한 후 다시 시도하세요."
+  not_found: "첨부 파일을 찾을 수 없습니다."
+data_operations:
+  admin_required: "관리자만 전체 모음을 백업할 수 있습니다."
+  backups: "데이터베이스 백업"
+  busy: "모음을 준비하고 있습니다. 잠시 기다려 주세요…"
+  choose_backup: "백업 폴더 선택"
+  choose_portable: "Cardfile portable을 만들 상위 폴더 선택"
+  choose_restore: "Cardfile 데이터베이스 백업 선택"
+  contents: "백업에는 모든 사용자, 첨부 파일, 암호화된 카드가 포함됩니다. 기존 암호화는 유지되지만 암호화되지 않은 내용은 암호화하지 않습니다. 시스템 자격 증명 저장소의 AI 키는 포함되지 않습니다."
+  daily: "매일 자동 백업"
+  daily_hint: "Cardfile이 열려 있을 때 24시간마다 백업합니다. 누락된 백업은 로그인 후 실행하며, 사용할 수 없는 대상은 한 시간마다 다시 시도합니다."
+  default_backup: "기본 폴더 사용"
+  destination_exists: "대상이 이미 있습니다. 다른 상위 폴더를 선택하세요. 기존 데이터를 덮어쓰지 않습니다."
+  failed: "작업 실패: %{error}"
+  invalid_destination: "대상이 올바른 폴더가 아닙니다."
+  nested_destination: "사용 중인 데이터 폴더와 프로그램 사전 폴더 밖의 대상을 선택하세요."
+  open_backup: "백업 폴더 열기"
+  portable: "포터블 복사본 만들기"
+  portable_confirm: "모든 사용자, 카드, 첨부 파일을 새 'Cardfile portable' 폴더에 복사할까요? 복사본에서는 MCP와 자동 백업이 꺼집니다. 다른 컴퓨터에서는 시스템 저장소의 AI 키를 다시 입력해야 합니다. 컴퓨터를 바꾸기 전에 Cardfile을 닫고 OneDrive 동기화가 끝날 때까지 기다리세요."
+  portable_unsupported: "스토어 또는 패키지 관리자로 설치한 이 버전을 복사하려면 https://github.com/FittyAr/Cardfile/releases에서 포터블 압축 파일을 받으세요."
+  protection_busy: "카드 보호 변경이 완료된 후 다시 시도하세요."
+  restore: "백업 복원"
+  restore_confirm: "이 백업으로 모든 사용자, 카드, 첨부 파일, 권한을 바꿀까요? Cardfile이 안전 복사본을 만든 후 다시 시작합니다. 복원된 계정과 비밀번호로 로그인하세요. 모음은 병합되지 않습니다."
+  retention: "보관할 자동 백업 수"

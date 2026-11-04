@@ -2,6 +2,8 @@ _version: 1
 
 app:
   name: Cardfile
+  db_error_body: "De database %{path} kon niet worden geopend: %{error}"
+  db_error_title: "Cardfile kan zijn database niet openen"
 test:
   greeting: "Hallo, %{name}!"
 
@@ -92,6 +94,15 @@ editor:
   media:
     open_external: "Openen in de systeemspeler"
 
+    failed: "Het afspelen kon niet worden gestart"
+    loading: "Laden…"
+    malformed: "Dit bestand lijkt beschadigd"
+    unsupported: "Dit formaat kan hier niet worden afgespeeld"
+  size_units:
+    bytes: "%{n} B"
+    kb: "%{n} KB"
+    mb: "%{n} MB"
+    gb: "%{n} GB"
 common:
   back: Terug
   next: Volgende
@@ -262,12 +273,18 @@ card:
     encrypt_title: Kaart versleutelen
     encrypt_body: Voer je wachtwoord in om deze kaart te versleutelen. Zonder wachtwoord kan de kaart niet worden geopend.
     failed: "Kon de beveiliging niet wijzigen: %{error}"
+    missing_password: "Er is een wachtwoord nodig om de kaart te versleutelen."
   purge:
     title: Definitief verwijderen
     body: Deze kaart wordt voorgoed verwijderd. Dit kan niet ongedaan worden gemaakt.
     confirm: Definitief verwijderen
+    failed: "De kaart kon niet worden verwijderd: %{error}"
   updated_by: "Bewerkt %{date} door %{name}"
 
+  delete_failed: "De kaart kon niet naar de prullenbak worden verplaatst: %{error}"
+  not_unlocked: "De versleutelde kaart is niet ontgrendeld."
+  restore_failed: "De kaart kon niet worden hersteld: %{error}"
+  save_failed: "De kaart kon niet worden opgeslagen: %{error}. Uw wijzigingen blijven behouden en worden bij de volgende bewerking opnieuw opgeslagen."
 tags:
   new: Nieuw label…
   edit: Label bewerken
@@ -287,6 +304,7 @@ recycle:
   empty_title: Prullenbak legen
   empty_body: Alle kaarten in de prullenbak worden voorgoed verwijderd.
 
+  empty_failed: "De prullenbak kon niet worden geleegd: %{error}"
 export:
   markdown: Exporteren als Markdown
   html: Exporteren als HTML
@@ -378,6 +396,16 @@ settings:
     check_updates_hint: Controleert alleen op GitHub of er een nieuwere versie is. Er worden geen gegevens verzonden.
     keymap: Sneltoetsen
     keymap_hint: Bewerk keymap.json om een sneltoets te wijzigen. Herstart om toe te passen.
+    dictionary: "Spellingwoordenboek"
+    dictionary_failed: "Het woordenboek kon niet worden geïnstalleerd: %{error}"
+    dictionary_installed: "Spellingwoordenboek geïnstalleerd."
+    dictionary_missing: "Het woordenboek voor %{language} is niet geïnstalleerd. Het wordt gedownload van github.com/wooorm/dictionaries."
+    install_dictionary: "Installeren"
+    installing_dictionary: "Installeren…"
+    update_channel: "Updatekanaal"
+    update_channel_hint: "Kies aanbevolen versies of neem testversies op die nog fouten kunnen bevatten. Van kanaal wisselen installeert nooit een oudere versie."
+    update_latest: "Aanbevolen (Latest)"
+    update_prerelease: "Testversies (Prerelease)"
   editor:
     markdown_shortcuts: Markdown-sneltoetsen
     markdown_shortcuts_hint: "Het typen van # , - , [] , **vet** en dergelijke maakt de tekst automatisch op."
@@ -579,5 +607,30 @@ chat:
     delete_card: "Naar de prullenbak verplaatst"
     restore_card: "Kaart hersteld"
 
+  step_limit: "De assistent is na te veel stappen gestopt zonder het werk af te maken. Vraag zo nodig om verder te gaan."
 attachment:
   no_app: "Geen enkele app op deze computer kan “%{name}” openen. Installeer een programma voor dit bestandstype (voor video's een mediaspeler zoals VLC) en probeer het opnieuw."
+  not_found: "De bijlage is niet gevonden."
+data_operations:
+  admin_required: "Alleen een beheerder kan een back-up van de hele verzameling maken."
+  backups: "Databaseback-ups"
+  busy: "Uw verzameling wordt voorbereid. Even geduld…"
+  choose_backup: "Back-upmap kiezen"
+  choose_portable: "Bovenliggende map voor Cardfile portable kiezen"
+  choose_restore: "Een databaseback-up van Cardfile kiezen"
+  contents: "Back-ups bevatten alle gebruikers, bijlagen en versleutelde kaarten. Bestaande versleuteling blijft behouden; niet-versleutelde inhoud wordt niet versleuteld. AI-sleutels uit de systeemkluis worden niet opgenomen."
+  daily: "Automatische dagelijkse back-up"
+  daily_hint: "Als Cardfile open is, wordt elke 24 uur een kopie gemaakt. Gemiste kopieën starten na aanmelden; onbeschikbare bestemmingen worden elk uur opnieuw geprobeerd."
+  default_backup: "Standaardmap gebruiken"
+  destination_exists: "De bestemming bestaat al. Kies een andere bovenliggende map; bestaande gegevens worden niet overschreven."
+  failed: "De bewerking is mislukt: %{error}"
+  invalid_destination: "De bestemming is geen geldige map."
+  nested_destination: "Kies een bestemming buiten de actieve gegevensmap en de woordenboeken van het programma."
+  open_backup: "Back-upmap openen"
+  portable: "Draagbare kopie maken"
+  portable_confirm: "Alle gebruikers, kaarten en bijlagen naar een nieuwe map 'Cardfile portable' kopiëren? MCP en automatische back-ups worden in de kopie uitgeschakeld. Voer op een andere computer de AI-sleutels uit de systeemkluis opnieuw in. Sluit Cardfile en wacht tot OneDrive klaar is met synchroniseren voordat u van computer wisselt."
+  portable_unsupported: "Download het draagbare archief van https://github.com/FittyAr/Cardfile/releases om deze winkel- of pakketinstallatie te kopiëren."
+  protection_busy: "Wacht tot de wijziging van de kaartbeveiliging is voltooid en probeer het opnieuw."
+  restore: "Back-up herstellen"
+  restore_confirm: "ALLE gebruikers, kaarten, bijlagen en machtigingen vervangen door deze back-up? Cardfile maakt een veiligheidskopie en start opnieuw. Meld u aan met de herstelde accounts en wachtwoorden. Verzamelingen worden niet samengevoegd."
+  retention: "Te bewaren automatische kopieën"

@@ -2,6 +2,8 @@ _version: 1
 
 app:
   name: Cardfile
+  db_error_body: "Die Datenbank %{path} konnte nicht geöffnet werden: %{error}"
+  db_error_title: "Cardfile kann seine Datenbank nicht öffnen"
 test:
   greeting: "Hallo, %{name}!"
 
@@ -92,6 +94,15 @@ editor:
   media:
     open_external: "Im Systemplayer öffnen"
 
+    failed: "Die Wiedergabe konnte nicht gestartet werden"
+    loading: "Wird geladen…"
+    malformed: "Diese Datei scheint beschädigt zu sein"
+    unsupported: "Dieses Format kann hier nicht abgespielt werden"
+  size_units:
+    bytes: "%{n} B"
+    kb: "%{n} KB"
+    mb: "%{n} MB"
+    gb: "%{n} GB"
 common:
   back: Zurück
   next: Weiter
@@ -262,12 +273,18 @@ card:
     encrypt_title: Karte verschlüsseln
     encrypt_body: Geben Sie Ihr Passwort ein, um diese Karte zu verschlüsseln. Ohne dieses lässt sich die Karte nicht öffnen.
     failed: "Der Schutz konnte nicht geändert werden: %{error}"
+    missing_password: "Zum Verschlüsseln der Karte ist ein Passwort erforderlich."
   purge:
     title: Endgültig löschen
     body: Diese Karte wird für immer gelöscht. Dies kann nicht rückgängig gemacht werden.
     confirm: Endgültig löschen
+    failed: "Die Karte konnte nicht gelöscht werden: %{error}"
   updated_by: "Bearbeitet %{date} von %{name}"
 
+  delete_failed: "Die Karte konnte nicht in den Papierkorb verschoben werden: %{error}"
+  not_unlocked: "Die verschlüsselte Karte ist nicht entsperrt."
+  restore_failed: "Die Karte konnte nicht wiederhergestellt werden: %{error}"
+  save_failed: "Die Karte konnte nicht gespeichert werden: %{error}. Ihre Änderungen bleiben erhalten; beim nächsten Bearbeiten wird erneut gespeichert."
 tags:
   new: Neues Schlagwort…
   edit: Schlagwort bearbeiten
@@ -287,6 +304,7 @@ recycle:
   empty_title: Papierkorb leeren
   empty_body: Alle Karten im Papierkorb werden für immer gelöscht.
 
+  empty_failed: "Der Papierkorb konnte nicht geleert werden: %{error}"
 export:
   markdown: Als Markdown exportieren
   html: Als HTML exportieren
@@ -378,6 +396,16 @@ settings:
     check_updates_hint: Prüft nur bei GitHub, ob es eine neuere Version gibt. Es werden keine Daten gesendet.
     keymap: Tastenkürzel
     keymap_hint: Bearbeiten Sie keymap.json, um ein Kürzel zu ändern. Zum Anwenden neu starten.
+    dictionary: "Rechtschreibwörterbuch"
+    dictionary_failed: "Das Wörterbuch konnte nicht installiert werden: %{error}"
+    dictionary_installed: "Rechtschreibwörterbuch installiert."
+    dictionary_missing: "Das Wörterbuch für %{language} ist nicht installiert. Es wird von github.com/wooorm/dictionaries heruntergeladen."
+    install_dictionary: "Installieren"
+    installing_dictionary: "Wird installiert…"
+    update_channel: "Aktualisierungskanal"
+    update_channel_hint: "Wählen Sie empfohlene Versionen oder auch Testversionen, die noch Fehler enthalten können. Ein Kanalwechsel installiert niemals eine ältere Version."
+    update_latest: "Empfohlen (Latest)"
+    update_prerelease: "Testversionen (Prerelease)"
   editor:
     markdown_shortcuts: Markdown-Kürzel
     markdown_shortcuts_hint: "Eingaben wie # , - , [] , **fett** und Ähnliches formatieren den Text automatisch."
@@ -579,5 +607,30 @@ chat:
     delete_card: "In den Papierkorb verschoben"
     restore_card: "Karte wiederhergestellt"
 
+  step_limit: "Der Assistent wurde nach zu vielen Schritten ohne Abschluss angehalten. Bitten Sie ihn bei Bedarf fortzufahren."
 attachment:
   no_app: "Keine Anwendung auf diesem Computer kann „%{name}“ öffnen. Installieren Sie ein Programm für diesen Dateityp (für Videos einen Mediaplayer wie VLC) und versuchen Sie es erneut."
+  not_found: "Der Anhang wurde nicht gefunden."
+data_operations:
+  admin_required: "Nur Administratoren können die gesamte Sammlung sichern."
+  backups: "Datenbanksicherungen"
+  busy: "Ihre Sammlung wird vorbereitet. Bitte warten…"
+  choose_backup: "Sicherungsordner auswählen"
+  choose_portable: "Übergeordneten Ordner für Cardfile portable auswählen"
+  choose_restore: "Eine Cardfile-Datenbanksicherung auswählen"
+  contents: "Sicherungen enthalten alle Benutzer, Anhänge und verschlüsselten Karten. Bestehende Verschlüsselung bleibt erhalten; unverschlüsselte Inhalte werden nicht verschlüsselt. KI-Schlüssel aus dem Anmeldedatenspeicher des Systems sind nicht enthalten."
+  daily: "Automatische tägliche Sicherung"
+  daily_hint: "Bei geöffnetem Cardfile erfolgt alle 24 Stunden eine Sicherung. Ausstehende Sicherungen starten bei der Anmeldung; nicht verfügbare Ziele werden stündlich erneut geprüft."
+  default_backup: "Standardordner verwenden"
+  destination_exists: "Das Ziel existiert bereits. Wählen Sie einen anderen übergeordneten Ordner; vorhandene Daten werden nicht überschrieben."
+  failed: "Der Vorgang ist fehlgeschlagen: %{error}"
+  invalid_destination: "Das Ziel ist kein gültiger Ordner."
+  nested_destination: "Wählen Sie ein Ziel außerhalb des aktiven Datenordners und der Programmwörterbücher."
+  open_backup: "Sicherungsordner öffnen"
+  portable: "Portable Kopie erstellen"
+  portable_confirm: "Alle Benutzer, Karten und Anhänge in einen neuen Ordner 'Cardfile portable' kopieren? MCP und automatische Sicherungen werden dort deaktiviert. Geben Sie auf einem anderen Computer die KI-Schlüssel aus dem Systemspeicher erneut ein. Schließen Sie Cardfile und warten Sie auf die vollständige OneDrive-Synchronisierung, bevor Sie den Computer wechseln."
+  portable_unsupported: "Laden Sie das portable Archiv von https://github.com/FittyAr/Cardfile/releases herunter, um diese Store- oder Paketinstallation zu kopieren."
+  protection_busy: "Warten Sie, bis die Änderung des Kartenschutzes abgeschlossen ist, und versuchen Sie es erneut."
+  restore: "Sicherung wiederherstellen"
+  restore_confirm: "ALLE Benutzer, Karten, Anhänge und Berechtigungen durch diese Sicherung ersetzen? Cardfile erstellt eine Sicherheitskopie und startet neu. Melden Sie sich mit den wiederhergestellten Konten und Passwörtern an. Sammlungen werden nicht zusammengeführt."
+  retention: "Aufzubewahrende automatische Kopien"

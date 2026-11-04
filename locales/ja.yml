@@ -2,6 +2,8 @@ _version: 1
 
 app:
   name: Cardfile
+  db_error_body: "データベース %{path} を開けませんでした：%{error}"
+  db_error_title: "Cardfile のデータベースを開けません"
 test:
   greeting: "こんにちは、%{name}さん！"
 
@@ -92,6 +94,15 @@ editor:
   media:
     open_external: "システムのプレーヤーで開く"
 
+    failed: "再生を開始できませんでした"
+    loading: "読み込み中…"
+    malformed: "このファイルは破損しているようです"
+    unsupported: "この形式はここでは再生できません"
+  size_units:
+    bytes: "%{n} B"
+    kb: "%{n} KB"
+    mb: "%{n} MB"
+    gb: "%{n} GB"
 common:
   back: 戻る
   next: 次へ
@@ -262,12 +273,18 @@ card:
     encrypt_title: カードを暗号化
     encrypt_body: このカードを暗号化するにはパスワードを入力してください。パスワードがないとカードを開けなくなります。
     failed: "保護を変更できませんでした: %{error}"
+    missing_password: "カードの暗号化にはパスワードが必要です。"
   purge:
     title: 完全に削除
     body: このカードは完全に削除されます。この操作は元に戻せません。
     confirm: 完全に削除
+    failed: "カードを削除できませんでした：%{error}"
   updated_by: "%{date} に %{name} さんが編集"
 
+  delete_failed: "カードをゴミ箱に移動できませんでした：%{error}"
+  not_unlocked: "暗号化されたカードのロックが解除されていません。"
+  restore_failed: "カードを復元できませんでした：%{error}"
+  save_failed: "カードを保存できませんでした：%{error}。変更は保持され、次の編集時に再度保存されます。"
 tags:
   new: 新しいタグ…
   edit: タグを編集
@@ -287,6 +304,7 @@ recycle:
   empty_title: ごみ箱を空にする
   empty_body: ごみ箱内のすべてのカードが完全に削除されます。
 
+  empty_failed: "ゴミ箱を空にできませんでした：%{error}"
 export:
   markdown: Markdown としてエクスポート
   html: HTML としてエクスポート
@@ -378,6 +396,16 @@ settings:
     check_updates_hint: GitHub に新しいバージョンがあるか確認するだけです。データは送信されません。
     keymap: キーボードショートカット
     keymap_hint: keymap.json を編集するとショートカットを変更できます。反映には再起動が必要です。
+    dictionary: "スペルチェック辞書"
+    dictionary_failed: "辞書をインストールできませんでした：%{error}"
+    dictionary_installed: "スペルチェック辞書をインストールしました。"
+    dictionary_missing: "%{language} の辞書はインストールされていません。github.com/wooorm/dictionaries からダウンロードします。"
+    install_dictionary: "インストール"
+    installing_dictionary: "インストール中…"
+    update_channel: "更新チャネル"
+    update_channel_hint: "推奨リリースを選ぶか、不具合が残っている可能性のあるプレビュー版も含めます。チャネルを切り替えても古いバージョンはインストールされません。"
+    update_latest: "推奨版（Latest）"
+    update_prerelease: "プレビュー版（Prerelease）"
   editor:
     markdown_shortcuts: Markdown ショートカット
     markdown_shortcuts_hint: "# 、- 、[] 、**太字** などを入力すると、自動的に書式が設定されます。"
@@ -579,5 +607,30 @@ chat:
     delete_card: "ごみ箱に移動しました"
     restore_card: "カードを復元しました"
 
+  step_limit: "手順が多すぎるため、アシスタントは完了前に停止しました。必要に応じて続行を依頼してください。"
 attachment:
   no_app: "このコンピューターには「%{name}」を開けるアプリケーションがありません。このファイル形式に対応したプログラム（動画の場合は VLC などのメディアプレーヤー）をインストールして、もう一度お試しください。"
+  not_found: "添付ファイルが見つかりません。"
+data_operations:
+  admin_required: "コレクション全体をバックアップできるのは管理者だけです。"
+  backups: "データベースのバックアップ"
+  busy: "コレクションを準備しています。お待ちください…"
+  choose_backup: "バックアップ先フォルダーを選択"
+  choose_portable: "Cardfile portable を作成する親フォルダーを選択"
+  choose_restore: "Cardfile データベースのバックアップを選択"
+  contents: "バックアップにはすべてのユーザー、添付ファイル、暗号化カードが含まれます。既存の暗号化は維持されますが、暗号化されていない内容は暗号化されません。システムの資格情報ストア内の AI キーは含まれません。"
+  daily: "毎日の自動バックアップ"
+  daily_hint: "Cardfile を開いている間、24 時間ごとにバックアップします。未実行のバックアップはログイン後に行い、利用できない保存先は毎時間再試行します。"
+  default_backup: "既定のフォルダーを使用"
+  destination_exists: "保存先は既に存在します。別の親フォルダーを選択してください。既存のデータは上書きされません。"
+  failed: "操作に失敗しました：%{error}"
+  invalid_destination: "保存先が有効なフォルダーではありません。"
+  nested_destination: "使用中のデータフォルダーとプログラムの辞書フォルダー以外を選択してください。"
+  open_backup: "バックアップフォルダーを開く"
+  portable: "ポータブルコピーを作成"
+  portable_confirm: "すべてのユーザー、カード、添付ファイルを新しい 'Cardfile portable' フォルダーにコピーしますか？コピーでは MCP と自動バックアップが無効になります。別のパソコンではシステムストアに保存された AI キーを再入力してください。パソコンを切り替える前に Cardfile を閉じ、OneDrive の同期完了を待ってください。"
+  portable_unsupported: "ストアまたはパッケージ管理されたインストールをコピーするには、https://github.com/FittyAr/Cardfile/releases からポータブル版アーカイブをダウンロードしてください。"
+  protection_busy: "カードの保護設定の変更が完了してから、もう一度お試しください。"
+  restore: "バックアップを復元"
+  restore_confirm: "すべてのユーザー、カード、添付ファイル、権限をこのバックアップで置き換えますか？Cardfile は安全のためのコピーを作成し、再起動します。復元したアカウントとパスワードでログインしてください。コレクションは結合されません。"
+  retention: "保存する自動バックアップ数"

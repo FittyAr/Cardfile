@@ -395,9 +395,9 @@ settings:
     check_updates: Check for updates on startup
     check_updates_hint: Only checks GitHub for a newer version. No data is sent.
     update_channel: Update channel
-    update_channel_hint: "Latest follows GitHub's designated latest release. Prerelease also includes testing releases. Switching channels never installs an older version."
-    update_latest: Latest
-    update_prerelease: Prerelease
+    update_channel_hint: "Choose recommended releases or include preview versions that may still have bugs. Switching channels never installs an older version."
+    update_latest: Recommended (Latest)
+    update_prerelease: Preview (Prerelease)
     keymap: Keyboard shortcuts
     keymap_hint: Edit keymap.json to change any shortcut. Restart to apply.
     dictionary: Spelling dictionary
@@ -617,7 +617,7 @@ data_operations:
   backups: Database backups
   choose_backup: Choose backup folder
   open_backup: Open backup folder
-  default_backup: Use data/backups
+  default_backup: Use default folder
   daily: Automatic daily backup
   daily_hint: "While Cardfile is open, back up every 24 hours. Missed backups run after signing in; unavailable destinations are retried hourly."
   retention: Automatic copies to keep

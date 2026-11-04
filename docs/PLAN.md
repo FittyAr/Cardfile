@@ -504,7 +504,8 @@ Pendiente (el seguimiento vivo está en el tablero Cardscape "Cardfile 2"; ver `
   (`docs/RELEASING.md`), crear el tag y revisar
   los artefactos generados por el pipeline.
 - Primera publicación manual en winget (`wingetcreate new`) y en Microsoft Store (Partner Center).
-- Traducciones: `locales/en.yml` está completo; copiar a `locales/<lang>.yml` para cada idioma.
+- Traducciones: los 21 idiomas incluyen todas las claves actuales; revisar la calidad lingüística
+  con hablantes nativos. `python scripts/check-locales.py --all` verifica cobertura y variables.
 - Flathub y AUR.
 - Pegado de HTML enriquecido: GPUI expone el portapapeles solo como texto, imagen o rutas; hoy se
   pega texto plano o Markdown.
@@ -567,3 +568,15 @@ El empaquetado Windows usa Inno Setup 7.1.1, descargado de la release oficial co
 fijado y extraído en modo portable dentro de la carpeta de herramientas del build.
 El mismo script compila los instaladores de CI y release; no requiere instalar Cardfile
 ni registrar el compilador en el equipo del mantenedor.
+
+### Corrección de traducciones y selección de canal (2026-11-04)
+
+- El selector de canal tiene una fila propia y la descripción se ajusta al ancho disponible,
+  incluso al usar la ventana mínima. Las opciones explican su finalidad: Recommended (Latest)
+  y Preview (Prerelease); las versiones de prueba pueden contener errores y no hay downgrade.
+- Se completan las 51 claves pendientes en los 20 idiomas distintos del inglés, incluidos
+  respaldos, restauración, copia portable y diccionarios. Los mensajes nuevos del instalador
+  se traducen en sus cinco idiomas. Esta entrega incluye traducciones por petición explícita
+  del mantenedor, además de las claves de desarrollo en inglés.
+- La corrección se entrega como `2.0.0-beta.4` prerelease; la promoción a Latest
+  sigue siendo una decisión del mantenedor después de probarla.

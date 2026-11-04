@@ -2,6 +2,8 @@ _version: 1
 
 app:
   name: Cardfile
+  db_error_body: "Impossibile aprire il database %{path}: %{error}"
+  db_error_title: "Cardfile non riesce ad aprire il database"
 test:
   greeting: "Ciao, %{name}!"
 
@@ -92,6 +94,15 @@ editor:
   media:
     open_external: "Apri nel lettore di sistema"
 
+    failed: "Impossibile avviare la riproduzione"
+    loading: "Caricamento…"
+    malformed: "Questo file sembra danneggiato"
+    unsupported: "Questo formato non è riproducibile qui"
+  size_units:
+    bytes: "%{n} B"
+    kb: "%{n} KB"
+    mb: "%{n} MB"
+    gb: "%{n} GB"
 common:
   back: Indietro
   next: Avanti
@@ -262,12 +273,18 @@ card:
     encrypt_title: Crittografa scheda
     encrypt_body: Inserisci la tua password per crittografare questa scheda. Senza di essa la scheda non potrà essere aperta.
     failed: "Impossibile modificare la protezione: %{error}"
+    missing_password: "Serve una password per cifrare la scheda."
   purge:
     title: Elimina definitivamente
     body: Questa scheda verrà eliminata per sempre. L'operazione non può essere annullata.
     confirm: Elimina definitivamente
+    failed: "Impossibile eliminare la scheda: %{error}"
   updated_by: "Modificata %{date} da %{name}"
 
+  delete_failed: "Impossibile spostare la scheda nel cestino: %{error}"
+  not_unlocked: "La scheda cifrata non è sbloccata."
+  restore_failed: "Impossibile ripristinare la scheda: %{error}"
+  save_failed: "Impossibile salvare la scheda: %{error}. Le modifiche sono conservate e il salvataggio verrà ritentato alla prossima modifica."
 tags:
   new: Nuova etichetta…
   edit: Modifica etichetta
@@ -287,6 +304,7 @@ recycle:
   empty_title: Svuota cestino
   empty_body: Tutte le schede nel cestino verranno eliminate per sempre.
 
+  empty_failed: "Impossibile svuotare il cestino: %{error}"
 export:
   markdown: Esporta come Markdown
   html: Esporta come HTML
@@ -378,6 +396,16 @@ settings:
     check_updates_hint: Controlla solo su GitHub se esiste una versione più recente. Non viene inviato alcun dato.
     keymap: Scorciatoie da tastiera
     keymap_hint: Modifica keymap.json per cambiare qualsiasi scorciatoia. Riavvia per applicare.
+    dictionary: "Dizionario ortografico"
+    dictionary_failed: "Impossibile installare il dizionario: %{error}"
+    dictionary_installed: "Dizionario ortografico installato."
+    dictionary_missing: "Il dizionario per %{language} non è installato. Verrà scaricato da github.com/wooorm/dictionaries."
+    install_dictionary: "Installa"
+    installing_dictionary: "Installazione…"
+    update_channel: "Canale degli aggiornamenti"
+    update_channel_hint: "Scegli le versioni consigliate o includi le versioni di prova, che possono ancora contenere errori. Cambiare canale non installa mai una versione precedente."
+    update_latest: "Consigliate (Latest)"
+    update_prerelease: "Di prova (Prerelease)"
   editor:
     markdown_shortcuts: Scorciatoie Markdown
     markdown_shortcuts_hint: "Digitare # , - , [] , **grassetto** e simili formatta automaticamente il testo."
@@ -579,5 +607,30 @@ chat:
     delete_card: "Spostata nel cestino"
     restore_card: "Scheda ripristinata"
 
+  step_limit: "L’assistente si è fermato dopo troppi passaggi senza concludere. Chiedigli di continuare se necessario."
 attachment:
   no_app: "Nessuna applicazione su questo computer può aprire «%{name}». Installa un programma per questo tipo di file (per i video, un lettore multimediale come VLC) e riprova."
+  not_found: "Allegato non trovato."
+data_operations:
+  admin_required: "Solo un amministratore può eseguire il backup dell’intera raccolta."
+  backups: "Backup del database"
+  busy: "Preparazione della raccolta. Attendi…"
+  choose_backup: "Scegli la cartella dei backup"
+  choose_portable: "Scegli la cartella che conterrà Cardfile portable"
+  choose_restore: "Scegli un backup del database di Cardfile"
+  contents: "I backup includono tutti gli utenti, gli allegati e le schede cifrate. Mantengono la cifratura esistente, ma non cifrano i contenuti non cifrati. Le chiavi IA nell’archivio credenziali del sistema non sono incluse."
+  daily: "Backup giornaliero automatico"
+  daily_hint: "Con Cardfile aperto, viene creato un backup ogni 24 ore. Quelli in sospeso partono all’accesso; le destinazioni non disponibili vengono ritentate ogni ora."
+  default_backup: "Usa la cartella predefinita"
+  destination_exists: "La destinazione esiste già. Scegli un’altra cartella; i dati esistenti non verranno sovrascritti."
+  failed: "Operazione non riuscita: %{error}"
+  invalid_destination: "La destinazione non è una cartella valida."
+  nested_destination: "Scegli una destinazione esterna alla cartella dati attiva e ai dizionari del programma."
+  open_backup: "Apri la cartella dei backup"
+  portable: "Crea una copia portatile"
+  portable_confirm: "Copiare tutti gli utenti, le schede e gli allegati in una nuova cartella 'Cardfile portable'? MCP e backup automatici saranno disattivati nella copia. Su un altro computer, reinserisci le chiavi IA conservate nell’archivio del sistema. Chiudi Cardfile e attendi la sincronizzazione di OneDrive prima di cambiare computer."
+  portable_unsupported: "Scarica l’archivio portatile da https://github.com/FittyAr/Cardfile/releases per copiare questa installazione da negozio o gestore di pacchetti."
+  protection_busy: "Attendi il completamento della modifica della protezione della scheda e riprova."
+  restore: "Ripristina backup"
+  restore_confirm: "Sostituire TUTTI gli utenti, le schede, gli allegati e i permessi con questo backup? Cardfile creerà una copia di sicurezza e si riavvierà. Accedi con gli account e le password ripristinati. Le raccolte non vengono unite."
+  retention: "Copie automatiche da conservare"

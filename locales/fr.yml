@@ -2,6 +2,8 @@ _version: 1
 
 app:
   name: Cardfile
+  db_error_body: "Impossible d’ouvrir la base de données %{path} : %{error}"
+  db_error_title: "Cardfile ne peut pas ouvrir sa base de données"
 test:
   greeting: "Bonjour, %{name} !"
 
@@ -92,6 +94,15 @@ editor:
   media:
     open_external: "Ouvrir dans le lecteur du système"
 
+    failed: "Impossible de lancer la lecture"
+    loading: "Chargement…"
+    malformed: "Ce fichier semble endommagé"
+    unsupported: "Ce format ne peut pas être lu ici"
+  size_units:
+    bytes: "%{n} B"
+    kb: "%{n} KB"
+    mb: "%{n} MB"
+    gb: "%{n} GB"
 common:
   back: Retour
   next: Suivant
@@ -262,12 +273,18 @@ card:
     encrypt_title: Chiffrer la fiche
     encrypt_body: Saisissez votre mot de passe pour chiffrer cette fiche. Sans lui, la fiche ne pourra pas être ouverte.
     failed: "Impossible de modifier la protection : %{error}"
+    missing_password: "Un mot de passe est nécessaire pour chiffrer la fiche."
   purge:
     title: Supprimer définitivement
     body: Cette fiche sera supprimée définitivement. Cette action est irréversible.
     confirm: Supprimer définitivement
+    failed: "Impossible de supprimer la fiche : %{error}"
   updated_by: "Modifiée %{date} par %{name}"
 
+  delete_failed: "Impossible de déplacer la fiche dans la corbeille : %{error}"
+  not_unlocked: "La fiche chiffrée n’est pas déverrouillée."
+  restore_failed: "Impossible de restaurer la fiche : %{error}"
+  save_failed: "Impossible d’enregistrer la fiche : %{error}. Vos modifications sont conservées ; l’enregistrement sera retenté à la prochaine modification."
 tags:
   new: Nouvelle étiquette…
   edit: Modifier l'étiquette
@@ -287,6 +304,7 @@ recycle:
   empty_title: Vider la corbeille
   empty_body: Toutes les fiches de la corbeille seront supprimées définitivement.
 
+  empty_failed: "Impossible de vider la corbeille : %{error}"
 export:
   markdown: Exporter en Markdown
   html: Exporter en HTML
@@ -378,6 +396,16 @@ settings:
     check_updates_hint: Consulte uniquement GitHub pour trouver une version plus récente. Aucune donnée n'est envoyée.
     keymap: Raccourcis clavier
     keymap_hint: Modifiez keymap.json pour changer un raccourci. Redémarrez pour appliquer.
+    dictionary: "Dictionnaire orthographique"
+    dictionary_failed: "Impossible d’installer le dictionnaire : %{error}"
+    dictionary_installed: "Dictionnaire orthographique installé."
+    dictionary_missing: "Le dictionnaire %{language} n’est pas installé. Il sera téléchargé depuis github.com/wooorm/dictionaries."
+    install_dictionary: "Installer"
+    installing_dictionary: "Installation…"
+    update_channel: "Canal de mise à jour"
+    update_channel_hint: "Choisissez les versions recommandées ou incluez les versions d’essai, qui peuvent encore contenir des erreurs. Changer de canal n’installe jamais une version antérieure."
+    update_latest: "Recommandées (Latest)"
+    update_prerelease: "D’essai (Prerelease)"
   editor:
     markdown_shortcuts: Raccourcis Markdown
     markdown_shortcuts_hint: "Saisir # , - , [] , **gras** et autres met automatiquement le texte en forme."
@@ -579,5 +607,30 @@ chat:
     delete_card: "Mise à la corbeille"
     restore_card: "Fiche restaurée"
 
+  step_limit: "L’assistant s’est arrêté après trop d’étapes sans terminer. Demandez-lui de continuer si nécessaire."
 attachment:
   no_app: "Aucune application de cet ordinateur ne peut ouvrir « %{name} ». Installez un programme pour ce type de fichier (pour les vidéos, un lecteur multimédia comme VLC) et réessayez."
+  not_found: "La pièce jointe est introuvable."
+data_operations:
+  admin_required: "Seul un administrateur peut sauvegarder toute la collection."
+  backups: "Sauvegardes de la base de données"
+  busy: "Préparation de votre collection. Veuillez patienter…"
+  choose_backup: "Choisir le dossier des sauvegardes"
+  choose_portable: "Choisir le dossier parent de Cardfile portable"
+  choose_restore: "Choisir une sauvegarde de la base Cardfile"
+  contents: "Les sauvegardes incluent tous les utilisateurs, pièces jointes et fiches chiffrées. Elles préservent le chiffrement existant sans chiffrer les contenus qui ne l’étaient pas. Les clés d’IA du coffre d’identifiants du système ne sont pas incluses."
+  daily: "Sauvegarde quotidienne automatique"
+  daily_hint: "Lorsque Cardfile est ouvert, une copie est créée toutes les 24 heures. Les copies en attente sont faites à la connexion ; les destinations indisponibles sont réessayées chaque heure."
+  default_backup: "Utiliser le dossier par défaut"
+  destination_exists: "La destination existe déjà. Choisissez un autre dossier parent ; les données existantes ne seront pas écrasées."
+  failed: "L’opération a échoué : %{error}"
+  invalid_destination: "La destination n’est pas un dossier valide."
+  nested_destination: "Choisissez une destination hors du dossier de données actif et des dictionnaires du programme."
+  open_backup: "Ouvrir le dossier des sauvegardes"
+  portable: "Créer une copie portable"
+  portable_confirm: "Créer une copie de tous les utilisateurs, fiches et pièces jointes dans un nouveau dossier 'Cardfile portable' ? Le MCP et les sauvegardes automatiques y seront désactivés. Sur un autre ordinateur, ressaisissez les clés d’IA du coffre du système. Fermez Cardfile et attendez la fin de la synchronisation OneDrive avant de changer d’ordinateur."
+  portable_unsupported: "Téléchargez l’archive portable sur https://github.com/FittyAr/Cardfile/releases pour copier cette installation gérée par une boutique ou un gestionnaire de paquets."
+  protection_busy: "Attendez la fin du changement de protection de la fiche, puis réessayez."
+  restore: "Restaurer une sauvegarde"
+  restore_confirm: "Remplacer TOUS les utilisateurs, fiches, pièces jointes et autorisations par cette sauvegarde ? Cardfile créera une copie de sécurité puis redémarrera. Connectez-vous avec les comptes et mots de passe restaurés. Les collections ne seront pas fusionnées."
+  retention: "Copies automatiques à conserver"

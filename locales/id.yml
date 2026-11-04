@@ -2,6 +2,8 @@ _version: 1
 
 app:
   name: Cardfile
+  db_error_body: "Basis data %{path} tidak dapat dibuka: %{error}"
+  db_error_title: "Cardfile tidak dapat membuka basis datanya"
 test:
   greeting: "Halo, %{name}!"
 
@@ -92,6 +94,15 @@ editor:
   media:
     open_external: "Buka di pemutar sistem"
 
+    failed: "Pemutaran tidak dapat dimulai"
+    loading: "Memuat…"
+    malformed: "File ini tampaknya rusak"
+    unsupported: "Format ini tidak dapat diputar di sini"
+  size_units:
+    bytes: "%{n} B"
+    kb: "%{n} KB"
+    mb: "%{n} MB"
+    gb: "%{n} GB"
 common:
   back: Kembali
   next: Berikutnya
@@ -262,12 +273,18 @@ card:
     encrypt_title: Enkripsi kartu
     encrypt_body: Masukkan kata sandi Anda untuk mengenkripsi kartu ini. Tanpanya, kartu tidak dapat dibuka.
     failed: "Tidak dapat mengubah perlindungan: %{error}"
+    missing_password: "Kata sandi diperlukan untuk mengenkripsi kartu."
   purge:
     title: Hapus permanen
     body: Kartu ini akan dihapus selamanya. Tindakan ini tidak dapat dibatalkan.
     confirm: Hapus permanen
+    failed: "Kartu tidak dapat dihapus: %{error}"
   updated_by: "Diedit %{date} oleh %{name}"
 
+  delete_failed: "Kartu tidak dapat dipindahkan ke tempat sampah: %{error}"
+  not_unlocked: "Kartu terenkripsi belum dibuka kuncinya."
+  restore_failed: "Kartu tidak dapat dipulihkan: %{error}"
+  save_failed: "Kartu tidak dapat disimpan: %{error}. Perubahan tetap disimpan di editor dan akan dicoba lagi saat pengeditan berikutnya."
 tags:
   new: Label baru…
   edit: Edit label
@@ -287,6 +304,7 @@ recycle:
   empty_title: Kosongkan tempat sampah
   empty_body: Semua kartu di tempat sampah akan dihapus selamanya.
 
+  empty_failed: "Tempat sampah tidak dapat dikosongkan: %{error}"
 export:
   markdown: Ekspor sebagai Markdown
   html: Ekspor sebagai HTML
@@ -378,6 +396,16 @@ settings:
     check_updates_hint: Hanya memeriksa GitHub untuk versi yang lebih baru. Tidak ada data yang dikirim.
     keymap: Pintasan keyboard
     keymap_hint: Edit keymap.json untuk mengubah pintasan apa pun. Mulai ulang untuk menerapkan.
+    dictionary: "Kamus ejaan"
+    dictionary_failed: "Kamus tidak dapat dipasang: %{error}"
+    dictionary_installed: "Kamus ejaan dipasang."
+    dictionary_missing: "Kamus untuk %{language} belum dipasang. Kamus diunduh dari github.com/wooorm/dictionaries."
+    install_dictionary: "Pasang"
+    installing_dictionary: "Memasang…"
+    update_channel: "Saluran pembaruan"
+    update_channel_hint: "Pilih rilis yang direkomendasikan atau sertakan versi uji yang mungkin masih bermasalah. Mengganti saluran tidak pernah memasang versi yang lebih lama."
+    update_latest: "Direkomendasikan (Latest)"
+    update_prerelease: "Versi uji (Prerelease)"
   editor:
     markdown_shortcuts: Pintasan Markdown
     markdown_shortcuts_hint: "Mengetik # , - , [] , **tebal** dan sejenisnya akan memformat teks secara otomatis."
@@ -579,5 +607,30 @@ chat:
     delete_card: "Memindahkan ke tempat sampah"
     restore_card: "Memulihkan kartu"
 
+  step_limit: "Asisten berhenti setelah terlalu banyak langkah tanpa selesai. Minta untuk melanjutkan jika perlu."
 attachment:
   no_app: "Tidak ada aplikasi di komputer ini yang dapat membuka “%{name}”. Instal program untuk jenis file ini (untuk video, pemutar media seperti VLC) lalu coba lagi."
+  not_found: "Lampiran tidak ditemukan."
+data_operations:
+  admin_required: "Hanya administrator yang dapat mencadangkan seluruh koleksi."
+  backups: "Cadangan basis data"
+  busy: "Menyiapkan koleksi Anda. Harap tunggu…"
+  choose_backup: "Pilih folder cadangan"
+  choose_portable: "Pilih folder induk untuk Cardfile portable"
+  choose_restore: "Pilih cadangan basis data Cardfile"
+  contents: "Cadangan mencakup semua pengguna, lampiran, dan kartu terenkripsi. Enkripsi yang ada tetap dipertahankan, tetapi konten tanpa enkripsi tidak dienkripsi. Kunci AI dalam penyimpanan kredensial sistem tidak disertakan."
+  daily: "Cadangan harian otomatis"
+  daily_hint: "Saat Cardfile terbuka, cadangan dibuat setiap 24 jam. Cadangan yang terlewat dibuat setelah masuk; tujuan yang tidak tersedia dicoba lagi setiap jam."
+  default_backup: "Gunakan folder bawaan"
+  destination_exists: "Tujuan sudah ada. Pilih folder induk lain; data yang ada tidak akan ditimpa."
+  failed: "Operasi gagal: %{error}"
+  invalid_destination: "Tujuan bukan folder yang valid."
+  nested_destination: "Pilih tujuan di luar folder data aktif dan kamus program."
+  open_backup: "Buka folder cadangan"
+  portable: "Buat salinan portabel"
+  portable_confirm: "Salin semua pengguna, kartu, dan lampiran ke folder baru 'Cardfile portable'? MCP dan pencadangan otomatis akan dinonaktifkan pada salinan. Di komputer lain, masukkan kembali kunci AI dari penyimpanan sistem. Tutup Cardfile dan tunggu sinkronisasi OneDrive selesai sebelum berganti komputer."
+  portable_unsupported: "Unduh arsip portabel dari https://github.com/FittyAr/Cardfile/releases untuk menyalin instalasi dari toko atau pengelola paket ini."
+  protection_busy: "Tunggu perubahan perlindungan kartu selesai, lalu coba lagi."
+  restore: "Pulihkan cadangan"
+  restore_confirm: "Ganti SEMUA pengguna, kartu, lampiran, dan izin dengan cadangan ini? Cardfile akan membuat salinan pengaman dan dimulai ulang. Masuk dengan akun dan kata sandi yang dipulihkan. Koleksi tidak digabungkan."
+  retention: "Jumlah salinan otomatis yang disimpan"

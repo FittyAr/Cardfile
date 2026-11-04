@@ -2,6 +2,8 @@ _version: 1
 
 app:
   name: Cardfile
+  db_error_body: "无法打开数据库 %{path}：%{error}"
+  db_error_title: "Cardfile 无法打开数据库"
 test:
   greeting: "你好，%{name}！"
 
@@ -92,6 +94,15 @@ editor:
   media:
     open_external: "在系统播放器中打开"
 
+    failed: "无法开始播放"
+    loading: "正在加载…"
+    malformed: "此文件似乎已损坏"
+    unsupported: "此格式无法在此处播放"
+  size_units:
+    bytes: "%{n} 字节"
+    kb: "%{n} KB"
+    mb: "%{n} MB"
+    gb: "%{n} GB"
 common:
   back: 返回
   next: 下一步
@@ -262,12 +273,18 @@ card:
     encrypt_title: 加密卡片
     encrypt_body: 输入密码以加密此卡片。没有密码将无法打开该卡片。
     failed: "无法更改保护级别：%{error}"
+    missing_password: "加密卡片需要密码。"
   purge:
     title: 永久删除
     body: 此卡片将被永久删除，且无法撤销。
     confirm: 永久删除
+    failed: "无法删除卡片：%{error}"
   updated_by: "%{name} 于 %{date} 编辑"
 
+  delete_failed: "无法将卡片移至回收站：%{error}"
+  not_unlocked: "加密卡片尚未解锁。"
+  restore_failed: "无法恢复卡片：%{error}"
+  save_failed: "无法保存卡片：%{error}。更改仍保留在编辑器中，下次编辑时会再次尝试保存。"
 tags:
   new: 新建标签…
   edit: 编辑标签
@@ -287,6 +304,7 @@ recycle:
   empty_title: 清空回收站
   empty_body: 回收站中的所有卡片都将被永久删除。
 
+  empty_failed: "无法清空回收站：%{error}"
 export:
   markdown: 导出为 Markdown
   html: 导出为 HTML
@@ -378,6 +396,16 @@ settings:
     check_updates_hint: 仅向 GitHub 查询是否有新版本，不会发送任何数据。
     keymap: 键盘快捷键
     keymap_hint: 编辑 keymap.json 可更改任意快捷键。重启后生效。
+    dictionary: "拼写词典"
+    dictionary_failed: "无法安装词典：%{error}"
+    dictionary_installed: "拼写词典已安装。"
+    dictionary_missing: "尚未安装 %{language} 的词典。将从 github.com/wooorm/dictionaries 下载。"
+    install_dictionary: "安装"
+    installing_dictionary: "正在安装…"
+    update_channel: "更新渠道"
+    update_channel_hint: "选择推荐版本，或包含可能仍有错误的预览版本。切换渠道不会安装更早的版本。"
+    update_latest: "推荐版本（Latest）"
+    update_prerelease: "预览版本（Prerelease）"
   editor:
     markdown_shortcuts: Markdown 快捷输入
     markdown_shortcuts_hint: "输入 # 、- 、[] 、**粗体** 等内容会自动设置文字格式。"
@@ -579,5 +607,30 @@ chat:
     delete_card: "已移到回收站"
     restore_card: "已恢复卡片"
 
+  step_limit: "助手执行过多步骤后仍未完成，已停止。需要时请让它继续。"
 attachment:
   no_app: "本机上没有可以打开“%{name}”的应用程序。请安装支持此文件类型的程序（视频可使用 VLC 等媒体播放器），然后重试。"
+  not_found: "未找到附件。"
+data_operations:
+  admin_required: "只有管理员可以备份整个集合。"
+  backups: "数据库备份"
+  busy: "正在准备集合，请稍候…"
+  choose_backup: "选择备份文件夹"
+  choose_portable: "选择用于存放 Cardfile portable 的上级文件夹"
+  choose_restore: "选择 Cardfile 数据库备份"
+  contents: "备份包含所有用户、附件和加密卡片。现有加密会保留，但不会加密原本未加密的内容。不包含保存在系统凭据库中的 AI 密钥。"
+  daily: "每日自动备份"
+  daily_hint: "Cardfile 打开期间每 24 小时备份一次。错过的备份会在登录后执行；无法访问的目标会每小时重试。"
+  default_backup: "使用默认文件夹"
+  destination_exists: "目标已存在。请选择其他上级文件夹；现有数据不会被覆盖。"
+  failed: "操作失败：%{error}"
+  invalid_destination: "目标不是有效的文件夹。"
+  nested_destination: "请选择当前数据文件夹及程序词典目录以外的位置。"
+  open_backup: "打开备份文件夹"
+  portable: "创建便携副本"
+  portable_confirm: "要将所有用户、卡片和附件复制到新建的 'Cardfile portable' 文件夹吗？副本中的 MCP 和自动备份将被关闭。在其他计算机上，需要重新输入保存在系统凭据库中的 AI 密钥。切换计算机前，请关闭 Cardfile 并等待 OneDrive 同步完成。"
+  portable_unsupported: "请从 https://github.com/FittyAr/Cardfile/releases 下载便携压缩包，以复制此商店或软件包管理器安装的版本。"
+  protection_busy: "请等待卡片保护设置更改完成，然后重试。"
+  restore: "恢复备份"
+  restore_confirm: "要使用此备份替换所有用户、卡片、附件和权限吗？Cardfile 会先创建安全副本，然后重新启动。请使用恢复后的账户和密码登录。集合不会合并。"
+  retention: "保留的自动备份数量"

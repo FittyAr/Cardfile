@@ -2,6 +2,8 @@ _version: 1
 
 app:
   name: Cardfile
+  db_error_body: "Không thể mở cơ sở dữ liệu %{path}: %{error}"
+  db_error_title: "Cardfile không thể mở cơ sở dữ liệu"
 test:
   greeting: "Xin chào, %{name}!"
 
@@ -92,6 +94,15 @@ editor:
   media:
     open_external: "Mở bằng trình phát của hệ thống"
 
+    failed: "Không thể bắt đầu phát"
+    loading: "Đang tải…"
+    malformed: "Tệp này có vẻ bị hỏng"
+    unsupported: "Không thể phát định dạng này tại đây"
+  size_units:
+    bytes: "%{n} B"
+    kb: "%{n} KB"
+    mb: "%{n} MB"
+    gb: "%{n} GB"
 common:
   back: Quay lại
   next: Tiếp theo
@@ -262,12 +273,18 @@ card:
     encrypt_title: Mã hóa thẻ
     encrypt_body: Nhập mật khẩu của bạn để mã hóa thẻ này. Không có mật khẩu sẽ không thể mở thẻ.
     failed: "Không thể thay đổi mức bảo vệ: %{error}"
+    missing_password: "Cần mật khẩu để mã hóa thẻ."
   purge:
     title: Xóa vĩnh viễn
     body: Thẻ này sẽ bị xóa vĩnh viễn. Không thể hoàn tác.
     confirm: Xóa vĩnh viễn
+    failed: "Không thể xóa thẻ: %{error}"
   updated_by: "%{name} đã sửa lúc %{date}"
 
+  delete_failed: "Không thể chuyển thẻ vào thùng rác: %{error}"
+  not_unlocked: "Thẻ được mã hóa chưa được mở khóa."
+  restore_failed: "Không thể khôi phục thẻ: %{error}"
+  save_failed: "Không thể lưu thẻ: %{error}. Các thay đổi được giữ lại và sẽ được lưu lại khi bạn chỉnh sửa tiếp."
 tags:
   new: Nhãn mới…
   edit: Sửa nhãn
@@ -287,6 +304,7 @@ recycle:
   empty_title: Dọn sạch thùng rác
   empty_body: Tất cả thẻ trong thùng rác sẽ bị xóa vĩnh viễn.
 
+  empty_failed: "Không thể dọn sạch thùng rác: %{error}"
 export:
   markdown: Xuất dưới dạng Markdown
   html: Xuất dưới dạng HTML
@@ -378,6 +396,16 @@ settings:
     check_updates_hint: Chỉ kiểm tra GitHub xem có phiên bản mới hơn không. Không gửi dữ liệu nào.
     keymap: Phím tắt
     keymap_hint: Chỉnh sửa keymap.json để đổi bất kỳ phím tắt nào. Khởi động lại để áp dụng.
+    dictionary: "Từ điển chính tả"
+    dictionary_failed: "Không thể cài từ điển: %{error}"
+    dictionary_installed: "Đã cài từ điển chính tả."
+    dictionary_missing: "Chưa cài từ điển cho %{language}. Từ điển được tải từ github.com/wooorm/dictionaries."
+    install_dictionary: "Cài đặt"
+    installing_dictionary: "Đang cài đặt…"
+    update_channel: "Kênh cập nhật"
+    update_channel_hint: "Chọn bản phát hành được đề xuất hoặc bao gồm bản thử nghiệm vẫn có thể có lỗi. Đổi kênh không bao giờ cài phiên bản cũ hơn."
+    update_latest: "Được đề xuất (Latest)"
+    update_prerelease: "Thử nghiệm (Prerelease)"
   editor:
     markdown_shortcuts: Phím tắt Markdown
     markdown_shortcuts_hint: "Gõ # , - , [] , **in đậm** và các mẫu tương tự sẽ tự động định dạng văn bản."
@@ -579,5 +607,30 @@ chat:
     delete_card: "Đã chuyển vào thùng rác"
     restore_card: "Đã khôi phục thẻ"
 
+  step_limit: "Trợ lý dừng sau quá nhiều bước mà chưa hoàn tất. Hãy yêu cầu tiếp tục nếu cần."
 attachment:
   no_app: "Không có ứng dụng nào trên máy tính này có thể mở “%{name}”. Hãy cài đặt một chương trình cho loại tệp này (với video, hãy dùng trình phát đa phương tiện như VLC) rồi thử lại."
+  not_found: "Không tìm thấy tệp đính kèm."
+data_operations:
+  admin_required: "Chỉ quản trị viên mới có thể sao lưu toàn bộ bộ sưu tập."
+  backups: "Bản sao lưu cơ sở dữ liệu"
+  busy: "Đang chuẩn bị bộ sưu tập. Vui lòng đợi…"
+  choose_backup: "Chọn thư mục sao lưu"
+  choose_portable: "Chọn thư mục chứa Cardfile portable"
+  choose_restore: "Chọn bản sao lưu cơ sở dữ liệu Cardfile"
+  contents: "Bản sao lưu gồm tất cả người dùng, tệp đính kèm và thẻ đã mã hóa. Mã hóa hiện có được giữ nguyên, nhưng nội dung chưa mã hóa sẽ không được mã hóa. Không bao gồm khóa AI trong kho thông tin xác thực của hệ thống."
+  daily: "Tự động sao lưu hằng ngày"
+  daily_hint: "Khi Cardfile đang mở, bản sao lưu được tạo mỗi 24 giờ. Bản sao lưu bị lỡ được thực hiện khi đăng nhập; đích không khả dụng được thử lại mỗi giờ."
+  default_backup: "Dùng thư mục mặc định"
+  destination_exists: "Đích đã tồn tại. Hãy chọn thư mục cha khác; dữ liệu hiện có sẽ không bị ghi đè."
+  failed: "Thao tác thất bại: %{error}"
+  invalid_destination: "Đích không phải là thư mục hợp lệ."
+  nested_destination: "Chọn đích bên ngoài thư mục dữ liệu đang dùng và thư mục từ điển của chương trình."
+  open_backup: "Mở thư mục sao lưu"
+  portable: "Tạo bản sao di động"
+  portable_confirm: "Sao chép tất cả người dùng, thẻ và tệp đính kèm vào thư mục mới 'Cardfile portable'? MCP và sao lưu tự động sẽ bị tắt trong bản sao. Trên máy khác, nhập lại khóa AI từ kho lưu trữ của hệ thống. Đóng Cardfile và chờ OneDrive đồng bộ xong trước khi đổi máy."
+  portable_unsupported: "Tải gói di động từ https://github.com/FittyAr/Cardfile/releases để sao chép bản cài từ cửa hàng hoặc trình quản lý gói này."
+  protection_busy: "Đợi thay đổi bảo vệ thẻ hoàn tất rồi thử lại."
+  restore: "Khôi phục bản sao lưu"
+  restore_confirm: "Thay thế TẤT CẢ người dùng, thẻ, tệp đính kèm và quyền bằng bản sao lưu này? Cardfile sẽ tạo bản sao an toàn và khởi động lại. Đăng nhập bằng tài khoản và mật khẩu đã khôi phục. Các bộ sưu tập không được hợp nhất."
+  retention: "Số bản sao tự động cần giữ"

@@ -26,7 +26,7 @@ jobs:
       - name: Check translation keys
         run: |
           pip install --quiet pyyaml
-          python3 scripts/check-locales.py
+          python3 scripts/check-locales.py --all
 
   deny:
     runs-on: ubuntu-latest

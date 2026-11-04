@@ -210,8 +210,9 @@ The app remembers normal window size and maximized state in `local-config.json`.
 
 ## Update channel
 
-Settings → General → Update channel offers **Latest** (default) and **Prerelease**.
-Latest follows the release designated Latest on GitHub, even if its tag contains
-`beta`. Prerelease also includes testing releases. Both channels verify signed
+Settings → General → Update channel has a dropdown with **Recommended (Latest)**
+(default) and **Preview (Prerelease)**. Latest follows the release designated Latest
+on GitHub, even if its tag contains `beta`. Prerelease also includes testing releases
+that may still have bugs. Both channels verify signed
 checksums and asset signatures; neither downgrades the installed version. Changing
 the choice checks immediately, and it is remembered for your account.
