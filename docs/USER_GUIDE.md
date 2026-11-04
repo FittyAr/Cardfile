@@ -167,3 +167,51 @@ Command line options:
 
 - `cardfile --portable` stores data next to the executable.
 - `cardfile --data-dir <folder>` uses any folder you choose.
+
+
+## Portable folders and recovery
+
+The Windows setup offers **Install on this computer**, **Create a portable copy** and
+an explicit all-users installation. For portable use, choose a writable folder on a USB
+ drive, OneDrive, or another local disk. Open `cardfile.exe` in that folder. Move the
+entire folder, including `portable.flag` and `data/`, together. ZIP downloads remain available.
+
+PowerShell uses the same verified setup executable:
+
+```powershell
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/FittyAr/Cardfile/main/install.ps1))) -Portable -Destination "E:\Cardfile"
+```
+
+To include an existing collection, an administrator can use **Settings → Data → Create
+portable copy**. Select the parent folder; Cardfile creates a new `Cardfile portable`
+subfolder and refuses to overwrite an existing destination. All accounts, cards,
+attachments, history and card encryption are retained. MCP and automatic backups are
+disabled in the copy. Re-enter AI keys stored in the original computer's credential store.
+Store and system-package distributions instead direct you to the portable download.
+
+Administrators can choose a backup folder in **Settings → Data**, create a backup now,
+and optionally enable daily backups. The default is manual only, in `backups/`, with
+10 automatic copies retained after enabling the schedule. Checks run hourly while signed
+in; a missed daily copy runs after sign-in. An unavailable folder reports an error and
+is retried. Manual and safety copies are never removed by automatic retention.
+
+**Restore backup** replaces the entire collection, including users and permissions;
+it does not merge cards. Cardfile validates the selected `.db`, saves current edits,
+creates a local safety backup, prepares the replacement and restarts. Use the restored
+accounts/passwords. Local backup preferences and window dimensions stay unchanged.
+Backups preserve existing encryption but do not encrypt otherwise unencrypted cards.
+Passwords and external credential-store secrets cannot be recovered from a backup.
+
+Close Cardfile before removing a USB drive or changing computers. With OneDrive, wait
+until synchronization finishes before opening the folder on another computer; simultaneous
+use is unsupported. The local process lock does not coordinate different computers.
+The app remembers normal window size and maximized state in `local-config.json`.
+
+
+## Update channel
+
+Settings → General → Update channel offers **Latest** (default) and **Prerelease**.
+Latest follows the release designated Latest on GitHub, even if its tag contains
+`beta`. Prerelease also includes testing releases. Both channels verify signed
+checksums and asset signatures; neither downgrades the installed version. Changing
+the choice checks immediately, and it is remembered for your account.

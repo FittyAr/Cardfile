@@ -35,6 +35,7 @@ use semver::Version;
 use serde::Deserialize;
 use thiserror::Error;
 
+pub use cardfile_core::UpdateChannel;
 pub use download::{Downloaded, download, parse_checksums};
 pub use install::{InstallOutcome, cleanup_after_update, install, restart};
 pub use kind::{Arch, InstallKind, Os, Platform, select_asset};
@@ -144,14 +145,17 @@ struct GhRelease {
 }
 
 /// Every release above `current` in a GitHub releases JSON array, newest first.
-/// Pre-releases are considered only when `current` is itself a pre-release.
-fn candidates_from_json(json: &str, current: &Version) -> Result<Vec<Release>, UpdateError> {
+/// The selected channel, rather than the running version, controls prereleases.
+fn candidates_from_json(
+    json: &str,
+    current: &Version,
+    channel: UpdateChannel,
+) -> Result<Vec<Release>, UpdateError> {
     let releases: Vec<GhRelease> =
         serde_json::from_str(json).map_err(|e| UpdateError::Parse(e.to_string()))?;
-    let allow_pre = !current.pre.is_empty();
     let mut candidates: Vec<Release> = releases
         .into_iter()
-        .filter(|r| !r.draft && (allow_pre || !r.prerelease))
+        .filter(|r| !r.draft && (channel == UpdateChannel::Prerelease || !r.prerelease))
         .filter_map(|r| {
             let version = Version::parse(r.tag_name.trim_start_matches('v')).ok()?;
             Some(Release {
@@ -169,9 +173,15 @@ fn candidates_from_json(json: &str, current: &Version) -> Result<Vec<Release>, U
 }
 
 /// Pick the newest release above `current` from a GitHub releases JSON array.
-/// Pre-releases are considered only when `current` is itself a pre-release.
-pub fn newest_from_json(json: &str, current: &Version) -> Result<Option<Release>, UpdateError> {
-    Ok(candidates_from_json(json, current)?.into_iter().next())
+/// Published prereleases require the Prerelease channel, even on a beta build.
+pub fn newest_from_json(
+    json: &str,
+    current: &Version,
+    channel: UpdateChannel,
+) -> Result<Option<Release>, UpdateError> {
+    Ok(candidates_from_json(json, current, channel)?
+        .into_iter()
+        .next())
 }
 
 /// Pick the newest release above `current` that carries its signature files
@@ -181,8 +191,9 @@ pub fn newest_from_json(json: &str, current: &Version) -> Result<Option<Release>
 pub fn newest_signed_from_json(
     json: &str,
     current: &Version,
+    channel: UpdateChannel,
 ) -> Result<Option<Release>, UpdateError> {
-    Ok(candidates_from_json(json, current)?
+    Ok(candidates_from_json(json, current, channel)?
         .into_iter()
         .find(Release::has_signature_files))
 }
@@ -292,11 +303,23 @@ fn fetch_signed_checksums(release: &Release) -> Result<Vec<u8>, UpdateError> {
 /// signature. A release still waiting for its signature files is skipped (an older
 /// signed one is offered instead, or nothing), so it is never reported as an error.
 /// Blocking: call off the UI thread.
-pub fn check(current: &Version) -> Result<Option<Release>, UpdateError> {
-    let url = format!("https://api.github.com/repos/{REPOSITORY}/releases?per_page=20");
+pub fn check(current: &Version, channel: UpdateChannel) -> Result<Option<Release>, UpdateError> {
+    let url = match channel {
+        UpdateChannel::Latest => {
+            format!("https://api.github.com/repos/{REPOSITORY}/releases/latest")
+        }
+        UpdateChannel::Prerelease => {
+            format!("https://api.github.com/repos/{REPOSITORY}/releases?per_page=100")
+        }
+    };
     let body = get(&url, "application/vnd.github+json")?;
     let body = String::from_utf8(body).map_err(|e| UpdateError::Parse(e.to_string()))?;
-    let Some(release) = newest_signed_from_json(&body, current)? else {
+    let body = if channel == UpdateChannel::Latest {
+        format!("[{body}]")
+    } else {
+        body
+    };
+    let Some(release) = newest_signed_from_json(&body, current, channel)? else {
         return Ok(None);
     };
     fetch_signed_checksums(&release)?;
@@ -320,18 +343,26 @@ pub(crate) mod tests {
 
     #[test]
     fn stable_users_skip_prereleases() {
-        let r = newest_from_json(JSON, &Version::parse("2.0.0").unwrap())
-            .unwrap()
-            .unwrap();
+        let r = newest_from_json(
+            JSON,
+            &Version::parse("2.0.0").unwrap(),
+            UpdateChannel::Latest,
+        )
+        .unwrap()
+        .unwrap();
         assert_eq!(r.version, Version::parse("2.0.1").unwrap());
         assert_eq!(r.notes, "fixes");
     }
 
     #[test]
     fn release_carries_assets() {
-        let r = newest_from_json(JSON, &Version::parse("2.0.0").unwrap())
-            .unwrap()
-            .unwrap();
+        let r = newest_from_json(
+            JSON,
+            &Version::parse("2.0.0").unwrap(),
+            UpdateChannel::Latest,
+        )
+        .unwrap()
+        .unwrap();
         assert_eq!(r.assets.len(), 2);
         assert_eq!(r.asset("SHA256SUMS").unwrap().size, 12);
         assert_eq!(r.download_url("SHA256SUMS"), "https://x/SHA256SUMS");
@@ -343,11 +374,85 @@ pub(crate) mod tests {
 
     #[test]
     fn prerelease_users_see_prereleases() {
-        let r = newest_from_json(JSON, &Version::parse("2.0.0-alpha.1").unwrap())
-            .unwrap()
-            .unwrap();
+        let r = newest_from_json(
+            JSON,
+            &Version::parse("2.0.0-alpha.1").unwrap(),
+            UpdateChannel::Prerelease,
+        )
+        .unwrap()
+        .unwrap();
         assert_eq!(r.version, Version::parse("2.1.0-beta.1").unwrap());
         assert!(r.assets.is_empty());
+    }
+
+    #[test]
+    fn stable_build_can_opt_in_and_beta_build_can_opt_out() {
+        let stable = Version::parse("2.0.0").unwrap();
+        let beta = Version::parse("2.0.0-alpha.1").unwrap();
+        assert_eq!(
+            newest_from_json(JSON, &stable, UpdateChannel::Prerelease)
+                .unwrap()
+                .unwrap()
+                .tag,
+            "v2.1.0-beta.1"
+        );
+        assert_eq!(
+            newest_from_json(JSON, &beta, UpdateChannel::Latest)
+                .unwrap()
+                .unwrap()
+                .tag,
+            "v2.0.1"
+        );
+    }
+
+    #[test]
+    fn latest_accepts_promoted_beta_and_never_downgrades_after_switching() {
+        let promoted = r#"[{"tag_name":"v2.0.0-beta.3","html_url":"latest","prerelease":false},
+            {"tag_name":"v2.0.0-beta.4","html_url":"testing","prerelease":true}]"#;
+        let installed = Version::parse("2.0.0-beta.2").unwrap();
+        let latest = newest_from_json(promoted, &installed, UpdateChannel::Latest)
+            .unwrap()
+            .unwrap();
+        assert_eq!(latest.tag, "v2.0.0-beta.3");
+        assert_eq!(
+            newest_from_json(promoted, &installed, UpdateChannel::Prerelease)
+                .unwrap()
+                .unwrap()
+                .tag,
+            "v2.0.0-beta.4"
+        );
+        assert!(
+            newest_from_json(
+                promoted,
+                &Version::parse("2.0.0-beta.4").unwrap(),
+                UpdateChannel::Latest
+            )
+            .unwrap()
+            .is_none()
+        );
+    }
+
+    #[test]
+    fn prerelease_channel_still_requires_signature_files_and_ignores_drafts() {
+        let json = r#"[
+            {"tag_name":"v2.3.0-beta.1","html_url":"draft","draft":true},
+            {"tag_name":"v2.2.0-beta.1","html_url":"unsigned","prerelease":true},
+            {"tag_name":"v2.1.0-beta.1","html_url":"signed","prerelease":true,"assets":[
+                {"name":"SHA256SUMS","browser_download_url":"https://x/sums"},
+                {"name":"SHA256SUMS.minisig","browser_download_url":"https://x/sig"}]}]"#;
+        let current = Version::parse("2.0.0").unwrap();
+        assert_eq!(
+            newest_signed_from_json(json, &current, UpdateChannel::Prerelease)
+                .unwrap()
+                .unwrap()
+                .tag,
+            "v2.1.0-beta.1"
+        );
+        assert!(
+            newest_signed_from_json(json, &current, UpdateChannel::Latest)
+                .unwrap()
+                .is_none()
+        );
     }
 
     // Test vector from the minisign-verify crate (MIT): `b"test"` signed by this key.
@@ -399,15 +504,19 @@ y/rUw2y8/hOUYjZU71eHp/Wo1KZ40fGy2VJEDl34XMJM+TX48Ss/17u3IvIfbVR1FkZZSNCisQbuQY+b
         ]"#;
         let v = |s| Version::parse(s).unwrap();
         // The newest overall is v2.0.3, but only v2.0.1 has both signature files.
-        let newest = newest_from_json(json, &v("2.0.0")).unwrap().unwrap();
+        let newest = newest_from_json(json, &v("2.0.0"), UpdateChannel::Latest)
+            .unwrap()
+            .unwrap();
         assert_eq!(newest.tag, "v2.0.3");
         assert!(!newest.has_signature_files());
-        let signed = newest_signed_from_json(json, &v("2.0.0")).unwrap().unwrap();
+        let signed = newest_signed_from_json(json, &v("2.0.0"), UpdateChannel::Latest)
+            .unwrap()
+            .unwrap();
         assert_eq!(signed.tag, "v2.0.1");
         assert!(signed.has_signature_files());
         // Already on the newest signed one: the unsigned v2.0.2/v2.0.3 are no update.
         assert!(
-            newest_signed_from_json(json, &v("2.0.1"))
+            newest_signed_from_json(json, &v("2.0.1"), UpdateChannel::Latest)
                 .unwrap()
                 .is_none()
         );
@@ -424,9 +533,13 @@ y/rUw2y8/hOUYjZU71eHp/Wo1KZ40fGy2VJEDl34XMJM+TX48Ss/17u3IvIfbVR1FkZZSNCisQbuQY+b
     #[test]
     fn up_to_date() {
         assert!(
-            newest_from_json(JSON, &Version::parse("2.1.0").unwrap())
-                .unwrap()
-                .is_none()
+            newest_from_json(
+                JSON,
+                &Version::parse("2.1.0").unwrap(),
+                UpdateChannel::Latest
+            )
+            .unwrap()
+            .is_none()
         );
     }
 }

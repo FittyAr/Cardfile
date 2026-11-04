@@ -130,6 +130,22 @@ pub struct McpServer {
 impl Global for McpServer {}
 
 impl McpServer {
+    /// Stop active requests before taking the pre-restoration snapshot.
+    pub(crate) fn stop(cx: &App) -> gpui_kit::Task<()> {
+        let Some(server) = cx.try_global::<Self>() else {
+            return gpui_kit::Task::ready(());
+        };
+        server.generation.fetch_add(1, Ordering::SeqCst);
+        let worker = server.worker.clone();
+        let status = server.status.clone();
+        cx.background_spawn(async move {
+            if let Some(handle) = worker.lock().handle.take() {
+                handle.stop();
+            }
+            *status.lock() = Status::Stopped;
+        })
+    }
+
     pub fn status(cx: &App) -> Status {
         cx.try_global::<Self>()
             .map(|s| s.status.lock().clone())

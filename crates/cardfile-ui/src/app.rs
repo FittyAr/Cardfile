@@ -9,13 +9,13 @@ use gpui_kit::component::notification::Notification;
 use gpui_kit::component::{ActiveTheme as _, WindowExt as _};
 use gpui_kit::{
     App, AppContext as _, Context, Entity, Focusable as _, InteractiveElement as _, IntoElement,
-    KeyDownEvent, MouseDownEvent, ParentElement as _, Render, ScrollWheelEvent, Styled as _,
+    KeyDownEvent, MouseDownEvent, ParentElement as _, Render, ScrollEvent, Styled as _,
     Subscription, Task, Window, canvas, div, px,
 };
 
 use crate::keymap::*;
 use crate::login::{LoginEvent, LoginView};
-use crate::state::{AppState, Session, run_db};
+use crate::state::{AppState, Session};
 use crate::wizard::{Wizard, WizardEvent};
 use crate::workspace::{Workspace, WorkspaceEvent};
 
@@ -38,8 +38,23 @@ pub struct CardfileApp {
 
 impl CardfileApp {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+        window.on_window_should_close(cx, |_, _| !crate::data_operations::busy());
         // Any keystroke counts as activity for the auto-lock timer.
         let subs = vec![
+            cx.observe_window_bounds(window, |_, window, cx| {
+                if !window.is_visible() || window.is_fullscreen() {
+                    return;
+                }
+                let normal = window.window_bounds().get_bounds().size;
+                let maximized = window.is_maximized();
+                crate::local_config::LocalPreferences::change(cx, |s| {
+                    s.window.maximized = maximized;
+                    if !maximized && normal.width >= px(100.) && normal.height >= px(100.) {
+                        s.window.width = normal.width.into();
+                        s.window.height = normal.height.into();
+                    }
+                });
+            }),
             cx.observe_keystrokes(|this, _, _, _| this.last_activity.set(Instant::now())),
             // Every quit path (menu, Ctrl+Q, the updater's restart) saves the open card
             // and waits (within the toolkit's shutdown timeout) for the write.
@@ -51,9 +66,16 @@ impl CardfileApp {
                 let cleaned = cx.background_spawn(async {
                     crate::export::remove_session_attachments();
                 });
+                let prefs = cx.global::<crate::local_config::LocalPreferences>().clone();
+                let config = cx.background_spawn(async move {
+                    if let Err(e) = prefs.persist() {
+                        tracing::error!("save window state: {e}");
+                    }
+                });
                 async move {
                     saved.await;
                     cleaned.await;
+                    config.await;
                 }
             }),
         ];
@@ -174,6 +196,7 @@ impl CardfileApp {
         focus.focus(window, cx);
         Workspace::set_current(Some(&ws), cx);
         self.screen = Screen::Workspace(ws);
+        crate::data_operations::start_scheduler(window, cx);
         self.last_activity.set(Instant::now());
         // `sign_in` also runs after every auto-lock unlock; check once per process.
         static UPDATE_CHECKED: std::sync::atomic::AtomicBool =
@@ -224,6 +247,9 @@ impl CardfileApp {
     }
 
     fn quit(&mut self, _: &Quit, _: &mut Window, cx: &mut Context<Self>) {
+        if crate::data_operations::busy() {
+            return;
+        }
         // The open card is saved by the `on_app_quit` hook.
         cx.quit();
     }
@@ -269,23 +295,7 @@ impl CardfileApp {
     }
 
     fn backup_now(&mut self, _: &BackupNow, window: &mut Window, cx: &mut Context<Self>) {
-        let db = AppState::db(cx);
-        let dir = AppState::get(cx).paths.backups();
-        let task = run_db(cx, move |_| db.backup(&dir));
-        cx.spawn_in(window, async move |_, cx| {
-            let result = task.await;
-            let _ = cx.update(|window, cx| match result {
-                Ok(path) => window.push_notification(
-                    Notification::success(cardfile_i18n::t_args(
-                        "backup.done",
-                        &[("path", &path.display().to_string())],
-                    )),
-                    cx,
-                ),
-                Err(e) => window.push_notification(Notification::error(e.to_string()), cx),
-            });
-        })
-        .detach();
+        crate::data_operations::backup(window, cx, false);
     }
 
     fn check_updates(&mut self, _: &CheckForUpdates, window: &mut Window, cx: &mut Context<Self>) {
@@ -331,11 +341,18 @@ impl SpawnExt for Context<'_, CardfileApp> {
 
 impl Render for CardfileApp {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let content = match &self.screen {
-            Screen::Loading => div().into_any_element(),
-            Screen::Wizard(v) => v.clone().into_any_element(),
-            Screen::Login(v) => v.clone().into_any_element(),
-            Screen::Workspace(v) => v.clone().into_any_element(),
+        let content = if crate::data_operations::busy() {
+            div()
+                .p(px(24.))
+                .child(cardfile_i18n::t("data_operations.busy"))
+                .into_any_element()
+        } else {
+            match &self.screen {
+                Screen::Loading => div().into_any_element(),
+                Screen::Wizard(v) => v.clone().into_any_element(),
+                Screen::Login(v) => v.clone().into_any_element(),
+                Screen::Workspace(v) => v.clone().into_any_element(),
+            }
         };
         let title_bar = self.render_title_bar(cx);
         let body = gpui_kit::component::v_flex()
@@ -352,7 +369,7 @@ impl Render for CardfileApp {
                 let a = activity.clone();
                 window.on_mouse_event(move |_: &MouseDownEvent, _, _, _| a.set(Instant::now()));
                 let a = activity.clone();
-                window.on_mouse_event(move |_: &ScrollWheelEvent, _, _, _| a.set(Instant::now()));
+                window.on_mouse_event(move |_: &ScrollEvent, _, _, _| a.set(Instant::now()));
                 let a = activity;
                 window.on_key_event(move |_: &KeyDownEvent, _, _, _| a.set(Instant::now()));
             },

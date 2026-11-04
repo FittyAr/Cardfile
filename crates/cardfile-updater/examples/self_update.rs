@@ -10,7 +10,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .nth(1)
         .unwrap_or_else(|| "2.0.0-alpha.1".into());
     let current = semver::Version::parse(&pretend)?;
-    let Some(release) = cardfile_updater::check(&current)? else {
+    let Some(release) = cardfile_updater::check(&current, cardfile_updater::UpdateChannel::Latest)?
+    else {
         println!("no newer release than {current}");
         return Ok(());
     };

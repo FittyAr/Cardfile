@@ -57,12 +57,20 @@ pub fn install(downloaded: Downloaded) -> Result<InstallOutcome, UpdateError> {
                 .map_err(|e| UpdateError::Io(e.error))?;
             Ok(InstallOutcome::Restart { exe: appimage })
         }
-        InstallKind::InnoSetup { per_user, .. } => {
+        InstallKind::InnoSetup { per_user, exe } => {
             // The installer must outlive this process: keep the file. The next start's
             // `cleanup_after_update` deletes it.
             let setup = path.keep().map_err(|e| UpdateError::Io(e.error))?;
             Command::new(&setup)
                 .args(installer_args(per_user))
+                .arg(format!(
+                    "/DIR={}",
+                    exe.parent()
+                        .ok_or_else(|| UpdateError::Unsupported(
+                            "installation has no parent folder".into()
+                        ))?
+                        .display()
+                ))
                 .spawn()?;
             Ok(InstallOutcome::QuitForInstaller)
         }
@@ -74,13 +82,14 @@ pub fn install(downloaded: Downloaded) -> Result<InstallOutcome, UpdateError> {
 
 /// Command line for a silent Inno Setup update. `/RELAUNCH` is Cardfile's own switch:
 /// `installer.iss` starts the app again when it is present.
-pub(crate) fn installer_args(per_user: bool) -> [&'static str; 6] {
+pub(crate) fn installer_args(per_user: bool) -> [&'static str; 7] {
     [
         "/VERYSILENT",
         "/SUPPRESSMSGBOXES",
         "/NORESTART",
         "/CLOSEAPPLICATIONS",
         "/RELAUNCH",
+        "/MODE=installed",
         if per_user {
             "/CURRENTUSER"
         } else {
@@ -560,6 +569,7 @@ mod tests {
         let args = installer_args(true);
         assert!(args.contains(&"/VERYSILENT") && args.contains(&"/RELAUNCH"));
         assert!(args.contains(&"/CURRENTUSER"));
+        assert!(args.contains(&"/MODE=installed"));
         assert!(installer_args(false).contains(&"/ALLUSERS"));
     }
 }

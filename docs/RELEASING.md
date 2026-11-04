@@ -9,7 +9,7 @@ generates `.github/workflows/release.yml`. Don't edit that file by hand: change
 | File | Produced by | Notes |
 |------|-------------|-------|
 | `cardfile-<target>.zip` / `.tar.xz` | dist | Portable archives for Windows and Linux (x64, ARM64) |
-| `install.ps1` / `install.sh` (repo root, not a release asset) | maintainers | One-line installers served from `main`; they always pick the newest release, so they need no change per release. They rely on the archive names `cardfile-<target>.zip` / `.tar.xz`, `SHA256SUMS` and the minisign trusted comment `Cardfile <tag> release file: <name>` |
+| `install.ps1` / `install.sh` (repo root, not a release asset) | maintainers | One-line installers served from `main`; they always pick the newest release, so they need no change per release. PowerShell uses `Cardfile-<version>-setup-<arch>.exe`; shell uses `cardfile-<target>.tar.xz`. They rely on `SHA256SUMS` and the minisign trusted comment `Cardfile <tag> release file: <name>` |
 | `Cardfile-<version>-setup-<arch>.exe` | `package.yml` | Inno Setup installer, also used by winget |
 | `Cardfile-<version>-<arch>.msix` | `package.yml` | For Microsoft Store submission (the Store signs it) |
 | `.deb`, `.rpm`, `.AppImage` | `package.yml` | Linux packages for x86_64 and aarch64 |
@@ -114,3 +114,20 @@ Tags with a pre-release suffix (`v2.0.0-alpha.1`) are published as GitHub pre-re
 ## Linux repositories (planned)
 
 Flathub and AUR are planned. The AppStream metadata in `packaging/linux` is ready for them.
+
+Windows setup supports `/MODE=installed|portable` and `/DIR`. Portable updates continue using ZIP archives. Validate both x64 and ARM64 setup modes before publishing.
+
+
+## beta.3 validation and dependency refresh
+
+The maintainer requested beta.3 as a **prerelease**; do not mark it Latest automatically.
+After testing, the maintainer can promote it in GitHub. The updater's Latest channel
+uses GitHub's designation, independently of beta suffixes in tags.
+
+All direct requirements and compatible locked dependencies were refreshed on 2026-11-04.
+Keep libsqlite3-sys 0.38.2 until Diesel supports 0.39. cargo-dist is updated to 0.33.0:
+[the 0.34.0 template](https://github.com/axodotdev/cargo-dist/blob/v0.34.0/cargo-dist/templates/ci/github/release.yml.j2)
+emits invalid `uses: $/.github/workflows/...` for custom jobs. Do not hand-edit generated
+release.yml or disable its consistency checks to work around that generator regression.
+CI compiles both Windows installer architectures with a disposable payload and runs the
+PowerShell bootstrap with mocked downloads, launches and legacy cleanup.

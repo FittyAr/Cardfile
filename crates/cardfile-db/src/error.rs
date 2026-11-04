@@ -3,6 +3,12 @@ use thiserror::Error;
 /// Errors from the storage layer.
 #[derive(Debug, Error)]
 pub enum DbError {
+    /// Another local process holds the collection's operating-system lock.
+    #[error("this collection is already open in another Cardfile process")]
+    AlreadyOpen,
+    /// A prepared restoration prevents further writes until restart.
+    #[error("a collection restore is pending; restart Cardfile")]
+    RestorePending,
     #[error("database error: {0}")]
     Query(#[from] diesel::result::Error),
     #[error("cannot open database: {0}")]

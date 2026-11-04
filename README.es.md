@@ -68,6 +68,18 @@ En Windows las opciones se pasan con
 `& ([scriptblock]::Create((irm https://raw.githubusercontent.com/FittyAr/Cardfile/main/install.ps1))) -Stable`;
 en Linux con `curl … | sh -s -- --stable`.
 
+
+En Windows, PowerShell delega en el mismo instalador `.exe` verificado. El instalador
+gráfico ofrece crear una carpeta portable en pendrive o OneDrive. Desde PowerShell:
+
+```powershell
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/FittyAr/Cardfile/main/install.ps1))) -Portable -Destination "E:\Cardfile"
+```
+
+Para incluir la colección actual, usá Configuración → Datos → Create portable copy como
+administrador. El ZIP sigue disponible. Cerrá Cardfile y esperá la sincronización de
+OneDrive antes de abrir la carpeta portable en otro equipo.
+
 **Windows (winget)**
 
 ```powershell

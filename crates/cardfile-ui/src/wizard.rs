@@ -35,8 +35,19 @@ struct StorageInfo {
 
 /// Where the wizard puts the database, decided in the background in [`Wizard::finish`].
 enum Location {
-    Created(DataPaths, Database, AppSettings, Box<Session>),
-    Existing(DataPaths, Database, AppSettings),
+    Created(
+        DataPaths,
+        Database,
+        AppSettings,
+        Box<Session>,
+        crate::local_config::LocalConfig,
+    ),
+    Existing(
+        DataPaths,
+        Database,
+        AppSettings,
+        crate::local_config::LocalConfig,
+    ),
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -71,8 +82,28 @@ pub struct Wizard {
 impl EventEmitter<WizardEvent> for Wizard {}
 
 impl Wizard {
+    fn switch_preferences(
+        paths: &DataPaths,
+        mut config: crate::local_config::LocalConfig,
+        cx: &mut Context<Self>,
+    ) {
+        use crate::local_config::LocalPreferences;
+        if cx.global::<LocalPreferences>().root == paths.root {
+            return;
+        }
+        config.window = LocalPreferences::snapshot(cx).window;
+        cx.set_global(LocalPreferences {
+            root: paths.root.clone(),
+            config: std::sync::Arc::new(parking_lot::Mutex::new(config)),
+            writer: Default::default(),
+            generation: Default::default(),
+        });
+        LocalPreferences::change(cx, |_| {});
+    }
+
     /// `ask_storage` is false when a database already exists.
     pub fn new(ask_storage: bool, window: &mut Window, cx: &mut Context<Self>) -> Self {
+        let ask_storage = ask_storage && !DataPaths::storage_preselected();
         let mut steps = vec![Step::Welcome];
         if ask_storage {
             steps.push(Step::Storage);
@@ -229,7 +260,8 @@ impl Wizard {
                         // already set up there: use it, never add a second account.
                         let app = db.app_settings()?;
                         if app.initialized {
-                            return anyhow::Ok(Location::Existing(paths, db, app));
+                            let config = crate::local_config::LocalConfig::load(&paths.root);
+                            return anyhow::Ok(Location::Existing(paths, db, app, config));
                         }
                     }
                     (paths, db)
@@ -269,11 +301,13 @@ impl Wizard {
                     lock_mode: LockMode::None,
                 },
             )?;
+            let config = crate::local_config::LocalConfig::load(&paths.root);
             anyhow::Ok(Location::Created(
                 paths,
                 db,
                 app,
                 Box::new(Session { user, settings }),
+                config,
             ))
         });
         cx.spawn(async move |this, cx| {
@@ -281,14 +315,16 @@ impl Wizard {
             let _ = this.update(cx, |this, cx| {
                 this.busy = false;
                 match result {
-                    Ok(Location::Existing(paths, db, app)) => {
+                    Ok(Location::Existing(paths, db, app, config)) => {
+                        Self::switch_preferences(&paths, config, cx);
                         let state = AppState::get_mut(cx);
                         state.paths = paths;
                         state.db = Some(db);
                         state.app = app;
                         cx.emit(WizardEvent::UseExisting);
                     }
-                    Ok(Location::Created(paths, db, app, session)) => {
+                    Ok(Location::Created(paths, db, app, session, config)) => {
+                        Self::switch_preferences(&paths, config, cx);
                         let state = AppState::get_mut(cx);
                         state.paths = paths;
                         state.db = Some(db);

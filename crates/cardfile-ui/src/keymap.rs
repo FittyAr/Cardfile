@@ -122,14 +122,7 @@ fn load_user_bindings(path: &std::path::Path, cx: &App) -> anyhow::Result<Vec<Ke
                 continue;
             }
         };
-        match KeyBinding::load(
-            &e.keys,
-            action,
-            predicate,
-            false,
-            None,
-            cx.keyboard_mapper().as_ref(),
-        ) {
+        match KeyBinding::load(&e.keys, action, predicate, false, None, cx) {
             Ok(b) => out.push(b),
             Err(err) => tracing::warn!("keymap: bad keys {}: {err}", e.keys),
         }

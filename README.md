@@ -65,6 +65,18 @@ On Windows pass options with
 `& ([scriptblock]::Create((irm https://raw.githubusercontent.com/FittyAr/Cardfile/main/install.ps1))) -Stable`;
 on Linux with `curl … | sh -s -- --stable`.
 
+
+On Windows, PowerShell delegates to the same verified `.exe` setup. The graphical setup
+also offers a portable folder for a USB drive or OneDrive. To prepare one from PowerShell:
+
+```powershell
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/FittyAr/Cardfile/main/install.ps1))) -Portable -Destination "E:\Cardfile"
+```
+
+To include your existing collection, use Settings → Data → Create portable copy as an
+administrator. The ZIP download remains available. Close Cardfile and finish OneDrive
+synchronization before opening the portable folder on another computer.
+
 **Windows (winget)**
 
 ```powershell
