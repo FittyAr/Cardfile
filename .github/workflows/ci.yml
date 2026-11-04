@@ -44,16 +44,13 @@ jobs:
       - name: Compile both installer architectures with a disposable payload
         shell: pwsh
         run: |
-          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
-          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress; }
           $payload = Join-Path $env:RUNNER_TEMP 'cardfile-test-payload'
           $output = Join-Path $env:RUNNER_TEMP 'cardfile-test-installers'
           New-Item -ItemType Directory -Force -Path $payload, $output | Out-Null
           Set-Content -LiteralPath (Join-Path $payload 'cardfile.exe') -Value 'Test payload; never execute'
           Copy-Item -LiteralPath LICENSE-MIT, LICENSE-APACHE -Destination $payload
           foreach ($arch in @('x64', 'arm64')) {
-            & $iscc /DAppVersion=0.0.0-test /DFileVersion=0.0.0 "/DArch=$arch" "/DSourceDir=$payload" "/O$output" packaging/windows/installer.iss
-            if ($LASTEXITCODE -ne 0) { throw "Installer compilation failed: $arch" }
+            ./scripts/compile-windows-installer.ps1 -SourceDir $payload -AppVersion 0.0.0-test -Arch $arch -OutputDirectory $output -ToolRoot (Join-Path $env:RUNNER_TEMP 'inno-7.1.1')
           }
 
   check:

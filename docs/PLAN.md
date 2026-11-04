@@ -561,3 +561,9 @@ Diesel 2.3.14 exige `<0.39` y no permite enlazar dos versiones de SQLite. Se con
 restricciones de licencia y las APIs públicas se adaptan sin migrar datos de usuarios.
 Las acciones de CI se fijan a los SHA de sus últimas versiones publicadas; cargo-dist
 se actualiza a 0.33.0 (0.34.0 genera rutas inválidas para los jobs personalizados) y regenera su workflow desde dist-workspace.toml.
+
+
+El empaquetado Windows usa Inno Setup 7.1.1, descargado de la release oficial con SHA-256
+fijado y extraído en modo portable dentro de la carpeta de herramientas del build.
+El mismo script compila los instaladores de CI y release; no requiere instalar Cardfile
+ni registrar el compilador en el equipo del mantenedor.

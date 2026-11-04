@@ -131,3 +131,10 @@ emits invalid `uses: $/.github/workflows/...` for custom jobs. Do not hand-edit 
 release.yml or disable its consistency checks to work around that generator regression.
 CI compiles both Windows installer architectures with a disposable payload and runs the
 PowerShell bootstrap with mocked downloads, launches and legacy cleanup.
+
+
+Windows compilation uses `scripts/compile-windows-installer.ps1`, which downloads the
+official Inno Setup 7.1.1 bootstrap pinned by SHA-256 and extracts it in portable mode
+under the build's temporary tooling folder. It creates no compiler uninstaller, PATH
+entry or application registration. CI and release jobs use this same compiler entrypoint.
+Local x64 and ARM64 smoke compilations succeeded with a disposable, never-run payload.

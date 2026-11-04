@@ -1,4 +1,4 @@
-; Cardfile Windows installer (Inno Setup 6).
+; Cardfile Windows installer (Inno Setup 7).
 ; Built in CI by .github/workflows/package.yml:
 ;   iscc /DAppVersion=2.0.0-beta.1 /DFileVersion=2.0.0 /DSourceDir=path\to\unzipped /DArch=x64 packaging\windows\installer.iss
 

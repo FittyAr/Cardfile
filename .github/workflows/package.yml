@@ -48,11 +48,7 @@ jobs:
       - name: Inno Setup installer
         shell: pwsh
         run: |
-          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
-          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress; }
-          $fileVersion = $env:VERSION -replace '-.*$', ''
-          & $iscc /DAppVersion=$env:VERSION /DFileVersion=$fileVersion /DArch=${{ matrix.arch }} "/DSourceDir=$env:SRC" packaging\windows\installer.iss
-          if ($LASTEXITCODE -ne 0) { throw "iscc failed" }
+          ./scripts/compile-windows-installer.ps1 -SourceDir $env:SRC -AppVersion $env:VERSION -Arch '${{ matrix.arch }}' -ToolRoot (Join-Path $env:RUNNER_TEMP 'inno-7.1.1')
       - name: MSIX (Microsoft Store)
         shell: pwsh
         run: |

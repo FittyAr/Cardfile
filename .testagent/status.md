@@ -98,3 +98,10 @@ is constrained by Diesel (<0.39). All compatible locked versions were refreshed.
 Minisign and linuxdeploy already match their latest published release; dictionary pins
 already match upstream. cargo-dist 0.33.0 is the latest usable generator for custom jobs
 because 0.34.0 produces invalid workflow references. No security-check waiver is used.
+
+
+Windows installer smoke compilation passed locally for both x64 and ARM64 with
+verified portable Inno Setup 7.1.1. `scripts/compile-windows-installer.ps1` now provides
+the same pinned compiler to CI and release packaging. Only the compiler bootstrap was
+executed in its documented portable mode; generated Cardfile installers and payloads
+were never executed. The current Cardfile installation was not accessed.
