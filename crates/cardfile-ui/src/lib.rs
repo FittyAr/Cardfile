@@ -5,11 +5,13 @@ mod app;
 mod assets;
 mod card_pane;
 mod chat;
+mod data_operations;
 mod dialogs;
 mod dictionaries;
 mod export;
 mod history;
 pub mod keymap;
+mod local_config;
 mod locks;
 mod login;
 mod mcp_host;
@@ -46,6 +48,16 @@ fn window_icon() -> Option<std::sync::Arc<image::RgbaImage>> {
 
 /// Start the application with the resolved data location. Blocks until quit.
 pub fn run(paths: DataPaths) {
+    // Startup disk work precedes the UI event loop.
+    let initial_config = local_config::LocalConfig::load(&paths.root);
+    let initial_db = if paths.db().exists() || paths.root.join(".restore-pending").exists() {
+        Some(
+            cardfile_db::Database::open(&paths.db(), Some(&paths.backups()))
+                .and_then(|db| db.app_settings().map(|settings| (db, settings))),
+        )
+    } else {
+        None
+    };
     gpui_kit::application()
         .with_assets(assets::Assets)
         .run(move |cx| {
@@ -57,18 +69,9 @@ pub fn run(paths: DataPaths) {
             keymap::init(&paths, cx);
 
             // Open the database if it already exists; the wizard creates it otherwise.
-            let (db, app_settings) = if paths.db().exists() {
-                match cardfile_db::Database::open(&paths.db(), Some(&paths.backups())) {
-                    Ok(db) => match db.app_settings() {
-                        Ok(settings) => (Some(db), settings),
-                        // Defaults would re-run the first-run wizard on existing data.
-                        Err(e) => {
-                            tracing::error!("cannot read settings: {e:#}");
-                            eprintln!("Cardfile: cannot read settings: {e}");
-                            cx.quit();
-                            return;
-                        }
-                    },
+            let (db, app_settings) = if let Some(initial_db) = initial_db {
+                match initial_db {
+                    Ok((db, settings)) => (Some(db), settings),
                     Err(e) => {
                         tracing::error!("cannot open database: {e:#}");
                         eprintln!(
@@ -102,10 +105,31 @@ pub fn run(paths: DataPaths) {
                 session: None,
             });
 
-            let bounds = Bounds::centered(None, size(px(1180.), px(760.)), cx);
+            let available = cx
+                .primary_display()
+                .map(|d| d.visible_bounds().size)
+                .unwrap_or(size(px(1180.), px(760.)));
+            let (width, height) = initial_config
+                .window
+                .clamped((available.width.into(), available.height.into()));
+            let maximized = initial_config.window.maximized;
+            let prefs = local_config::LocalPreferences {
+                root: paths.root.clone(),
+                config: std::sync::Arc::new(parking_lot::Mutex::new(initial_config)),
+                writer: Default::default(),
+                generation: Default::default(),
+            };
+            cx.set_global(prefs.clone());
+            // Establish a stable collection ID even before a first backup.
+            local_config::LocalPreferences::change(cx, |_| {});
+            let bounds = Bounds::centered(None, size(px(width), px(height)), cx);
             // The app draws its own title bar (like Zed): no native frame.
             let options = WindowOptions {
-                window_bounds: Some(WindowBounds::Windowed(bounds)),
+                window_bounds: Some(if maximized {
+                    WindowBounds::Maximized(bounds)
+                } else {
+                    WindowBounds::Windowed(bounds)
+                }),
                 titlebar: Some(TitlebarOptions {
                     title: Some("Cardfile".into()),
                     ..gpui_kit::component::TitleBar::title_bar_options()
@@ -117,7 +141,10 @@ pub fn run(paths: DataPaths) {
                 // off subpixel text rendering.
                 window_background: gpui_kit::WindowBackgroundAppearance::Opaque,
                 app_id: Some("ar.fittyar.Cardfile".into()),
-                window_min_size: Some(size(px(760.), px(480.))),
+                window_min_size: Some(size(
+                    px(760.).min(available.width),
+                    px(480.).min(available.height),
+                )),
                 // Used by X11; Windows takes the icon from the executable's resources.
                 icon: window_icon(),
                 ..gpui_kit::component::TitleBar::window_options()

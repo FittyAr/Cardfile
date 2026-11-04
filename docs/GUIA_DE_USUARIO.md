@@ -141,7 +141,7 @@ Cardfile busca versiones nuevas al iniciar (Configuración → General). Cuando 
 - **Todas las tarjetas:** Configuración → Datos → Export.
   - Las tarjetas privadas y cifradas no se exportan.
   - Las exportaciones a Markdown guardan las imágenes en una carpeta `blobs`.
-- **Respaldo:** menú de configuración → *Back up now* guarda una copia de la base de datos en la carpeta `backups`. También se hace un respaldo automático antes de cada actualización de la base de datos.
+- **Respaldo:** menú de configuración → *Back up now* guarda una copia en la carpeta configurable de respaldos (por defecto, `backups`). También se hace un respaldo automático antes de cada actualización de la base de datos.
 
 ## Atajos de teclado y comandos
 
@@ -170,3 +170,52 @@ Opciones de línea de comandos:
 
 - `cardfile --portable` guarda los datos junto al ejecutable.
 - `cardfile --data-dir <carpeta>` usa la carpeta que elijas.
+
+
+## Copias portables y recuperación
+
+El instalador Windows ofrece **Install on this computer**, **Create a portable copy** y
+una instalación explícita para todos los usuarios. Para portable, elegí una carpeta
+escribible en pendrive, OneDrive u otro disco y abrí su `cardfile.exe`. Mové siempre la
+carpeta completa, con `portable.flag` y `data/`. El ZIP sigue disponible.
+
+PowerShell descarga y verifica ese mismo instalador:
+
+```powershell
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/FittyAr/Cardfile/main/install.ps1))) -Portable -Destination "E:\Cardfile"
+```
+
+Para llevar los datos actuales, un administrador usa **Configuración → Datos → Create
+portable copy** y elige la carpeta contenedora. Se crea `Cardfile portable` sin sobrescribir
+un destino existente. Incluye todos los usuarios, fichas, adjuntos, historial y cifrado.
+MCP y respaldos automáticos quedan desactivados en la copia. Las claves de IA del almacén
+del sistema se ingresan nuevamente en el otro equipo. Las versiones de tienda o paquetes
+del sistema indican cómo obtener la distribución portable.
+
+En **Configuración → Datos**, los administradores pueden elegir la carpeta de respaldos,
+crear copias manuales y activar copias diarias. Por defecto son manuales en `backups/`;
+al activar la programación se conservan 10 copias automáticas. Se comprueba cada hora
+mientras haya sesión abierta y se recupera una copia diaria pendiente al iniciar sesión.
+Si falta el destino, se informa y se reintenta. La retención nunca borra copias manuales,
+de otra colección o de seguridad anteriores a restauraciones y migraciones.
+
+**Restore backup** reemplaza toda la colección, incluidos usuarios y permisos; no combina
+fichas. Se valida el `.db`, se guardan ediciones, se crea un respaldo local obligatorio,
+se prepara la base recuperada y se reinicia. Ingresá con las cuentas y contraseñas del
+respaldo. Se conserva el archivo fuente y la configuración local de respaldos/ventana.
+Los respaldos mantienen el cifrado existente, pero no cifran fichas que estaban sin cifrar.
+No recuperan contraseñas olvidadas ni secretos externos del almacén del sistema.
+
+Cerrá Cardfile antes de extraer el pendrive o cambiar de equipo. En OneDrive esperá a que
+termine de sincronizar antes de abrir en otro equipo; no se admite uso simultáneo.
+El bloqueo local no coordina equipos diferentes. El tamaño normal de ventana y el estado
+maximizado se recuerdan en `local-config.json`.
+
+
+## Canal de actualizaciones
+
+Configuración → General → Update channel ofrece **Latest** (predeterminado) y
+**Prerelease**. Latest sigue la release marcada como Latest en GitHub, aunque su
+etiqueta diga `beta`. Prerelease incluye también las versiones de prueba. Ambos
+canales mantienen las firmas y verificaciones y nunca instalan una versión menor.
+Al cambiar el canal se comprueba inmediatamente y se recuerda la elección por usuario.

@@ -3,6 +3,17 @@ use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::{LockMode, SearchScope, SortOrder};
 
+/// Which GitHub release channel a user wants the updater to check.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum UpdateChannel {
+    /// Only the release GitHub designates as Latest, including promoted beta tags.
+    #[default]
+    Latest,
+    /// Include published prereleases as well as regular releases.
+    Prerelease,
+}
+
 /// How people sign in. Chosen in the first-run wizard.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -132,6 +143,8 @@ pub struct UserSettings {
     /// Snapshots kept per card (0 disables history).
     pub max_revisions: u32,
     pub check_for_updates: bool,
+    /// Explicit opt-in to prerelease updates; independent of the running version.
+    pub update_channel: UpdateChannel,
     pub confirm_delete: bool,
     pub language: String,
     /// Width of the card list column in logical pixels.
@@ -187,6 +200,7 @@ impl Default for UserSettings {
             markdown_shortcuts: true,
             max_revisions: 50,
             check_for_updates: true,
+            update_channel: UpdateChannel::Latest,
             confirm_delete: true,
             language: "en".into(),
             list_width: 300.0,
@@ -208,6 +222,23 @@ mod tests {
         let s: UserSettings = serde_json::from_str(r#"{"theme":"Forest"}"#).unwrap();
         assert_eq!(s.theme, "Forest");
         assert_eq!(s.max_revisions, 50);
+        assert_eq!(s.update_channel, UpdateChannel::Latest);
+    }
+
+    #[test]
+    fn update_channel_persists_and_invalid_values_preserve_other_preferences() {
+        let s =
+            UserSettings::from_json(r#"{"theme":"Forest","update_channel":"prerelease"}"#).unwrap();
+        assert_eq!(s.update_channel, UpdateChannel::Prerelease);
+        let saved = serde_json::to_string(&s).unwrap();
+        assert_eq!(
+            UserSettings::from_json(&saved).unwrap().update_channel,
+            UpdateChannel::Prerelease
+        );
+        let unknown =
+            UserSettings::from_json(r#"{"theme":"Forest","update_channel":"future"}"#).unwrap();
+        assert_eq!(unknown.update_channel, UpdateChannel::Latest);
+        assert_eq!(unknown.theme, "Forest");
     }
 
     #[test]

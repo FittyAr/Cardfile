@@ -711,6 +711,10 @@ impl Workspace {
         self.pane.update(cx, |p, cx| p.save_now(cx))
     }
 
+    pub(crate) fn flush_checked(&mut self, cx: &mut Context<Self>) -> Task<anyhow::Result<()>> {
+        self.pane.update(cx, |p, cx| p.flush_checked(cx))
+    }
+
     pub fn apply_settings(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         self.pane.update(cx, |p, cx| p.apply_user_settings(cx));
         self.reload(window, cx);

@@ -112,6 +112,7 @@ struct PendingSave {
     title_gen: u64,
     /// Released when the write finished (or was skipped).
     done: Latch,
+    error: Arc<parking_lot::Mutex<Option<String>>>,
 }
 
 impl EventEmitter<CardPaneEvent> for CardPane {}
@@ -489,6 +490,28 @@ impl CardPane {
         })
     }
 
+    /// Flush for data operations, propagating failures instead of copying stale content.
+    pub(crate) fn flush_checked(&mut self, cx: &mut Context<Self>) -> Task<anyhow::Result<()>> {
+        if self.lock_change.is_some() {
+            return Task::ready(Err(anyhow::anyhow!(t("data_operations.protection_busy"))));
+        }
+        drop(self.save_now(cx));
+        let pending: Vec<_> = self
+            .pending
+            .iter()
+            .map(|p| (p.done.clone(), p.error.clone()))
+            .collect();
+        cx.background_spawn(async move {
+            for (done, error) in pending {
+                done.block();
+                if let Some(error) = error.lock().clone() {
+                    return Err(anyhow::anyhow!(error));
+                }
+            }
+            Ok(())
+        })
+    }
+
     fn save(&mut self, cx: &mut Context<Self>) {
         self.save_task = None;
         let Some(card) = self.card.as_ref() else {
@@ -521,6 +544,7 @@ impl CardPane {
         let writer = self.writer.clone();
         let ticket = writer.ticket();
         let done = Latch::default();
+        let error = Arc::new(parking_lot::Mutex::new(None));
         self.pending.push(PendingSave {
             card: id,
             ticket,
@@ -528,6 +552,7 @@ impl CardPane {
             revision,
             title_gen,
             done: done.clone(),
+            error: error.clone(),
         });
         let write = move || {
             let json = doc.to_json();
@@ -555,6 +580,9 @@ impl CardPane {
         let task = cx.background_spawn(async move {
             // Skipped (`None`) when a newer snapshot of the card was already written.
             let result = writer.write(id, ticket, write);
+            if let Some(Err(e)) = &result {
+                *error.lock() = Some(format!("{e:#}"));
+            }
             done.release();
             result
         });

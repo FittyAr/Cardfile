@@ -394,6 +394,10 @@ settings:
     confirm_delete: Ask before deleting cards
     check_updates: Check for updates on startup
     check_updates_hint: Only checks GitHub for a newer version. No data is sent.
+    update_channel: Update channel
+    update_channel_hint: "Latest follows GitHub's designated latest release. Prerelease also includes testing releases. Switching channels never installs an older version."
+    update_latest: Latest
+    update_prerelease: Prerelease
     keymap: Keyboard shortcuts
     keymap_hint: Edit keymap.json to change any shortcut. Restart to apply.
     dictionary: Spelling dictionary
@@ -607,3 +611,27 @@ chat:
 attachment:
   not_found: The attachment was not found.
   no_app: "No application on this computer can open “%{name}”. Install a program for this file type (for videos, a media player such as VLC) and try again."
+
+data_operations:
+  admin_required: Only an administrator can back up the entire collection.
+  backups: Database backups
+  choose_backup: Choose backup folder
+  open_backup: Open backup folder
+  default_backup: Use data/backups
+  daily: Automatic daily backup
+  daily_hint: "While Cardfile is open, back up every 24 hours. Missed backups run after signing in; unavailable destinations are retried hourly."
+  retention: Automatic copies to keep
+  contents: "Backups contain the entire collection, including all users, attachments and encrypted cards. They retain existing card encryption; they do not encrypt unencrypted content. System credential-store API keys are not included."
+  choose_restore: Choose a Cardfile database backup
+  restore: Restore backup
+  restore_confirm: "Replace ALL users, cards, attachments and permissions with this backup? Cardfile will create a safety backup and restart. Sign in using the restored accounts and passwords. This does not merge collections."
+  portable: Create portable copy
+  portable_confirm: "Create a complete copy of all users, cards and attachments in a new 'Cardfile portable' folder? MCP and automatic backups will be disabled in the copy. Re-enter AI keys stored in this computer's credential store on another computer. Close Cardfile and finish OneDrive synchronization before changing computers."
+  choose_portable: Choose the parent folder for Cardfile portable
+  portable_unsupported: "Download the portable archive from https://github.com/FittyAr/Cardfile/releases to create a portable copy of this store or package-managed installation."
+  destination_exists: "The destination already exists. Choose another parent folder; existing data will not be overwritten."
+  invalid_destination: The destination is not a valid folder.
+  nested_destination: Choose a destination outside the active data folder and resource dictionaries.
+  protection_busy: Wait for the card protection change to finish and try again.
+  busy: "Preparing your collection. Please wait…"
+  failed: "The operation failed: %{error}"

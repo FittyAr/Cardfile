@@ -13,9 +13,9 @@
 //!   keeps working without the flag). Choosing the standard location in the
 //!   first-run wizard removes the flag, so that choice sticks.
 //!
-//! Every setting lives in `cardfile.db` (installation settings in `app_settings`,
-//! preferences on each user row) next to `keymap.json`, so the folder is the whole
-//! state of Cardfile.
+//! Collection settings live in `cardfile.db` (installation settings in
+//! `app_settings`, preferences on each user row). Window and backup preferences
+//! live in `local-config.json` and survive database restoration.
 
 use std::path::{Path, PathBuf};
 
@@ -28,6 +28,13 @@ pub struct DataPaths {
 }
 
 impl DataPaths {
+    /// An installer or explicit CLI option has already selected storage.
+    pub fn storage_preselected() -> bool {
+        std::env::args().any(|a| a == "--portable" || a == "--data-dir")
+            || exe_dir().is_some_and(|dir| {
+                dir.join("portable.flag").exists() || dir.join("installed.flag").exists()
+            })
+    }
     pub fn db(&self) -> PathBuf {
         self.root.join("cardfile.db")
     }

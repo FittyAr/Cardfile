@@ -8,6 +8,7 @@ mod api_keys;
 mod blobs;
 mod cards;
 mod error;
+mod recovery;
 mod rows;
 mod schema;
 mod search;
@@ -27,6 +28,7 @@ use parking_lot::Mutex;
 
 pub use cards::ContentUpdate;
 pub use error::{DbError, DbResult};
+pub use recovery::{BackupKind, validate_backup};
 pub use search::fts_query;
 pub use users::{CredentialUpdate, Rekey};
 
@@ -37,6 +39,9 @@ const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
 pub struct Database {
     conn: Arc<Mutex<SqliteConnection>>,
     path: Option<PathBuf>,
+    // An OS lock is released even after a crash; never delete the lock file.
+    _file_lock: Option<Arc<std::fs::File>>,
+    frozen: Arc<std::sync::atomic::AtomicBool>,
 }
 
 impl std::fmt::Debug for Database {
@@ -51,11 +56,13 @@ impl Database {
     /// Open (or create) the database at `path` and apply pending migrations.
     ///
     /// When migrations are pending on an existing file, a copy is saved to
-    /// `<backup_dir>/cardfile-<timestamp>.db` first.
+    /// `<backup_dir>/cardfile-migration-<timestamp>-<uuid>.db` first.
     pub fn open(path: &Path, backup_dir: Option<&Path>) -> DbResult<Self> {
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent)?;
         }
+        let file_lock = recovery::lock_database(path)?;
+        recovery::recover(path)?;
         let existed = path.exists();
         let url = path.to_string_lossy().into_owned();
         let mut conn = SqliteConnection::establish(&url)?;
@@ -75,6 +82,8 @@ impl Database {
         Ok(Self {
             conn: Arc::new(Mutex::new(conn)),
             path: Some(path.to_owned()),
+            _file_lock: Some(Arc::new(file_lock)),
+            frozen: Default::default(),
         })
     }
 
@@ -87,6 +96,8 @@ impl Database {
         Ok(Self {
             conn: Arc::new(Mutex::new(conn)),
             path: None,
+            _file_lock: None,
+            frozen: Default::default(),
         })
     }
 
@@ -97,6 +108,9 @@ impl Database {
     /// Run `f` with exclusive access to the connection.
     fn with<T>(&self, f: impl FnOnce(&mut SqliteConnection) -> DbResult<T>) -> DbResult<T> {
         let mut conn = self.conn.lock();
+        if self.frozen.load(std::sync::atomic::Ordering::SeqCst) {
+            return Err(DbError::RestorePending);
+        }
         f(&mut conn)
     }
 
@@ -126,11 +140,7 @@ fn configure(conn: &mut SqliteConnection) -> DbResult<()> {
 }
 
 fn backup_to(conn: &mut SqliteConnection, dir: &Path) -> DbResult<PathBuf> {
-    std::fs::create_dir_all(dir)?;
-    let stamp = cardfile_core::now_millis();
-    let target = dir.join(format!("cardfile-{stamp}.db"));
-    let quoted = target.to_string_lossy().replace('\'', "''");
-    conn.batch_execute(&format!("VACUUM INTO '{quoted}';"))?;
+    let target = recovery::snapshot(conn, dir, "migration")?;
     tracing::info!(path = %target.display(), "database backup written");
     Ok(target)
 }

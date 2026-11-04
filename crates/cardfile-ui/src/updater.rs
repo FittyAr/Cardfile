@@ -24,6 +24,18 @@ use crate::state::AppState;
 /// How Cardfile was installed. Detecting it touches the file system (it creates a
 /// probe file), so it runs once, on the background executor (see [`detect_kind`]).
 static KIND: OnceLock<InstallKind> = OnceLock::new();
+static INSTALLING: AtomicBool = AtomicBool::new(false);
+
+pub(crate) fn busy() -> bool {
+    INSTALLING.load(Ordering::SeqCst)
+}
+
+struct InstallGuard;
+impl Drop for InstallGuard {
+    fn drop(&mut self) {
+        INSTALLING.store(false, Ordering::SeqCst);
+    }
+}
 
 /// The install kind, detecting it on first use. Blocking: background executor only.
 fn kind() -> &'static InstallKind {
@@ -94,11 +106,12 @@ enum Check {
 }
 
 fn run(verbose: bool, window: &mut Window, cx: &mut App) {
+    let channel = AppState::user_settings(cx).update_channel;
     let task = cx.background_spawn(async move {
         if !updates_by_us(kind()) {
             return Check::Managed;
         }
-        Check::Done(cardfile_updater::check(&current()))
+        Check::Done(cardfile_updater::check(&current(), channel))
     });
     window
         .spawn(cx, async move |cx| {
@@ -113,28 +126,38 @@ fn run(verbose: bool, window: &mut Window, cx: &mut App) {
                 }
                 Check::Done(result) => result,
             };
-            let _ = cx.update(|window, cx| match result {
-                Ok(Some(release)) => {
-                    let version = release.version.to_string();
-                    let release = Arc::new(release);
-                    window.push_notification(
-                        Notification::info(t_args("updates.available", &[("version", &version)]))
+            let _ = cx.update(|window, cx| {
+                if AppState::user_settings(cx).update_channel != channel {
+                    return;
+                }
+                match result {
+                    Ok(Some(release)) => {
+                        let version = release.version.to_string();
+                        let release = Arc::new(release);
+                        window.push_notification(
+                            Notification::info(t_args(
+                                "updates.available",
+                                &[("version", &version)],
+                            ))
                             .title(t("updates.title"))
                             .autohide(false)
                             .on_click(move |_, window, cx| {
-                                show_dialog(release.clone(), window, cx)
+                                if AppState::user_settings(cx).update_channel == channel {
+                                    show_dialog(release.clone(), window, cx)
+                                }
                             }),
+                            cx,
+                        );
+                    }
+                    Ok(None) if verbose => {
+                        window.push_notification(Notification::success(t("updates.latest")), cx)
+                    }
+                    Err(e) if verbose => window.push_notification(
+                        Notification::error(t_args("updates.failed", &[("error", &e.to_string())])),
                         cx,
-                    );
+                    ),
+                    _ => {}
                 }
-                Ok(None) if verbose => {
-                    window.push_notification(Notification::success(t("updates.latest")), cx)
-                }
-                Err(e) if verbose => window.push_notification(
-                    Notification::error(t_args("updates.failed", &[("error", &e.to_string())])),
-                    cx,
-                ),
-                _ => {}
             });
         })
         .detach();
@@ -292,6 +315,10 @@ fn release_notes_body(notes: &str) -> String {
 }
 
 fn start(release: Arc<Release>, state: Entity<UpdateState>, window: &mut Window, cx: &mut App) {
+    if crate::data_operations::busy() || INSTALLING.swap(true, Ordering::SeqCst) {
+        return;
+    }
+    let guard = InstallGuard;
     let cancel = Arc::new(AtomicBool::new(false));
     state.update(cx, |s, cx| {
         s.phase = Phase::Downloading {
@@ -351,6 +378,7 @@ fn start(release: Arc<Release>, state: Entity<UpdateState>, window: &mut Window,
     poll.detach();
     window
         .spawn(cx, async move |cx| {
+            let _guard = guard;
             let result = task.await;
             // Save the open card before the new version starts (it would read the
             // database while the old one is still writing) or the installer runs.

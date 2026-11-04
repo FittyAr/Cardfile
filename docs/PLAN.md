@@ -17,7 +17,7 @@ alcance debe reflejarse aquí primero.
 | 4 | Funcionalidades | Todas: etiquetas/categorías, imágenes embebidas, adjuntos, exportación (Markdown, HTML, PDF, JSON), favoritos/fijadas, orden manual, historial de versiones. |
 | 5 | Búsqueda | Texto completo (título + contenido) con resaltado; alcance configurable (solo título / título + contenido / incluir etiquetas). |
 | 6 | Papelera | Se mantiene (borrado lógico, restaurar, vaciar). |
-| 7 | Importación | **No** existe ningún tipo de importación ni restauración (ni Flet, ni `.crd`, ni backups JSON). Se arranca de cero. |
+| 7 | Importación | No se importa Flet, `.crd` ni backups JSON. Se admite restaurar una copia SQLite completa de Cardfile, validada y con respaldo previo obligatorio; no se combinan colecciones. |
 | 8 | Temas | Se portan los 9 temas actuales, se crean nuevos y se soportan temas JSON externos. |
 | 9 | Idiomas | Se desarrolla **solo en inglés**, con infraestructura i18n completa desde el día 1 (ningún string de UI hardcodeado). La traducción se hará al final. |
 | 10 | Modo portable | Se mantiene. |
@@ -323,9 +323,11 @@ consultan la API de GitHub e instalan la release más nueva (estable, o la pre-r
 no hay una estable posterior; `-Stable`/`--stable` y `-Version`/`--version` lo cambian), verifican
 el SHA-256 contra el `SHA256SUMS` firmado y las firmas minisign (minisign oficial descargado y
 fijado por SHA-256 si no está instalado), y crean los accesos directos:
-- **Windows**: `%LOCALAPPDATA%\Programs\FittyAr\Cardfile` (carpeta FittyAr compartida por todos los
-  proyectos), accesos en menú Inicio y escritorio, PATH de
-  usuario y entrada en *Aplicaciones instaladas* (desinstalador `uninstall.ps1` local).
+- **Windows**: `install.ps1` descarga y verifica el instalador Inno Setup `.exe` de la arquitectura.
+  Delega la instalación por usuario a `%LOCALAPPDATA%\Programs\FittyAr\Cardfile`, accesos y
+  desinstalación en Inno. `-Portable -Destination <carpeta>` prepara una copia sin registro, PATH
+  ni accesos. La migración retira registros anteriores solamente tras instalar correctamente;
+  conserva carpetas y datos existentes.
 - **Linux**: `~/.local/lib/FittyAr/Cardfile` + enlace `~/.local/bin/cardfile`, `.desktop` en
   `~/.local/share/applications`, íconos hicolor y acceso en el escritorio (`xdg-user-dir`).
 Migran la instalación anterior de cargo-dist (`~/.cardfile/bin`). Inspirado en el instalador de
@@ -342,7 +344,7 @@ Pairee (mismo autor).
 ### 5.4 Updater
 
 Consulta las releases de GitHub al arrancar (configurable, desactivable), compara `semver`
-(pre-releases solo si la versión instalada es pre-release) y solo anuncia releases cuyo
+(canal por usuario: Latest sigue la designación de GitHub; Prerelease incluye versiones de prueba) y solo anuncia releases cuyo
 `SHA256SUMS` lleva una firma minisign válida de la clave embebida (`PUBLIC_KEY`).
 
 Actualización automática (`cardfile-updater`, sin GPUI, funciones bloqueantes en el executor de
@@ -462,7 +464,7 @@ Cada fase termina con PR(s) mergeados, CI verde y criterios de aceptación cumpl
 
 ## 8. Puntos resueltos
 
-1. No hay importación ni restauración de ningún tipo.
+1. No hay importación Flet, `.crd` ni JSON. Se admite restauración de respaldos SQLite completos con validación y copia de seguridad previa.
 2. Se acepta la excepción MPL-2.0 para `spellbook`.
 3. macOS queda fuera hasta contar con cuenta Apple Developer.
 
@@ -508,3 +510,60 @@ Pendiente (el seguimiento vivo está en el tablero Cardscape "Cardfile 2"; ver `
   pega texto plano o Markdown.
 - Rendimiento con decenas de miles de tarjetas: contadores con `COUNT(*)` en vez de listar.
 - macOS cuando exista cuenta Apple Developer.
+
+
+## 10. Ventana, portabilidad y recuperación (2026-11-03)
+
+- `local-config.json` versionado en la carpeta de datos conserva tamaño normal en píxeles
+  lógicos y estado maximizado, identidad local de colección, destino de respaldo (absoluto
+  o relativo), programación y retención. Restaurar la DB no reemplaza estas preferencias.
+- Instalador Windows único: instalado por usuario (predeterminado), para todos los usuarios
+  mediante elevación explícita, o portable sin integración con Windows. `/MODE=installed|portable`
+  y `/DIR` sirven también a PowerShell. Los marcadores evitan repetir almacenamiento en el
+  asistente y rechazan conversiones implícitas. ZIP continúa para uso manual y actualización portable.
+- Administradores: copias manuales, automáticas opcionales cada 24 horas con comprobación horaria
+  mientras la app está abierta (10 automáticas por defecto), restauración completa y creación de
+  portable con toda la colección. Un destino desconectado se informa y se reintenta; no se instala
+  servicio ni tarea del sistema. La retención se limita a las automáticas de la misma colección.
+- Instantáneas SQLite con `VACUUM INTO`, integridad verificada, publicación desde temporal y
+  nombres únicos. Los respaldos previos a migración siguen siendo locales y obligatorios.
+- Restauración: guardar editor, detener MCP, respaldo local obligatorio, validar/migrar un
+  reemplazo y congelar la conexión; al reiniciar y adquirir el bloqueo de proceso se reemplaza
+  la DB con registro de recuperación. Se rechazan bases ajenas, corruptas o de versiones futuras.
+  Se conservan el respaldo fuente y las copias de seguridad; no se fusionan usuarios ni tarjetas.
+- Portable desde la app: destino nuevo, publicación desde staging, ejecutable/recursos,
+  DB consistente, temas, keymap y diccionarios personales. Sin logs, temporales, respaldos previos
+  ni extracción de credenciales del sistema. MCP y programación desactivados en la copia.
+- Todas las operaciones se serializan; un bloqueo del sistema operativo por DB impide dos
+  procesos locales sobre la misma colección. No es un bloqueo entre equipos sincronizados.
+- OneDrive: cerrar Cardfile y esperar a que termine de sincronizar antes de usar otro equipo;
+  no se incorpora sincronización simultánea. Pendrive: cerrar antes de extraer.
+
+
+### Canal del actualizador y release de prueba (2026-11-04)
+
+- Configuración → General ofrece Latest (predeterminado) o Prerelease por usuario,
+  independientemente de si el binario actual tiene sufijo beta. Latest consulta
+  `/releases/latest`: una beta promovida por el mantenedor sigue siendo Latest.
+- Prerelease considera también releases normales publicadas. Se mantienen firmas,
+  comprobaciones SHA-256 y comparación semver estrictamente creciente; no hay downgrade.
+- `2.0.0-beta.3` se publica como prerelease; pasar a Latest queda a cargo del mantenedor
+  después de probarla. Se actualizan pulldown-cmark y async-executor para desbloquear
+  los controles de dependencias requeridos antes de integrar y publicar.
+
+
+### Actualización de dependencias (2026-11-04)
+
+Se actualizan las dependencias directas y transitivas publicadas compatibles con Rust
+stable, incluido gpui-kit 0.9.0 junto con GPUI 0.3.11. El `gpui-pre` de pruebas se declara
+en el workspace y permanece alineado con el pin del kit. libsqlite3-sys queda en 0.38.2:
+Diesel 2.3.14 exige `<0.39` y no permite enlazar dos versiones de SQLite. Se conservan las
+restricciones de licencia y las APIs públicas se adaptan sin migrar datos de usuarios.
+Las acciones de CI se fijan a los SHA de sus últimas versiones publicadas; cargo-dist
+se actualiza a 0.33.0 (0.34.0 genera rutas inválidas para los jobs personalizados) y regenera su workflow desde dist-workspace.toml.
+
+
+El empaquetado Windows usa Inno Setup 7.1.1, descargado de la release oficial con SHA-256
+fijado y extraído en modo portable dentro de la carpeta de herramientas del build.
+El mismo script compila los instaladores de CI y release; no requiere instalar Cardfile
+ni registrar el compilador en el equipo del mantenedor.

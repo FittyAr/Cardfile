@@ -3,6 +3,44 @@
 All notable changes to this project are documented here. Generated with
 [git-cliff](https://git-cliff.org) from Conventional Commits (`cliff.toml`).
 
+## [2.0.0-beta.3] - 2026-11-04
+
+Testing release. The maintainer will promote it to Latest after validation.
+
+### Features
+
+- Cardfile remembers the normal window size and whether it was maximized.
+- Windows setup can install Cardfile on this computer or create a portable folder
+  on a USB drive, OneDrive or another disk. PowerShell uses the same verified setup.
+- Administrators can choose a backup folder, create manual backups and enable daily
+  backups while Cardfile is running, with configurable retention (10 automatic copies
+  by default). Manual and safety backups are retained separately.
+- Restore an entire database backup from Settings → Data. Cardfile checks it, saves
+  a safety copy, prepares the replacement and restarts using the restored accounts.
+- Create a portable copy of the complete collection, including users, cards and
+  attachments. Existing destinations are never overwritten. MCP and automatic backups
+  are disabled in the copy; system credential-store AI keys must be entered again.
+- Choose Latest or Prerelease updates in Settings → General. Latest follows GitHub's
+  designation, even for a promoted beta tag. Switching channels never downgrades.
+
+### Reliability
+
+- Backups include committed WAL data and are verified before publication. Restoration
+  has restart recovery and a rollback copy; a local process lock prevents two Cardfile
+  processes from opening the same collection.
+- Update signing and checksum verification remain mandatory in both channels.
+- Updated direct and compatible transitive dependencies, including GPUI 0.9 and the
+  fixes for the pulldown-cmark advisories. Refreshed CI actions and installer checks.
+
+### Portable use
+
+Close Cardfile and finish OneDrive synchronization before using the folder on another
+computer. Simultaneous cross-computer use is not supported. Keep the whole portable
+folder together and close Cardfile before removing a USB drive.
+
+The new channel selection applies from this version onward; older beta updaters retain
+their previous prerelease-detection behavior until updated.
+
 ## [2.0.0-beta.2] - 2026-10-27
 
 ### Features

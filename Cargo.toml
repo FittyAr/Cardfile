@@ -4,7 +4,7 @@ members = ["crates/*"]
 default-members = ["crates/cardfile"]
 
 [workspace.package]
-version = "2.0.0-beta.2"
+version = "2.0.0-beta.3"
 edition = "2024"
 rust-version = "1.99"
 license = "MIT OR Apache-2.0"
@@ -29,28 +29,30 @@ cardfile-ui = { path = "crates/cardfile-ui" }
 cardfile-updater = { path = "crates/cardfile-updater" }
 
 # UI
-gpui-kit = "0.7.3"
+gpui-kit = "0.9.0"
+gpui-pre = "=0.3.11"
 
 # Data
 diesel = { version = "2.3.14", default-features = false, features = ["sqlite", "returning_clauses_for_sqlite_3_35"] }
 diesel_migrations = { version = "2.3.2", features = ["sqlite"] }
+# Diesel 2.3.14 requires <0.39; one sqlite3 native library must serve the workspace.
 libsqlite3-sys = { version = "0.38.2", features = ["bundled"] }
 
 # General
 anyhow = "1.0.104"
 base64 = "0.23.1"
 directories = "6.0.0"
-jiff = { version = "0.2.38", features = ["serde"] }
-parking_lot = "0.12.5"
+jiff = { version = "0.2.39", features = ["serde"] }
+parking_lot = "0.13.0"
 semver = "1.0.28"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 thiserror = "2.0.21"
-toml = "1.1.8"
+toml = "1.2.0"
 unicode-segmentation = "1.13.3"
 unicode-bidi = "0.3.18"
 ar-reshaper = "1.5.0"
-uuid = { version = "1.28.0", features = ["v7", "serde"] }
+uuid = { version = "1.29.0", features = ["v7", "serde"] }
 
 # Crypto
 argon2 = "0.6.0"
@@ -63,8 +65,8 @@ zeroize = { version = "1.9.1", features = ["derive"] }
 # Documents / export
 image = { version = "0.25.10", default-features = false, features = ["png", "jpeg", "gif", "webp", "bmp"] }
 krilla = "0.8.2"
-harfrust = "0.14.0"
-pulldown-cmark = "0.13.4"
+harfrust = "0.15.0"
+pulldown-cmark = "0.13.6"
 spellbook = "0.4.2"
 
 # Media (inline audio playback in cards; patent-free formats only: MP3, WAV, OGG/Vorbis, FLAC)
@@ -73,18 +75,18 @@ rodio = { version = "0.23.0", default-features = false, features = ["playback", 
 symphonia = { version = "0.6.1", default-features = false, features = ["flac", "mp3", "ogg", "pcm", "vorbis", "wav", "id3v2"] }
 
 # Platform
-open = "5.4.4"
+open = "5.4.5"
 keyring = "4.2.0"
 rfd = "0.17.2"
 rust-i18n = "4.2.4"
 tiny_http = "0.12.0"
-ureq = "3.4.2"
+ureq = "3.5.1"
 minisign-verify = "0.3.0"
 # Self-updater: checksums and release archives (pure Rust, decoders only).
 sha2 = { version = "0.11.1", default-features = false }
-zip = { version = "9.0.3", default-features = false, features = ["deflate-flate2-zlib-rs"] }
+zip = { version = "9.3.0", default-features = false, features = ["deflate-flate2-zlib-rs"] }
 tar = { version = "0.4.46", default-features = false }
-lzma-rust2 = { version = "0.22.0", default-features = false, features = ["std", "xz"] }
+lzma-rust2 = { version = "0.25.0", default-features = false, features = ["std", "xz"] }
 
 # Observability
 tracing = "0.1.44"

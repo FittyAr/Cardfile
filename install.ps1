@@ -7,10 +7,12 @@
 # newest stable one, or the newest pre-release while no stable release is newer.
 # -Stable ignores pre-releases; -Version installs that exact tag.
 #
+# Delegates to the verified Inno Setup .exe (no separate ZIP installation).
+# -Portable -Destination E:\Cardfile prepares an unregistered portable folder.
 # Installs to %LOCALAPPDATA%\Programs\FittyAr\Cardfile (all FittyAr apps share the
 # FittyAr folder; the cards live in %APPDATA%\FittyAr\Cardfile), adds Start menu and desktop
-# shortcuts, puts the folder on the user PATH and registers Cardfile in
-# "Installed apps" so it can be uninstalled from Windows Settings. No admin
+# shortcuts and registers Cardfile in
+# "Installed apps" using the Inno uninstaller. No admin
 # rights are needed. Cardfile updates itself afterwards (Settings -> General).
 #
 # The download is checked against the signed SHA256SUMS and its own minisign
@@ -25,7 +27,9 @@ param (
     [switch]$Uninstall = $false,
     [switch]$VerifyOnly = $false,
     [switch]$InsecureSkipSignature = $false,
-    [switch]$Yes = $false
+    [switch]$Yes = $false,
+    [switch]$Portable = $false,
+    [string]$Destination = ""
 )
 
 # Also accept bare words, e.g. `... | iex` cannot take parameters, but the
@@ -218,234 +222,86 @@ function Test-Download([string]$file, [string]$name, [string]$base, [string]$tag
     }
 }
 
-# Downloads, verifies and extracts the release into $tempDir; returns the
-# folder that holds cardfile.exe.
+# Downloads and verifies the architecture-specific Inno Setup installer.
 function Get-Package([string]$tempDir) {
-    Write-Host "Looking for the newest Cardfile release..."
     $release = Get-ReleaseInfo
     $script:tag = $release.tag_name
-    if ($script:tag -notmatch '^v\d+\.\d+\.\d+[A-Za-z0-9.-]*$') {
-        throw "Unexpected release tag '$($script:tag)'."
-    }
-    $kind = if ($release.prerelease -or $script:tag.Contains("-")) { " (pre-release)" } else { "" }
-    Write-Host "Newest version: $($script:tag)$kind" -ForegroundColor Green
-
-    $target = if (Test-Arm64) { "aarch64-pc-windows-msvc" } else { "x86_64-pc-windows-msvc" }
-    $zipName = "cardfile-$target.zip"
-    if (-not (@($release.assets | ForEach-Object { $_.name }) -contains $zipName)) {
-        throw "Release $($script:tag) has no $zipName."
+    if ($script:tag -notmatch '^v\d+\.\d+\.\d+[A-Za-z0-9.-]*$') { throw "Unexpected release tag." }
+    $arch = if (Test-Arm64) { "arm64" } else { "x64" }
+    $name = "Cardfile-$($script:tag.TrimStart('v'))-setup-$arch.exe"
+    if (-not (@($release.assets | ForEach-Object { $_.name }) -contains $name)) {
+        throw "Release $($script:tag) has no $name. Choose a release containing the Windows installer."
     }
     $base = "https://github.com/$repo/releases/download/$($script:tag)"
-    $zipPath = Join-Path $tempDir $zipName
-    Write-Host "Downloading $zipName..."
-    Invoke-WebRequest -Uri "$base/$zipName" -OutFile $zipPath -UseBasicParsing
-    Test-Download $zipPath $zipName $base $script:tag $tempDir
-
-    Write-Host "Extracting..."
-    $extract = Join-Path $tempDir "extract"
-    Expand-Archive -Path $zipPath -DestinationPath $extract -Force
-    $exe = Get-ChildItem -Path $extract -Recurse -Filter "cardfile.exe" | Select-Object -First 1
-    if (-not $exe) {
-        throw "cardfile.exe not found in $zipName."
-    }
-    return $exe.DirectoryName
+    $file = Join-Path $tempDir $name
+    Invoke-WebRequest -Uri "$base/$name" -OutFile $file -UseBasicParsing
+    Test-Download $file $name $base $script:tag $tempDir
+    return $file
 }
 
-# --- Install ---
-
-function New-Shortcut([string]$path, [string]$target) {
-    New-Item -ItemType Directory -Force -Path (Split-Path $path) | Out-Null
-    $shell = New-Object -ComObject WScript.Shell
-    $link = $shell.CreateShortcut($path)
-    $link.TargetPath = $target
-    $link.WorkingDirectory = Split-Path $target
-    $link.IconLocation = "$target,0"
-    $link.Description = "Cardfile - a modern digital card file"
-    $link.Save()
-}
-
-function Register-Uninstall([string]$version) {
-    # A copy of this script runs the uninstall from Windows Settings, offline.
-    $local = Join-Path $installDir "uninstall.ps1"
-    try {
-        if ($PSCommandPath -and (Test-Path $PSCommandPath) -and ($PSCommandPath -ne $local)) {
-            Copy-Item -Path $PSCommandPath -Destination $local -Force
-        } elseif (-not $PSCommandPath) {
-            Invoke-WebRequest -Uri $scriptUrl -OutFile $local -UseBasicParsing
+# Retire the script's registration only after Inno reports success. These exact
+# keys/files belong to the old bootstrap; never recursively remove its folders.
+function Remove-LegacyRegistration {
+    foreach ($dir in @($installDir, $previousDir, $legacyDir)) {
+        Remove-FromUserPath $dir
+        $legacyUninstaller = Join-Path $dir 'uninstall.ps1'
+        if (Test-Path -LiteralPath $legacyUninstaller) {
+            Remove-Item -LiteralPath $legacyUninstaller -Force
         }
-    } catch {
-        Write-Host "Could not save the uninstaller ($($_.Exception.Message)); skipping Windows Settings entry." -ForegroundColor Yellow
-        return
     }
-    New-Item -Path $uninstallKey -Force | Out-Null
-    $size = [int]((Get-ChildItem $installDir -Recurse | Measure-Object -Property Length -Sum).Sum / 1KB)
-    $values = @{
-        DisplayName     = "Cardfile"
-        DisplayVersion  = $version.TrimStart("v")
-        Publisher       = "FittyAr"
-        DisplayIcon     = "$exePath,0"
-        InstallLocation = $installDir
-        URLInfoAbout    = "https://github.com/$repo"
-        UninstallString = "powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$local`" -Uninstall"
-        QuietUninstallString = "powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$local`" -Uninstall -Yes"
-    }
-    foreach ($name in $values.Keys) {
-        Set-ItemProperty -Path $uninstallKey -Name $name -Value $values[$name]
-    }
-    Set-ItemProperty -Path $uninstallKey -Name EstimatedSize -Value $size -Type DWord
-    Set-ItemProperty -Path $uninstallKey -Name NoModify -Value 1 -Type DWord
-    Set-ItemProperty -Path $uninstallKey -Name NoRepair -Value 1 -Type DWord
-}
-
-# Copies the package into $installDir. A running Cardfile cannot be
-# overwritten, but it can be renamed aside (it deletes `*.old` itself later).
-# Every installed file the package replaces is moved aside first; if anything
-# fails, the previous installation is put back as it was.
-function Install-Files([string]$package) {
-    Write-Host "Installing to $installDir..."
-    New-Item -ItemType Directory -Force -Path $installDir | Out-Null
-    $package = (Resolve-Path -LiteralPath $package).Path.TrimEnd('\', '/')
-    $backup = Join-Path $installDir ".install-backup"
-    Remove-Item -Recurse -Force -LiteralPath $backup -ErrorAction SilentlyContinue
-    $old = "$exePath.old"
-    $renamedExe = $false
-    $moved = @()
-    $added = @()
-    try {
-        if (Test-Path -LiteralPath $exePath) {
-            Remove-Item -Force -LiteralPath $old -ErrorAction SilentlyContinue
-            try {
-                Rename-Item -LiteralPath $exePath -NewName "cardfile.exe.old" -ErrorAction Stop
-            } catch {
-                throw "Cardfile is running and could not be replaced. Close it and try again."
-            }
-            $renamedExe = $true
-        }
-        foreach ($item in Get-ChildItem -LiteralPath $package -Recurse -File) {
-            $rel = $item.FullName.Substring($package.Length).TrimStart('\', '/')
-            if ($rel -eq "cardfile.exe") { continue }
-            $dest = Join-Path $installDir $rel
-            if (Test-Path -LiteralPath $dest -PathType Leaf) {
-                $bak = Join-Path $backup $rel
-                New-Item -ItemType Directory -Force -Path (Split-Path $bak) | Out-Null
-                Move-Item -LiteralPath $dest -Destination $bak -Force -ErrorAction Stop
-                $moved += $rel
-            } else {
-                $added += $rel
-            }
-        }
-        Copy-Item -Path (Join-Path $package "*") -Destination $installDir -Recurse -Force -ErrorAction Stop
-    } catch {
-        $failure = $_
-        if ($renamedExe -or $moved.Count -gt 0) {
-            Write-Host "Installation failed; restoring the previous version..." -ForegroundColor Yellow
-        }
-        foreach ($rel in $added) {
-            Remove-Item -Force -LiteralPath (Join-Path $installDir $rel) -ErrorAction SilentlyContinue
-        }
-        foreach ($rel in $moved) {
-            Move-Item -LiteralPath (Join-Path $backup $rel) -Destination (Join-Path $installDir $rel) -Force -ErrorAction SilentlyContinue
-        }
-        if ($renamedExe) {
-            Remove-Item -Force -LiteralPath $exePath -ErrorAction SilentlyContinue
-            Rename-Item -LiteralPath $old -NewName "cardfile.exe" -ErrorAction SilentlyContinue
-        }
-        Remove-Item -Recurse -Force -LiteralPath $backup -ErrorAction SilentlyContinue
-        throw $failure
-    }
-    Remove-Item -Recurse -Force -LiteralPath $backup -ErrorAction SilentlyContinue
-}
-
-function Remove-Legacy {
-    # The earlier layout of this same installer: replaced silently.
-    if (Test-Path (Join-Path $previousDir "cardfile.exe")) {
-        Write-Host "Moving from $previousDir to $installDir..."
-        Remove-Item -Recurse -Force $previousDir -ErrorAction SilentlyContinue
-        Remove-FromUserPath $previousDir
-    }
-    $legacyExe = Join-Path $legacyDir "cardfile.exe"
-    if (-not (Test-Path $legacyExe)) { return }
-    Write-Host "An older Cardfile installation was found in $legacyDir."
-    if (Read-YesNo "Remove it (your cards are kept)?") {
-        Remove-Item -Recurse -Force $legacyDir -ErrorAction SilentlyContinue
-        $parent = Split-Path $legacyDir
-        if ((Test-Path $parent) -and -not (Get-ChildItem $parent)) {
-            Remove-Item -Force $parent -ErrorAction SilentlyContinue
-        }
-        Remove-FromUserPath $legacyDir
+    if (Test-Path -LiteralPath $uninstallKey) {
+        Remove-Item -LiteralPath $uninstallKey -Recurse -Force
     }
 }
 
-# No `exit` here: run through `irm | iex`, it would close the user's shell.
 function Invoke-Install {
-    Write-Host "Cardfile installer for Windows" -ForegroundColor Blue
-    Write-Host "=============================="
-    $tempDir = Join-Path $env:TEMP "cardfile_install_$([guid]::NewGuid().ToString('N'))"
-    New-Item -ItemType Directory -Force -Path $tempDir | Out-Null
+    if ($Portable -and -not $VerifyOnly -and [string]::IsNullOrWhiteSpace($Destination)) {
+        throw '-Portable requires -Destination, for example E:\Cardfile.'
+    }
+    $targetDir = if ($Destination) { [IO.Path]::GetFullPath($Destination) } else { $installDir }
+    if ($targetDir.Contains('"')) { throw 'The destination cannot contain quotation marks.' }
+    $tempDir = Join-Path ([IO.Path]::GetTempPath()) ("cardfile-setup-" + [guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Path $tempDir | Out-Null
     try {
         $package = Get-Package $tempDir
-        if ($VerifyOnly) {
-            Write-Host "Cardfile $tag downloaded and verified; nothing was installed (-VerifyOnly)." -ForegroundColor Green
-            return
-        }
-        Install-Files $package
-    } catch {
-        Write-Host "Error: $($_.Exception.Message) Aborting." -ForegroundColor Red
-        throw
+        if ($VerifyOnly) { Write-Host "Installer verified: $tag"; return }
+        $mode = if ($Portable) { 'portable' } else { 'installed' }
+        $parameters = @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CURRENTUSER', "/MODE=$mode", "/DIR=`"$targetDir`"")
+        if (-not $Portable -and -not $NoDesktopShortcut) { $parameters += '/TASKS=desktopicon' }
+        else { $parameters += '/TASKS=' }
+        $process = Start-Process -FilePath $package -ArgumentList $parameters -WindowStyle Hidden -Wait -PassThru
+        if ($process.ExitCode -ne 0) { throw "Installer failed with exit code $($process.ExitCode). Existing data was retained." }
+        if (-not $Portable) { Remove-LegacyRegistration }
+        Write-Host "Cardfile $tag ready in $targetDir" -ForegroundColor Green
+        Write-Host "Open $(Join-Path $targetDir 'cardfile.exe')."
     } finally {
-        Remove-Item -Recurse -Force $tempDir -ErrorAction SilentlyContinue
+        # This path was created above, is absolute and stays under the OS temp root.
+        $resolvedTemp = [IO.Path]::GetFullPath($tempDir)
+        $tempRoot = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\') + '\'
+        if (-not $resolvedTemp.StartsWith($tempRoot, [StringComparison]::OrdinalIgnoreCase)) { throw 'Unsafe temporary cleanup path.' }
+        Remove-Item -LiteralPath $resolvedTemp -Recurse -Force -ErrorAction SilentlyContinue
     }
-
-    New-Shortcut $startMenuLink $exePath
-    if (-not $NoDesktopShortcut) {
-        New-Shortcut $desktopLink $exePath
-    }
-    Add-ToUserPath
-    Register-Uninstall $tag
-    Remove-Legacy
-
-    Write-Host "==============================" -ForegroundColor Blue
-    Write-Host "Cardfile $tag installed." -ForegroundColor Green
-    Write-Host "  Program:   $exePath"
-    Write-Host "  Shortcuts: Start menu$(if (-not $NoDesktopShortcut) { ' and desktop' })"
-    Write-Host "  Updates:   automatic, from inside Cardfile"
-    Write-Host "Open it from the Start menu, or type: cardfile" -ForegroundColor Green
 }
 
 function Invoke-Uninstall {
-    Write-Host "Cardfile uninstaller" -ForegroundColor Blue
-    Write-Host "=============================="
-    if (-not (Test-Path $installDir) -and -not (Test-Path $uninstallKey)) {
-        Write-Host "Cardfile is not installed in $installDir."
-    } elseif (Read-YesNo "Uninstall Cardfile from $installDir?") {
-        Get-Process cardfile -ErrorAction SilentlyContinue | Where-Object { $_.Path -like "$installDir*" } | Stop-Process -Force -ErrorAction SilentlyContinue
-        Start-Sleep -Milliseconds 500
-        Remove-Item -Force $startMenuLink, $desktopLink -ErrorAction SilentlyContinue
-        Remove-FromUserPath $installDir
-        Remove-Item -Recurse -Force $uninstallKey -ErrorAction SilentlyContinue
-        # The running uninstall.ps1 lives in $installDir; PowerShell has read it already.
-        Remove-Item -Recurse -Force $installDir -ErrorAction SilentlyContinue
-        # Leave the shared FittyAr folder only while other apps use it.
-        if ((Test-Path $vendorDir) -and -not (Get-ChildItem $vendorDir)) {
-            Remove-Item -Force $vendorDir -ErrorAction SilentlyContinue
+    if ($Portable) { throw 'Portable copies have no uninstaller. Close Cardfile and remove the chosen folder when no longer needed.' }
+    $targetDir = if ($Destination) { [IO.Path]::GetFullPath($Destination) } else { $installDir }
+    $uninstaller = Join-Path $targetDir 'unins000.exe'
+    if (Test-Path -LiteralPath $uninstaller) {
+        $parameters = if ($Yes) { @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART') } else { @('/NORESTART') }
+        $process = Start-Process -FilePath $uninstaller -ArgumentList $parameters -WindowStyle Hidden -Wait -PassThru
+        if ($process.ExitCode -ne 0) { throw "Uninstall failed with exit code $($process.ExitCode)." }
+        Write-Host 'Cardfile removed. Your cards and settings were kept.'
+    } elseif (Test-Path -LiteralPath $uninstallKey) {
+        if (-not (Read-YesNo 'Remove the legacy Cardfile program? All data folders will be kept.')) { return }
+        # Remove only known program files, never an arbitrary installation tree.
+        foreach ($name in @('cardfile.exe', 'THIRD_PARTY_LICENSES.html', 'LICENSE-MIT', 'LICENSE-APACHE')) {
+            $file = Join-Path $installDir $name
+            Remove-Item -LiteralPath $file -Force -ErrorAction SilentlyContinue
         }
-        Write-Host "Cardfile was removed." -ForegroundColor Green
-    } else {
-        Write-Host "Uninstall cancelled."
-        return
-    }
-    if ((Test-Path $dataDir) -and -not $Yes) {
-        if (Read-YesNo "Also delete your cards and settings in $dataDir? This cannot be undone.") {
-            Remove-Item -Recurse -Force $dataDir -ErrorAction SilentlyContinue
-            Write-Host "Your cards and settings were deleted."
-        } else {
-            Write-Host "Your cards and settings were kept in $dataDir."
-        }
-    }
+        Remove-LegacyRegistration
+        Write-Host 'Legacy program removed. Data folders were kept.'
+    } else { Write-Host "No Cardfile uninstaller found in $targetDir." }
 }
 
-if ($Uninstall) {
-    Invoke-Uninstall
-} else {
-    Invoke-Install
-}
+if ($Uninstall) { Invoke-Uninstall } else { Invoke-Install }

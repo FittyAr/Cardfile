@@ -19,7 +19,7 @@ pub use model::{
     CardShare, CardSummary, EncryptedPayload, LockMode, NewCard, REDACTED, SearchScope,
     SharePermission, SortOrder, Tag, User, UserKind,
 };
-pub use settings::{AppSettings, AuthMode, DEFAULT_MCP_PORT, UserSettings};
+pub use settings::{AppSettings, AuthMode, DEFAULT_MCP_PORT, UpdateChannel, UserSettings};
 pub use time::{Millis, now_millis};
 
 /// Mask a title for display when a card is private and still locked.
