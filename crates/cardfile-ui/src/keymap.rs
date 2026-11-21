@@ -130,31 +130,39 @@ fn load_user_bindings(path: &std::path::Path, cx: &App) -> anyhow::Result<Vec<Ke
     Ok(out)
 }
 
-/// Write a starter `keymap.json` listing every action, if none exists.
-pub fn ensure_keymap_file(paths: &DataPaths, cx: &App) -> std::io::Result<std::path::PathBuf> {
+/// The starter keymap file: commented instructions and every bindable action.
+/// Reads the action registry, so it runs on the UI thread; it touches no files.
+pub fn keymap_template(cx: &App) -> String {
+    let mut names: Vec<&str> = cx
+        .all_action_names()
+        .iter()
+        .copied()
+        .filter(|n| n.starts_with("cardfile::") || n.starts_with("rich_editor::"))
+        .collect();
+    names.sort_unstable();
+    let mut text = String::from(
+        "// Cardfile key bindings. Uncomment and edit entries; restart Cardfile to apply.\n\
+         // Available actions:\n",
+    );
+    for n in names {
+        text.push_str("//   ");
+        text.push_str(n);
+        text.push('\n');
+    }
+    text.push_str("[\n  // { \"keys\": \"ctrl-shift-n\", \"action\": \"cardfile::NewCard\" }\n]\n");
+    text
+}
+
+/// Create the user's keymap file from `template` if it does not exist yet and return
+/// its path. File I/O: call it on the background executor.
+pub fn ensure_keymap_file(
+    paths: &DataPaths,
+    template: &str,
+) -> std::io::Result<std::path::PathBuf> {
     let path = paths.keymap();
     if !path.exists() {
         std::fs::create_dir_all(&paths.root)?;
-        let mut names: Vec<&str> = cx
-            .all_action_names()
-            .iter()
-            .copied()
-            .filter(|n| n.starts_with("cardfile::") || n.starts_with("rich_editor::"))
-            .collect();
-        names.sort_unstable();
-        let mut text = String::from(
-            "// Cardfile key bindings. Uncomment and edit entries; restart Cardfile to apply.\n\
-             // Available actions:\n",
-        );
-        for n in names {
-            text.push_str("//   ");
-            text.push_str(n);
-            text.push('\n');
-        }
-        text.push_str(
-            "[\n  // { \"keys\": \"ctrl-shift-n\", \"action\": \"cardfile::NewCard\" }\n]\n",
-        );
-        std::fs::write(&path, text)?;
+        std::fs::write(&path, template)?;
     }
     Ok(path)
 }

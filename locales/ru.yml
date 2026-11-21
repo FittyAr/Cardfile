@@ -3,6 +3,7 @@ _version: 1
 app:
   name: Cardfile
   db_error_body: "Не удалось открыть базу данных %{path}: %{error}"
+  open_keymap_failed: "Не удалось открыть файл сочетаний клавиш: %{error}"
   db_error_title: "Cardfile не может открыть свою базу данных"
 test:
   greeting: "Здравствуйте, %{name}!"
@@ -40,7 +41,6 @@ editor:
     align_center: По центру
     align_right: По правому краю
     align_justify: По ширине
-    size: Размер текста
     size_small: Маленький
     size_normal: Обычный
     size_large: Большой
@@ -78,7 +78,6 @@ editor:
     add_to_dictionary: Добавить в словарь
     no_suggestions: Нет вариантов
   attachment:
-    open_hint: Дважды щёлкните, чтобы открыть
   read_only: Эта карточка доступна только для чтения. Разблокируйте её, чтобы редактировать.
   find:
     placeholder: Найти в карточке
@@ -352,9 +351,7 @@ updates:
   manual: "Эта копия Cardfile не может обновиться сама. Скачайте новую версию со страницы выпуска."
 
 about:
-  version: "Версия %{version}"
   description: Современная цифровая картотека для ваших заметок.
-  license: Свободное программное обеспечение под лицензией MIT или Apache 2.0.
   website: Веб-сайт
   third_party: Лицензии сторонних компонентов
   version_label: "Версия"
@@ -383,14 +380,12 @@ settings:
     security: Безопасность
     users: Пользователи
     data: Данные
-    ai: "ИИ"
     ai_services: "ИИ-сервисы"
     ai_assistant: "Помощник"
     mcp: "ИИ-приложения (MCP)"
   general:
     theme: Тема
     language: Язык
-    language_hint: Скоро появятся другие языки.
     font_size: Размер текста в редакторе
     confirm_delete: Спрашивать перед удалением карточек
     check_updates: Проверять обновления при запуске
@@ -508,12 +503,8 @@ activity:
   encrypted: "Зашифрована"
 
 ai:
-  providers: "ИИ-сервисы"
   providers_hint: "Подключите облачный или локальный ИИ, чтобы получить помощника. Его кнопки появятся только после настройки сервиса."
-  local: "локальный"
-  cloud: "облачный"
   provider:
-    add: "Добавить ИИ-сервис"
     name: "Название"
     url: "Базовый URL"
     model: "Модель"

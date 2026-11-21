@@ -3,6 +3,7 @@ _version: 1
 app:
   name: Cardfile
   db_error_body: "データベース %{path} を開けませんでした：%{error}"
+  open_keymap_failed: "キーマップファイルを開けませんでした: %{error}"
   db_error_title: "Cardfile のデータベースを開けません"
 test:
   greeting: "こんにちは、%{name}さん！"
@@ -40,7 +41,6 @@ editor:
     align_center: 中央揃え
     align_right: 右揃え
     align_justify: 両端揃え
-    size: 文字サイズ
     size_small: 小
     size_normal: 標準
     size_large: 大
@@ -78,7 +78,6 @@ editor:
     add_to_dictionary: 辞書に追加
     no_suggestions: 候補なし
   attachment:
-    open_hint: ダブルクリックで開く
   read_only: このカードは読み取り専用です。編集するにはロックを解除してください。
   find:
     placeholder: カード内を検索
@@ -352,9 +351,7 @@ updates:
   manual: "この Cardfile は自動で更新できません。リリースページから新しいバージョンをダウンロードしてください。"
 
 about:
-  version: "バージョン %{version}"
   description: メモのためのモダンなデジタルカードファイル。
-  license: MIT または Apache 2.0 ライセンスのフリーソフトウェアです。
   website: ウェブサイト
   third_party: サードパーティのライセンス
   version_label: "バージョン"
@@ -383,14 +380,12 @@ settings:
     security: セキュリティ
     users: ユーザー
     data: データ
-    ai: "AI"
     ai_services: "AI サービス"
     ai_assistant: "アシスタント"
     mcp: "AI アプリ（MCP）"
   general:
     theme: テーマ
     language: 言語
-    language_hint: 今後、対応言語が増えます。
     font_size: エディターの文字サイズ
     confirm_delete: カードを削除する前に確認する
     check_updates: 起動時に更新を確認する
@@ -508,12 +503,8 @@ activity:
   encrypted: "暗号化"
 
 ai:
-  providers: "AI サービス"
   providers_hint: "クラウドまたはローカルの AI を接続するとアシスタントを使えます。ボタンはサービスを設定した後にのみ表示されます。"
-  local: "ローカル"
-  cloud: "クラウド"
   provider:
-    add: "AI サービスを追加"
     name: "名前"
     url: "ベース URL"
     model: "モデル"

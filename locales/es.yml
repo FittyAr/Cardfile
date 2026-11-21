@@ -3,6 +3,7 @@ _version: 1
 app:
   name: Cardfile
   db_error_body: "No se pudo abrir la base de datos %{path}: %{error}"
+  open_keymap_failed: "No se pudo abrir el archivo de atajos: %{error}"
   db_error_title: "Cardfile no puede abrir su base de datos"
 test:
   greeting: "¡Hola, %{name}!"
@@ -40,7 +41,6 @@ editor:
     align_center: Centrar
     align_right: Alinear a la derecha
     align_justify: Justificar
-    size: Tamaño del texto
     size_small: Pequeño
     size_normal: Normal
     size_large: Grande
@@ -78,7 +78,6 @@ editor:
     add_to_dictionary: Añadir al diccionario
     no_suggestions: Sin sugerencias
   attachment:
-    open_hint: Doble clic para abrir
   read_only: Esta ficha es de solo lectura. Desbloquéala para editarla.
   find:
     placeholder: Buscar en la ficha
@@ -352,9 +351,7 @@ updates:
   manual: "Esta copia de Cardfile no puede actualizarse sola. Descarga la nueva versión desde la página de la versión."
 
 about:
-  version: "Versión %{version}"
   description: Un fichero digital moderno para tus notas.
-  license: Software libre bajo licencia MIT o Apache 2.0.
   website: Sitio web
   third_party: Licencias de terceros
   version_label: "Versión"
@@ -383,14 +380,12 @@ settings:
     security: Seguridad
     users: Usuarios
     data: Datos
-    ai: "IA"
     ai_services: "Servicios de IA"
     ai_assistant: "Asistente"
     mcp: "Apps de IA (MCP)"
   general:
     theme: Tema
     language: Idioma
-    language_hint: Pronto habrá más idiomas.
     font_size: Tamaño del texto del editor
     confirm_delete: Preguntar antes de eliminar fichas
     check_updates: Buscar actualizaciones al iniciar
@@ -508,12 +503,8 @@ activity:
   encrypted: "Cifrada"
 
 ai:
-  providers: "Servicios de IA"
   providers_hint: "Conecta una IA en la nube o local para tener el asistente. Sus botones solo aparecen cuando hay un servicio configurado."
-  local: "local"
-  cloud: "nube"
   provider:
-    add: "Añadir servicio de IA"
     name: "Nombre"
     url: "URL base"
     model: "Modelo"

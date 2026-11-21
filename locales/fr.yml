@@ -3,6 +3,7 @@ _version: 1
 app:
   name: Cardfile
   db_error_body: "Impossible d’ouvrir la base de données %{path} : %{error}"
+  open_keymap_failed: "Impossible d’ouvrir le fichier de raccourcis : %{error}"
   db_error_title: "Cardfile ne peut pas ouvrir sa base de données"
 test:
   greeting: "Bonjour, %{name} !"
@@ -40,7 +41,6 @@ editor:
     align_center: Centrer
     align_right: Aligner à droite
     align_justify: Justifier
-    size: Taille du texte
     size_small: Petite
     size_normal: Normale
     size_large: Grande
@@ -78,7 +78,6 @@ editor:
     add_to_dictionary: Ajouter au dictionnaire
     no_suggestions: Aucune suggestion
   attachment:
-    open_hint: Double-cliquez pour ouvrir
   read_only: Cette fiche est en lecture seule. Déverrouillez-la pour la modifier.
   find:
     placeholder: Rechercher dans la fiche
@@ -352,9 +351,7 @@ updates:
   manual: "Cette copie de Cardfile ne peut pas se mettre à jour elle-même. Téléchargez la nouvelle version depuis la page de la version."
 
 about:
-  version: "Version %{version}"
   description: Un fichier numérique moderne pour vos notes.
-  license: Logiciel libre sous licence MIT ou Apache 2.0.
   website: Site web
   third_party: Licences tierces
   version_label: "Version"
@@ -383,14 +380,12 @@ settings:
     security: Sécurité
     users: Utilisateurs
     data: Données
-    ai: "IA"
     ai_services: "Services d'IA"
     ai_assistant: "Assistant"
     mcp: "Applications d'IA (MCP)"
   general:
     theme: Thème
     language: Langue
-    language_hint: D'autres langues arrivent bientôt.
     font_size: Taille du texte de l'éditeur
     confirm_delete: Demander confirmation avant de supprimer des fiches
     check_updates: Rechercher des mises à jour au démarrage
@@ -508,12 +503,8 @@ activity:
   encrypted: "Chiffrée"
 
 ai:
-  providers: "Services d'IA"
   providers_hint: "Connectez une IA dans le cloud ou locale pour obtenir l'assistant. Ses boutons n'apparaissent qu'une fois un service configuré."
-  local: "local"
-  cloud: "cloud"
   provider:
-    add: "Ajouter un service d'IA"
     name: "Nom"
     url: "URL de base"
     model: "Modèle"

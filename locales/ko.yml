@@ -3,6 +3,7 @@ _version: 1
 app:
   name: Cardfile
   db_error_body: "데이터베이스 %{path}을(를) 열 수 없습니다: %{error}"
+  open_keymap_failed: "키맵 파일을 열 수 없습니다: %{error}"
   db_error_title: "Cardfile에서 데이터베이스를 열 수 없습니다"
 test:
   greeting: "안녕하세요, %{name}님!"
@@ -40,7 +41,6 @@ editor:
     align_center: 가운데 정렬
     align_right: 오른쪽 정렬
     align_justify: 양쪽 정렬
-    size: 글자 크기
     size_small: 작게
     size_normal: 보통
     size_large: 크게
@@ -78,7 +78,6 @@ editor:
     add_to_dictionary: 사전에 추가
     no_suggestions: 추천 없음
   attachment:
-    open_hint: 두 번 클릭하여 열기
   read_only: 이 카드는 읽기 전용입니다. 편집하려면 잠금을 해제하세요.
   find:
     placeholder: 카드에서 찾기
@@ -352,9 +351,7 @@ updates:
   manual: "이 Cardfile 사본은 자동으로 업데이트할 수 없습니다. 릴리스 페이지에서 새 버전을 다운로드하세요."
 
 about:
-  version: "버전 %{version}"
   description: 메모를 위한 현대적인 디지털 카드 파일.
-  license: MIT 또는 Apache 2.0 라이선스의 자유 소프트웨어.
   website: 웹사이트
   third_party: 서드파티 라이선스
   version_label: "버전"
@@ -383,14 +380,12 @@ settings:
     security: 보안
     users: 사용자
     data: 데이터
-    ai: "AI"
     ai_services: "AI 서비스"
     ai_assistant: "어시스턴트"
     mcp: "AI 앱(MCP)"
   general:
     theme: 테마
     language: 언어
-    language_hint: 더 많은 언어가 추가될 예정입니다.
     font_size: 편집기 글자 크기
     confirm_delete: 카드를 삭제하기 전에 확인
     check_updates: 시작할 때 업데이트 확인
@@ -508,12 +503,8 @@ activity:
   encrypted: "암호화함"
 
 ai:
-  providers: "AI 서비스"
   providers_hint: "클라우드 또는 로컬 AI를 연결하면 어시스턴트를 사용할 수 있습니다. 버튼은 서비스를 구성한 후에만 표시됩니다."
-  local: "로컬"
-  cloud: "클라우드"
   provider:
-    add: "AI 서비스 추가"
     name: "이름"
     url: "기본 URL"
     model: "모델"

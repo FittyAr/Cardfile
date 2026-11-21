@@ -3,6 +3,7 @@ _version: 1
 app:
   name: Cardfile
   db_error_body: "ไม่สามารถเปิดฐานข้อมูล %{path}: %{error}"
+  open_keymap_failed: "ไม่สามารถเปิดไฟล์คีย์ลัดได้: %{error}"
   db_error_title: "Cardfile ไม่สามารถเปิดฐานข้อมูลได้"
 test:
   greeting: "สวัสดี %{name}!"
@@ -40,7 +41,6 @@ editor:
     align_center: กึ่งกลาง
     align_right: ชิดขวา
     align_justify: กระจายแนว
-    size: ขนาดข้อความ
     size_small: เล็ก
     size_normal: ปกติ
     size_large: ใหญ่
@@ -78,7 +78,6 @@ editor:
     add_to_dictionary: เพิ่มในพจนานุกรม
     no_suggestions: ไม่มีคำแนะนำ
   attachment:
-    open_hint: ดับเบิลคลิกเพื่อเปิด
   read_only: การ์ดนี้อ่านได้อย่างเดียว ปลดล็อกเพื่อแก้ไข
   find:
     placeholder: ค้นหาในการ์ด
@@ -352,9 +351,7 @@ updates:
   manual: "Cardfile ชุดนี้อัปเดตตัวเองไม่ได้ โปรดดาวน์โหลดเวอร์ชันใหม่จากหน้ารุ่นที่เผยแพร่"
 
 about:
-  version: "เวอร์ชัน %{version}"
   description: แฟ้มการ์ดดิจิทัลทันสมัยสำหรับบันทึกของคุณ
-  license: ซอฟต์แวร์เสรีภายใต้สัญญาอนุญาต MIT หรือ Apache 2.0
   website: เว็บไซต์
   third_party: สัญญาอนุญาตของบุคคลที่สาม
   version_label: "เวอร์ชัน"
@@ -383,14 +380,12 @@ settings:
     security: ความปลอดภัย
     users: ผู้ใช้
     data: ข้อมูล
-    ai: "AI"
     ai_services: "บริการ AI"
     ai_assistant: "ผู้ช่วย"
     mcp: "แอป AI (MCP)"
   general:
     theme: ธีม
     language: ภาษา
-    language_hint: จะมีภาษาเพิ่มเติมเร็วๆ นี้
     font_size: ขนาดข้อความในตัวแก้ไข
     confirm_delete: ถามก่อนลบการ์ด
     check_updates: ตรวจหาการอัปเดตเมื่อเริ่มต้น
@@ -508,12 +503,8 @@ activity:
   encrypted: "เข้ารหัสแล้ว"
 
 ai:
-  providers: "บริการ AI"
   providers_hint: "เชื่อมต่อ AI บนคลาวด์หรือในเครื่องเพื่อใช้ผู้ช่วย ปุ่มต่าง ๆ จะปรากฏเมื่อกำหนดค่าบริการแล้วเท่านั้น"
-  local: "ในเครื่อง"
-  cloud: "คลาวด์"
   provider:
-    add: "เพิ่มบริการ AI"
     name: "ชื่อ"
     url: "URL หลัก"
     model: "โมเดล"

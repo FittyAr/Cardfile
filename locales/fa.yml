@@ -3,6 +3,7 @@ _version: 1
 app:
   name: Cardfile
   db_error_body: "پایگاه دادهٔ %{path} باز نشد: %{error}"
+  open_keymap_failed: "باز کردن فایل میان‌برهای صفحه‌کلید ممکن نشد: %{error}"
   db_error_title: "Cardfile نمی‌تواند پایگاه دادهٔ خود را باز کند"
 test:
   greeting: "سلام، %{name}!"
@@ -40,7 +41,6 @@ editor:
     align_center: وسط‌چین
     align_right: تراز راست
     align_justify: هم‌تراز
-    size: اندازه متن
     size_small: کوچک
     size_normal: معمولی
     size_large: بزرگ
@@ -78,7 +78,6 @@ editor:
     add_to_dictionary: افزودن به فرهنگ لغت
     no_suggestions: پیشنهادی وجود ندارد
   attachment:
-    open_hint: برای باز کردن دوبار کلیک کنید
   read_only: این کارت فقط‌خواندنی است. برای ویرایش، قفل آن را باز کنید.
   find:
     placeholder: جست‌وجو در کارت
@@ -352,9 +351,7 @@ updates:
   manual: "این نسخه از Cardfile نمی‌تواند خودش را به‌روزرسانی کند. نسخه جدید را از صفحه انتشار دانلود کنید."
 
 about:
-  version: "نسخه %{version}"
   description: یک کارت‌دان دیجیتال مدرن برای یادداشت‌های شما.
-  license: نرم‌افزار آزاد با مجوز MIT یا Apache 2.0.
   website: وب‌سایت
   third_party: مجوزهای شخص ثالث
   version_label: "نسخه"
@@ -383,14 +380,12 @@ settings:
     security: امنیت
     users: کاربران
     data: داده‌ها
-    ai: "هوش مصنوعی"
     ai_services: "سرویس‌های هوش مصنوعی"
     ai_assistant: "دستیار"
     mcp: "برنامه‌های هوش مصنوعی (MCP)"
   general:
     theme: پوسته
     language: زبان
-    language_hint: زبان‌های بیشتری به‌زودی اضافه می‌شود.
     font_size: اندازه متن ویرایشگر
     confirm_delete: پرسش پیش از حذف کارت‌ها
     check_updates: بررسی به‌روزرسانی هنگام راه‌اندازی
@@ -508,12 +503,8 @@ activity:
   encrypted: "رمزگذاری شد"
 
 ai:
-  providers: "سرویس‌های هوش مصنوعی"
   providers_hint: "برای داشتن دستیار، یک هوش مصنوعی ابری یا محلی متصل کنید. دکمه‌های آن فقط پس از پیکربندی یک سرویس نمایش داده می‌شوند."
-  local: "محلی"
-  cloud: "ابری"
   provider:
-    add: "افزودن سرویس هوش مصنوعی"
     name: "نام"
     url: "URL پایه"
     model: "مدل"

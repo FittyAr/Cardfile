@@ -426,11 +426,6 @@ fn start(release: Arc<Release>, state: Entity<UpdateState>, window: &mut Window,
         .detach();
 }
 
-#[allow(dead_code)]
-fn _sizable(b: Button) -> Button {
-    b.xsmall()
-}
-
 #[cfg(test)]
 mod tests {
     use super::release_notes_body;

@@ -3,6 +3,7 @@ _version: 1
 app:
   name: Cardfile
   db_error_body: "无法打开数据库 %{path}：%{error}"
+  open_keymap_failed: "无法打开快捷键文件：%{error}"
   db_error_title: "Cardfile 无法打开数据库"
 test:
   greeting: "你好，%{name}！"
@@ -40,7 +41,6 @@ editor:
     align_center: 居中
     align_right: 右对齐
     align_justify: 两端对齐
-    size: 文字大小
     size_small: 小
     size_normal: 正常
     size_large: 大
@@ -78,7 +78,6 @@ editor:
     add_to_dictionary: 添加到词典
     no_suggestions: 无建议
   attachment:
-    open_hint: 双击打开
   read_only: 此卡片为只读。解锁后才能编辑。
   find:
     placeholder: 在卡片中查找
@@ -352,9 +351,7 @@ updates:
   manual: "此 Cardfile 副本无法自行更新。请从发布页面下载新版本。"
 
 about:
-  version: "版本 %{version}"
   description: 一款现代化的数字卡片盒，用于记录您的笔记。
-  license: 自由软件，采用 MIT 或 Apache 2.0 许可证。
   website: 网站
   third_party: 第三方许可证
   version_label: "版本"
@@ -383,14 +380,12 @@ settings:
     security: 安全
     users: 用户
     data: 数据
-    ai: "AI"
     ai_services: "AI 服务"
     ai_assistant: "助手"
     mcp: "AI 应用（MCP）"
   general:
     theme: 主题
     language: 语言
-    language_hint: 更多语言即将推出。
     font_size: 编辑器文字大小
     confirm_delete: 删除卡片前询问
     check_updates: 启动时检查更新
@@ -508,12 +503,8 @@ activity:
   encrypted: "已加密"
 
 ai:
-  providers: "AI 服务"
   providers_hint: "连接云端或本地 AI 即可使用助手。只有配置好服务后，相关按钮才会出现。"
-  local: "本地"
-  cloud: "云端"
   provider:
-    add: "添加 AI 服务"
     name: "名称"
     url: "基础 URL"
     model: "模型"

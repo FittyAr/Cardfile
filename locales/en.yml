@@ -4,6 +4,7 @@ app:
   name: Cardfile
   db_error_title: Cardfile cannot open its database
   db_error_body: "The database %{path} could not be opened: %{error}"
+  open_keymap_failed: "Could not open the keymap file: %{error}"
 test:
   greeting: "Hello, %{name}!"
 
@@ -40,7 +41,6 @@ editor:
     align_center: Center
     align_right: Align right
     align_justify: Justify
-    size: Text size
     size_small: Small
     size_normal: Normal
     size_large: Large
@@ -78,7 +78,6 @@ editor:
     add_to_dictionary: Add to dictionary
     no_suggestions: No suggestions
   attachment:
-    open_hint: Double-click to open
   read_only: This card is read-only. Unlock it to edit.
   find:
     placeholder: Find in card
@@ -352,9 +351,7 @@ updates:
   manual: "This copy of Cardfile can't update itself. Download the new version from the release page."
 
 about:
-  version: "Version %{version}"
   description: A modern digital card file for your notes.
-  license: Free software under the MIT or Apache 2.0 license.
   website: Website
   third_party: Third-party licenses
   version_label: "Version"
@@ -383,14 +380,12 @@ settings:
     security: Security
     users: Users
     data: Data
-    ai: "AI"
     ai_services: "AI services"
     ai_assistant: "Assistant"
     mcp: "AI apps (MCP)"
   general:
     theme: Theme
     language: Language
-    language_hint: More languages are coming.
     font_size: Editor text size
     confirm_delete: Ask before deleting cards
     check_updates: Check for updates on startup
@@ -508,12 +503,8 @@ activity:
   encrypted: "Encrypted"
 
 ai:
-  providers: "AI services"
   providers_hint: "Connect a cloud or local AI to get the assistant. Its buttons appear only once a service is configured."
-  local: "local"
-  cloud: "cloud"
   provider:
-    add: "Add AI service"
     name: "Name"
     url: "Base URL"
     model: "Model"

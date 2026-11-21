@@ -3,6 +3,7 @@ _version: 1
 app:
   name: Cardfile
   db_error_body: "ডেটাবেস %{path} খোলা যায়নি: %{error}"
+  open_keymap_failed: "কীম্যাপ ফাইল খোলা যায়নি: %{error}"
   db_error_title: "Cardfile তার ডেটাবেস খুলতে পারছে না"
 test:
   greeting: "হ্যালো, %{name}!"
@@ -40,7 +41,6 @@ editor:
     align_center: মাঝখানে আনুন
     align_right: ডানে সারিবদ্ধ করুন
     align_justify: দুই পাশে সমান করুন
-    size: লেখার আকার
     size_small: ছোট
     size_normal: সাধারণ
     size_large: বড়
@@ -78,7 +78,6 @@ editor:
     add_to_dictionary: অভিধানে যোগ করুন
     no_suggestions: কোনো পরামর্শ নেই
   attachment:
-    open_hint: খুলতে ডাবল-ক্লিক করুন
   read_only: এই কার্ডটি শুধু পড়ার জন্য। সম্পাদনা করতে এটি আনলক করুন।
   find:
     placeholder: কার্ডে খুঁজুন
@@ -352,9 +351,7 @@ updates:
   manual: "Cardfile-এর এই কপি নিজে নিজে আপডেট হতে পারে না। রিলিজ পেজ থেকে নতুন সংস্করণ ডাউনলোড করুন।"
 
 about:
-  version: "সংস্করণ %{version}"
   description: আপনার নোটের জন্য একটি আধুনিক ডিজিটাল কার্ড-ফাইল।
-  license: MIT বা Apache 2.0 লাইসেন্সের অধীনে মুক্ত সফটওয়্যার।
   website: ওয়েবসাইট
   third_party: তৃতীয়-পক্ষের লাইসেন্স
   version_label: "সংস্করণ"
@@ -383,14 +380,12 @@ settings:
     security: নিরাপত্তা
     users: ব্যবহারকারী
     data: ডেটা
-    ai: "AI"
     ai_services: "AI পরিষেবা"
     ai_assistant: "সহকারী"
     mcp: "AI অ্যাপ (MCP)"
   general:
     theme: থিম
     language: ভাষা
-    language_hint: আরও ভাষা আসছে।
     font_size: সম্পাদকের লেখার আকার
     confirm_delete: কার্ড মোছার আগে জিজ্ঞেস করুন
     check_updates: চালু হওয়ার সময় আপডেট দেখুন
@@ -508,12 +503,8 @@ activity:
   encrypted: "এনক্রিপ্ট করা হয়েছে"
 
 ai:
-  providers: "AI পরিষেবা"
   providers_hint: "সহকারী পেতে একটি ক্লাউড বা লোকাল AI সংযুক্ত করুন। কোনো পরিষেবা কনফিগার করার পরেই এর বোতামগুলো দেখা যায়।"
-  local: "লোকাল"
-  cloud: "ক্লাউড"
   provider:
-    add: "AI পরিষেবা যোগ করুন"
     name: "নাম"
     url: "বেস URL"
     model: "মডেল"

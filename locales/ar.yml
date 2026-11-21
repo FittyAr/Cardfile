@@ -3,6 +3,7 @@ _version: 1
 app:
   name: Cardfile
   db_error_body: "تعذّر فتح قاعدة البيانات %{path}: %{error}"
+  open_keymap_failed: "تعذّر فتح ملف اختصارات لوحة المفاتيح: %{error}"
   db_error_title: "يتعذّر على Cardfile فتح قاعدة بياناته"
 test:
   greeting: "مرحباً، %{name}!"
@@ -40,7 +41,6 @@ editor:
     align_center: توسيط
     align_right: محاذاة إلى اليمين
     align_justify: ضبط
-    size: حجم النص
     size_small: صغير
     size_normal: عادي
     size_large: كبير
@@ -78,7 +78,6 @@ editor:
     add_to_dictionary: إضافة إلى القاموس
     no_suggestions: لا توجد اقتراحات
   attachment:
-    open_hint: انقر نقراً مزدوجاً للفتح
   read_only: هذه البطاقة للقراءة فقط. افتح قفلها لتحريرها.
   find:
     placeholder: بحث في البطاقة
@@ -352,9 +351,7 @@ updates:
   manual: "لا تستطيع هذه النسخة من Cardfile تحديث نفسها. نزّل الإصدار الجديد من صفحة الإصدار."
 
 about:
-  version: "الإصدار %{version}"
   description: صندوق بطاقات رقمي حديث لملاحظاتك.
-  license: برنامج حر بموجب ترخيص MIT أو Apache 2.0.
   website: الموقع الإلكتروني
   third_party: تراخيص الجهات الخارجية
   version_label: "الإصدار"
@@ -383,14 +380,12 @@ settings:
     security: الأمان
     users: المستخدمون
     data: البيانات
-    ai: "الذكاء الاصطناعي"
     ai_services: "خدمات الذكاء الاصطناعي"
     ai_assistant: "المساعد"
     mcp: "تطبيقات الذكاء الاصطناعي (MCP)"
   general:
     theme: السمة
     language: اللغة
-    language_hint: ستتوفر لغات أخرى قريباً.
     font_size: حجم نص المحرر
     confirm_delete: السؤال قبل حذف البطاقات
     check_updates: التحقق من التحديثات عند بدء التشغيل
@@ -508,12 +503,8 @@ activity:
   encrypted: "شُفّرت"
 
 ai:
-  providers: "خدمات الذكاء الاصطناعي"
   providers_hint: "اربط ذكاءً اصطناعياً سحابياً أو محلياً لتحصل على المساعد. لا تظهر أزراره إلا بعد إعداد خدمة."
-  local: "محلي"
-  cloud: "سحابي"
   provider:
-    add: "إضافة خدمة ذكاء اصطناعي"
     name: "الاسم"
     url: "عنوان URL الأساسي"
     model: "النموذج"

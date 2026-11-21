@@ -3,6 +3,7 @@ _version: 1
 app:
   name: Cardfile
   db_error_body: "Không thể mở cơ sở dữ liệu %{path}: %{error}"
+  open_keymap_failed: "Không thể mở tệp phím tắt: %{error}"
   db_error_title: "Cardfile không thể mở cơ sở dữ liệu"
 test:
   greeting: "Xin chào, %{name}!"
@@ -40,7 +41,6 @@ editor:
     align_center: Căn giữa
     align_right: Căn phải
     align_justify: Căn đều hai bên
-    size: Cỡ chữ
     size_small: Nhỏ
     size_normal: Bình thường
     size_large: Lớn
@@ -78,7 +78,6 @@ editor:
     add_to_dictionary: Thêm vào từ điển
     no_suggestions: Không có gợi ý
   attachment:
-    open_hint: Nhấp đúp để mở
   read_only: Thẻ này chỉ có thể đọc. Hãy mở khóa để chỉnh sửa.
   find:
     placeholder: Tìm trong thẻ
@@ -352,9 +351,7 @@ updates:
   manual: "Bản Cardfile này không thể tự cập nhật. Hãy tải phiên bản mới từ trang phát hành."
 
 about:
-  version: "Phiên bản %{version}"
   description: Hộp thẻ kỹ thuật số hiện đại cho ghi chú của bạn.
-  license: Phần mềm tự do theo giấy phép MIT hoặc Apache 2.0.
   website: Trang web
   third_party: Giấy phép của bên thứ ba
   version_label: "Phiên bản"
@@ -383,14 +380,12 @@ settings:
     security: Bảo mật
     users: Người dùng
     data: Dữ liệu
-    ai: "AI"
     ai_services: "Dịch vụ AI"
     ai_assistant: "Trợ lý"
     mcp: "Ứng dụng AI (MCP)"
   general:
     theme: Giao diện
     language: Ngôn ngữ
-    language_hint: Sẽ có thêm nhiều ngôn ngữ.
     font_size: Cỡ chữ trình soạn thảo
     confirm_delete: Hỏi trước khi xóa thẻ
     check_updates: Kiểm tra cập nhật khi khởi động
@@ -508,12 +503,8 @@ activity:
   encrypted: "Đã mã hóa"
 
 ai:
-  providers: "Dịch vụ AI"
   providers_hint: "Kết nối AI trên đám mây hoặc cục bộ để dùng trợ lý. Các nút của trợ lý chỉ xuất hiện khi đã cấu hình dịch vụ."
-  local: "cục bộ"
-  cloud: "đám mây"
   provider:
-    add: "Thêm dịch vụ AI"
     name: "Tên"
     url: "URL gốc"
     model: "Mô hình"

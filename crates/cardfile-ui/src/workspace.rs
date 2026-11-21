@@ -1444,8 +1444,3 @@ impl Render for Workspace {
             }))
     }
 }
-
-#[allow(dead_code)]
-fn _assert_window_ext(w: &mut Window, cx: &mut App) {
-    let _ = w.has_active_dialog(cx);
-}

@@ -3,6 +3,7 @@ _version: 1
 app:
   name: Cardfile
   db_error_body: "%{path} veritabanı açılamadı: %{error}"
+  open_keymap_failed: "Kısayol dosyası açılamadı: %{error}"
   db_error_title: "Cardfile veritabanını açamıyor"
 test:
   greeting: "Merhaba, %{name}!"
@@ -40,7 +41,6 @@ editor:
     align_center: Ortala
     align_right: Sağa hizala
     align_justify: İki yana yasla
-    size: Metin boyutu
     size_small: Küçük
     size_normal: Normal
     size_large: Büyük
@@ -78,7 +78,6 @@ editor:
     add_to_dictionary: Sözlüğe ekle
     no_suggestions: Öneri yok
   attachment:
-    open_hint: Açmak için çift tıklayın
   read_only: Bu kart salt okunurdur. Düzenlemek için kilidini açın.
   find:
     placeholder: Kartta ara
@@ -352,9 +351,7 @@ updates:
   manual: "Cardfile'ın bu kopyası kendini güncelleyemez. Yeni sürümü sürüm sayfasından indirin."
 
 about:
-  version: "Sürüm %{version}"
   description: Notlarınız için modern bir dijital kart dosyası.
-  license: MIT veya Apache 2.0 lisansı altında özgür yazılım.
   website: Web sitesi
   third_party: Üçüncü taraf lisansları
   version_label: "Sürüm"
@@ -383,14 +380,12 @@ settings:
     security: Güvenlik
     users: Kullanıcılar
     data: Veriler
-    ai: "Yapay zekâ"
     ai_services: "Yapay zekâ hizmetleri"
     ai_assistant: "Asistan"
     mcp: "Yapay zekâ uygulamaları (MCP)"
   general:
     theme: Tema
     language: Dil
-    language_hint: Daha fazla dil geliyor.
     font_size: Düzenleyici metin boyutu
     confirm_delete: Kartları silmeden önce sor
     check_updates: Başlangıçta güncellemeleri denetle
@@ -508,12 +503,8 @@ activity:
   encrypted: "Şifrelendi"
 
 ai:
-  providers: "Yapay zekâ hizmetleri"
   providers_hint: "Asistanı kullanmak için bulut veya yerel bir yapay zekâ bağlayın. Düğmeleri yalnızca bir hizmet yapılandırıldığında görünür."
-  local: "yerel"
-  cloud: "bulut"
   provider:
-    add: "Yapay zekâ hizmeti ekle"
     name: "Ad"
     url: "Temel URL"
     model: "Model"

@@ -44,6 +44,9 @@ impl AppState {
         // Views that need the database only exist after it was opened.
         Self::get(cx).db.clone().unwrap_or_else(|| {
             tracing::error!("database requested before it was opened");
+            // Invariant: opening an empty in-memory SQLite database and running the
+            // embedded migrations only fails if the binary itself is broken (bad
+            // migrations or no memory), in which case no view can work anyway.
             Database::open_in_memory().unwrap_or_else(|e| panic!("in-memory database: {e}"))
         })
     }

@@ -3,6 +3,7 @@ _version: 1
 app:
   name: Cardfile
   db_error_body: "De database %{path} kon niet worden geopend: %{error}"
+  open_keymap_failed: "Kan het sneltoetsenbestand niet openen: %{error}"
   db_error_title: "Cardfile kan zijn database niet openen"
 test:
   greeting: "Hallo, %{name}!"
@@ -40,7 +41,6 @@ editor:
     align_center: Centreren
     align_right: Rechts uitlijnen
     align_justify: Uitvullen
-    size: Tekstgrootte
     size_small: Klein
     size_normal: Normaal
     size_large: Groot
@@ -78,7 +78,6 @@ editor:
     add_to_dictionary: Aan woordenboek toevoegen
     no_suggestions: Geen suggesties
   attachment:
-    open_hint: Dubbelklik om te openen
   read_only: Deze kaart is alleen-lezen. Ontgrendel hem om te bewerken.
   find:
     placeholder: Zoeken in kaart
@@ -352,9 +351,7 @@ updates:
   manual: "Deze kopie van Cardfile kan zichzelf niet bijwerken. Download de nieuwe versie van de releasepagina."
 
 about:
-  version: "Versie %{version}"
   description: Een moderne digitale kaartenbak voor je notities.
-  license: Vrije software onder de MIT- of Apache 2.0-licentie.
   website: Website
   third_party: Licenties van derden
   version_label: "Versie"
@@ -383,14 +380,12 @@ settings:
     security: Beveiliging
     users: Gebruikers
     data: Gegevens
-    ai: "AI"
     ai_services: "AI-diensten"
     ai_assistant: "Assistent"
     mcp: "AI-apps (MCP)"
   general:
     theme: Thema
     language: Taal
-    language_hint: Er komen meer talen.
     font_size: Tekstgrootte in de editor
     confirm_delete: Vragen voordat kaarten worden verwijderd
     check_updates: Bij het opstarten op updates controleren
@@ -508,12 +503,8 @@ activity:
   encrypted: "Versleuteld"
 
 ai:
-  providers: "AI-diensten"
   providers_hint: "Koppel een cloud- of lokale AI om de assistent te gebruiken. De knoppen verschijnen pas als er een dienst is ingesteld."
-  local: "lokaal"
-  cloud: "cloud"
   provider:
-    add: "AI-dienst toevoegen"
     name: "Naam"
     url: "Basis-URL"
     model: "Model"

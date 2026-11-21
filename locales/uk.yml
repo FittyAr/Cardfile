@@ -3,6 +3,7 @@ _version: 1
 app:
   name: Cardfile
   db_error_body: "Не вдалося відкрити базу даних %{path}: %{error}"
+  open_keymap_failed: "Не вдалося відкрити файл сполучень клавіш: %{error}"
   db_error_title: "Cardfile не може відкрити свою базу даних"
 test:
   greeting: "Вітаємо, %{name}!"
@@ -40,7 +41,6 @@ editor:
     align_center: По центру
     align_right: За правим краєм
     align_justify: За шириною
-    size: Розмір тексту
     size_small: Малий
     size_normal: Звичайний
     size_large: Великий
@@ -78,7 +78,6 @@ editor:
     add_to_dictionary: Додати до словника
     no_suggestions: Немає варіантів
   attachment:
-    open_hint: Двічі клацніть, щоб відкрити
   read_only: Ця картка лише для читання. Розблокуйте її, щоб редагувати.
   find:
     placeholder: Знайти в картці
@@ -352,9 +351,7 @@ updates:
   manual: "Ця копія Cardfile не може оновитися сама. Завантажте нову версію зі сторінки випуску."
 
 about:
-  version: "Версія %{version}"
   description: Сучасна цифрова картотека для ваших нотаток.
-  license: Вільне програмне забезпечення за ліцензією MIT або Apache 2.0.
   website: Вебсайт
   third_party: Ліцензії сторонніх компонентів
   version_label: "Версія"
@@ -383,14 +380,12 @@ settings:
     security: Безпека
     users: Користувачі
     data: Дані
-    ai: "ШІ"
     ai_services: "ШІ-сервіси"
     ai_assistant: "Помічник"
     mcp: "ШІ-застосунки (MCP)"
   general:
     theme: Тема
     language: Мова
-    language_hint: Незабаром з'являться інші мови.
     font_size: Розмір тексту в редакторі
     confirm_delete: Питати перед видаленням карток
     check_updates: Перевіряти оновлення під час запуску
@@ -508,12 +503,8 @@ activity:
   encrypted: "Зашифровано"
 
 ai:
-  providers: "ШІ-сервіси"
   providers_hint: "Підключіть хмарний або локальний ШІ, щоб отримати помічника. Його кнопки з'являться лише після налаштування сервісу."
-  local: "локальний"
-  cloud: "хмарний"
   provider:
-    add: "Додати ШІ-сервіс"
     name: "Назва"
     url: "Базова URL-адреса"
     model: "Модель"

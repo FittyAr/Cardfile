@@ -262,14 +262,25 @@ impl CardfileApp {
 
     fn open_keymap(&mut self, _: &OpenKeymap, window: &mut Window, cx: &mut Context<Self>) {
         let paths = AppState::get(cx).paths.clone();
-        match crate::keymap::ensure_keymap_file(&paths, cx) {
-            Ok(path) => {
-                if let Err(e) = open::that_detached(&path) {
-                    window.push_notification(Notification::error(e.to_string()), cx);
-                }
+        let template = crate::keymap::keymap_template(cx);
+        let task = cx.background_spawn(async move {
+            let path = crate::keymap::ensure_keymap_file(&paths, &template)?;
+            open::that_detached(&path)
+        });
+        cx.spawn_in(window, async move |_, cx| {
+            if let Err(e) = task.await {
+                let _ = cx.update(|window, cx| {
+                    window.push_notification(
+                        Notification::error(cardfile_i18n::t_args(
+                            "app.open_keymap_failed",
+                            &[("error", &e.to_string())],
+                        )),
+                        cx,
+                    );
+                });
             }
-            Err(e) => window.push_notification(Notification::error(e.to_string()), cx),
-        }
+        })
+        .detach();
     }
 
     fn open_data_folder(

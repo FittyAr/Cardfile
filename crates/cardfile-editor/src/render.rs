@@ -1,6 +1,6 @@
 //! Rendering of the document blocks.
 
-use cardfile_doc::{Align, Block, BlockKind, RichText, TextSize};
+use cardfile_doc::{Align, Block, BlockKind, RichText};
 use cardfile_i18n::t;
 use gpui_kit::component::menu::{ContextMenuExt as _, PopupMenu};
 use gpui_kit::component::scroll::ScrollableElement as _;
@@ -641,9 +641,4 @@ impl Render for RichEditor {
             .children(self.render_find_bar(cx))
             .child(div().flex_1().min_h_0().child(root))
     }
-}
-
-#[allow(dead_code)]
-fn _size_scale_used(s: TextSize) -> f32 {
-    s.scale()
 }

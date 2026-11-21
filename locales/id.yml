@@ -3,6 +3,7 @@ _version: 1
 app:
   name: Cardfile
   db_error_body: "Basis data %{path} tidak dapat dibuka: %{error}"
+  open_keymap_failed: "Tidak dapat membuka berkas pintasan: %{error}"
   db_error_title: "Cardfile tidak dapat membuka basis datanya"
 test:
   greeting: "Halo, %{name}!"
@@ -40,7 +41,6 @@ editor:
     align_center: Rata tengah
     align_right: Rata kanan
     align_justify: Rata kiri-kanan
-    size: Ukuran teks
     size_small: Kecil
     size_normal: Normal
     size_large: Besar
@@ -78,7 +78,6 @@ editor:
     add_to_dictionary: Tambahkan ke kamus
     no_suggestions: Tidak ada saran
   attachment:
-    open_hint: Klik dua kali untuk membuka
   read_only: Kartu ini hanya-baca. Buka kuncinya untuk mengedit.
   find:
     placeholder: Cari di kartu
@@ -352,9 +351,7 @@ updates:
   manual: "Salinan Cardfile ini tidak dapat memperbarui dirinya sendiri. Unduh versi baru dari halaman rilis."
 
 about:
-  version: "Versi %{version}"
   description: Kotak kartu digital modern untuk catatan Anda.
-  license: Perangkat lunak bebas berlisensi MIT atau Apache 2.0.
   website: Situs web
   third_party: Lisensi pihak ketiga
   version_label: "Versi"
@@ -383,14 +380,12 @@ settings:
     security: Keamanan
     users: Pengguna
     data: Data
-    ai: "AI"
     ai_services: "Layanan AI"
     ai_assistant: "Asisten"
     mcp: "Aplikasi AI (MCP)"
   general:
     theme: Tema
     language: Bahasa
-    language_hint: Bahasa lain segera hadir.
     font_size: Ukuran teks editor
     confirm_delete: Tanya sebelum menghapus kartu
     check_updates: Periksa pembaruan saat memulai
@@ -508,12 +503,8 @@ activity:
   encrypted: "Dienkripsi"
 
 ai:
-  providers: "Layanan AI"
   providers_hint: "Hubungkan AI cloud atau lokal untuk mendapatkan asisten. Tombolnya hanya muncul setelah sebuah layanan dikonfigurasi."
-  local: "lokal"
-  cloud: "cloud"
   provider:
-    add: "Tambah layanan AI"
     name: "Nama"
     url: "URL dasar"
     model: "Model"

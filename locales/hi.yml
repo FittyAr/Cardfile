@@ -3,6 +3,7 @@ _version: 1
 app:
   name: Cardfile
   db_error_body: "डेटाबेस %{path} नहीं खोला जा सका: %{error}"
+  open_keymap_failed: "कीमैप फ़ाइल नहीं खोली जा सकी: %{error}"
   db_error_title: "Cardfile अपना डेटाबेस नहीं खोल सकता"
 test:
   greeting: "नमस्ते, %{name}!"
@@ -40,7 +41,6 @@ editor:
     align_center: केंद्र में रखें
     align_right: दाएँ संरेखित करें
     align_justify: दोनों ओर संरेखित करें
-    size: टेक्स्ट का आकार
     size_small: छोटा
     size_normal: सामान्य
     size_large: बड़ा
@@ -78,7 +78,6 @@ editor:
     add_to_dictionary: शब्दकोश में जोड़ें
     no_suggestions: कोई सुझाव नहीं
   attachment:
-    open_hint: खोलने के लिए डबल-क्लिक करें
   read_only: यह कार्ड केवल पढ़ने के लिए है। संपादित करने के लिए इसे अनलॉक करें।
   find:
     placeholder: कार्ड में खोजें
@@ -352,9 +351,7 @@ updates:
   manual: "Cardfile की यह कॉपी खुद को अपडेट नहीं कर सकती। नया संस्करण रिलीज़ पेज से डाउनलोड करें।"
 
 about:
-  version: "संस्करण %{version}"
   description: आपके नोट्स के लिए एक आधुनिक डिजिटल कार्ड-फ़ाइल।
-  license: MIT या Apache 2.0 लाइसेंस के अंतर्गत मुक्त सॉफ़्टवेयर।
   website: वेबसाइट
   third_party: तृतीय-पक्ष लाइसेंस
   version_label: "संस्करण"
@@ -383,14 +380,12 @@ settings:
     security: सुरक्षा
     users: उपयोगकर्ता
     data: डेटा
-    ai: "AI"
     ai_services: "AI सेवाएँ"
     ai_assistant: "सहायक"
     mcp: "AI ऐप्स (MCP)"
   general:
     theme: थीम
     language: भाषा
-    language_hint: और भाषाएँ जल्द आ रही हैं।
     font_size: संपादक में टेक्स्ट का आकार
     confirm_delete: कार्ड हटाने से पहले पूछें
     check_updates: शुरू होने पर अपडेट जाँचें
@@ -508,12 +503,8 @@ activity:
   encrypted: "एन्क्रिप्ट किया गया"
 
 ai:
-  providers: "AI सेवाएँ"
   providers_hint: "सहायक पाने के लिए कोई क्लाउड या स्थानीय AI कनेक्ट करें। इसके बटन किसी सेवा के कॉन्फ़िगर होने के बाद ही दिखते हैं।"
-  local: "स्थानीय"
-  cloud: "क्लाउड"
   provider:
-    add: "AI सेवा जोड़ें"
     name: "नाम"
     url: "बेस URL"
     model: "मॉडल"

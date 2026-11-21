@@ -3,6 +3,7 @@ _version: 1
 app:
   name: Cardfile
   db_error_body: "Die Datenbank %{path} konnte nicht geöffnet werden: %{error}"
+  open_keymap_failed: "Die Tastenbelegungsdatei konnte nicht geöffnet werden: %{error}"
   db_error_title: "Cardfile kann seine Datenbank nicht öffnen"
 test:
   greeting: "Hallo, %{name}!"
@@ -40,7 +41,6 @@ editor:
     align_center: Zentriert
     align_right: Rechtsbündig
     align_justify: Blocksatz
-    size: Textgröße
     size_small: Klein
     size_normal: Normal
     size_large: Groß
@@ -78,7 +78,6 @@ editor:
     add_to_dictionary: Zum Wörterbuch hinzufügen
     no_suggestions: Keine Vorschläge
   attachment:
-    open_hint: Zum Öffnen doppelklicken
   read_only: Diese Karte ist schreibgeschützt. Entsperren Sie sie zum Bearbeiten.
   find:
     placeholder: In Karte suchen
@@ -352,9 +351,7 @@ updates:
   manual: "Diese Cardfile-Kopie kann sich nicht selbst aktualisieren. Laden Sie die neue Version von der Release-Seite herunter."
 
 about:
-  version: "Version %{version}"
   description: Eine moderne digitale Kartei für Ihre Notizen.
-  license: Freie Software unter der MIT- oder Apache-2.0-Lizenz.
   website: Webseite
   third_party: Lizenzen von Drittanbietern
   version_label: "Version"
@@ -383,14 +380,12 @@ settings:
     security: Sicherheit
     users: Benutzer
     data: Daten
-    ai: "KI"
     ai_services: "KI-Dienste"
     ai_assistant: "Assistent"
     mcp: "KI-Apps (MCP)"
   general:
     theme: Design
     language: Sprache
-    language_hint: Weitere Sprachen folgen.
     font_size: Textgröße im Editor
     confirm_delete: Vor dem Löschen von Karten nachfragen
     check_updates: Beim Start nach Updates suchen
@@ -508,12 +503,8 @@ activity:
   encrypted: "Verschlüsselt"
 
 ai:
-  providers: "KI-Dienste"
   providers_hint: "Verbinden Sie eine Cloud- oder lokale KI, um den Assistenten zu nutzen. Seine Schaltflächen erscheinen erst, wenn ein Dienst eingerichtet ist."
-  local: "lokal"
-  cloud: "Cloud"
   provider:
-    add: "KI-Dienst hinzufügen"
     name: "Name"
     url: "Basis-URL"
     model: "Modell"

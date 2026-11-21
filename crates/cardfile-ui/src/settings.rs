@@ -1622,8 +1622,3 @@ impl Render for SettingsView {
             )
     }
 }
-
-#[allow(dead_code)]
-fn _sizes(b: Button) -> Button {
-    b.xsmall()
-}

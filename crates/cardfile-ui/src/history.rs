@@ -8,7 +8,7 @@ use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::{ActiveTheme as _, Sizable as _, WindowExt as _, h_flex, v_flex};
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::{
-    App, AppContext as _, Entity, InteractiveElement as _, IntoElement, ParentElement as _,
+    App, AppContext as _, Entity, InteractiveElement as _, ParentElement as _,
     StatefulInteractiveElement as _, Styled as _, Window, div, px,
 };
 
@@ -167,6 +167,3 @@ impl DisabledWhen for Button {
         self.disabled(v)
     }
 }
-
-#[allow(dead_code)]
-fn _unused(_: impl IntoElement) {}

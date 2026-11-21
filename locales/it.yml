@@ -3,6 +3,7 @@ _version: 1
 app:
   name: Cardfile
   db_error_body: "Impossibile aprire il database %{path}: %{error}"
+  open_keymap_failed: "Impossibile aprire il file delle scorciatoie: %{error}"
   db_error_title: "Cardfile non riesce ad aprire il database"
 test:
   greeting: "Ciao, %{name}!"
@@ -40,7 +41,6 @@ editor:
     align_center: Centra
     align_right: Allinea a destra
     align_justify: Giustifica
-    size: Dimensione del testo
     size_small: Piccolo
     size_normal: Normale
     size_large: Grande
@@ -78,7 +78,6 @@ editor:
     add_to_dictionary: Aggiungi al dizionario
     no_suggestions: Nessun suggerimento
   attachment:
-    open_hint: Doppio clic per aprire
   read_only: Questa scheda è di sola lettura. Sbloccala per modificarla.
   find:
     placeholder: Trova nella scheda
@@ -352,9 +351,7 @@ updates:
   manual: "Questa copia di Cardfile non può aggiornarsi da sola. Scarica la nuova versione dalla pagina della versione."
 
 about:
-  version: "Versione %{version}"
   description: Uno schedario digitale moderno per i tuoi appunti.
-  license: Software libero con licenza MIT o Apache 2.0.
   website: Sito web
   third_party: Licenze di terze parti
   version_label: "Versione"
@@ -383,14 +380,12 @@ settings:
     security: Sicurezza
     users: Utenti
     data: Dati
-    ai: "IA"
     ai_services: "Servizi di IA"
     ai_assistant: "Assistente"
     mcp: "App di IA (MCP)"
   general:
     theme: Tema
     language: Lingua
-    language_hint: Altre lingue in arrivo.
     font_size: Dimensione del testo dell'editor
     confirm_delete: Chiedi conferma prima di eliminare le schede
     check_updates: Verifica aggiornamenti all'avvio
@@ -508,12 +503,8 @@ activity:
   encrypted: "Crittografata"
 
 ai:
-  providers: "Servizi di IA"
   providers_hint: "Collega un'IA cloud o locale per avere l'assistente. I suoi pulsanti compaiono solo quando un servizio è configurato."
-  local: "locale"
-  cloud: "cloud"
   provider:
-    add: "Aggiungi servizio di IA"
     name: "Nome"
     url: "URL di base"
     model: "Modello"

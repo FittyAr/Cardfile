@@ -3,6 +3,7 @@ _version: 1
 app:
   name: Cardfile
   db_error_body: "Nie można otworzyć bazy danych %{path}: %{error}"
+  open_keymap_failed: "Nie można otworzyć pliku skrótów: %{error}"
   db_error_title: "Cardfile nie może otworzyć swojej bazy danych"
 test:
   greeting: "Cześć, %{name}!"
@@ -40,7 +41,6 @@ editor:
     align_center: Wyśrodkuj
     align_right: Wyrównaj do prawej
     align_justify: Wyjustuj
-    size: Rozmiar tekstu
     size_small: Mały
     size_normal: Normalny
     size_large: Duży
@@ -78,7 +78,6 @@ editor:
     add_to_dictionary: Dodaj do słownika
     no_suggestions: Brak sugestii
   attachment:
-    open_hint: Kliknij dwukrotnie, aby otworzyć
   read_only: Ta karta jest tylko do odczytu. Odblokuj ją, aby edytować.
   find:
     placeholder: Znajdź w karcie
@@ -352,9 +351,7 @@ updates:
   manual: "Ta kopia programu Cardfile nie może zaktualizować się sama. Pobierz nową wersję ze strony wydania."
 
 about:
-  version: "Wersja %{version}"
   description: Nowoczesna cyfrowa kartoteka na Twoje notatki.
-  license: Wolne oprogramowanie na licencji MIT lub Apache 2.0.
   website: Strona internetowa
   third_party: Licencje stron trzecich
   version_label: "Wersja"
@@ -383,14 +380,12 @@ settings:
     security: Bezpieczeństwo
     users: Użytkownicy
     data: Dane
-    ai: "AI"
     ai_services: "Usługi AI"
     ai_assistant: "Asystent"
     mcp: "Aplikacje AI (MCP)"
   general:
     theme: Motyw
     language: Język
-    language_hint: Wkrótce więcej języków.
     font_size: Rozmiar tekstu w edytorze
     confirm_delete: Pytaj przed usunięciem kart
     check_updates: Sprawdzaj aktualizacje przy uruchomieniu
@@ -508,12 +503,8 @@ activity:
   encrypted: "Zaszyfrowano"
 
 ai:
-  providers: "Usługi AI"
   providers_hint: "Połącz chmurową lub lokalną AI, aby korzystać z asystenta. Jego przyciski pojawią się dopiero po skonfigurowaniu usługi."
-  local: "lokalna"
-  cloud: "chmurowa"
   provider:
-    add: "Dodaj usługę AI"
     name: "Nazwa"
     url: "Bazowy URL"
     model: "Model"

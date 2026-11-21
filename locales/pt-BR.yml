@@ -3,6 +3,7 @@ _version: 1
 app:
   name: Cardfile
   db_error_body: "Não foi possível abrir o banco de dados %{path}: %{error}"
+  open_keymap_failed: "Não foi possível abrir o arquivo de atalhos: %{error}"
   db_error_title: "O Cardfile não consegue abrir seu banco de dados"
 test:
   greeting: "Olá, %{name}!"
@@ -40,7 +41,6 @@ editor:
     align_center: Centralizar
     align_right: Alinhar à direita
     align_justify: Justificar
-    size: Tamanho do texto
     size_small: Pequeno
     size_normal: Normal
     size_large: Grande
@@ -78,7 +78,6 @@ editor:
     add_to_dictionary: Adicionar ao dicionário
     no_suggestions: Sem sugestões
   attachment:
-    open_hint: Clique duas vezes para abrir
   read_only: Este cartão é somente leitura. Desbloqueie-o para editar.
   find:
     placeholder: Localizar no cartão
@@ -352,9 +351,7 @@ updates:
   manual: "Esta cópia do Cardfile não consegue se atualizar sozinha. Baixe a nova versão na página da versão."
 
 about:
-  version: "Versão %{version}"
   description: Um fichário digital moderno para suas notas.
-  license: Software livre sob a licença MIT ou Apache 2.0.
   website: Site
   third_party: Licenças de terceiros
   version_label: "Versão"
@@ -383,14 +380,12 @@ settings:
     security: Segurança
     users: Usuários
     data: Dados
-    ai: "IA"
     ai_services: "Serviços de IA"
     ai_assistant: "Assistente"
     mcp: "Apps de IA (MCP)"
   general:
     theme: Tema
     language: Idioma
-    language_hint: Mais idiomas em breve.
     font_size: Tamanho do texto do editor
     confirm_delete: Perguntar antes de excluir cartões
     check_updates: Verificar atualizações ao iniciar
@@ -508,12 +503,8 @@ activity:
   encrypted: "Criptografado"
 
 ai:
-  providers: "Serviços de IA"
   providers_hint: "Conecte uma IA na nuvem ou local para ter o assistente. Os botões dele só aparecem quando um serviço está configurado."
-  local: "local"
-  cloud: "nuvem"
   provider:
-    add: "Adicionar serviço de IA"
     name: "Nome"
     url: "URL base"
     model: "Modelo"
