@@ -100,6 +100,7 @@ tempfile = "3.27.0"
 
 [workspace.lints.rust]
 unsafe_code = "deny"
+missing_docs = "warn"
 missing_debug_implementations = "allow"
 
 [workspace.lints.clippy]
