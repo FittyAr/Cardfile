@@ -15,6 +15,7 @@
 //!
 //! All functions are blocking (database access): call them off the UI thread.
 
+/// Conversion between card documents and the Markdown the AI reads and writes.
 pub mod content;
 
 use std::collections::{HashMap, HashSet};
@@ -23,20 +24,25 @@ use cardfile_core::{
     Actor, Card, CardAccess, CardFilter, CardId, CardSummary, LockMode, NewCard, SearchScope,
     SortOrder, Tag, TagId, UserId, mask_title,
 };
-use cardfile_db::{ContentUpdate, Database};
+use cardfile_db::{CardMove, ContentUpdate, Database};
 use cardfile_doc::Document;
 use serde_json::{Value, json};
 
 /// A tool definition, independent of MCP or any LLM wire format.
 #[derive(Clone, Debug)]
 pub struct ToolDef {
+    /// Stable tool name the model calls (`snake_case`).
     pub name: &'static str,
+    /// What the tool does, shown to the model.
     pub description: &'static str,
     /// JSON Schema of the arguments.
     pub schema: Value,
     /// Only reads data.
     pub read_only: bool,
-    /// May remove data (moves cards to the recycle bin).
+    /// May remove or overwrite data (deletes, rewrites, tag removal, reordering).
+    /// The MCP server reports it as `destructiveHint`; the in-app chat asks the
+    /// user before running such a tool, so text inside a card cannot talk the
+    /// model into silent mass changes.
     pub destructive: bool,
 }
 
@@ -64,7 +70,9 @@ impl Scope {
 /// Result of running a tool: JSON for the AI, and whether data changed.
 #[derive(Clone, Debug)]
 pub struct Outcome {
+    /// JSON result returned to the AI.
     pub value: Value,
+    /// Whether the tool changed data (the UI then refreshes).
     pub changed: bool,
     /// The card the tool created or edited, so the UI can show it.
     pub card: Option<CardId>,
@@ -180,7 +188,7 @@ pub fn all_tools() -> Vec<ToolDef> {
                 &["id"],
             ),
             read_only: false,
-            destructive: false,
+            destructive: true,
         },
         ToolDef {
             name: "edit_card_text",
@@ -196,7 +204,7 @@ pub fn all_tools() -> Vec<ToolDef> {
                 &["id", "find", "replace"],
             ),
             read_only: false,
-            destructive: false,
+            destructive: true,
         },
         ToolDef {
             name: "append_to_card",
@@ -221,7 +229,7 @@ pub fn all_tools() -> Vec<ToolDef> {
                 &["id", "tags"],
             ),
             read_only: false,
-            destructive: false,
+            destructive: true,
         },
         ToolDef {
             name: "create_tag",
@@ -256,7 +264,7 @@ pub fn all_tools() -> Vec<ToolDef> {
                 &["ids"],
             ),
             read_only: false,
-            destructive: false,
+            destructive: true,
         },
         ToolDef {
             name: "delete_card",
@@ -851,7 +859,9 @@ impl Ctx<'_> {
             }
             writable(&card)?;
         }
-        let actor = self.scope.actor();
+        // Work out every move against the snapshot, then apply them in one
+        // transaction: a failure half-way must not leave a partial order.
+        let mut moves = Vec::with_capacity(ids.len() - 1);
         for pair in ids.windows(2) {
             let (prev, id) = (pair[0], pair[1]);
             // Place `id` right after `prev`, before whatever follows `prev` now.
@@ -862,11 +872,16 @@ impl Ctx<'_> {
                 .ok_or("the card list changed while reordering")?
                 + 1;
             let next = order.get(at).copied();
-            self.db
-                .move_card(&actor, id, Some(prev), next)
-                .map_err(err)?;
+            moves.push(CardMove {
+                id,
+                before: Some(prev),
+                after: next,
+            });
             order.insert(at, id);
         }
+        self.db
+            .move_cards(&self.scope.actor(), &moves)
+            .map_err(err)?;
         Ok(Outcome::wrote(json!({"ok": true}), None))
     }
 

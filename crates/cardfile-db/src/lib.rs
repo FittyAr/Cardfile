@@ -9,6 +9,7 @@ mod blobs;
 mod cards;
 mod error;
 mod recovery;
+mod reorder;
 mod rows;
 mod schema;
 mod search;
@@ -29,6 +30,7 @@ use parking_lot::Mutex;
 pub use cards::ContentUpdate;
 pub use error::{DbError, DbResult};
 pub use recovery::{BackupKind, validate_backup};
+pub use reorder::CardMove;
 pub use search::fts_query;
 pub use users::{CredentialUpdate, Rekey};
 
