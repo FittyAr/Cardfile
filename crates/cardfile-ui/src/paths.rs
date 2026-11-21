@@ -21,9 +21,12 @@ use std::path::{Path, PathBuf};
 
 pub const PORTABLE_FLAG: &str = "portable.flag";
 
+/// The data folder Cardfile uses and the files inside it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DataPaths {
+    /// The data folder; every other path is inside it.
     pub root: PathBuf,
+    /// Whether the folder sits next to the executable (portable mode).
     pub portable: bool,
 }
 
@@ -35,21 +38,27 @@ impl DataPaths {
                 dir.join("portable.flag").exists() || dir.join("installed.flag").exists()
             })
     }
+    /// The SQLite database, `cardfile.db`.
     pub fn db(&self) -> PathBuf {
         self.root.join("cardfile.db")
     }
+    /// Folder of database backups.
     pub fn backups(&self) -> PathBuf {
         self.root.join("backups")
     }
+    /// Folder of log files.
     pub fn logs(&self) -> PathBuf {
         self.root.join("logs")
     }
+    /// Folder of user theme files.
     pub fn themes(&self) -> PathBuf {
         self.root.join("themes")
     }
+    /// The user's key binding overrides, `keymap.json`.
     pub fn keymap(&self) -> PathBuf {
         self.root.join("keymap.json")
     }
+    /// Folder of spell-checking dictionaries.
     pub fn dictionaries(&self) -> PathBuf {
         self.root.join("dictionaries")
     }
@@ -79,6 +88,8 @@ impl DataPaths {
         }
     }
 
+    /// Portable layout for an executable in `exe_dir`: data in `exe_dir/data`.
+    /// Does not touch the disk.
     pub fn portable_at(exe_dir: &Path) -> Self {
         Self {
             root: exe_dir.join("data"),
