@@ -1,0 +1,262 @@
+{
+  "version": 1,
+  "blocks": [
+    {
+      "kind": {
+        "type": "heading",
+        "data": 1
+      },
+      "text": {
+        "text": "Project notes"
+      }
+    },
+    {
+      "kind": {
+        "type": "paragraph"
+      },
+      "text": {
+        "text": "Plain, bold, italic, underlined, struck, code and a link.",
+        "runs": [
+          {
+            "len": 7
+          },
+          {
+            "len": 4,
+            "style": {
+              "bold": true
+            }
+          },
+          {
+            "len": 2
+          },
+          {
+            "len": 6,
+            "style": {
+              "italic": true
+            }
+          },
+          {
+            "len": 2
+          },
+          {
+            "len": 10,
+            "style": {
+              "underline": true
+            }
+          },
+          {
+            "len": 2
+          },
+          {
+            "len": 6,
+            "style": {
+              "strike": true
+            }
+          },
+          {
+            "len": 2
+          },
+          {
+            "len": 4,
+            "style": {
+              "code": true
+            }
+          },
+          {
+            "len": 7
+          },
+          {
+            "len": 4,
+            "style": {
+              "link": "https://example.com/a?b=1&c=2"
+            }
+          },
+          {
+            "len": 1
+          }
+        ]
+      }
+    },
+    {
+      "kind": {
+        "type": "paragraph"
+      },
+      "align": "center",
+      "size": "large",
+      "text": {
+        "text": "Red on yellow, centred",
+        "runs": [
+          {
+            "len": 13,
+            "style": {
+              "color": "#cc0000",
+              "highlight": "#ffff00"
+            }
+          },
+          {
+            "len": 9
+          }
+        ]
+      }
+    },
+    {
+      "kind": {
+        "type": "paragraph"
+      },
+      "text": {
+        "text": "Special characters: <tag> & *stars* _under_ `tick` # | \\ é ü 日本 مرحبا\nSecond line after a break"
+      }
+    },
+    {
+      "kind": {
+        "type": "heading",
+        "data": 2
+      },
+      "text": {
+        "text": "Lists"
+      }
+    },
+    {
+      "kind": {
+        "type": "bullet_list"
+      },
+      "text": {
+        "text": "First bullet"
+      }
+    },
+    {
+      "kind": {
+        "type": "bullet_list"
+      },
+      "indent": 1,
+      "text": {
+        "text": "Nested bullet"
+      }
+    },
+    {
+      "kind": {
+        "type": "numbered_list"
+      },
+      "text": {
+        "text": "Step one"
+      }
+    },
+    {
+      "kind": {
+        "type": "numbered_list"
+      },
+      "text": {
+        "text": "Step two"
+      }
+    },
+    {
+      "kind": {
+        "type": "check_list",
+        "data": {
+          "checked": true
+        }
+      },
+      "text": {
+        "text": "Done task"
+      }
+    },
+    {
+      "kind": {
+        "type": "check_list",
+        "data": {
+          "checked": false
+        }
+      },
+      "text": {
+        "text": "Open task"
+      }
+    },
+    {
+      "kind": {
+        "type": "quote"
+      },
+      "text": {
+        "text": "A quoted line\nand its continuation"
+      }
+    },
+    {
+      "kind": {
+        "type": "code",
+        "data": {
+          "language": "rust"
+        }
+      },
+      "text": {
+        "text": "fn main() {\n    let fence = \"```\";\n    println!(\"{fence}\");\n}"
+      }
+    },
+    {
+      "kind": {
+        "type": "divider"
+      }
+    },
+    {
+      "kind": {
+        "type": "image",
+        "data": {
+          "blob": "img1",
+          "mime": "image/png",
+          "alt": "A pixel"
+        }
+      }
+    },
+    {
+      "kind": {
+        "type": "attachment",
+        "data": {
+          "blob": "att1",
+          "file_name": "report.pdf",
+          "mime": "application/pdf",
+          "size": 1234
+        }
+      }
+    },
+    {
+      "kind": {
+        "type": "table",
+        "data": {
+          "rows": [
+            [
+              {
+                "text": "Name"
+              },
+              {
+                "text": "Value"
+              }
+            ],
+            [
+              {
+                "text": "pipe | inside"
+              },
+              {
+                "text": "two\nlines"
+              }
+            ],
+            [
+              {
+                "text": "bold",
+                "runs": [
+                  {
+                    "len": 4,
+                    "style": {
+                      "bold": true
+                    }
+                  }
+                ]
+              },
+              {
+                "text": "42"
+              }
+            ]
+          ],
+          "header": true
+        }
+      }
+    }
+  ]
+}
