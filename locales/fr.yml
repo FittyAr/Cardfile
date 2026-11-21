@@ -608,6 +608,20 @@ chat:
     restore_card: "Fiche restaurée"
 
   step_limit: "L’assistant s’est arrêté après trop d’étapes sans terminer. Demandez-lui de continuer si nécessaire."
+  error:
+    start: "L'assistant n'a pas pu démarrer."
+    generic: "L'assistant n'a pas pu répondre."
+    network: "Impossible de joindre le service d'IA. Vérifiez votre connexion internet."
+    timeout: "Le service d'IA a mis trop de temps à répondre. Réessayez."
+    auth: "Le service d'IA a refusé la clé d'API. Vérifiez-la dans Paramètres → IA."
+    insecure_url: "Ce service d'IA utilise http:// sur un autre ordinateur, ce qui enverrait votre clé et vos fiches sans chiffrement. Utilisez https:// (http:// n'est autorisé que pour localhost)."
+  approval:
+    title: "Autoriser l'assistant à faire ceci ?"
+    approve: "Autoriser"
+    approve_all: "Tout autoriser dans cette conversation"
+    reject: "Refuser"
+    declined: "Non autorisé"
+    more: "et %{count} de plus"
 attachment:
   no_app: "Aucune application de cet ordinateur ne peut ouvrir « %{name} ». Installez un programme pour ce type de fichier (pour les vidéos, un lecteur multimédia comme VLC) et réessayez."
   not_found: "La pièce jointe est introuvable."

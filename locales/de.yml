@@ -608,6 +608,20 @@ chat:
     restore_card: "Karte wiederhergestellt"
 
   step_limit: "Der Assistent wurde nach zu vielen Schritten ohne Abschluss angehalten. Bitten Sie ihn bei Bedarf fortzufahren."
+  error:
+    start: "Der Assistent konnte nicht starten."
+    generic: "Der Assistent konnte nicht antworten."
+    network: "Der KI-Dienst ist nicht erreichbar. Prüfe deine Internetverbindung."
+    timeout: "Der KI-Dienst hat zu lange gebraucht. Versuche es erneut."
+    auth: "Der KI-Dienst hat den API-Schlüssel abgelehnt. Prüfe ihn unter Einstellungen → KI."
+    insecure_url: "Dieser KI-Dienst nutzt http:// auf einem anderen Computer, wodurch dein Schlüssel und deine Karten unverschlüsselt gesendet würden. Verwende https:// (http:// ist nur für localhost erlaubt)."
+  approval:
+    title: "Soll der Assistent das tun dürfen?"
+    approve: "Erlauben"
+    approve_all: "In diesem Gespräch alles erlauben"
+    reject: "Ablehnen"
+    declined: "Nicht erlaubt"
+    more: "und %{count} weitere"
 attachment:
   no_app: "Keine Anwendung auf diesem Computer kann „%{name}“ öffnen. Installieren Sie ein Programm für diesen Dateityp (für Videos einen Mediaplayer wie VLC) und versuchen Sie es erneut."
   not_found: "Der Anhang wurde nicht gefunden."

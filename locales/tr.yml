@@ -608,6 +608,20 @@ chat:
     restore_card: "Kart geri yüklendi"
 
   step_limit: "Asistan, işi bitirmeden çok fazla adımdan sonra durdu. Gerekirse devam etmesini isteyin."
+  error:
+    start: "Asistan başlatılamadı."
+    generic: "Asistan yanıt veremedi."
+    network: "Yapay zekâ hizmetine ulaşılamadı. İnternet bağlantınızı kontrol edin."
+    timeout: "Yapay zekâ hizmeti yanıt vermekte çok gecikti. Yeniden deneyin."
+    auth: "Yapay zekâ hizmeti API anahtarını reddetti. Ayarlar → Yapay zekâ bölümünden kontrol edin."
+    insecure_url: "Bu yapay zekâ hizmeti başka bir bilgisayarda http:// kullanıyor; bu, anahtarınızı ve kartlarınızı şifrelenmeden gönderir. https:// kullanın (http:// yalnızca localhost için izinlidir)."
+  approval:
+    title: "Asistanın bunu yapmasına izin verilsin mi?"
+    approve: "İzin ver"
+    approve_all: "Bu konuşmada hepsine izin ver"
+    reject: "Reddet"
+    declined: "İzin verilmedi"
+    more: "ve %{count} tane daha"
 attachment:
   no_app: "Bu bilgisayarda “%{name}” dosyasını açabilecek bir uygulama yok. Bu dosya türü için bir program kurun (videolar için VLC gibi bir medya oynatıcı) ve yeniden deneyin."
   not_found: "Ek bulunamadı."

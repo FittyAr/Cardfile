@@ -608,6 +608,20 @@ chat:
     restore_card: "Przywrócono kartę"
 
   step_limit: "Asystent zatrzymał się po zbyt wielu krokach bez zakończenia. W razie potrzeby poproś o kontynuację."
+  error:
+    start: "Nie udało się uruchomić asystenta."
+    generic: "Asystent nie mógł odpowiedzieć."
+    network: "Nie można połączyć się z usługą AI. Sprawdź połączenie z internetem."
+    timeout: "Usługa AI zbyt długo nie odpowiadała. Spróbuj ponownie."
+    auth: "Usługa AI odrzuciła klucz API. Sprawdź go w Ustawienia → AI."
+    insecure_url: "Ta usługa AI używa http:// na innym komputerze, więc Twój klucz i karty zostałyby wysłane bez szyfrowania. Użyj https:// (http:// jest dozwolone tylko dla localhost)."
+  approval:
+    title: "Pozwolić asystentowi to zrobić?"
+    approve: "Zezwól"
+    approve_all: "Zezwól na wszystko w tej rozmowie"
+    reject: "Odmów"
+    declined: "Nie zezwolono"
+    more: "i %{count} więcej"
 attachment:
   no_app: "Na tym komputerze nie ma aplikacji, która może otworzyć „%{name}”. Zainstaluj program dla tego typu plików (dla filmów odtwarzacz multimedialny, np. VLC) i spróbuj ponownie."
   not_found: "Nie znaleziono załącznika."

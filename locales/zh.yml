@@ -608,6 +608,20 @@ chat:
     restore_card: "已恢复卡片"
 
   step_limit: "助手执行过多步骤后仍未完成，已停止。需要时请让它继续。"
+  error:
+    start: "无法启动助手。"
+    generic: "助手无法回答。"
+    network: "无法连接到 AI 服务。请检查网络连接。"
+    timeout: "AI 服务响应时间过长。请重试。"
+    auth: "AI 服务拒绝了 API 密钥。请在“设置 → AI”中检查。"
+    insecure_url: "此 AI 服务在另一台计算机上使用 http://，这会以未加密的方式发送你的密钥和卡片。请使用 https://（http:// 仅允许用于 localhost）。"
+  approval:
+    title: "允许助手执行此操作吗？"
+    approve: "允许"
+    approve_all: "在此对话中全部允许"
+    reject: "拒绝"
+    declined: "未获允许"
+    more: "以及另外 %{count} 个"
 attachment:
   no_app: "本机上没有可以打开“%{name}”的应用程序。请安装支持此文件类型的程序（视频可使用 VLC 等媒体播放器），然后重试。"
   not_found: "未找到附件。"
