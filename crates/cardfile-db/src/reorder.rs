@@ -5,12 +5,9 @@
 //! so that a failure half-way leaves the order exactly as it was, instead of a
 //! partially applied arrangement.
 
-use cardfile_core::{Actor, CardId, now_millis, order};
-use diesel::prelude::*;
+use cardfile_core::{Actor, CardId};
 
-use crate::cards::ensure_owner;
-use crate::schema::cards;
-use crate::{Database, DbError, DbResult};
+use crate::{Database, DbResult};
 
 /// One step of [`Database::move_cards`]: put `id` between `before` (the card
 /// that will sit above it) and `after` (the one below). `None` is the list edge.
@@ -31,42 +28,11 @@ impl Database {
     pub fn move_cards(&self, actor: &Actor, moves: &[CardMove]) -> DbResult<()> {
         self.tx(|conn| {
             for m in moves {
-                move_in(conn, actor, m)?;
+                crate::cards::move_card_in(conn, actor, m.id, m.before, m.after)?;
             }
             Ok(())
         })
     }
-}
-
-/// The body of [`Database::move_card`], run on a connection that is already in a
-/// transaction.
-fn move_in(conn: &mut SqliteConnection, actor: &Actor, m: &CardMove) -> DbResult<()> {
-    let id = m.id.to_string();
-    ensure_owner(conn, actor, &id)?;
-    let key_of = |conn: &mut SqliteConnection, c: Option<CardId>| -> DbResult<Option<String>> {
-        c.map(|c| {
-            cards::table
-                .find(c.to_string())
-                .select(cards::sort_key)
-                .first::<String>(conn)
-                .map_err(DbError::from)
-        })
-        .transpose()
-    };
-    let lo = key_of(conn, m.before)?;
-    let hi = key_of(conn, m.after)?;
-    let key = order::key_between(lo.as_deref(), hi.as_deref());
-    diesel::update(cards::table.find(&id))
-        .set((
-            cards::sort_key.eq(key),
-            cards::updated_at.eq(now_millis()),
-            cards::updated_by.eq(actor.user.to_string()),
-            cards::rev.eq(cards::rev + 1),
-        ))
-        .execute(conn)?;
-    let title: String = cards::table.find(&id).select(cards::title).first(conn)?;
-    crate::activity::log(conn, actor, Some(&id), "move", &title)?;
-    Ok(())
 }
 
 #[cfg(test)]

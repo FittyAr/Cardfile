@@ -343,48 +343,7 @@ impl Database {
         before: Option<CardId>,
         after: Option<CardId>,
     ) -> DbResult<()> {
-        self.tx(|conn| {
-            ensure_live_owner(conn, actor, &id.to_string())?;
-            let owner = actor.principal().to_string();
-            let key_of =
-                |conn: &mut SqliteConnection, c: Option<CardId>| -> DbResult<Option<String>> {
-                    let Some(c) = c else {
-                        return Ok(None);
-                    };
-                    let invalid = || {
-                        DbError::from(cardfile_core::Error::Invalid(format!(
-                            "{c} is not a neighbour in this list"
-                        )))
-                    };
-                    if c == id {
-                        return Err(invalid());
-                    }
-                    cards::table
-                        .find(c.to_string())
-                        .filter(cards::owner_id.eq(&owner))
-                        .filter(cards::deleted_at.is_null())
-                        .select(cards::sort_key)
-                        .first::<String>(conn)
-                        .optional()?
-                        .map(Some)
-                        .ok_or_else(invalid)
-                };
-            // `before` is the card that will sit above, `after` the one below.
-            let lo = key_of(conn, before)?;
-            let hi = key_of(conn, after)?;
-            let key = order::key_between(lo.as_deref(), hi.as_deref());
-            diesel::update(cards::table.find(id.to_string()))
-                .set((
-                    cards::sort_key.eq(key),
-                    cards::updated_at.eq(now_millis()),
-                    cards::updated_by.eq(actor.user.to_string()),
-                    cards::rev.eq(cards::rev + 1),
-                ))
-                .execute(conn)?;
-            let title = title_of(conn, &id.to_string())?;
-            crate::activity::log(conn, actor, Some(&id.to_string()), "move", &title)?;
-            Ok(())
-        })
+        self.tx(|conn| move_card_in(conn, actor, id, before, after))
     }
 
     /// Move a card to the recycle bin. Owner only.
@@ -620,6 +579,56 @@ fn add_card_blobs(conn: &mut SqliteConnection, id: CardId, blob_ids: &[String]) 
             .values(rows)
             .execute(conn)?;
     }
+    Ok(())
+}
+
+/// The body of [`Database::move_card`], on a connection already inside a
+/// transaction (shared with [`Database::move_cards`]).
+pub(crate) fn move_card_in(
+    conn: &mut SqliteConnection,
+    actor: &Actor,
+    id: CardId,
+    before: Option<CardId>,
+    after: Option<CardId>,
+) -> DbResult<()> {
+    ensure_live_owner(conn, actor, &id.to_string())?;
+    let owner = actor.principal().to_string();
+    let key_of = |conn: &mut SqliteConnection, c: Option<CardId>| -> DbResult<Option<String>> {
+        let Some(c) = c else {
+            return Ok(None);
+        };
+        let invalid = || {
+            DbError::from(cardfile_core::Error::Invalid(format!(
+                "{c} is not a neighbour in this list"
+            )))
+        };
+        if c == id {
+            return Err(invalid());
+        }
+        cards::table
+            .find(c.to_string())
+            .filter(cards::owner_id.eq(&owner))
+            .filter(cards::deleted_at.is_null())
+            .select(cards::sort_key)
+            .first::<String>(conn)
+            .optional()?
+            .map(Some)
+            .ok_or_else(invalid)
+    };
+    // `before` is the card that will sit above, `after` the one below.
+    let lo = key_of(conn, before)?;
+    let hi = key_of(conn, after)?;
+    let key = order::key_between(lo.as_deref(), hi.as_deref());
+    diesel::update(cards::table.find(id.to_string()))
+        .set((
+            cards::sort_key.eq(key),
+            cards::updated_at.eq(now_millis()),
+            cards::updated_by.eq(actor.user.to_string()),
+            cards::rev.eq(cards::rev + 1),
+        ))
+        .execute(conn)?;
+    let title = title_of(conn, &id.to_string())?;
+    crate::activity::log(conn, actor, Some(&id.to_string()), "move", &title)?;
     Ok(())
 }
 
