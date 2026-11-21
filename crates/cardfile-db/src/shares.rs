@@ -4,13 +4,117 @@
 //! keys (`card_keys`) are the exception to the soft-delete rule: they are secrets,
 //! so a key that must stop working (unshare, decryption) is hard-deleted rather than
 //! left in the file for a revoked user.
+//!
+//! Deleting a wrapped key is not enough on its own: a revoked user may have kept the
+//! unwrapped card key. When the owner unshares an encrypted card the card therefore
+//! moves to a new key ([`KeyRotation`]) in the same transaction.
 
-use cardfile_core::{Actor, CardAccess, CardId, CardShare, SharePermission, UserId, now_millis};
+use std::collections::BTreeSet;
+
+use cardfile_core::{
+    Actor, CardAccess, CardId, CardShare, EncryptedPayload, LockMode, RevisionId, SharePermission,
+    UserId, now_millis,
+};
 use diesel::prelude::*;
 
-use crate::rows::parse_id;
-use crate::schema::{card_keys, card_shares, cards};
+use crate::rows::{parse_id, payload_json};
+use crate::schema::{card_keys, card_revisions, card_shares, cards};
 use crate::{Database, DbError, DbResult};
+
+/// A new card key for an encrypted card, prepared by the caller (who holds the
+/// unlocked current key) when the owner unshares it. See [`Database::unshare_card`].
+///
+/// Everything sealed under the old key is re-encrypted under the new one: the
+/// current content and the revisions. Revisions left out are deleted, so no
+/// ciphertext under the revoked key stays behind. Sealed images and attachments keep
+/// their own per-blob keys, which live inside the (now re-encrypted) document.
+#[derive(Clone, Debug)]
+pub struct KeyRotation {
+    /// The card's `rev` the rotation was prepared from. If the card changed since,
+    /// the rotation is refused and must be prepared again.
+    pub base_rev: i64,
+    /// The current content, encrypted under the new key (format v2, with its key id).
+    pub encrypted: EncryptedPayload,
+    /// Revisions re-encrypted under the new key.
+    pub revisions: Vec<(RevisionId, EncryptedPayload)>,
+    /// The new key wrapped for the owner and every user who keeps access.
+    pub card_keys: Vec<(UserId, String)>,
+}
+
+/// Apply `rotation` to `card_id` after `removed` lost access. Checks that it was made
+/// from the current version and covers exactly the users who keep access.
+fn rotate_card_key(
+    conn: &mut SqliteConnection,
+    actor: &Actor,
+    card_id: &str,
+    owner: &str,
+    rotation: &KeyRotation,
+    now: i64,
+) -> DbResult<()> {
+    let invalid = |msg: &str| DbError::from(cardfile_core::Error::Invalid(msg.into()));
+    let rev: i64 = cards::table.find(card_id).select(cards::rev).first(conn)?;
+    if rev != rotation.base_rev {
+        return Err(invalid(
+            "the card changed while its key was being replaced; try again",
+        ));
+    }
+    let payload = &rotation.encrypted;
+    if payload.v < 2 || payload.key_id.is_empty() {
+        return Err(invalid("a key rotation needs a keyed (v2) payload"));
+    }
+    // Exactly the owner and the remaining recipients, each once.
+    let mut expected: BTreeSet<String> = card_shares::table
+        .filter(card_shares::card_id.eq(card_id))
+        .filter(card_shares::deleted_at.is_null())
+        .select(card_shares::user_id)
+        .load::<String>(conn)?
+        .into_iter()
+        .collect();
+    expected.insert(owner.to_owned());
+    let given: BTreeSet<String> = rotation
+        .card_keys
+        .iter()
+        .map(|(u, _)| u.to_string())
+        .collect();
+    if given.len() != rotation.card_keys.len() || given != expected {
+        return Err(invalid(
+            "the new card key must be wrapped for the owner and every remaining user",
+        ));
+    }
+    let revisions: Vec<String> = card_revisions::table
+        .filter(card_revisions::card_id.eq(card_id))
+        .filter(card_revisions::encrypted.is_not_null())
+        .select(card_revisions::id)
+        .load(conn)?;
+    let revisions: BTreeSet<String> = revisions.into_iter().collect();
+    let mut rekeyed = BTreeSet::new();
+    for (id, payload) in &rotation.revisions {
+        let id = id.to_string();
+        if !revisions.contains(&id) || !rekeyed.insert(id.clone()) {
+            return Err(invalid(
+                "a re-encrypted revision does not belong to the card",
+            ));
+        }
+        diesel::update(card_revisions::table.find(&id))
+            .set(card_revisions::encrypted.eq(payload_json(Some(payload))))
+            .execute(conn)?;
+    }
+    // Revisions still sealed under the old key: a revoked user could open them.
+    let stale: Vec<&String> = revisions.difference(&rekeyed).collect();
+    for chunk in stale.chunks(500) {
+        diesel::delete(card_revisions::table.filter(card_revisions::id.eq_any(chunk)))
+            .execute(conn)?;
+    }
+    diesel::update(cards::table.find(card_id))
+        .set((
+            cards::encrypted.eq(payload_json(Some(payload))),
+            cards::updated_at.eq(now),
+            cards::updated_by.eq(actor.user.to_string()),
+            cards::rev.eq(cards::rev + 1),
+        ))
+        .execute(conn)?;
+    replace_card_keys(conn, card_id, &rotation.card_keys)
+}
 
 /// `card_id`'s wrapped keys are replaced by `keys` (`(user, wrapped)`). Old keys are
 /// hard-deleted on purpose (see the module docs).
@@ -39,16 +143,21 @@ pub(crate) fn access_of(
     card: &str,
     user: &str,
 ) -> DbResult<Option<CardAccess>> {
-    let owner: Option<String> = cards::table
+    let row: Option<(String, Option<i64>)> = cards::table
         .find(card)
-        .select(cards::owner_id)
+        .select((cards::owner_id, cards::deleted_at))
         .first(conn)
         .optional()?;
-    let Some(owner) = owner else {
+    let Some((owner, deleted_at)) = row else {
         return Ok(None);
     };
     if owner == user {
         return Ok(Some(CardAccess::Owner));
+    }
+    // A card in the owner's recycle bin is hidden from the people it is shared with
+    // (as in their lists) until it is restored.
+    if deleted_at.is_some() {
+        return Ok(None);
     }
     let perm: Option<String> = card_shares::table
         .find((card, user))
@@ -124,6 +233,7 @@ impl Database {
             if owner != actor.principal().to_string() {
                 return Err(DbError::Domain(cardfile_core::Error::PermissionDenied));
             }
+            crate::cards::ensure_not_trashed(conn, &card_id)?;
             if owner == user.to_string() {
                 return Err(
                     cardfile_core::Error::Invalid("cannot share with the owner".into()).into(),
@@ -172,15 +282,30 @@ impl Database {
 
     /// Stop sharing `card` with `user`. The owner may unshare anyone; a recipient may
     /// remove themselves.
-    pub fn unshare_card(&self, actor: &Actor, card: CardId, user: UserId) -> DbResult<()> {
+    ///
+    /// When the owner unshares an **encrypted** card, `rotation` is required: the
+    /// removed user may still hold the unwrapped card key, so the card moves to a new
+    /// key in the same transaction (see [`KeyRotation`]). Later saves must use the new
+    /// key; one made with the old key is refused ([`cardfile_core::Error::LockModeMismatch`]).
+    /// A recipient leaving on their own passes `None`: they cannot be trusted to
+    /// rewrite the ciphertext, and only their wrapped key is removed. Plain cards
+    /// take `None`.
+    pub fn unshare_card(
+        &self,
+        actor: &Actor,
+        card: CardId,
+        user: UserId,
+        rotation: Option<&KeyRotation>,
+    ) -> DbResult<()> {
         let card_id = card.to_string();
         self.tx(|conn| {
-            let row: (String, String) = cards::table
+            let row: (String, String, String) = cards::table
                 .find(&card_id)
-                .select((cards::owner_id, cards::title))
+                .select((cards::owner_id, cards::title, cards::lock_mode))
                 .first(conn)?;
             let me = actor.principal();
-            if row.0 != me.to_string() && me != user {
+            let by_owner = row.0 == me.to_string();
+            if !by_owner && me != user {
                 return Err(DbError::Domain(cardfile_core::Error::PermissionDenied));
             }
             let now = now_millis();
@@ -198,9 +323,29 @@ impl Database {
             // A secret: removed for real (see the module docs).
             diesel::delete(card_keys::table.find((&card_id, user.to_string()))).execute(conn)?;
             if n == 0 {
+                // Not shared with them: nothing to revoke, no key to replace.
                 return Ok(());
             }
-            bump_card(conn, actor, &card_id, now)?;
+            let encrypted = LockMode::parse(&row.2) == Some(LockMode::Encrypted);
+            match (encrypted && by_owner, rotation) {
+                (true, Some(rotation)) => {
+                    // Also bumps the card.
+                    rotate_card_key(conn, actor, &card_id, &row.0, rotation, now)?;
+                }
+                (false, None) => bump_card(conn, actor, &card_id, now)?,
+                (true, None) => {
+                    return Err(cardfile_core::Error::Invalid(
+                        "unsharing an encrypted card needs a new card key".into(),
+                    )
+                    .into());
+                }
+                (false, Some(_)) => {
+                    return Err(cardfile_core::Error::Invalid(
+                        "only the owner of an encrypted card replaces its key".into(),
+                    )
+                    .into());
+                }
+            }
             crate::activity::log(conn, actor, Some(&card_id), "unshare", &row.1)
         })
     }
@@ -222,6 +367,8 @@ impl Database {
 mod tests {
     use cardfile_core::{Actor, CardAccess, CardFilter, LockMode, NewCard, SharePermission};
 
+    use super::KeyRotation;
+    use crate::DbError;
     use crate::test_util::*;
 
     #[test]
@@ -280,7 +427,7 @@ mod tests {
         assert!(db.list_cards(bob.id, &shared).unwrap().is_empty());
         db.restore_card(&a, card.id).unwrap();
         // A recipient may leave a share.
-        db.unshare_card(&b, card.id, bob.id).unwrap();
+        db.unshare_card(&b, card.id, bob.id, None).unwrap();
         assert_eq!(db.card_access(card.id, bob.id).unwrap(), None);
     }
 
@@ -295,7 +442,7 @@ mod tests {
             .unwrap();
         let shared = db.card(card.id).unwrap();
         assert_eq!(shared.rev, card.rev + 1);
-        db.unshare_card(&a, card.id, bob.id).unwrap();
+        db.unshare_card(&a, card.id, bob.id, None).unwrap();
         let unshared = db.card(card.id).unwrap();
         assert_eq!(unshared.rev, shared.rev + 1);
         assert!(db.card_shares(card.id).unwrap().is_empty());
@@ -333,15 +480,28 @@ mod tests {
         let (db, alice) = db_with_user();
         let bob = db.create_user("bob", "Bob", None, false).unwrap();
         let a = Actor::user(alice.id);
-        let card = db
-            .create_card(
-                &a,
-                NewCard {
-                    lock_mode: LockMode::Encrypted,
-                    ..Default::default()
-                },
-            )
-            .unwrap();
+        let card = db.create_card(&a, NewCard::default()).unwrap();
+        let payload = cardfile_core::EncryptedPayload {
+            v: 2,
+            salt: String::new(),
+            nonce: "n".into(),
+            m_cost: 0,
+            t_cost: 0,
+            p_cost: 0,
+            ciphertext: "c".into(),
+            key_id: String::new(),
+        };
+        db.set_card_lock(
+            &a,
+            card.id,
+            LockMode::Encrypted,
+            "",
+            "",
+            Some(&payload),
+            &[(alice.id, "owner-key".into())],
+            &[],
+        )
+        .unwrap();
         assert!(
             db.share_card(&a, card.id, bob.id, SharePermission::View, None)
                 .is_err()
@@ -352,7 +512,229 @@ mod tests {
             db.wrapped_card_key(card.id, bob.id).unwrap().as_deref(),
             Some("wrapped")
         );
-        db.unshare_card(&a, card.id, bob.id).unwrap();
+        // The owner cannot just drop Bob's key: the card needs a new one.
+        assert!(db.unshare_card(&a, card.id, bob.id, None).is_err());
+        assert_eq!(
+            db.wrapped_card_key(card.id, bob.id).unwrap().as_deref(),
+            Some("wrapped")
+        );
+        let rotation = KeyRotation {
+            base_rev: db.card(card.id).unwrap().rev,
+            encrypted: cardfile_core::EncryptedPayload {
+                key_id: "new-key".into(),
+                ..payload
+            },
+            revisions: vec![],
+            card_keys: vec![(alice.id, "owner-key-2".into())],
+        };
+        db.unshare_card(&a, card.id, bob.id, Some(&rotation))
+            .unwrap();
         assert_eq!(db.wrapped_card_key(card.id, bob.id).unwrap(), None);
+        assert_eq!(
+            db.wrapped_card_key(card.id, alice.id).unwrap().as_deref(),
+            Some("owner-key-2")
+        );
+    }
+
+    /// Real keys: a user who kept the unwrapped card key from before they were
+    /// removed cannot read anything written (or kept) after the unshare.
+    #[test]
+    fn unsharing_an_encrypted_card_rotates_its_key() {
+        use cardfile_crypto::{
+            CardKey, decrypt_with_key, encrypt_with_key, generate_user_keys, reencrypt_with_key,
+            unwrap_card_key, wrap_card_key,
+        };
+
+        use crate::ContentUpdate;
+
+        let (db, alice) = db_with_user();
+        let bob = db.create_user("bob", "Bob", None, false).unwrap();
+        let carol = db.create_user("carol", "Carol", None, false).unwrap();
+        let (alice_pub, _, alice_secret) = generate_user_keys("a", &alice.id.to_string()).unwrap();
+        let (bob_pub, _, bob_secret) = generate_user_keys("b", &bob.id.to_string()).unwrap();
+        let (carol_pub, _, carol_secret) = generate_user_keys("c", &carol.id.to_string()).unwrap();
+        let a = Actor::user(alice.id);
+        let card = db.create_card(&a, NewCard::default()).unwrap();
+        let aad = card.id.to_string();
+        let seal = |json: &str, key: &CardKey| encrypt_with_key(json, key, aad.as_bytes()).unwrap();
+        let save = |json: &str, key: &CardKey| {
+            db.update_card_content(
+                &a,
+                card.id,
+                ContentUpdate {
+                    title: "t".into(),
+                    encrypted: Some(seal(json, key)),
+                    ..Default::default()
+                },
+                10,
+                0,
+            )
+        };
+
+        // Encrypted under K1 and shared with Bob and Carol, with some history.
+        let k1 = CardKey::generate().unwrap();
+        db.set_card_lock(
+            &a,
+            card.id,
+            LockMode::Encrypted,
+            "",
+            "",
+            Some(&seal("v1", &k1)),
+            &[(alice.id, wrap_card_key(&k1, &alice_pub, &aad).unwrap())],
+            &[],
+        )
+        .unwrap();
+        for (user, public) in [(bob.id, &bob_pub), (carol.id, &carol_pub)] {
+            let wrapped = wrap_card_key(&k1, public, &aad).unwrap();
+            db.share_card(&a, card.id, user, SharePermission::Edit, Some(&wrapped))
+                .unwrap();
+        }
+        save("v2", &k1).unwrap();
+        save("v3", &k1).unwrap();
+        assert_eq!(db.card_revisions(card.id).unwrap().len(), 2);
+        // Bob unwraps K1 and keeps it.
+        let bob_kept = unwrap_card_key(
+            &db.wrapped_card_key(card.id, bob.id).unwrap().unwrap(),
+            &bob_secret,
+            &aad,
+        )
+        .unwrap();
+
+        // Alice removes Bob: everything moves to K2, wrapped for Alice and Carol.
+        let k2 = CardKey::generate().unwrap();
+        let current = db.card(card.id).unwrap();
+        let revisions = db.card_revisions(card.id).unwrap();
+        let rotation = KeyRotation {
+            base_rev: current.rev,
+            encrypted: reencrypt_with_key(
+                current.encrypted.as_ref().unwrap(),
+                &k1,
+                &k2,
+                aad.as_bytes(),
+            )
+            .unwrap(),
+            // One revision is re-encrypted; the other is left out and must go.
+            revisions: vec![(
+                revisions[0].id,
+                reencrypt_with_key(
+                    revisions[0].encrypted.as_ref().unwrap(),
+                    &k1,
+                    &k2,
+                    aad.as_bytes(),
+                )
+                .unwrap(),
+            )],
+            card_keys: vec![
+                (alice.id, wrap_card_key(&k2, &alice_pub, &aad).unwrap()),
+                (carol.id, wrap_card_key(&k2, &carol_pub, &aad).unwrap()),
+            ],
+        };
+        // A rotation that still includes Bob, or forgets Carol, is refused.
+        for keys in [
+            vec![rotation.card_keys[0].clone()],
+            vec![
+                rotation.card_keys[0].clone(),
+                rotation.card_keys[1].clone(),
+                (bob.id, wrap_card_key(&k2, &bob_pub, &aad).unwrap()),
+            ],
+        ] {
+            let bad = KeyRotation {
+                card_keys: keys,
+                ..rotation.clone()
+            };
+            assert!(db.unshare_card(&a, card.id, bob.id, Some(&bad)).is_err());
+        }
+        // So is one prepared from an older version of the card.
+        let stale = KeyRotation {
+            base_rev: rotation.base_rev - 1,
+            ..rotation.clone()
+        };
+        assert!(db.unshare_card(&a, card.id, bob.id, Some(&stale)).is_err());
+        assert!(db.wrapped_card_key(card.id, bob.id).unwrap().is_some());
+        db.unshare_card(&a, card.id, bob.id, Some(&rotation))
+            .unwrap();
+        assert_eq!(db.wrapped_card_key(card.id, bob.id).unwrap(), None);
+        assert_eq!(db.card(card.id).unwrap().rev, current.rev + 1);
+
+        // A save with the old key (an editor that missed the rotation) is refused.
+        assert!(matches!(
+            save("stale", &k1).unwrap_err(),
+            DbError::Domain(cardfile_core::Error::LockModeMismatch)
+        ));
+        // Alice writes after the unshare with the new key.
+        save("after unshare", &k2).unwrap();
+        let after = db.card(card.id).unwrap();
+        let payload = after.encrypted.as_ref().unwrap();
+        assert!(decrypt_with_key(payload, &bob_kept, aad.as_bytes()).is_err());
+        // Nothing left in the history opens with Bob's old key either.
+        let history = db.card_revisions(card.id).unwrap();
+        assert!(!history.is_empty());
+        for rev in &history {
+            let p = rev.encrypted.as_ref().unwrap();
+            assert!(decrypt_with_key(p, &bob_kept, aad.as_bytes()).is_err());
+        }
+        assert!(
+            !history.iter().any(|r| r.id == revisions[1].id),
+            "the revision left under the old key was not purged"
+        );
+        // Carol and Alice open the new content with their own keys.
+        for (user, secret) in [(carol.id, &carol_secret), (alice.id, &alice_secret)] {
+            let wrapped = db.wrapped_card_key(card.id, user).unwrap().unwrap();
+            let key = unwrap_card_key(&wrapped, secret, &aad).unwrap();
+            assert_eq!(
+                &*decrypt_with_key(payload, &key, aad.as_bytes()).unwrap(),
+                "after unshare"
+            );
+        }
+    }
+
+    #[test]
+    fn recipients_leaving_an_encrypted_card_do_not_rotate_it() {
+        let (db, alice) = db_with_user();
+        let bob = db.create_user("bob", "Bob", None, false).unwrap();
+        let a = Actor::user(alice.id);
+        let b = Actor::user(bob.id);
+        let card = db.create_card(&a, NewCard::default()).unwrap();
+        let payload = cardfile_core::EncryptedPayload {
+            v: 2,
+            salt: String::new(),
+            nonce: "n".into(),
+            m_cost: 0,
+            t_cost: 0,
+            p_cost: 0,
+            ciphertext: "c".into(),
+            key_id: "k1".into(),
+        };
+        db.set_card_lock(
+            &a,
+            card.id,
+            LockMode::Encrypted,
+            "",
+            "",
+            Some(&payload),
+            &[(alice.id, "owner-key".into())],
+            &[],
+        )
+        .unwrap();
+        db.share_card(&a, card.id, bob.id, SharePermission::View, Some("bob-key"))
+            .unwrap();
+        // A viewer may not rewrite the ciphertext on the way out.
+        let rotation = KeyRotation {
+            base_rev: db.card(card.id).unwrap().rev,
+            encrypted: payload.clone(),
+            revisions: vec![],
+            card_keys: vec![(alice.id, "evil".into())],
+        };
+        assert!(
+            db.unshare_card(&b, card.id, bob.id, Some(&rotation))
+                .is_err()
+        );
+        db.unshare_card(&b, card.id, bob.id, None).unwrap();
+        assert_eq!(db.wrapped_card_key(card.id, bob.id).unwrap(), None);
+        assert_eq!(
+            db.wrapped_card_key(card.id, alice.id).unwrap().as_deref(),
+            Some("owner-key")
+        );
+        assert_eq!(db.card(card.id).unwrap().encrypted, Some(payload));
     }
 }

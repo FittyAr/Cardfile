@@ -81,6 +81,7 @@ fn snapshot_preserves_uncheckpointed_accounts_cards_and_attachment_bytes() {
         t_cost: 1,
         p_cost: 1,
         ciphertext: "ciphertext-preserved-as-is".into(),
+        key_id: String::new(),
     };
     db.set_card_lock(
         &actor,

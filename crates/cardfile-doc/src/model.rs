@@ -408,14 +408,19 @@ impl RichText {
         self.text.is_empty()
     }
 
+    /// Restore the invariants. Run lengths come from untrusted JSON, so every sum
+    /// here is checked or saturating: absurd lengths are clamped, never overflow.
     pub fn normalize(&mut self) {
-        let total: usize = self.runs.iter().map(|r| r.len).sum();
-        if total != self.text.len() {
+        let total = self
+            .runs
+            .iter()
+            .try_fold(0usize, |acc, r| acc.checked_add(r.len));
+        if total != Some(self.text.len()) {
             // Corrupt or hand-written input: keep styles that fit, pad with plain text.
             let mut kept = Vec::new();
-            let mut acc = 0;
+            let mut acc: usize = 0;
             for run in self.runs.drain(..) {
-                if acc + run.len > self.text.len() {
+                if acc.saturating_add(run.len) > self.text.len() {
                     let len = self.text.len() - acc;
                     kept.push(Run {
                         len,
@@ -436,9 +441,9 @@ impl RichText {
             self.runs = kept;
         }
         // Snap run boundaries to char boundaries.
-        let mut pos = 0;
+        let mut pos: usize = 0;
         for run in &mut self.runs {
-            let mut end = (pos + run.len).min(self.text.len());
+            let mut end = pos.saturating_add(run.len).min(self.text.len());
             while end < self.text.len() && !self.text.is_char_boundary(end) {
                 end += 1;
             }
@@ -716,6 +721,51 @@ mod tests {
         let tail = rt.split_off(7);
         rt.append(&tail);
         assert_eq!(rt, original);
+    }
+
+    #[test]
+    fn huge_run_lengths_do_not_overflow() {
+        let mut doc = Document::default();
+        doc.blocks[0].text = RichText::styled("héllo", Style::default());
+        let template: serde_json::Value = serde_json::from_str(&doc.to_json()).unwrap();
+        for lens in [
+            vec![u64::MAX],
+            vec![1, u64::MAX],
+            vec![u64::MAX, u64::MAX],
+            vec![u64::MAX - 1, 2, 3],
+            vec![2, 1, u64::MAX / 2, u64::MAX / 2 + 2],
+        ] {
+            let mut json = template.clone();
+            let runs: Vec<serde_json::Value> = lens
+                .iter()
+                .map(|l| serde_json::json!({ "len": l, "style": { "bold": true } }))
+                .collect();
+            json["blocks"][0]["text"]["runs"] = serde_json::Value::Array(runs);
+            // Must not panic; on 32-bit targets such lengths are a JSON error instead.
+            let Ok(doc) = Document::from_json(&json.to_string()) else {
+                continue;
+            };
+            let text = &doc.blocks[0].text;
+            assert_eq!(text.text, "héllo");
+            let total: usize = text.runs.iter().map(|r| r.len).sum();
+            assert!(text.runs.is_empty() || total == text.len(), "{lens:?}");
+            assert!(text.runs.iter().all(|r| r.len > 0));
+        }
+        let mut rt = RichText {
+            text: "abc".into(),
+            runs: vec![
+                Run {
+                    len: usize::MAX,
+                    style: Style::default(),
+                },
+                Run {
+                    len: usize::MAX,
+                    style: Style::default(),
+                },
+            ],
+        };
+        rt.normalize();
+        assert!(rt.runs.is_empty());
     }
 
     #[test]

@@ -30,6 +30,7 @@ pub use cards::ContentUpdate;
 pub use error::{DbError, DbResult};
 pub use recovery::{BackupKind, validate_backup};
 pub use search::fts_query;
+pub use shares::KeyRotation;
 pub use users::{CredentialUpdate, Rekey};
 
 const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");

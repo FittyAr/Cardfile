@@ -20,15 +20,17 @@ use chacha20poly1305::{XChaCha20Poly1305, XNonce};
 use x25519_dalek::{PublicKey, StaticSecret};
 use zeroize::Zeroizing;
 
-use crate::{CryptoError, CryptoResult, KEY_LEN, NONCE_LEN, random};
+use crate::{CryptoError, CryptoResult, KEY_LEN, NONCE_LEN, random, random_secret};
 
 /// Envelope version of content encrypted with a [`CardKey`].
 pub const KEYED_PAYLOAD_VERSION: u32 = 2;
 
 const WRAP_CONTEXT: &str = "Cardfile 2 card key wrap v1";
+const KEY_ID_CONTEXT: &str = "Cardfile 2 card key id v1";
 
-/// A user's unlocked X25519 secret key. Zeroed on drop.
-pub struct UserSecret(Zeroizing<[u8; KEY_LEN]>);
+/// A user's unlocked X25519 secret key. Zeroed on drop (`StaticSecret` zeroizes
+/// itself), and kept as a `StaticSecret` so no byte copy is made for each use.
+pub struct UserSecret(StaticSecret);
 
 impl std::fmt::Debug for UserSecret {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -39,8 +41,13 @@ impl std::fmt::Debug for UserSecret {
 impl UserSecret {
     /// The matching public key, base64.
     pub fn public_key(&self) -> String {
-        let secret = StaticSecret::from(*self.0);
-        B64.encode(PublicKey::from(&secret).as_bytes())
+        B64.encode(PublicKey::from(&self.0).as_bytes())
+    }
+
+    /// Build the secret from raw bytes held in a zeroizing buffer. The single
+    /// by-value copy `StaticSecret::from` needs is the only one made.
+    fn from_bytes(bytes: &Zeroizing<[u8; KEY_LEN]>) -> Self {
+        Self(StaticSecret::from(**bytes))
     }
 }
 
@@ -55,9 +62,17 @@ impl std::fmt::Debug for CardKey {
 }
 
 impl CardKey {
-    /// A fresh random key.
+    /// A fresh random key, generated in place (no copy is returned by value).
     pub fn generate() -> CryptoResult<Self> {
-        Ok(Self(Zeroizing::new(random()?)))
+        Ok(Self(random_secret()?))
+    }
+
+    /// A public fingerprint of this key (base64, 128 bits of a BLAKE3 key
+    /// derivation). It reveals nothing about the key and is stored with every
+    /// payload it seals, so storage can tell which key a save was made with.
+    pub fn id(&self) -> String {
+        let digest = Zeroizing::new(blake3::derive_key(KEY_ID_CONTEXT, self.0.as_ref()));
+        B64.encode(&digest[..16])
     }
 }
 
@@ -69,7 +84,7 @@ pub fn generate_user_keys(
     password: &str,
     user_id: &str,
 ) -> CryptoResult<(String, EncryptedPayload, UserSecret)> {
-    let secret = UserSecret(Zeroizing::new(random()?));
+    let secret = UserSecret::from_bytes(&random_secret()?);
     let sealed = seal_user_secret(&secret, password, user_id)?;
     Ok((secret.public_key(), sealed, secret))
 }
@@ -80,7 +95,7 @@ pub fn seal_user_secret(
     password: &str,
     user_id: &str,
 ) -> CryptoResult<EncryptedPayload> {
-    let encoded = Zeroizing::new(B64.encode(*secret.0));
+    let encoded = Zeroizing::new(B64.encode(secret.0.as_bytes()));
     crate::encrypt(&encoded, password, user_id.as_bytes())
 }
 
@@ -95,11 +110,12 @@ pub fn open_user_secret(
         B64.decode(encoded.as_bytes())
             .map_err(|e| CryptoError::Malformed(format!("secret key: {e}")))?,
     );
-    let key: [u8; KEY_LEN] = bytes
-        .as_slice()
-        .try_into()
-        .map_err(|_| CryptoError::Malformed("secret key length".into()))?;
-    Ok(UserSecret(Zeroizing::new(key)))
+    if bytes.len() != KEY_LEN {
+        return Err(CryptoError::Malformed("secret key length".into()));
+    }
+    let mut key = Zeroizing::new([0u8; KEY_LEN]);
+    key.copy_from_slice(&bytes);
+    Ok(UserSecret::from_bytes(&key))
 }
 
 fn wrap_key(shared: &[u8; 32], eph_public: &[u8; 32], recipient: &[u8; 32]) -> [u8; KEY_LEN] {
@@ -121,7 +137,7 @@ fn decode_public(public_b64: &str) -> CryptoResult<[u8; 32]> {
 /// associated data. Returns base64 of `ephemeral public || nonce || ciphertext`.
 pub fn wrap_card_key(key: &CardKey, recipient_public: &str, card_id: &str) -> CryptoResult<String> {
     let recipient = decode_public(recipient_public)?;
-    let eph = StaticSecret::from(random::<32>()?);
+    let eph = StaticSecret::from(*random_secret::<32>()?);
     let eph_public = PublicKey::from(&eph);
     let shared = eph.diffie_hellman(&PublicKey::from(recipient));
     if !shared.was_contributory() {
@@ -167,8 +183,8 @@ pub fn unwrap_card_key(wrapped: &str, secret: &UserSecret, card_id: &str) -> Cry
     let nonce: [u8; NONCE_LEN] = nonce
         .try_into()
         .map_err(|_| CryptoError::Malformed("nonce length".into()))?;
-    let me = StaticSecret::from(*secret.0);
-    let my_public = PublicKey::from(&me);
+    let me = &secret.0;
+    let my_public = PublicKey::from(me);
     let shared = me.diffie_hellman(&PublicKey::from(eph_public));
     let wrap = Zeroizing::new(wrap_key(
         shared.as_bytes(),
@@ -188,11 +204,12 @@ pub fn unwrap_card_key(wrapped: &str, secret: &UserSecret, card_id: &str) -> Cry
             )
             .map_err(|_| CryptoError::Decrypt)?,
     );
-    let key: [u8; KEY_LEN] = key
-        .as_slice()
-        .try_into()
-        .map_err(|_| CryptoError::Malformed("card key length".into()))?;
-    Ok(CardKey(Zeroizing::new(key)))
+    if key.len() != KEY_LEN {
+        return Err(CryptoError::Malformed("card key length".into()));
+    }
+    let mut out = Zeroizing::new([0u8; KEY_LEN]);
+    out.copy_from_slice(&key);
+    Ok(CardKey(out))
 }
 
 /// Encrypt card content with its key (envelope version 2). Fast: no key derivation.
@@ -221,7 +238,20 @@ pub fn encrypt_with_key(
         t_cost: 0,
         p_cost: 0,
         ciphertext: B64.encode(ciphertext),
+        key_id: key.id(),
     })
+}
+
+/// Re-encrypt content sealed under `old` with `new` (a key rotation). The plaintext
+/// only exists in zeroizing memory in between.
+pub fn reencrypt_with_key(
+    payload: &EncryptedPayload,
+    old: &CardKey,
+    new: &CardKey,
+    aad: &[u8],
+) -> CryptoResult<EncryptedPayload> {
+    let plain = decrypt_with_key(payload, old, aad)?;
+    encrypt_with_key(&plain, new, aad)
 }
 
 /// Decrypt content produced by [`encrypt_with_key`].
@@ -306,6 +336,32 @@ mod tests {
         let other = CardKey::generate().unwrap();
         assert!(decrypt_with_key(&payload, &other, b"card-1").is_err());
         assert!(unwrap_card_key("AAAA", &alice, "card-1").is_err());
+    }
+
+    #[test]
+    fn key_ids_identify_the_sealing_key() {
+        let key = CardKey::generate().unwrap();
+        let other = CardKey::generate().unwrap();
+        assert_eq!(key.id(), key.clone().id());
+        assert_ne!(key.id(), other.id());
+        let payload = encrypt_with_key("x", &key, b"card").unwrap();
+        assert_eq!(payload.key_id, key.id());
+    }
+
+    #[test]
+    fn rotation_locks_out_the_old_key() {
+        let old = CardKey::generate().unwrap();
+        let new = CardKey::generate().unwrap();
+        let before = encrypt_with_key("history", &old, b"card").unwrap();
+        let rotated = reencrypt_with_key(&before, &old, &new, b"card").unwrap();
+        assert_eq!(rotated.key_id, new.id());
+        assert_eq!(
+            &*decrypt_with_key(&rotated, &new, b"card").unwrap(),
+            "history"
+        );
+        assert!(decrypt_with_key(&rotated, &old, b"card").is_err());
+        // Rotating with the wrong key fails instead of producing garbage.
+        assert!(reencrypt_with_key(&before, &new, &old, b"card").is_err());
     }
 
     #[test]

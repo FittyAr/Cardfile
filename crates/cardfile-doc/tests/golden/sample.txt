@@ -1,0 +1,24 @@
+Project notes
+Plain, bold, italic, underlined, struck, code and a link.
+Red on yellow, centred
+Special characters: <tag> & *stars* _under_ `tick` # | \ é ü 日本 مرحبا
+Second line after a break
+Lists
+First bullet
+Nested bullet
+Step one
+Step two
+Done task
+Open task
+A quoted line
+and its continuation
+fn main() {
+    let fence = "```";
+    println!("{fence}");
+}
+A pixel
+report.pdf
+Name	Value
+pipe | inside	two
+lines
+bold	42
