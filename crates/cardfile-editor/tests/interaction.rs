@@ -136,6 +136,54 @@ fn inserting_files_stores_in_the_background(cx: &mut TestAppContext) {
 }
 
 #[gpui_kit::test]
+fn background_insertions_never_land_in_another_document(cx: &mut TestAppContext) {
+    let (editor, cx) = setup(cx, Document::from_plain_text("first card"));
+    let store = Arc::new(Store::default());
+    let generation = editor.read_with(cx, |e, _| e.document_generation());
+    editor.update(cx, |e, cx| {
+        e.set_blob_store(store.clone());
+        e.insert_attachment_bytes(b"abc", "text/plain", "a.txt", cx);
+    });
+    // A rich fragment with an image, pasted while the first card is shown.
+    let mut frag = Document::from_plain_text("pasted");
+    frag.blocks.push(Block::new(
+        BlockKind::Image(Image {
+            blob: "blob0".into(),
+            mime: "image/png".into(),
+            width: None,
+            height: None,
+            alt: String::new(),
+        }),
+        "",
+    ));
+    store
+        .data
+        .lock()
+        .expect("test store lock")
+        .push(("image/png".into(), b"png".to_vec()));
+    cx.write_to_clipboard(ClipboardItem::new_string_with_json_metadata(
+        "pasted".into(),
+        frag,
+    ));
+    cx.simulate_keystrokes("ctrl-v");
+    // Another card is opened before the blob writes finish.
+    editor.update(cx, |e, cx| {
+        e.set_document(Document::from_plain_text("second card"), cx)
+    });
+    cx.run_until_parked();
+    editor.read_with(cx, |e, _| {
+        assert_ne!(e.document_generation(), generation);
+        assert!(
+            e.document()
+                .blocks
+                .iter()
+                .all(|b| !matches!(b.kind, BlockKind::Attachment(_) | BlockKind::Image(_)))
+        );
+    });
+    assert_eq!(texts(&editor, cx), ["second card"]);
+}
+
+#[gpui_kit::test]
 fn read_only_writes_no_blobs(cx: &mut TestAppContext) {
     let (editor, cx) = setup(cx, Document::from_plain_text("fixed"));
     let store = Arc::new(Store::default());

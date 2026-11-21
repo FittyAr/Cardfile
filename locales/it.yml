@@ -254,6 +254,7 @@ card:
   read_only_banner: Questa scheda è di sola lettura.
   unlock_edit: Modifica
   deleted_banner: Questa scheda è nel cestino.
+  invalid_content: "Impossibile leggere il contenuto salvato di questa scheda. È mostrata in sola lettura per non sovrascriverlo; ripristina una versione dalla cronologia per modificarla."
   saving: Salvataggio…
   updated: "Salvata %{date}"
   words: "%{n} parole"
@@ -485,6 +486,7 @@ drag:
   copied: "Copiato in «%{title}»"
   cannot_edit: "Non puoi modificare quella scheda."
   protected: "Sblocca quella scheda prima di trascinarci dei file."
+  source_kept: "Copiato in «%{title}». La scheda originale è cambiata nel frattempo, quindi il blocco è rimasto anche lì."
 
 activity:
   create: "Creata"

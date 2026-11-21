@@ -116,6 +116,7 @@ impl RichEditor {
             insert(self, block, cx);
             return;
         };
+        let generation = self.document_generation();
         let task = cx.background_spawn(async move {
             let mut frag = Document {
                 version: cardfile_doc::DOC_VERSION,
@@ -129,6 +130,10 @@ impl RichEditor {
                 return;
             };
             let _ = this.update(cx, |this, cx| {
+                // Another card may have been opened while the blob was copied.
+                if !this.same_document(generation, "dropped block") {
+                    return;
+                }
                 // The card may have been locked while the blob was copied.
                 if this.is_read_only() {
                     cx.emit(EditorEvent::EditBlocked);

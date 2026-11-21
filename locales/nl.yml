@@ -254,6 +254,7 @@ card:
   read_only_banner: Deze kaart is alleen-lezen.
   unlock_edit: Bewerken
   deleted_banner: Deze kaart staat in de prullenbak.
+  invalid_content: "De opgeslagen inhoud van deze kaart kon niet worden gelezen. Ze wordt alleen-lezen getoond zodat ze niet wordt overschreven; herstel een versie uit de geschiedenis om haar te bewerken."
   saving: Opslaan…
   updated: "Opgeslagen %{date}"
   words: "%{n} woorden"
@@ -485,6 +486,7 @@ drag:
   copied: "Gekopieerd naar “%{title}”"
   cannot_edit: "Je kunt die kaart niet bewerken."
   protected: "Ontgrendel die kaart voordat je er bestanden op neerzet."
+  source_kept: "Gekopieerd naar ‘%{title}’. De oorspronkelijke kaart is intussen gewijzigd, dus het blok is daar ook gebleven."
 
 activity:
   create: "Gemaakt"

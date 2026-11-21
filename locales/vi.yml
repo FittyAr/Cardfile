@@ -254,6 +254,7 @@ card:
   read_only_banner: Thẻ này chỉ có thể đọc.
   unlock_edit: Chỉnh sửa
   deleted_banner: Thẻ này đang ở trong thùng rác.
+  invalid_content: "Không đọc được nội dung đã lưu của thẻ này. Thẻ được hiển thị ở chế độ chỉ đọc để không bị ghi đè; hãy khôi phục một phiên bản từ lịch sử để chỉnh sửa."
   saving: Đang lưu…
   updated: "Đã lưu %{date}"
   words: "%{n} từ"
@@ -485,6 +486,7 @@ drag:
   copied: "Đã sao chép đến “%{title}”"
   cannot_edit: "Bạn không thể sửa thẻ đó."
   protected: "Hãy mở khóa thẻ đó trước khi thả tệp vào."
+  source_kept: "Đã sao chép vào “%{title}”. Thẻ gốc đã thay đổi trong lúc đó nên khối vẫn được giữ lại trong thẻ gốc."
 
 activity:
   create: "Đã tạo"

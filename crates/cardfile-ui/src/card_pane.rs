@@ -100,6 +100,9 @@ pub struct CardPane {
     /// with the old lock mode (e.g. plaintext over a card just encrypted).
     lock_change: Option<CardId>,
     suppress_title_event: bool,
+    /// The card's stored content could not be read. It is shown read-only and never
+    /// saved, so the stored data is not overwritten with an empty document.
+    content_invalid: bool,
     _subs: Vec<Subscription>,
 }
 
@@ -193,6 +196,7 @@ impl CardPane {
             save_task: None,
             relock_task: None,
             suppress_title_event: false,
+            content_invalid: false,
             _subs: subs,
         };
         pane.apply_user_settings(cx);
@@ -213,7 +217,7 @@ impl CardPane {
 
     /// Whether the content is visible and the user may change it.
     fn editable(&self) -> bool {
-        self.access == Access::Open && self.card_access.can_edit()
+        self.access == Access::Open && self.card_access.can_edit() && !self.content_invalid
     }
 
     /// Whether the open card has unsaved changes.
@@ -342,6 +346,7 @@ impl CardPane {
         self.flush_save(cx);
         self.card_key = None;
         self.pending_password = None;
+        self.content_invalid = false;
         self.card_access = access;
         self.relock_task = None;
         self.unlock_error = None;
@@ -373,10 +378,16 @@ impl CardPane {
                 focus.focus(window, cx);
             }
             _ => {
-                let doc = Document::from_json(&card.content).unwrap_or_else(|e| {
-                    tracing::error!("card {} has invalid content: {e}", card.id);
-                    Document::default()
-                });
+                let doc = match Document::from_json(&card.content) {
+                    Ok(doc) => doc,
+                    Err(e) => {
+                        tracing::error!("card {} has invalid content: {e}", card.id);
+                        self.content_invalid = true;
+                        // The title is saved with the content: keep it read-only too.
+                        self.set_title(&card.title, window, cx);
+                        Document::default()
+                    }
+                };
                 self.set_editor_doc(doc, !self.editable(), cx);
             }
         }
@@ -737,7 +748,7 @@ impl CardPane {
 
     /// Allow editing a read-only card until another card is opened.
     fn unlock_read_only(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        if self.access != Access::ReadOnly || !self.card_access.can_edit() {
+        if self.access != Access::ReadOnly || !self.card_access.can_edit() || self.content_invalid {
             return;
         }
         self.access = Access::Open;
@@ -758,6 +769,11 @@ impl CardPane {
             return;
         };
         if card.lock_mode == mode || !self.card_access.is_owner() {
+            return;
+        }
+        // The change rewrites the content from the editor, which does not hold it.
+        if self.content_invalid {
+            window.push_notification(Notification::warning(t("card.invalid_content")), cx);
             return;
         }
         // A locked Private or Encrypted card must be unlocked first, or changing the
@@ -1159,12 +1175,22 @@ impl CardPane {
         if !self.card_access.can_edit() {
             return;
         }
+        // Restoring a readable revision is the way out of unreadable content.
+        let was_invalid = std::mem::take(&mut self.content_invalid);
         if self.access == Access::ReadOnly {
             self.unlock_read_only(window, cx);
         }
+        let read_only = !self.editable();
         self.editor.update(cx, |e, cx| {
             e.set_document(doc, cx);
+            if was_invalid {
+                e.set_read_only(read_only, cx);
+            }
         });
+        if was_invalid {
+            self.title
+                .update(cx, |e, cx| e.set_read_only(read_only, cx));
+        }
         // A fresh document resets the editor revision; force a save.
         self.doc_epoch += 1;
         self.saved_revision = u64::MAX;
@@ -1487,6 +1513,17 @@ impl CardPane {
 
     fn render_banner(&self, cx: &mut Context<Self>) -> Option<AnyElement> {
         let th = cx.theme();
+        if self.content_invalid && self.access != Access::Locked {
+            return Some(
+                h_flex()
+                    .px(px(16.))
+                    .py(px(6.))
+                    .bg(th.danger.opacity(0.12))
+                    .text_size(px(13.))
+                    .child(t("card.invalid_content"))
+                    .into_any_element(),
+            );
+        }
         match self.access {
             Access::ReadOnly => {
                 Some(

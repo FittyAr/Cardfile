@@ -254,6 +254,7 @@ card:
   read_only_banner: Este cartão é somente leitura.
   unlock_edit: Editar
   deleted_banner: Este cartão está na lixeira.
+  invalid_content: "Não foi possível ler o conteúdo salvo deste cartão. Ele é mostrado somente leitura para não ser sobrescrito; restaure uma versão do histórico para editá-lo."
   saving: Salvando…
   updated: "Salvo %{date}"
   words: "%{n} palavras"
@@ -485,6 +486,7 @@ drag:
   copied: "Copiado para «%{title}»"
   cannot_edit: "Você não pode editar esse cartão."
   protected: "Desbloqueie esse cartão antes de soltar arquivos nele."
+  source_kept: "Copiado para “%{title}”. O cartão original mudou nesse meio-tempo, então o bloco também foi mantido nele."
 
 activity:
   create: "Criado"

@@ -254,6 +254,7 @@ card:
   read_only_banner: Ta karta jest tylko do odczytu.
   unlock_edit: Edytuj
   deleted_banner: Ta karta jest w koszu.
+  invalid_content: "Nie udało się odczytać zapisanej treści tej karty. Jest wyświetlana tylko do odczytu, aby jej nie nadpisać; przywróć wersję z historii, aby ją edytować."
   saving: Zapisywanie…
   updated: "Zapisano %{date}"
   words: "Słów: %{n}"
@@ -485,6 +486,7 @@ drag:
   copied: "Skopiowano do „%{title}”"
   cannot_edit: "Nie możesz edytować tej karty."
   protected: "Odblokuj tę kartę, zanim upuścisz na nią pliki."
+  source_kept: "Skopiowano do „%{title}”. Oryginalna karta zmieniła się w międzyczasie, więc blok pozostał także w niej."
 
 activity:
   create: "Utworzono"

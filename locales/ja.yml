@@ -254,6 +254,7 @@ card:
   read_only_banner: このカードは読み取り専用です。
   unlock_edit: 編集
   deleted_banner: このカードはごみ箱にあります。
+  invalid_content: "このカードの保存内容を読み込めませんでした。上書きされないよう読み取り専用で表示しています。編集するには履歴からバージョンを復元してください。"
   saving: 保存中…
   updated: "%{date} に保存"
   words: "%{n} 語"
@@ -485,6 +486,7 @@ drag:
   copied: "「%{title}」にコピーしました"
   cannot_edit: "そのカードは編集できません。"
   protected: "ファイルをドロップする前に、そのカードのロックを解除してください。"
+  source_kept: "「%{title}」にコピーしました。その間に元のカードが変更されたため、ブロックは元のカードにも残しました。"
 
 activity:
   create: "作成"
