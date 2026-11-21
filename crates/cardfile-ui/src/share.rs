@@ -19,14 +19,18 @@ struct State {
     shares: Vec<CardShare>,
     busy: bool,
     error: Option<String>,
+    /// The card key while an encrypted card is unlocked. Replaced when removing
+    /// someone rotates it, so later changes in the same dialog use the new key.
+    key: Option<CardKey>,
 }
 
 /// Open the share dialog. `key` is the card key when an encrypted card is unlocked;
-/// it is needed to give someone else access.
+/// it is needed to give someone else access or take it away. `on_change` runs after
+/// every change, with the card's new key when removing someone rotated it.
 pub fn open(
     card: Card,
     key: Option<CardKey>,
-    on_change: impl Fn(&mut App) + 'static,
+    on_change: impl Fn(&mut App, Option<CardKey>) + 'static,
     window: &mut Window,
     cx: &mut App,
 ) {
@@ -38,6 +42,7 @@ pub fn open(
         shares: Vec::new(),
         busy: true,
         error: None,
+        key,
     });
     reload(&state, card.id, me, cx);
     let on_change = std::rc::Rc::new(on_change);
@@ -45,7 +50,7 @@ pub fn open(
         let th = cx.theme();
         let st = state.read(cx);
         let mut list = v_flex().gap(px(6.)).w(px(440.));
-        if card.lock_mode == LockMode::Encrypted && key.is_none() {
+        if card.lock_mode == LockMode::Encrypted && st.key.is_none() {
             list = list.child(
                 div()
                     .text_size(px(12.))
@@ -74,13 +79,8 @@ pub fn open(
                 (Some(SharePermission::Edit), t("share.edit")),
             ] {
                 let selected = current == choice;
-                let (state, card, key, uid, on_change) = (
-                    state.clone(),
-                    card.clone(),
-                    key.clone(),
-                    user.id,
-                    on_change.clone(),
-                );
+                let (state, card, uid, on_change) =
+                    (state.clone(), card.clone(), user.id, on_change.clone());
                 let id = SharedString::from(format!(
                     "share-{}-{}",
                     user.id,
@@ -94,16 +94,7 @@ pub fn open(
                         .when(!selected, |b| b.outline())
                         .on_click(move |_, window, cx| {
                             if !selected {
-                                set(
-                                    &state,
-                                    &card,
-                                    key.clone(),
-                                    uid,
-                                    choice,
-                                    on_change.clone(),
-                                    window,
-                                    cx,
-                                );
+                                set(&state, &card, uid, choice, on_change.clone(), window, cx);
                             }
                         }),
                 );
@@ -142,6 +133,9 @@ pub fn open(
     });
 }
 
+/// Called after each change, with the new card key when it was rotated.
+type OnChange = std::rc::Rc<dyn Fn(&mut App, Option<CardKey>)>;
+
 fn reload(state: &Entity<State>, card: cardfile_core::CardId, _me: UserId, cx: &mut App) {
     let db = AppState::db(cx);
     let task = run_db(cx, move |_| Ok((db.list_users()?, db.card_shares(card)?)));
@@ -163,14 +157,12 @@ fn reload(state: &Entity<State>, card: cardfile_core::CardId, _me: UserId, cx: &
     .detach();
 }
 
-#[allow(clippy::too_many_arguments)]
 fn set(
     state: &Entity<State>,
     card: &Card,
-    key: Option<CardKey>,
     user: UserId,
     choice: Option<SharePermission>,
-    on_change: std::rc::Rc<dyn Fn(&mut App)>,
+    on_change: OnChange,
     window: &mut Window,
     cx: &mut App,
 ) {
@@ -178,6 +170,7 @@ fn set(
         return;
     };
     let me = actor.user;
+    let key = state.read(cx).key.clone();
     let db = AppState::db(cx);
     let card = card.clone();
     let encrypted = card.lock_mode == LockMode::Encrypted;
@@ -186,12 +179,14 @@ fn set(
             None => {
                 // The removed user may have kept the card key: move to a new one.
                 let rotation = if encrypted {
-                    let key = key.ok_or_else(|| anyhow::anyhow!(t("share.unlock_encrypted")))?;
+                    let key =
+                        key.ok_or_else(|| anyhow::anyhow!(t("share.unlock_encrypted_unshare")))?;
                     Some(rotate_key(&db, card.id, &key, user)?)
                 } else {
                     None
                 };
-                db.unshare_card(&actor, card.id, user, rotation.as_ref())?;
+                db.unshare_card(&actor, card.id, user, rotation.as_ref().map(|(r, _)| r))?;
+                Ok(rotation.map(|(_, new)| new))
             }
             Some(permission) => {
                 let wrapped = if encrypted {
@@ -212,9 +207,9 @@ fn set(
                     None
                 };
                 db.share_card(&actor, card.id, user, permission, wrapped.as_deref())?;
+                anyhow::Ok(None)
             }
         }
-        anyhow::Ok(())
     });
     let state = state.clone();
     let card_id = card.id;
@@ -222,10 +217,15 @@ fn set(
         .spawn(cx, async move |cx| {
             let result = task.await;
             let _ = cx.update(|window, cx| match result {
-                Ok(()) => {
-                    state.update(cx, |s, _| s.error = None);
+                Ok(rotated) => {
+                    state.update(cx, |s, _| {
+                        s.error = None;
+                        if rotated.is_some() {
+                            s.key.clone_from(&rotated);
+                        }
+                    });
                     reload(&state, card_id, me, cx);
-                    on_change(cx);
+                    on_change(cx, rotated);
                 }
                 Err(e) => {
                     window.push_notification(Notification::error(e.to_string()), cx);
@@ -248,7 +248,7 @@ fn rotate_key(
     card: CardId,
     key: &CardKey,
     removed: UserId,
-) -> anyhow::Result<KeyRotation> {
+) -> anyhow::Result<(KeyRotation, CardKey)> {
     let current = db.card(card)?;
     let aad = card.to_string();
     let payload = current
@@ -284,15 +284,13 @@ fn rotate_key(
             anyhow::Ok((id, cardfile_crypto::wrap_card_key(&new, public, &aad)?))
         })
         .collect::<anyhow::Result<_>>()?;
-    Ok(KeyRotation {
-        base_rev: current.rev,
-        encrypted,
-        revisions,
-        card_keys,
-    })
-}
-
-#[allow(dead_code)]
-fn _sizable(b: Button) -> Button {
-    b.small()
+    Ok((
+        KeyRotation {
+            base_rev: current.rev,
+            encrypted,
+            revisions,
+            card_keys,
+        },
+        new,
+    ))
 }

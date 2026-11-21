@@ -477,6 +477,7 @@ share:
   no_users: "Belum ada pengguna lain. Tambahkan di Pengaturan → Pengguna."
   no_keys: "%{name} belum menyiapkan kuncinya. Mereka perlu masuk (atau membuka kunci kartu yang dilindungi) sekali."
   unlock_encrypted: "Buka kunci kartu terenkripsi ini terlebih dahulu untuk membagikannya."
+  unlock_encrypted_unshare: "Buka kunci kartu terenkripsi ini terlebih dahulu untuk mencabut akses seseorang."
   shared_by: "%{name} · %{permission}"
   view_only: "Kartu ini dibagikan kepada Anda hanya untuk dilihat."
   owner_only: "Hanya pemilik kartu yang dapat melakukannya."

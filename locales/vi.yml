@@ -477,6 +477,7 @@ share:
   no_users: "Chưa có người dùng nào khác. Hãy thêm trong Cài đặt → Người dùng."
   no_keys: "%{name} chưa thiết lập khóa. Người đó cần đăng nhập (hoặc mở khóa một thẻ được bảo vệ) một lần."
   unlock_encrypted: "Hãy mở khóa thẻ đã mã hóa này trước khi chia sẻ."
+  unlock_encrypted_unshare: "Hãy mở khóa thẻ đã mã hóa này trước để thu hồi quyền truy cập của ai đó."
   shared_by: "%{name} · %{permission}"
   view_only: "Thẻ này được chia sẻ với bạn ở chế độ chỉ xem."
   owner_only: "Chỉ chủ sở hữu thẻ mới có thể làm điều đó."

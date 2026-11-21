@@ -477,6 +477,7 @@ share:
   no_users: "Es gibt noch keine anderen Benutzer. Fügen Sie sie unter Einstellungen → Benutzer hinzu."
   no_keys: "%{name} hat die eigenen Schlüssel noch nicht eingerichtet. Dazu muss sich die Person einmal anmelden (oder eine geschützte Karte entsperren)."
   unlock_encrypted: "Entsperren Sie diese verschlüsselte Karte zuerst, um sie zu teilen."
+  unlock_encrypted_unshare: "Entsperre diese verschlüsselte Karte zuerst, um jemandem den Zugriff zu entziehen."
   shared_by: "%{name} · %{permission}"
   view_only: "Diese Karte wurde nur zum Ansehen mit Ihnen geteilt."
   owner_only: "Das kann nur die Person, der die Karte gehört."

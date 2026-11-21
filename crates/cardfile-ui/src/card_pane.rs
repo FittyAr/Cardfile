@@ -1146,8 +1146,15 @@ impl CardPane {
         crate::share::open(
             card,
             self.card_key.clone(),
-            move |cx| {
-                let _ = pane.update(cx, |_, cx| cx.emit(CardPaneEvent::ListChanged));
+            move |cx, rotated| {
+                let _ = pane.update(cx, |this, cx| {
+                    // Removing someone moved the card to a new key: keep editing with it
+                    // (saves sealed with the old one are refused).
+                    if let Some(key) = rotated {
+                        this.card_key = Some(key);
+                    }
+                    cx.emit(CardPaneEvent::ListChanged);
+                });
             },
             window,
             cx,

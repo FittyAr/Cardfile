@@ -477,6 +477,7 @@ share:
   no_users: "Ainda não há outros usuários. Adicione-os em Configurações → Usuários."
   no_keys: "%{name} ainda não configurou suas chaves. É preciso entrar (ou desbloquear um cartão protegido) uma vez."
   unlock_encrypted: "Desbloqueie este cartão criptografado primeiro para compartilhá-lo."
+  unlock_encrypted_unshare: "Desbloqueie primeiro esta ficha criptografada para remover o acesso de alguém."
   shared_by: "%{name} · %{permission}"
   view_only: "Este cartão foi compartilhado com você somente para visualização."
   owner_only: "Apenas o proprietário do cartão pode fazer isso."

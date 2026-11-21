@@ -477,6 +477,7 @@ share:
   no_users: "Todavía no hay otros usuarios. Añádelos en Ajustes → Usuarios."
   no_keys: "%{name} aún no ha configurado sus claves. Debe iniciar sesión (o desbloquear una ficha protegida) una vez."
   unlock_encrypted: "Desbloquea primero esta ficha cifrada para compartirla."
+  unlock_encrypted_unshare: "Desbloquea primero esta ficha cifrada para quitarle el acceso a alguien."
   shared_by: "%{name} · %{permission}"
   view_only: "Esta ficha se compartió contigo solo para ver."
   owner_only: "Solo el propietario de la ficha puede hacer eso."
