@@ -11,7 +11,7 @@ use gpui_kit::component::{
 };
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::{
-    Action, AnyElement, App, Context, Entity, InteractiveElement as _, IntoElement,
+    Action, AnyElement, App, Context, Entity, FocusHandle, InteractiveElement as _, IntoElement,
     ParentElement as _, Render, SharedString, StatefulInteractiveElement as _, Styled as _,
     Subscription, Window, div, px,
 };
@@ -184,84 +184,8 @@ impl Render for EditorToolbar {
         let read_only = e.is_read_only();
         let kind = e.current_block_kind();
         let align = e.current_align();
-        let (bold, italic, underline, strike, code) = (
-            e.has_mark(Mark::Bold),
-            e.has_mark(Mark::Italic),
-            e.has_mark(Mark::Underline),
-            e.has_mark(Mark::Strike),
-            e.has_mark(Mark::Code),
-        );
         let (can_undo, can_redo) = (e.can_undo(), e.can_redo());
         let focus = e.focus_handle.clone();
-        let is = |k: fn(&BlockKind) -> bool| kind.as_ref().is_some_and(k);
-
-        let style_menu = {
-            let focus = focus.clone();
-            Button::new("block-style")
-                .label(SharedString::from(block_label(kind.as_ref())))
-                .ghost()
-                .small()
-                .w(px(130.))
-                .dropdown_caret(true)
-                .tooltip(t("editor.toolbar.block_type"))
-                .dropdown_menu(move |menu, _, _| {
-                    menu.action_context(focus.clone())
-                        .menu(t("editor.toolbar.paragraph"), Box::new(Paragraph))
-                        .menu(t("editor.toolbar.heading1"), Box::new(Heading1))
-                        .menu(t("editor.toolbar.heading2"), Box::new(Heading2))
-                        .menu(t("editor.toolbar.heading3"), Box::new(Heading3))
-                        .separator()
-                        .menu(t("editor.toolbar.quote"), Box::new(Quote))
-                        .menu(t("editor.toolbar.code_block"), Box::new(CodeBlock))
-                        .separator()
-                        .menu(t("editor.toolbar.size_small"), Box::new(TextSmall))
-                        .menu(t("editor.toolbar.size_normal"), Box::new(TextNormal))
-                        .menu(t("editor.toolbar.size_large"), Box::new(TextLarge))
-                        .menu(t("editor.toolbar.size_huge"), Box::new(TextHuge))
-                })
-        };
-
-        let align_icon = match align {
-            Align::Left => IconName::TextAlignStart,
-            Align::Center => IconName::TextAlignCenter,
-            Align::Right => IconName::TextAlignEnd,
-            Align::Justify => IconName::TextAlignJustify,
-        };
-        let align_menu = {
-            let focus = focus.clone();
-            Button::new("align")
-                .icon(align_icon)
-                .ghost()
-                .small()
-                .dropdown_caret(true)
-                .tooltip(t("editor.toolbar.align"))
-                .dropdown_menu(move |menu, _, _| {
-                    menu.action_context(focus.clone())
-                        .menu(t("editor.toolbar.align_left"), Box::new(AlignLeft))
-                        .menu(t("editor.toolbar.align_center"), Box::new(AlignCenter))
-                        .menu(t("editor.toolbar.align_right"), Box::new(AlignRight))
-                        .menu(t("editor.toolbar.align_justify"), Box::new(AlignJustify))
-                })
-        };
-
-        let insert_menu = {
-            let focus = focus.clone();
-            Button::new("insert")
-                .icon(IconName::Plus)
-                .label(t("editor.toolbar.insert"))
-                .ghost()
-                .small()
-                .dropdown_caret(true)
-                .dropdown_menu(move |menu, _, _| {
-                    menu.action_context(focus.clone())
-                        .menu(t("editor.toolbar.image"), Box::new(InsertImage))
-                        .menu(t("editor.toolbar.attachment"), Box::new(InsertAttachment))
-                        .menu(t("editor.toolbar.table"), Box::new(InsertTable))
-                        .menu(t("editor.toolbar.divider"), Box::new(InsertDivider))
-                        .separator()
-                        .menu(t("editor.toolbar.link"), Box::new(InsertLink))
-                })
-        };
 
         let bar = h_flex()
             .id("editor-toolbar")
@@ -294,99 +218,12 @@ impl Render for EditorToolbar {
                 .disabled(!can_redo),
             )
             .child(Self::sep(cx))
-            .child(style_menu)
+            .child(Self::style_menu(kind.as_ref(), focus.clone()))
             .child(Self::sep(cx))
-            .child(self.icon_button(
-                "bold",
-                IconName::Bold,
-                t("editor.toolbar.bold"),
-                bold,
-                Box::new(Bold),
-            ))
-            .child(self.icon_button(
-                "italic",
-                IconName::Italic,
-                t("editor.toolbar.italic"),
-                italic,
-                Box::new(Italic),
-            ))
-            .child(self.icon_button(
-                "underline",
-                IconName::Underline,
-                t("editor.toolbar.underline"),
-                underline,
-                Box::new(Underline),
-            ))
-            .child(self.icon_button(
-                "strike",
-                IconName::Strikethrough,
-                t("editor.toolbar.strikethrough"),
-                strike,
-                Box::new(Strikethrough),
-            ))
-            .child(self.icon_button(
-                "code",
-                IconName::Code,
-                t("editor.toolbar.code"),
-                code,
-                Box::new(InlineCode),
-            ))
-            .child(self.swatches(
-                "text-color",
-                IconName::Baseline,
-                t("editor.toolbar.text_color"),
-                false,
-            ))
-            .child(self.swatches(
-                "highlight",
-                IconName::Highlighter,
-                t("editor.toolbar.highlight"),
-                true,
-            ))
-            .child(self.icon_button(
-                "clear",
-                IconName::RemoveFormatting,
-                t("editor.toolbar.clear_formatting"),
-                false,
-                Box::new(ClearFormatting),
-            ))
+            .children(self.mark_buttons(cx))
             .child(Self::sep(cx))
-            .child(self.icon_button(
-                "bullets",
-                IconName::List,
-                t("editor.toolbar.bullet_list"),
-                is(|k| matches!(k, BlockKind::BulletList)),
-                Box::new(BulletList),
-            ))
-            .child(self.icon_button(
-                "numbers",
-                IconName::ListOrdered,
-                t("editor.toolbar.numbered_list"),
-                is(|k| matches!(k, BlockKind::NumberedList)),
-                Box::new(NumberedList),
-            ))
-            .child(self.icon_button(
-                "checks",
-                IconName::ListTodo,
-                t("editor.toolbar.check_list"),
-                is(|k| matches!(k, BlockKind::CheckList { .. })),
-                Box::new(CheckList),
-            ))
-            .child(self.icon_button(
-                "outdent",
-                IconName::ListIndentDecrease,
-                t("editor.toolbar.outdent"),
-                false,
-                Box::new(Outdent),
-            ))
-            .child(self.icon_button(
-                "indent",
-                IconName::ListIndentIncrease,
-                t("editor.toolbar.indent"),
-                false,
-                Box::new(Indent),
-            ))
-            .child(align_menu)
+            .children(self.list_buttons(kind.as_ref()))
+            .child(Self::align_menu(align, focus.clone()))
             .child(Self::sep(cx))
             .child(self.icon_button(
                 "link",
@@ -395,11 +232,195 @@ impl Render for EditorToolbar {
                 false,
                 Box::new(InsertLink),
             ))
-            .child(insert_menu);
+            .child(Self::insert_menu(focus));
         if read_only {
             div().w_full().child(bar.opacity(0.45)).into_any_element()
         } else {
             bar.into_any_element()
         }
+    }
+}
+
+impl EditorToolbar {
+    /// The block type and text size dropdown, labelled with the current block type.
+    fn style_menu(kind: Option<&BlockKind>, focus: FocusHandle) -> impl IntoElement {
+        Button::new("block-style")
+            .label(SharedString::from(block_label(kind)))
+            .ghost()
+            .small()
+            .w(px(130.))
+            .dropdown_caret(true)
+            .tooltip(t("editor.toolbar.block_type"))
+            .dropdown_menu(move |menu, _, _| {
+                menu.action_context(focus.clone())
+                    .menu(t("editor.toolbar.paragraph"), Box::new(Paragraph))
+                    .menu(t("editor.toolbar.heading1"), Box::new(Heading1))
+                    .menu(t("editor.toolbar.heading2"), Box::new(Heading2))
+                    .menu(t("editor.toolbar.heading3"), Box::new(Heading3))
+                    .separator()
+                    .menu(t("editor.toolbar.quote"), Box::new(Quote))
+                    .menu(t("editor.toolbar.code_block"), Box::new(CodeBlock))
+                    .separator()
+                    .menu(t("editor.toolbar.size_small"), Box::new(TextSmall))
+                    .menu(t("editor.toolbar.size_normal"), Box::new(TextNormal))
+                    .menu(t("editor.toolbar.size_large"), Box::new(TextLarge))
+                    .menu(t("editor.toolbar.size_huge"), Box::new(TextHuge))
+            })
+    }
+
+    /// The alignment dropdown, showing the current alignment's icon.
+    fn align_menu(align: Align, focus: FocusHandle) -> impl IntoElement {
+        let align_icon = match align {
+            Align::Left => IconName::TextAlignStart,
+            Align::Center => IconName::TextAlignCenter,
+            Align::Right => IconName::TextAlignEnd,
+            Align::Justify => IconName::TextAlignJustify,
+        };
+        Button::new("align")
+            .icon(align_icon)
+            .ghost()
+            .small()
+            .dropdown_caret(true)
+            .tooltip(t("editor.toolbar.align"))
+            .dropdown_menu(move |menu, _, _| {
+                menu.action_context(focus.clone())
+                    .menu(t("editor.toolbar.align_left"), Box::new(AlignLeft))
+                    .menu(t("editor.toolbar.align_center"), Box::new(AlignCenter))
+                    .menu(t("editor.toolbar.align_right"), Box::new(AlignRight))
+                    .menu(t("editor.toolbar.align_justify"), Box::new(AlignJustify))
+            })
+    }
+
+    fn insert_menu(focus: FocusHandle) -> impl IntoElement {
+        Button::new("insert")
+            .icon(IconName::Plus)
+            .label(t("editor.toolbar.insert"))
+            .ghost()
+            .small()
+            .dropdown_caret(true)
+            .dropdown_menu(move |menu, _, _| {
+                menu.action_context(focus.clone())
+                    .menu(t("editor.toolbar.image"), Box::new(InsertImage))
+                    .menu(t("editor.toolbar.attachment"), Box::new(InsertAttachment))
+                    .menu(t("editor.toolbar.table"), Box::new(InsertTable))
+                    .menu(t("editor.toolbar.divider"), Box::new(InsertDivider))
+                    .separator()
+                    .menu(t("editor.toolbar.link"), Box::new(InsertLink))
+            })
+    }
+
+    /// Inline formatting: marks, colors and "clear formatting".
+    fn mark_buttons(&self, cx: &App) -> Vec<AnyElement> {
+        let e = self.editor.read(cx);
+        let mark = |id, icon, tip: &str, m: Mark, action: Box<dyn Action>| {
+            self.icon_button(id, icon, t(tip), e.has_mark(m), action)
+                .into_any_element()
+        };
+        vec![
+            mark(
+                "bold",
+                IconName::Bold,
+                "editor.toolbar.bold",
+                Mark::Bold,
+                Box::new(Bold),
+            ),
+            mark(
+                "italic",
+                IconName::Italic,
+                "editor.toolbar.italic",
+                Mark::Italic,
+                Box::new(Italic),
+            ),
+            mark(
+                "underline",
+                IconName::Underline,
+                "editor.toolbar.underline",
+                Mark::Underline,
+                Box::new(Underline),
+            ),
+            mark(
+                "strike",
+                IconName::Strikethrough,
+                "editor.toolbar.strikethrough",
+                Mark::Strike,
+                Box::new(Strikethrough),
+            ),
+            mark(
+                "code",
+                IconName::Code,
+                "editor.toolbar.code",
+                Mark::Code,
+                Box::new(InlineCode),
+            ),
+            self.swatches(
+                "text-color",
+                IconName::Baseline,
+                t("editor.toolbar.text_color"),
+                false,
+            )
+            .into_any_element(),
+            self.swatches(
+                "highlight",
+                IconName::Highlighter,
+                t("editor.toolbar.highlight"),
+                true,
+            )
+            .into_any_element(),
+            self.icon_button(
+                "clear",
+                IconName::RemoveFormatting,
+                t("editor.toolbar.clear_formatting"),
+                false,
+                Box::new(ClearFormatting),
+            )
+            .into_any_element(),
+        ]
+    }
+
+    /// List toggles (active for the current block's list type) and indentation.
+    fn list_buttons(&self, kind: Option<&BlockKind>) -> Vec<AnyElement> {
+        let is = |k: fn(&BlockKind) -> bool| kind.is_some_and(k);
+        vec![
+            self.icon_button(
+                "bullets",
+                IconName::List,
+                t("editor.toolbar.bullet_list"),
+                is(|k| matches!(k, BlockKind::BulletList)),
+                Box::new(BulletList),
+            )
+            .into_any_element(),
+            self.icon_button(
+                "numbers",
+                IconName::ListOrdered,
+                t("editor.toolbar.numbered_list"),
+                is(|k| matches!(k, BlockKind::NumberedList)),
+                Box::new(NumberedList),
+            )
+            .into_any_element(),
+            self.icon_button(
+                "checks",
+                IconName::ListTodo,
+                t("editor.toolbar.check_list"),
+                is(|k| matches!(k, BlockKind::CheckList { .. })),
+                Box::new(CheckList),
+            )
+            .into_any_element(),
+            self.icon_button(
+                "outdent",
+                IconName::ListIndentDecrease,
+                t("editor.toolbar.outdent"),
+                false,
+                Box::new(Outdent),
+            )
+            .into_any_element(),
+            self.icon_button(
+                "indent",
+                IconName::ListIndentIncrease,
+                t("editor.toolbar.indent"),
+                false,
+                Box::new(Indent),
+            )
+            .into_any_element(),
+        ]
     }
 }

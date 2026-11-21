@@ -1,6 +1,6 @@
 //! Rendering of the document blocks.
 
-use cardfile_doc::{Align, Block, BlockKind, RichText};
+use cardfile_doc::{Align, Attachment, Block, BlockKind, Image, RichText, Table};
 use cardfile_i18n::t;
 use gpui_kit::component::menu::{ContextMenuExt as _, PopupMenu};
 use gpui_kit::component::scroll::ScrollableElement as _;
@@ -8,9 +8,9 @@ use gpui_kit::component::{ActiveTheme as _, h_flex, v_flex};
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::{
     AnyElement, App, AppContext as _, Context, CursorStyle, Entity, ExternalPaths, Hsla,
-    ImageSource, InteractiveElement, IntoElement, MouseButton, ObjectFit, ParentElement, Render,
-    SharedString, StatefulInteractiveElement, Styled, StyledImage, TextAlign, Window, canvas, div,
-    img, px,
+    ImageSource, InteractiveElement, IntoElement, MouseButton, ObjectFit, ParentElement, Pixels,
+    Render, SharedString, StatefulInteractiveElement, Styled, StyledImage, TextAlign, Window,
+    canvas, div, img, px,
 };
 
 use crate::drag::{DragPreview, DraggedBlock};
@@ -155,64 +155,7 @@ impl RichEditor {
                     .into_any_element()
             }
             BlockKind::BulletList | BlockKind::NumberedList | BlockKind::CheckList { .. } => {
-                let lh = style.line_height;
-                let marker: AnyElement = match &block.kind {
-                    BlockKind::CheckList { checked } => {
-                        let checked = *checked;
-                        let ent = entity.clone();
-                        div()
-                            .id(("check", ix))
-                            .size(px(15.))
-                            .mt((lh - px(15.)) / 2.)
-                            .rounded(px(3.))
-                            .border_1()
-                            .border_color(if checked { pal.primary } else { pal.muted_fg })
-                            .when(checked, |d| d.bg(pal.primary))
-                            .flex()
-                            .items_center()
-                            .justify_center()
-                            .text_color(gpui_kit::white())
-                            .text_size(px(11.))
-                            .cursor(CursorStyle::PointingHand)
-                            .when(checked, |d| d.child("✓"))
-                            .on_mouse_down(MouseButton::Left, move |_, _, cx| {
-                                cx.stop_propagation();
-                                ent.update(cx, |e, cx| e.toggle_check(ix, cx));
-                            })
-                            .into_any_element()
-                    }
-                    BlockKind::NumberedList => div()
-                        .text_size(style.font_size)
-                        .line_height(lh)
-                        .text_color(pal.muted_fg)
-                        .child(format!("{}.", number.unwrap_or(1)))
-                        .into_any_element(),
-                    _ => div()
-                        .text_size(style.font_size)
-                        .line_height(lh)
-                        .text_color(pal.muted_fg)
-                        .child(BULLETS[block.indent as usize % BULLETS.len()])
-                        .into_any_element(),
-                };
-                h_flex()
-                    .items_start()
-                    .pl(indent)
-                    .child(
-                        div()
-                            .w(px(26.))
-                            .flex_shrink_0()
-                            .flex()
-                            .justify_end()
-                            .pr(px(8.))
-                            .child(marker),
-                    )
-                    .child(div().flex_1().min_w_0().child(self.slot(
-                        entity,
-                        Slot::block(ix),
-                        &block.text,
-                        style,
-                    )))
-                    .into_any_element()
+                self.render_list_item(ix, block, number, style, indent, pal, entity)
             }
             BlockKind::Quote => div()
                 .ml(indent)
@@ -237,193 +180,328 @@ impl RichEditor {
                 })
                 .child(self.slot(entity, Slot::block(ix), &block.text, style))
                 .into_any_element(),
-            BlockKind::Divider => {
-                let ent = entity.clone();
-                div()
-                    .id(("divider", ix))
-                    .py(px(8.))
-                    .cursor(CursorStyle::PointingHand)
-                    .on_mouse_down(MouseButton::Left, move |_, window, cx| {
-                        cx.stop_propagation();
-                        ent.update(cx, |e, cx| e.select_atom(ix, window, cx));
-                    })
-                    .child(div().h(px(if selected { 2. } else { 1. })).bg(if selected {
-                        pal.primary
-                    } else {
-                        pal.border
-                    }))
-                    .into_any_element()
-            }
+            BlockKind::Divider => Self::render_divider(ix, selected, pal, entity),
             BlockKind::Image(image) => {
-                let ent = entity.clone();
-                let dragged = DraggedBlock::new(entity.entity_id(), ix, block);
-                let loaded = self.image_for(image, cx);
-                let (width, height) =
-                    crate::image_resize::preview_size(self.image_drag.as_ref(), ix)
-                        .map_or((image.width, image.height), |(w, h)| (Some(w), h));
-                let body: AnyElement = match loaded {
-                    Some(data) => {
-                        let el = img(ImageSource::Image(data)).max_w_full();
-                        match (width, height) {
-                            // Stretched: show exactly the chosen box.
-                            // An explicit ratio stops GPUI from imposing the image's own.
-                            (Some(w), Some(h)) => el
-                                .object_fit(ObjectFit::Fill)
-                                .aspect_ratio(w / h.max(1.))
-                                .w(px(w))
-                                .h(px(h))
-                                .into_any_element(),
-                            (Some(w), None) => el
-                                .object_fit(ObjectFit::Contain)
-                                .w(px(w))
-                                .into_any_element(),
-                            _ => el
-                                .object_fit(ObjectFit::Contain)
-                                .w_full()
-                                .into_any_element(),
-                        }
-                    }
-                    None => div()
-                        .p(px(16.))
-                        .text_color(pal.muted_fg)
-                        .child(format!("🖼 {}", image.alt))
-                        .into_any_element(),
-                };
-                div()
-                    .id(("image", ix))
-                    .flex()
-                    .when(block.align == Align::Center, |d| d.justify_center())
-                    .when(block.align == Align::Right, |d| d.justify_end())
-                    .on_mouse_down(MouseButton::Left, move |_, window, cx| {
-                        cx.stop_propagation();
-                        ent.update(cx, |e, cx| e.select_atom(ix, window, cx));
-                    })
-                    .child(
-                        div()
-                            .id(("image-drag", ix))
-                            .border_2()
-                            .rounded(px(4.))
-                            .border_color(if selected {
-                                pal.primary
-                            } else {
-                                gpui_kit::transparent_black()
-                            })
-                            .when_some(dragged, |d, dragged| {
-                                d.on_drag(dragged, |d: &DraggedBlock, _, _, cx| {
-                                    cx.new(|_| DragPreview(d.label.clone()))
-                                })
-                            })
-                            .relative()
-                            .child(body)
-                            .child({
-                                // Remember the painted size: resizing starts from it.
-                                let bounds = self.image_bounds.clone();
-                                canvas(
-                                    move |b, _, _| {
-                                        bounds.borrow_mut().insert(ix, b);
-                                    },
-                                    |_, _, _, _| {},
-                                )
-                                .absolute()
-                                .size_full()
-                            })
-                            .when(selected && !self.is_read_only(), |d| {
-                                d.children(Self::resize_handles(ix, pal.primary, entity))
-                            }),
-                    )
-                    .into_any_element()
+                let body = self.image_body(ix, image, pal, cx);
+                self.render_image(ix, block, body, selected, pal, entity)
             }
             BlockKind::Attachment(att) => {
-                let dragged = DraggedBlock::new(entity.entity_id(), ix, block);
-                if let Some(kind) = crate::media::playable(att) {
-                    let colors = MediaColors {
-                        fg: pal.fg,
-                        muted: pal.muted_fg,
-                        primary: pal.primary,
-                        border: pal.border,
-                        track: pal.code_bg,
-                    };
-                    let player = self.render_media(ix, att, kind, selected, colors, entity);
-                    let ent = entity.clone();
-                    return div()
-                        .id(("media", ix))
-                        .on_mouse_down(MouseButton::Left, move |_, window, cx| {
-                            cx.stop_propagation();
-                            ent.update(cx, |e, cx| e.select_atom(ix, window, cx));
-                        })
-                        .when_some(dragged, |d, dragged| {
-                            d.on_drag(dragged, |d: &DraggedBlock, _, _, cx| {
-                                cx.new(|_| DragPreview(d.label.clone()))
-                            })
-                        })
-                        .child(player)
-                        .into_any_element();
-                }
+                self.render_attachment(ix, block, att, selected, pal, entity)
+            }
+            BlockKind::Table(table) => self.render_table(ix, table, indent, pal, entity),
+        }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn render_list_item(
+        &self,
+        ix: usize,
+        block: &Block,
+        number: Option<usize>,
+        style: SlotStyle,
+        indent: Pixels,
+        pal: &Palette,
+        entity: &Entity<Self>,
+    ) -> AnyElement {
+        let marker = Self::list_marker(ix, block, number, &style, pal, entity);
+        h_flex()
+            .items_start()
+            .pl(indent)
+            .child(
+                div()
+                    .w(px(26.))
+                    .flex_shrink_0()
+                    .flex()
+                    .justify_end()
+                    .pr(px(8.))
+                    .child(marker),
+            )
+            .child(div().flex_1().min_w_0().child(self.slot(
+                entity,
+                Slot::block(ix),
+                &block.text,
+                style,
+            )))
+            .into_any_element()
+    }
+
+    /// The checkbox, number or bullet in front of a list item.
+    fn list_marker(
+        ix: usize,
+        block: &Block,
+        number: Option<usize>,
+        style: &SlotStyle,
+        pal: &Palette,
+        entity: &Entity<Self>,
+    ) -> AnyElement {
+        let lh = style.line_height;
+        match &block.kind {
+            BlockKind::CheckList { checked } => {
+                let checked = *checked;
                 let ent = entity.clone();
-                let ent2 = entity.clone();
-                h_flex()
-                    .id(("attachment", ix))
+                div()
+                    .id(("check", ix))
+                    .size(px(15.))
+                    .mt((lh - px(15.)) / 2.)
+                    .rounded(px(3.))
+                    .border_1()
+                    .border_color(if checked { pal.primary } else { pal.muted_fg })
+                    .when(checked, |d| d.bg(pal.primary))
+                    .flex()
+                    .items_center()
+                    .justify_center()
+                    .text_color(gpui_kit::white())
+                    .text_size(px(11.))
+                    .cursor(CursorStyle::PointingHand)
+                    .when(checked, |d| d.child("✓"))
+                    .on_mouse_down(MouseButton::Left, move |_, _, cx| {
+                        cx.stop_propagation();
+                        ent.update(cx, |e, cx| e.toggle_check(ix, cx));
+                    })
+                    .into_any_element()
+            }
+            BlockKind::NumberedList => div()
+                .text_size(style.font_size)
+                .line_height(lh)
+                .text_color(pal.muted_fg)
+                .child(format!("{}.", number.unwrap_or(1)))
+                .into_any_element(),
+            _ => div()
+                .text_size(style.font_size)
+                .line_height(lh)
+                .text_color(pal.muted_fg)
+                .child(BULLETS[block.indent as usize % BULLETS.len()])
+                .into_any_element(),
+        }
+    }
+
+    fn render_divider(
+        ix: usize,
+        selected: bool,
+        pal: &Palette,
+        entity: &Entity<Self>,
+    ) -> AnyElement {
+        let ent = entity.clone();
+        div()
+            .id(("divider", ix))
+            .py(px(8.))
+            .cursor(CursorStyle::PointingHand)
+            .on_mouse_down(MouseButton::Left, move |_, window, cx| {
+                cx.stop_propagation();
+                ent.update(cx, |e, cx| e.select_atom(ix, window, cx));
+            })
+            .child(div().h(px(if selected { 2. } else { 1. })).bg(if selected {
+                pal.primary
+            } else {
+                pal.border
+            }))
+            .into_any_element()
+    }
+
+    /// The selectable, draggable and resizable frame around an image `body`.
+    fn render_image(
+        &self,
+        ix: usize,
+        block: &Block,
+        body: AnyElement,
+        selected: bool,
+        pal: &Palette,
+        entity: &Entity<Self>,
+    ) -> AnyElement {
+        let ent = entity.clone();
+        let dragged = DraggedBlock::new(entity.entity_id(), ix, block);
+        div()
+            .id(("image", ix))
+            .flex()
+            .when(block.align == Align::Center, |d| d.justify_center())
+            .when(block.align == Align::Right, |d| d.justify_end())
+            .on_mouse_down(MouseButton::Left, move |_, window, cx| {
+                cx.stop_propagation();
+                ent.update(cx, |e, cx| e.select_atom(ix, window, cx));
+            })
+            .child(
+                div()
+                    .id(("image-drag", ix))
+                    .border_2()
+                    .rounded(px(4.))
+                    .border_color(if selected {
+                        pal.primary
+                    } else {
+                        gpui_kit::transparent_black()
+                    })
                     .when_some(dragged, |d, dragged| {
                         d.on_drag(dragged, |d: &DraggedBlock, _, _, cx| {
                             cx.new(|_| DragPreview(d.label.clone()))
                         })
                     })
-                    .gap(px(8.))
-                    .px(px(10.))
-                    .py(px(6.))
-                    .rounded(px(6.))
-                    .border_1()
-                    .border_color(if selected { pal.primary } else { pal.border })
-                    .cursor(CursorStyle::PointingHand)
-                    .on_mouse_down(MouseButton::Left, move |ev, window, cx| {
-                        cx.stop_propagation();
-                        if ev.click_count >= 2 {
-                            ent2.update(cx, |e, cx| e.open_attachment(ix, cx));
-                        } else {
-                            ent.update(cx, |e, cx| e.select_atom(ix, window, cx));
-                        }
+                    .relative()
+                    .child(body)
+                    .child({
+                        // Remember the painted size: resizing starts from it.
+                        let bounds = self.image_bounds.clone();
+                        canvas(
+                            move |b, _, _| {
+                                bounds.borrow_mut().insert(ix, b);
+                            },
+                            |_, _, _, _| {},
+                        )
+                        .absolute()
+                        .size_full()
                     })
-                    .child("📎")
-                    .child(div().text_color(pal.fg).child(att.file_name.clone()))
-                    .child(
-                        div()
-                            .text_color(pal.muted_fg)
-                            .text_size(px(12.))
-                            .child(crate::util::format_size(att.size)),
-                    )
-                    .into_any_element()
-            }
-            BlockKind::Table(table) => {
-                let mut rows = v_flex()
-                    .w_full()
-                    .border_1()
-                    .border_color(pal.border)
-                    .rounded(px(4.));
-                for (r, row) in table.rows.iter().enumerate() {
-                    let header = r == 0 && table.header;
-                    let mut line = h_flex().w_full().items_stretch();
-                    for (c, cell) in row.iter().enumerate() {
-                        let st = self.slot_style(&Block::paragraph(""), pal, header);
-                        line = line.child(
-                            div()
-                                .flex_1()
-                                .min_w(px(60.))
-                                .px(px(8.))
-                                .py(px(4.))
-                                .when(c > 0, |d| d.border_l_1().border_color(pal.border))
-                                .when(header, |d| d.bg(pal.header_bg))
-                                .child(self.slot(entity, Slot::cell(ix, r, c), cell, st)),
-                        );
-                    }
-                    rows = rows.child(
-                        div()
-                            .when(r > 0, |d| d.border_t_1().border_color(pal.border))
-                            .child(line),
-                    );
+                    .when(selected && !self.is_read_only(), |d| {
+                        d.children(Self::resize_handles(ix, pal.primary, entity))
+                    }),
+            )
+            .into_any_element()
+    }
+
+    /// The picture itself at its display size, or a placeholder while it loads.
+    fn image_body(
+        &mut self,
+        ix: usize,
+        image: &Image,
+        pal: &Palette,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
+        let loaded = self.image_for(image, cx);
+        let (width, height) = crate::image_resize::preview_size(self.image_drag.as_ref(), ix)
+            .map_or((image.width, image.height), |(w, h)| (Some(w), h));
+        match loaded {
+            Some(data) => {
+                let el = img(ImageSource::Image(data)).max_w_full();
+                match (width, height) {
+                    // Stretched: show exactly the chosen box.
+                    // An explicit ratio stops GPUI from imposing the image's own.
+                    (Some(w), Some(h)) => el
+                        .object_fit(ObjectFit::Fill)
+                        .aspect_ratio(w / h.max(1.))
+                        .w(px(w))
+                        .h(px(h))
+                        .into_any_element(),
+                    (Some(w), None) => el
+                        .object_fit(ObjectFit::Contain)
+                        .w(px(w))
+                        .into_any_element(),
+                    _ => el
+                        .object_fit(ObjectFit::Contain)
+                        .w_full()
+                        .into_any_element(),
                 }
-                div().ml(indent).py(px(4.)).child(rows).into_any_element()
             }
+            None => div()
+                .p(px(16.))
+                .text_color(pal.muted_fg)
+                .child(format!("🖼 {}", image.alt))
+                .into_any_element(),
         }
+    }
+
+    /// An attachment: an inline player for playable audio, a file chip otherwise.
+    fn render_attachment(
+        &mut self,
+        ix: usize,
+        block: &Block,
+        att: &Attachment,
+        selected: bool,
+        pal: &Palette,
+        entity: &Entity<Self>,
+    ) -> AnyElement {
+        let dragged = DraggedBlock::new(entity.entity_id(), ix, block);
+        if let Some(kind) = crate::media::playable(att) {
+            let colors = MediaColors {
+                fg: pal.fg,
+                muted: pal.muted_fg,
+                primary: pal.primary,
+                border: pal.border,
+                track: pal.code_bg,
+            };
+            let player = self.render_media(ix, att, kind, selected, colors, entity);
+            let ent = entity.clone();
+            return div()
+                .id(("media", ix))
+                .on_mouse_down(MouseButton::Left, move |_, window, cx| {
+                    cx.stop_propagation();
+                    ent.update(cx, |e, cx| e.select_atom(ix, window, cx));
+                })
+                .when_some(dragged, |d, dragged| {
+                    d.on_drag(dragged, |d: &DraggedBlock, _, _, cx| {
+                        cx.new(|_| DragPreview(d.label.clone()))
+                    })
+                })
+                .child(player)
+                .into_any_element();
+        }
+        let ent = entity.clone();
+        let ent2 = entity.clone();
+        h_flex()
+            .id(("attachment", ix))
+            .when_some(dragged, |d, dragged| {
+                d.on_drag(dragged, |d: &DraggedBlock, _, _, cx| {
+                    cx.new(|_| DragPreview(d.label.clone()))
+                })
+            })
+            .gap(px(8.))
+            .px(px(10.))
+            .py(px(6.))
+            .rounded(px(6.))
+            .border_1()
+            .border_color(if selected { pal.primary } else { pal.border })
+            .cursor(CursorStyle::PointingHand)
+            .on_mouse_down(MouseButton::Left, move |ev, window, cx| {
+                cx.stop_propagation();
+                if ev.click_count >= 2 {
+                    ent2.update(cx, |e, cx| e.open_attachment(ix, cx));
+                } else {
+                    ent.update(cx, |e, cx| e.select_atom(ix, window, cx));
+                }
+            })
+            .child("📎")
+            .child(div().text_color(pal.fg).child(att.file_name.clone()))
+            .child(
+                div()
+                    .text_color(pal.muted_fg)
+                    .text_size(px(12.))
+                    .child(crate::util::format_size(att.size)),
+            )
+            .into_any_element()
+    }
+
+    fn render_table(
+        &self,
+        ix: usize,
+        table: &Table,
+        indent: Pixels,
+        pal: &Palette,
+        entity: &Entity<Self>,
+    ) -> AnyElement {
+        let mut rows = v_flex()
+            .w_full()
+            .border_1()
+            .border_color(pal.border)
+            .rounded(px(4.));
+        for (r, row) in table.rows.iter().enumerate() {
+            let header = r == 0 && table.header;
+            let mut line = h_flex().w_full().items_stretch();
+            for (c, cell) in row.iter().enumerate() {
+                let st = self.slot_style(&Block::paragraph(""), pal, header);
+                line = line.child(
+                    div()
+                        .flex_1()
+                        .min_w(px(60.))
+                        .px(px(8.))
+                        .py(px(4.))
+                        .when(c > 0, |d| d.border_l_1().border_color(pal.border))
+                        .when(header, |d| d.bg(pal.header_bg))
+                        .child(self.slot(entity, Slot::cell(ix, r, c), cell, st)),
+                );
+            }
+            rows = rows.child(
+                div()
+                    .when(r > 0, |d| d.border_t_1().border_color(pal.border))
+                    .child(line),
+            );
+        }
+        div().ml(indent).py(px(4.)).child(rows).into_any_element()
     }
 
     /// The three resize handles of a selected image.
