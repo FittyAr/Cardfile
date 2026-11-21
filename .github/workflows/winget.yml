@@ -15,8 +15,10 @@ on:
         required: true
         type: string
     secrets:
+      # Optional: winget submission is deferred until 2.0.0, so the secret may not exist
+      # yet; a required-but-missing secret would fail the whole release run.
       WINGET_TOKEN:
-        required: true
+        required: false
   workflow_dispatch:
     inputs:
       tag:
