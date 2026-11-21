@@ -21,10 +21,13 @@ use krilla::text::{Font, TextDirection};
 use crate::export::BlobResolver;
 use crate::model::{Align, Block, BlockKind, Document, RichText, Style, TextSize};
 
+/// Errors from the PDF exporter.
 #[derive(Debug, thiserror::Error)]
 pub enum PdfError {
+    /// No usable regular text font could be loaded.
     #[error("no usable font found on this system")]
     NoFont,
+    /// The PDF library failed to write the document; the string is its message.
     #[error("PDF generation failed: {0}")]
     Pdf(String),
 }

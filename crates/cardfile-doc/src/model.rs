@@ -14,9 +14,14 @@ pub const DOC_VERSION: u32 = 1;
 /// Maximum list / paragraph indent level.
 pub const MAX_INDENT: u8 = 8;
 
+/// A card's content: a flat list of blocks.
+///
+/// Invariant (restored by [`Document::normalize`]): there is at least one block.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Document {
+    /// Serialization version; [`DOC_VERSION`] for documents written by this build.
     pub version: u32,
+    /// The blocks in reading order.
     pub blocks: Vec<Block>,
 }
 
@@ -43,6 +48,8 @@ impl Document {
         }
     }
 
+    /// Serialize for storage. Serializing this type cannot fail in practice; an
+    /// empty string is returned if it ever does.
     pub fn to_json(&self) -> String {
         serde_json::to_string(self).unwrap_or_default()
     }
@@ -70,13 +77,13 @@ impl Document {
         }
     }
 
+    /// Whether the document has no visible content: only empty text blocks.
     pub fn is_empty(&self) -> bool {
         self.blocks
             .iter()
             .all(|b| b.text.is_empty() && b.kind.is_textual())
     }
 
-    /// IDs of all blobs referenced by images and attachments.
     /// Rewrite image and attachment blob references; `f` returns the new reference or
     /// `None` to keep the old one.
     pub fn map_blob_refs<E>(
@@ -96,6 +103,8 @@ impl Document {
         Ok(())
     }
 
+    /// Ids of all blobs referenced by images and attachments, in document order
+    /// (references as stored, so sealed references keep their key).
     pub fn blob_ids(&self) -> Vec<String> {
         self.blocks
             .iter()
@@ -108,11 +117,15 @@ impl Document {
     }
 }
 
+/// One paragraph-level element of a [`Document`].
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Block {
+    /// What the block is (paragraph, heading, list item, image, …).
     pub kind: BlockKind,
+    /// Horizontal alignment of the block's text.
     #[serde(default, skip_serializing_if = "is_default")]
     pub align: Align,
+    /// Indent level, `0..=MAX_INDENT`; for lists it is the nesting depth.
     #[serde(default, skip_serializing_if = "is_default")]
     pub indent: u8,
     /// Text size of the whole block (paragraphs, lists, quotes).
@@ -124,6 +137,7 @@ pub struct Block {
 }
 
 impl Block {
+    /// A left-aligned, unindented block of normal size.
     pub fn new(kind: BlockKind, text: impl Into<RichText>) -> Self {
         Self {
             kind,
@@ -134,10 +148,12 @@ impl Block {
         }
     }
 
+    /// A plain paragraph holding `text`.
     pub fn paragraph(text: &str) -> Self {
         Self::new(BlockKind::Paragraph, text)
     }
 
+    /// A heading; `level` is clamped to 1..=3.
     pub fn heading(level: u8, text: &str) -> Self {
         Self::new(BlockKind::Heading(level.clamp(1, 3)), text)
     }
@@ -147,25 +163,37 @@ fn is_default<T: Default + PartialEq>(v: &T) -> bool {
     *v == T::default()
 }
 
+/// The type of a [`Block`], with any data that type carries.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", content = "data", rename_all = "snake_case")]
 pub enum BlockKind {
+    /// Body text.
     Paragraph,
     /// Level 1 to 3.
     Heading(u8),
+    /// An item of a bulleted list.
     BulletList,
     /// Numbering restarts after any non-numbered block or indent change.
     NumberedList,
+    /// An item of a to-do list with a checkbox.
     CheckList {
+        /// Whether the item is ticked.
         checked: bool,
     },
+    /// A block quote.
     Quote,
+    /// Preformatted code; holds plain text only.
     Code {
+        /// Language name given after the opening fence (may be empty).
         language: String,
     },
+    /// A horizontal rule; has no text.
     Divider,
+    /// An embedded image.
     Image(Image),
+    /// A file attached to the card (audio and video get an inline player).
     Attachment(Attachment),
+    /// A table of rich-text cells.
     Table(Table),
 }
 
@@ -178,6 +206,7 @@ impl BlockKind {
         )
     }
 
+    /// Whether the block is a bulleted, numbered or check list item.
     pub fn is_list(&self) -> bool {
         matches!(
             self,
@@ -191,20 +220,27 @@ impl BlockKind {
     }
 }
 
+/// Horizontal text alignment of a block.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Align {
+    /// Aligned to the start edge.
     #[default]
     Left,
+    /// Centred.
     Center,
+    /// Aligned to the end edge.
     Right,
+    /// Stretched to both edges.
     Justify,
 }
 
+/// An image block.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Image {
     /// BLAKE3 hex id of the image bytes in the `blobs` table.
     pub blob: String,
+    /// MIME type of the image, e.g. `image/png`.
     pub mime: String,
     /// Display width in logical pixels; `None` fits the editor width.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -213,18 +249,28 @@ pub struct Image {
     /// the aspect ratio.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub height: Option<f32>,
+    /// Alternative text for exports and accessibility.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub alt: String,
 }
 
+/// An attached file block.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Attachment {
+    /// Reference to the file bytes in the `blobs` table (see `cardfile_core::BlobRef`).
     pub blob: String,
+    /// Original file name.
     pub file_name: String,
+    /// MIME type of the file.
     pub mime: String,
+    /// File size in bytes.
     pub size: u64,
 }
 
+/// A table block.
+///
+/// Invariant (restored by [`Table::normalize`]): at least one row and one column,
+/// and every row has the same number of cells.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Table {
     /// Row-major cells. All rows have the same length.
@@ -235,6 +281,8 @@ pub struct Table {
 }
 
 impl Table {
+    /// An empty `rows` × `cols` table with a header row. Both dimensions are at
+    /// least 1.
     pub fn new(rows: usize, cols: usize) -> Self {
         let rows = rows.max(1);
         let cols = cols.max(1);
@@ -244,10 +292,13 @@ impl Table {
         }
     }
 
+    /// Number of columns (0 only for a table that was not normalized).
     pub fn cols(&self) -> usize {
         self.rows.first().map_or(0, Vec::len)
     }
 
+    /// Restore the invariants: pad short rows with empty cells and normalize
+    /// every cell's text.
     pub fn normalize(&mut self) {
         if self.rows.is_empty() {
             self.rows.push(vec![RichText::default()]);
@@ -269,14 +320,19 @@ pub type Color = String;
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum TextSize {
+    /// 85 % of the base size.
     Small,
+    /// The base size.
     #[default]
     Normal,
+    /// 125 % of the base size.
     Large,
+    /// 160 % of the base size.
     Huge,
 }
 
 impl TextSize {
+    /// Factor applied to the base font size.
     pub fn scale(self) -> f32 {
         match self {
             Self::Small => 0.85,
@@ -291,25 +347,34 @@ impl TextSize {
 #[derive(Clone, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Style {
+    /// Bold weight.
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub bold: bool,
+    /// Italic.
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub italic: bool,
+    /// Underlined.
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub underline: bool,
+    /// Struck through.
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub strike: bool,
+    /// Inline code (monospace font).
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub code: bool,
+    /// Text colour; `None` uses the theme colour.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub color: Option<Color>,
+    /// Background highlight colour; `None` for none.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub highlight: Option<Color>,
+    /// Hyperlink target URL.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub link: Option<String>,
 }
 
 impl Style {
+    /// Whether no formatting is applied.
     pub fn is_plain(&self) -> bool {
         *self == Self::default()
     }
@@ -318,14 +383,20 @@ impl Style {
 /// A toggleable boolean mark.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Mark {
+    /// See [`Style::bold`].
     Bold,
+    /// See [`Style::italic`].
     Italic,
+    /// See [`Style::underline`].
     Underline,
+    /// See [`Style::strike`].
     Strike,
+    /// See [`Style::code`].
     Code,
 }
 
 impl Mark {
+    /// Whether this mark is set in `s`.
     pub fn get(self, s: &Style) -> bool {
         match self {
             Self::Bold => s.bold,
@@ -336,6 +407,7 @@ impl Mark {
         }
     }
 
+    /// Turn this mark on or off in `s`.
     pub fn set(self, s: &mut Style, on: bool) {
         match self {
             Self::Bold => s.bold = on,
@@ -350,7 +422,9 @@ impl Mark {
 /// A run of `len` bytes sharing one [`Style`].
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Run {
+    /// Length of the run in bytes of [`RichText::text`].
     pub len: usize,
+    /// Formatting of the run.
     #[serde(default, skip_serializing_if = "Style::is_plain")]
     pub style: Style,
 }
@@ -361,7 +435,9 @@ pub struct Run {
 /// every run boundary is a char boundary, no empty runs, adjacent runs differ in style.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RichText {
+    /// The text (UTF-8).
     pub text: String,
+    /// Style runs covering `text`; empty means all plain.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub runs: Vec<Run>,
 }
@@ -379,6 +455,7 @@ impl From<String> for RichText {
 }
 
 impl RichText {
+    /// Unformatted text.
     pub fn plain(text: &str) -> Self {
         let mut rt = Self {
             text: text.to_owned(),
@@ -388,6 +465,7 @@ impl RichText {
         rt
     }
 
+    /// Text with `style` applied to all of it.
     pub fn styled(text: &str, style: Style) -> Self {
         let mut rt = Self {
             text: text.to_owned(),
@@ -400,10 +478,12 @@ impl RichText {
         rt
     }
 
+    /// Length of the text in bytes.
     pub fn len(&self) -> usize {
         self.text.len()
     }
 
+    /// Whether the text is empty.
     pub fn is_empty(&self) -> bool {
         self.text.is_empty()
     }

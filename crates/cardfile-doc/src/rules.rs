@@ -8,7 +8,9 @@ use crate::model::{BlockKind, Mark};
 /// Result of a block-level rule: replace the block kind and drop `strip` leading bytes.
 #[derive(Clone, Debug, PartialEq)]
 pub struct BlockRule {
+    /// The block kind to switch to.
     pub kind: BlockKind,
+    /// Number of leading bytes (the typed marker) to delete from the block text.
     pub strip: usize,
 }
 
@@ -68,9 +70,13 @@ pub fn block_rule_on_enter(text: &str) -> Option<BlockRule> {
 /// marked text ends up *after* the markers are removed.
 #[derive(Clone, Debug, PartialEq)]
 pub struct InlineRule {
+    /// Byte range of the opening marker.
     pub open: Range<usize>,
+    /// Byte range of the closing marker.
     pub close: Range<usize>,
+    /// Byte range of the marked text once both markers are removed.
     pub content: Range<usize>,
+    /// The formatting to apply to `content`.
     pub mark: Mark,
 }
 
