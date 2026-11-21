@@ -202,10 +202,11 @@ impl Database {
                     ))
                     .execute(conn)?;
             }
-            diesel::update(target())
+            let n = diesel::update(target())
                 .set((users::updated_at.eq(now), users::rev.eq(users::rev + 1)))
                 .execute(conn)?;
-            Ok(())
+            // Unknown user: roll the whole update back.
+            found(n)
         })
     }
 
@@ -215,35 +216,40 @@ impl Database {
         self.tx(|conn| apply_rekey(conn, rekey, now_millis()))
     }
 
+    /// Set or clear the separate lock password. Fails with not-found for an unknown
+    /// user.
     pub fn set_lock_hash(&self, id: UserId, hash: Option<&str>) -> DbResult<()> {
         self.with(|conn| {
-            diesel::update(users::table.find(id.to_string()))
+            let n = diesel::update(users::table.find(id.to_string()))
                 .set((
                     users::lock_hash.eq(hash),
                     users::updated_at.eq(now_millis()),
                     users::rev.eq(users::rev + 1),
                 ))
                 .execute(conn)?;
-            Ok(())
+            found(n)
         })
     }
 
+    /// Set or clear the sign-in password. Fails with not-found for an unknown user.
     pub fn set_password_hash(&self, id: UserId, hash: Option<&str>) -> DbResult<()> {
         self.with(|conn| {
-            diesel::update(users::table.find(id.to_string()))
+            let n = diesel::update(users::table.find(id.to_string()))
                 .set((
                     users::password_hash.eq(hash),
                     users::updated_at.eq(now_millis()),
                     users::rev.eq(users::rev + 1),
                 ))
                 .execute(conn)?;
-            Ok(())
+            found(n)
         })
     }
 
+    /// Change a user's display name and admin flag. Fails with not-found for an
+    /// unknown user.
     pub fn update_user(&self, id: UserId, display_name: &str, is_admin: bool) -> DbResult<()> {
         self.with(|conn| {
-            diesel::update(users::table.find(id.to_string()))
+            let n = diesel::update(users::table.find(id.to_string()))
                 .set((
                     users::display_name.eq(display_name.trim()),
                     users::is_admin.eq(is_admin),
@@ -251,7 +257,7 @@ impl Database {
                     users::rev.eq(users::rev + 1),
                 ))
                 .execute(conn)?;
-            Ok(())
+            found(n)
         })
     }
 
@@ -276,6 +282,15 @@ impl Database {
             .execute(conn)?;
             Ok(())
         })
+    }
+}
+
+/// `Ok` when an update by primary key touched a row, not-found otherwise.
+fn found(rows: usize) -> DbResult<()> {
+    if rows == 0 {
+        Err(DbError::Query(diesel::result::Error::NotFound))
+    } else {
+        Ok(())
     }
 }
 
@@ -389,6 +404,27 @@ mod tests {
         // Clearing the separate lock password falls back to the sign-in password.
         db.set_lock_hash(alice.id, None).unwrap();
         assert_eq!(db.user(alice.id).unwrap().effective_lock_hash(), Some("h1"));
+    }
+
+    #[test]
+    fn updates_of_unknown_users_are_not_found() {
+        let (db, alice) = db_with_user();
+        let ghost = cardfile_core::UserId::new();
+        assert!(db.update_user(ghost, "x", false).unwrap_err().is_not_found());
+        assert!(db.set_lock_hash(ghost, Some("h")).unwrap_err().is_not_found());
+        assert!(
+            db.set_password_hash(ghost, Some("h"))
+                .unwrap_err()
+                .is_not_found()
+        );
+        let update = super::CredentialUpdate {
+            password_hash: Some(Some("h".into())),
+            ..Default::default()
+        };
+        assert!(db.update_credentials(ghost, &update).unwrap_err().is_not_found());
+        // Known users still update.
+        db.update_user(alice.id, "Alice A.", true).unwrap();
+        assert_eq!(db.user(alice.id).unwrap().display_name, "Alice A.");
     }
 
     #[test]
