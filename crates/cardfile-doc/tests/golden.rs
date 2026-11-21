@@ -40,6 +40,7 @@ fn dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests")
 }
 
+#[allow(clippy::unwrap_used)] // Test fixture helper: a missing or broken fixture must fail the test.
 fn sample() -> Document {
     let json = std::fs::read_to_string(dir().join("fixtures/sample.json")).unwrap();
     Document::from_json(&json).unwrap()
@@ -47,6 +48,7 @@ fn sample() -> Document {
 
 /// Compare `actual` with `tests/golden/<name>`, or rewrite the file when
 /// `CARDFILE_UPDATE_GOLDENS` is set.
+#[allow(clippy::unwrap_used)] // Test helper: failing to write a golden must fail the test.
 fn check(name: &str, actual: &str) {
     let path = dir().join("golden").join(name);
     if std::env::var_os("CARDFILE_UPDATE_GOLDENS").is_some() {
