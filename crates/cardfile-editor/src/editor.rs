@@ -288,6 +288,10 @@ pub struct RichEditor {
     pub(crate) base_font_size: Pixels,
     pub(crate) placeholder: Option<String>,
     revision: u64,
+    /// Bumped by [`RichEditor::set_document`]; background work captures it so a
+    /// result that arrives after another document was loaded is dropped instead of
+    /// landing in the wrong card.
+    doc_generation: u64,
     pub(crate) find: Option<crate::find::FindBar>,
     pub(crate) slash: Option<crate::slash::SlashMenu>,
     pub(crate) media: crate::media::MediaState,
@@ -334,6 +338,7 @@ impl RichEditor {
             base_font_size: px(15.),
             placeholder: None,
             revision: 0,
+            doc_generation: 0,
             find: None,
             slash: None,
             media: Default::default(),
@@ -400,6 +405,7 @@ impl RichEditor {
             input_rules: self.model.input_rules,
             ..Model::new(doc)
         };
+        self.doc_generation = self.doc_generation.wrapping_add(1);
         self.history.clear();
         self.layouts.clear();
         self.image_unavailable.clear();
@@ -415,6 +421,24 @@ impl RichEditor {
     /// Bump on every content change; the host compares it to know what was saved.
     pub fn revision(&self) -> u64 {
         self.revision
+    }
+
+    /// Identifies the loaded document: it changes every time
+    /// [`RichEditor::set_document`] replaces it, but not on edits. Hosts compare it
+    /// to know whether the editor still shows the document they captured.
+    pub fn document_generation(&self) -> u64 {
+        self.doc_generation
+    }
+
+    /// Whether `generation` (from [`RichEditor::document_generation`]) still names
+    /// the loaded document; logs and returns `false` when it does not, so a late
+    /// background result is dropped.
+    pub(crate) fn same_document(&self, generation: u64, what: &str) -> bool {
+        if self.doc_generation == generation {
+            return true;
+        }
+        tracing::warn!("dropped a {what}: another document was loaded while it was prepared");
+        false
     }
 
     pub fn set_read_only(&mut self, read_only: bool, cx: &mut Context<Self>) {
@@ -1074,6 +1098,7 @@ impl RichEditor {
             self.edit(EditKind::Other, cx, |m| m.insert_fragment(&frag));
             return;
         };
+        let generation = self.doc_generation;
         let task = cx.background_spawn(async move {
             adopt_fragment_blobs(store.as_ref(), &mut frag);
             frag
@@ -1081,6 +1106,9 @@ impl RichEditor {
         cx.spawn(async move |this, cx| {
             let frag = task.await;
             let _ = this.update(cx, |e, cx| {
+                if !e.same_document(generation, "paste") {
+                    return;
+                }
                 e.edit(EditKind::Other, cx, |m| m.insert_fragment(&frag));
             });
         })
@@ -1191,9 +1219,13 @@ impl RichEditor {
     /// Insert blocks built on the background executor once they are ready, one undo
     /// step each, at the caret as it is then.
     fn insert_stored_blocks(&mut self, task: Task<Vec<Block>>, cx: &mut Context<Self>) {
+        let generation = self.doc_generation;
         cx.spawn(async move |this, cx| {
             let blocks = task.await;
             let _ = this.update(cx, |e, cx| {
+                if !e.same_document(generation, "file insertion") {
+                    return;
+                }
                 for block in blocks {
                     e.edit(EditKind::Other, cx, |m| m.insert_block(block));
                 }
