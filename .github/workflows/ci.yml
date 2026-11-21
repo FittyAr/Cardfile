@@ -5,6 +5,10 @@ on:
   push:
     branches: [main]
 
+# Read-only token by default; jobs that need more ask for it explicitly.
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -25,7 +29,7 @@ jobs:
       - run: cargo fmt --all --check
       - name: Check translation keys
         run: |
-          pip install --quiet pyyaml
+          pip install --quiet pyyaml==6.0.4
           python3 scripts/check-locales.py --all
 
   deny:
@@ -70,8 +74,8 @@ jobs:
         if: runner.os == 'Linux'
         run: ./scripts/install-linux-deps.sh
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
-      - run: cargo clippy --workspace --all-targets -- -D warnings
-      - run: cargo test --workspace
+      - run: cargo clippy --locked --workspace --all-targets -- -D warnings
+      - run: cargo test --locked --workspace
 
   pr-title:
     if: github.event_name == 'pull_request'
