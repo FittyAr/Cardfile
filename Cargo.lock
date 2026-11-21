@@ -994,6 +994,7 @@ version = "2.0.0-beta.4"
 dependencies = [
  "blake3",
  "cardfile-core",
+ "cardfile-crypto",
  "cardfile-doc",
  "diesel",
  "diesel_migrations",

@@ -26,5 +26,6 @@ parking_lot.workspace = true
 uuid.workspace = true
 
 [dev-dependencies]
+cardfile-crypto.workspace = true
 tempfile.workspace = true
 pretty_assertions.workspace = true

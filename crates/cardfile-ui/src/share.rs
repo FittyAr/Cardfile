@@ -1,7 +1,8 @@
 //! Share a card with other users: no access, can view, or can edit.
 
-use cardfile_core::{Card, CardShare, LockMode, SharePermission, User, UserId};
+use cardfile_core::{Card, CardId, CardShare, LockMode, SharePermission, User, UserId};
 use cardfile_crypto::CardKey;
+use cardfile_db::{Database, KeyRotation};
 use cardfile_i18n::{t, t_args};
 use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::notification::Notification;
@@ -182,7 +183,16 @@ fn set(
     let encrypted = card.lock_mode == LockMode::Encrypted;
     let task = cx.background_spawn(async move {
         match choice {
-            None => db.unshare_card(&actor, card.id, user)?,
+            None => {
+                // The removed user may have kept the card key: move to a new one.
+                let rotation = if encrypted {
+                    let key = key.ok_or_else(|| anyhow::anyhow!(t("share.unlock_encrypted")))?;
+                    Some(rotate_key(&db, card.id, &key, user)?)
+                } else {
+                    None
+                };
+                db.unshare_card(&actor, card.id, user, rotation.as_ref())?;
+            }
             Some(permission) => {
                 let wrapped = if encrypted {
                     let key = key.ok_or_else(|| anyhow::anyhow!(t("share.unlock_encrypted")))?;
@@ -227,6 +237,59 @@ fn set(
             });
         })
         .detach();
+}
+
+/// A new key for `card` once `removed` loses access: the content and every history
+/// snapshot re-encrypted from `key`, and the new key wrapped for the owner and the
+/// users who keep access. Snapshots `key` cannot open (e.g. legacy ones) are left
+/// out, so the database drops them with the rotation.
+fn rotate_key(
+    db: &Database,
+    card: CardId,
+    key: &CardKey,
+    removed: UserId,
+) -> anyhow::Result<KeyRotation> {
+    let current = db.card(card)?;
+    let aad = card.to_string();
+    let payload = current
+        .encrypted
+        .as_ref()
+        .ok_or_else(|| anyhow::anyhow!(t("card.not_unlocked")))?;
+    let new = CardKey::generate()?;
+    let encrypted = cardfile_crypto::reencrypt_with_key(payload, key, &new, aad.as_bytes())?;
+    let revisions = db
+        .card_revisions(card)?
+        .into_iter()
+        .filter_map(|rev| {
+            let sealed = rev.encrypted.as_ref()?;
+            cardfile_crypto::reencrypt_with_key(sealed, key, &new, aad.as_bytes())
+                .ok()
+                .map(|p| (rev.id, p))
+        })
+        .collect();
+    let mut users = vec![current.owner_id];
+    users.extend(
+        db.card_shares(card)?
+            .into_iter()
+            .map(|s| s.user_id)
+            .filter(|u| *u != removed),
+    );
+    let card_keys = users
+        .into_iter()
+        .map(|id| {
+            let user = db.user(id)?;
+            let public = user.public_key.as_deref().ok_or_else(|| {
+                anyhow::anyhow!(t_args("share.no_keys", &[("name", &user.display_name)]))
+            })?;
+            anyhow::Ok((id, cardfile_crypto::wrap_card_key(&new, public, &aad)?))
+        })
+        .collect::<anyhow::Result<_>>()?;
+    Ok(KeyRotation {
+        base_rev: current.rev,
+        encrypted,
+        revisions,
+        card_keys,
+    })
 }
 
 #[allow(dead_code)]

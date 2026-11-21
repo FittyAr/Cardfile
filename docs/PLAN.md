@@ -216,7 +216,11 @@ Preparada para sincronización futura: PK `UUIDv7` (texto/blob), `created_at`, `
 - **Excepciones al soft delete** (no son entidades sincronizadas o son secretos):
   `card_keys` (claves envueltas: se borran de verdad al dejar de compartir o descifrar),
   `card_revisions` (historial local: se podan, se borran al cifrar/descifrar y al limpiar el
-  historial), y el purgado de la papelera (que además vacía el `summary` de su `activity`).
+  historial; al rotar la clave de una tarjeta cifrada se re-cifran o se borran), y el purgado
+  de la papelera (que además vacía el `summary` de su `activity`).
+- Una tarjeta en la papelera queda congelada: la DB rechaza editarla, protegerla, fijarla,
+  etiquetarla, moverla o compartirla hasta restaurarla, y deja de verse para quienes la
+  tienen compartida.
 
 ### 3.4 Autenticación y bloqueo
 
@@ -234,6 +238,17 @@ Preparada para sincronización futura: PK `UUIDv7` (texto/blob), `created_at`, `
     (X25519 + BLAKE3 + XChaCha20) para cada usuario con acceso; la clave secreta del usuario se
     sella con Argon2id bajo su contraseña de bloqueo. Claves en memoria con `zeroize`.
     Advertencia clara: contraseña perdida = datos perdidos.
+  - *Rotación al dejar de compartir*: cuando el dueño quita a alguien de una tarjeta cifrada,
+    en la misma transacción la tarjeta pasa a una **clave nueva** (`KeyRotation`): el contenido
+    actual y las revisiones se re-cifran con ella, las revisiones que no se pueden re-cifrar
+    se borran y la clave se envuelve solo para el dueño y quienes siguen con acceso. Cada
+    payload v2 guarda un `key_id` (huella pública de la clave), y la DB rechaza guardar con
+    una clave rotada (`LockModeMismatch`). **Garantía**: una clave de tarjeta que el usuario
+    quitado haya conservado no abre nada escrito después, ni el historial que queda. Lo que
+    ya vio antes no se puede "des-ver": las imágenes y adjuntos sellados conservan su clave
+    por blob (guardada dentro del documento, ahora bajo la clave nueva); los nuevos usan
+    claves nuevas. Si un destinatario se va por su cuenta no hay rotación (no es de fiar
+    para re-cifrar), solo se borra su clave envuelta.
 - Settings permite habilitar/deshabilitar cada nivel y elegir el nivel por defecto.
 
 ### 3.5 Editor WYSIWYG (`cardfile-editor`) — módulo de mayor riesgo

@@ -6,7 +6,7 @@ use cardfile_core::{
 };
 use diesel::prelude::*;
 
-use crate::rows::{CardRow, RevisionRow, parse_id, payload_json};
+use crate::rows::{CardRow, RevisionRow, parse_id, parse_payload, payload_json};
 use crate::schema::{activity, blobs, card_blobs, card_revisions, card_tags, cards};
 use crate::{Database, DbError, DbResult};
 
@@ -79,9 +79,24 @@ pub(crate) fn ensure_not_trashed(conn: &mut SqliteConnection, card: &str) -> DbR
 /// Checked inside the saving transaction, so a save prepared before the card was
 /// encrypted (e.g. a racing AI edit) cannot write plaintext into it, and one prepared
 /// before it was decrypted cannot leave ciphertext without keys behind.
-fn ensure_payload_matches(lock_mode: &str, update: &ContentUpdate) -> DbResult<()> {
-    let ok = if LockMode::parse(lock_mode) == Some(LockMode::Encrypted) {
-        update.encrypted.is_some() && update.content.is_empty() && update.plain_text.is_empty()
+///
+/// Once a card's ciphertext records the id of its card key, a save must be sealed
+/// with that same key: an editor still holding a key that was rotated away (see
+/// [`Database::unshare_card`]) cannot write content the current key cannot open,
+/// or that a revoked user could still read.
+fn ensure_payload_matches(old: &CardRow, update: &ContentUpdate) -> DbResult<()> {
+    let ok = if LockMode::parse(&old.lock_mode) == Some(LockMode::Encrypted) {
+        let current_key = parse_payload(old.encrypted.as_deref())?
+            .map(|p| p.key_id)
+            .filter(|id| !id.is_empty());
+        let same_key = match (&current_key, &update.encrypted) {
+            (Some(current), Some(new)) => *current == new.key_id,
+            _ => true,
+        };
+        update.encrypted.is_some()
+            && update.content.is_empty()
+            && update.plain_text.is_empty()
+            && same_key
     } else {
         update.encrypted.is_none()
     };
@@ -177,7 +192,7 @@ impl Database {
                 .find(id.to_string())
                 .select(CardRow::as_select())
                 .first(conn)?;
-            ensure_payload_matches(&old.lock_mode, &update)?;
+            ensure_payload_matches(&old, &update)?;
             let now = now_millis();
             if keep_revisions > 0 {
                 let newest: Option<i64> = card_revisions::table
