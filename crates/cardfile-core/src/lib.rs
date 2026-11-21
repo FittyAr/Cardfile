@@ -67,6 +67,7 @@ mod tests {
                 t_cost: 0,
                 p_cost: 0,
                 ciphertext: "sealed-ciphertext".into(),
+                key_id: String::new(),
             }),
             created_at: 0,
             updated_at: 0,

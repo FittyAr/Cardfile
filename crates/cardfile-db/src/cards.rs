@@ -683,6 +683,7 @@ mod tests {
             t_cost: 1,
             p_cost: 1,
             ciphertext: "c".into(),
+            key_id: String::new(),
         };
         assert!(
             db.set_card_lock(
@@ -826,6 +827,7 @@ mod tests {
             t_cost: 1,
             p_cost: 1,
             ciphertext: "c".into(),
+            key_id: String::new(),
         };
         db.set_card_lock(
             &Actor::user(user.id),
@@ -888,6 +890,7 @@ mod tests {
             t_cost: 0,
             p_cost: 0,
             ciphertext: "c".into(),
+            key_id: String::new(),
         }
     }
 

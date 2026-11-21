@@ -180,6 +180,12 @@ pub struct EncryptedPayload {
     pub p_cost: u32,
     /// Ciphertext (base64) of the serialized document JSON.
     pub ciphertext: String,
+    /// Version 2: a public fingerprint of the card key that sealed this payload (see
+    /// `cardfile_crypto::CardKey::id`), so storage can refuse a save made with a key
+    /// that was rotated away. Empty for version 1 and for payloads written before key
+    /// fingerprints existed.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub key_id: String,
 }
 
 /// A card with its full content.

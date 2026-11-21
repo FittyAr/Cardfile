@@ -5,6 +5,7 @@
 //!   salt) and XChaCha20-Poly1305. The card id is bound as associated data so a
 //!   ciphertext cannot be moved to another card.
 
+use argon2::password_hash::phc::PasswordHash;
 use argon2::password_hash::{PasswordHasher, PasswordVerifier};
 use argon2::{Algorithm, Argon2, Params, Version};
 use base64::Engine as _;
@@ -18,7 +19,8 @@ use zeroize::Zeroizing;
 mod keys;
 pub use keys::{
     CardKey, KEYED_PAYLOAD_VERSION, UserSecret, decrypt_with_key, encrypt_with_key,
-    generate_user_keys, open_user_secret, seal_user_secret, unwrap_card_key, wrap_card_key,
+    generate_user_keys, open_user_secret, reencrypt_with_key, seal_user_secret, unwrap_card_key,
+    wrap_card_key,
 };
 
 /// Envelope format version written to [`EncryptedPayload::v`].
@@ -31,6 +33,17 @@ const P_COST: u32 = 1;
 pub(crate) const KEY_LEN: usize = 32;
 const SALT_LEN: usize = 16;
 pub(crate) const NONCE_LEN: usize = 24;
+
+/// Largest Argon2 parameters accepted from stored data (a payload or a PHC string):
+/// 1 GiB, 64 passes, 16 lanes. Anything above is treated as tampering, so a hostile
+/// row cannot make an unlock exhaust memory or run for hours.
+const MAX_M_COST: u32 = 1024 * 1024;
+const MAX_T_COST: u32 = 64;
+const MAX_P_COST: u32 = 16;
+
+fn params_in_range(m: u32, t: u32, p: u32) -> bool {
+    m <= MAX_M_COST && t <= MAX_T_COST && p <= MAX_P_COST
+}
 
 #[derive(Debug, Error)]
 pub enum CryptoError {
@@ -62,17 +75,41 @@ pub fn hash_password(password: &str) -> CryptoResult<String> {
     Ok(hash.to_string())
 }
 
-/// Check a password against a stored PHC string. Malformed hashes never verify.
+/// Check a password against a stored PHC string. Malformed hashes, and hashes whose
+/// Argon2 parameters are out of the accepted range (see [`decrypt`]), never verify.
 pub fn verify_password(phc: &str, password: &str) -> bool {
+    let Ok(hash) = PasswordHash::new(phc) else {
+        return false;
+    };
+    let Ok(params) = Params::try_from(&hash) else {
+        return false;
+    };
+    if !params_in_range(params.m_cost(), params.t_cost(), params.p_cost()) {
+        return false;
+    }
     // The parameters embedded in the PHC string take precedence over these.
     Argon2::default()
-        .verify_password(password.as_bytes(), phc)
+        .verify_password(password.as_bytes(), &hash)
         .is_ok()
 }
 
+/// Random bytes for values that are not secret (salts, nonces).
 pub(crate) fn random<const N: usize>() -> CryptoResult<[u8; N]> {
     let mut buf = [0u8; N];
-    getrandom::fill(&mut buf).map_err(|_| CryptoError::Random)?;
+    fill_random(&mut buf)?;
+    Ok(buf)
+}
+
+/// Fill `buf` with random bytes in place. Secrets use this on a [`Zeroizing`] buffer
+/// so no copy of the key is returned by value and left behind on the stack.
+pub(crate) fn fill_random(buf: &mut [u8]) -> CryptoResult<()> {
+    getrandom::fill(buf).map_err(|_| CryptoError::Random)
+}
+
+/// A fresh random secret of `N` bytes, generated in place inside its zeroizing box.
+pub(crate) fn random_secret<const N: usize>() -> CryptoResult<Zeroizing<[u8; N]>> {
+    let mut buf = Zeroizing::new([0u8; N]);
+    fill_random(buf.as_mut())?;
     Ok(buf)
 }
 
@@ -116,6 +153,7 @@ pub fn encrypt(plaintext: &str, password: &str, aad: &[u8]) -> CryptoResult<Encr
         t_cost: T_COST,
         p_cost: P_COST,
         ciphertext: B64.encode(ciphertext),
+        key_id: String::new(),
     })
 }
 
@@ -138,7 +176,7 @@ pub fn decrypt(
         .map_err(|_| CryptoError::Malformed("nonce length".into()))?;
     let ciphertext = decode("ciphertext", &payload.ciphertext)?;
     // Refuse absurd parameters (e.g. from a tampered row) that would exhaust memory.
-    if payload.m_cost > 1024 * 1024 || payload.t_cost > 64 || payload.p_cost > 16 {
+    if !params_in_range(payload.m_cost, payload.t_cost, payload.p_cost) {
         return Err(CryptoError::Malformed(
             "argon2 parameters out of range".into(),
         ));
@@ -173,7 +211,7 @@ pub fn decrypt(
 /// involved, so this is fast; the key itself is protected by the card's encrypted
 /// document. `aad` is the blob id.
 pub fn seal_blob(data: &[u8], aad: &[u8]) -> CryptoResult<(Zeroizing<String>, Vec<u8>)> {
-    let key = Zeroizing::new(random::<KEY_LEN>()?);
+    let key = random_secret::<KEY_LEN>()?;
     let nonce: [u8; NONCE_LEN] = random()?;
     let cipher =
         XChaCha20Poly1305::new_from_slice(key.as_ref()).map_err(|_| CryptoError::Decrypt)?;
@@ -218,7 +256,7 @@ pub fn open_blob(key: &str, sealed: &[u8], aad: &[u8]) -> CryptoResult<Zeroizing
 ///
 /// Keys are 256 random bits, so a fast hash (BLAKE3) is enough to store them.
 pub fn new_api_key() -> CryptoResult<(Zeroizing<String>, String, String)> {
-    let bytes = Zeroizing::new(random::<32>()?);
+    let bytes = random_secret::<32>()?;
     let secret = Zeroizing::new(format!("cf_{}", B64URL.encode(bytes.as_ref())));
     let prefix: String = secret.chars().take(10).collect();
     let hash = hash_api_key(&secret);
@@ -282,6 +320,23 @@ mod tests {
         assert!(verify_password(&hash, "correct horse"));
         assert!(!verify_password(&hash, "wrong"));
         assert!(!verify_password("not a hash", "x"));
+    }
+
+    #[test]
+    fn password_hashes_with_hostile_parameters_never_verify() {
+        let hash = hash_password("pw").unwrap();
+        // Same salt and digest, but parameters a tampered row could carry.
+        for (from, to) in [
+            ("m=65536", "m=4294967295"),
+            ("t=3", "t=100000"),
+            ("p=1", "p=255"),
+        ] {
+            let hostile = hash.replacen(from, to, 1);
+            assert_ne!(hostile, hash);
+            assert!(!verify_password(&hostile, "pw"), "{hostile}");
+        }
+        // In-range parameters still verify.
+        assert!(verify_password(&hash, "pw"));
     }
 
     #[test]

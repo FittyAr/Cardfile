@@ -362,6 +362,7 @@ mod tests {
             t_cost: 0,
             p_cost: 0,
             ciphertext: "c".into(),
+            key_id: String::new(),
         };
         let update = super::CredentialUpdate {
             password_hash: Some(Some("h1".into())),
