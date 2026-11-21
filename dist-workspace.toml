@@ -7,6 +7,11 @@ members = ["cargo:."]
 # Keep the latest working generator until that upstream template is fixed.
 cargo-dist-version = "0.33.0"
 ci = "github"
+# release.yml is generated, then hardened by hand (read-only default token, write only in
+# `announce`, explicit secrets instead of `secrets: inherit`); dist has no options for
+# those. This stops `dist plan`/`dist generate` from rejecting or overwriting the edits.
+# See "Regenerating release.yml" in docs/RELEASING.md.
+allow-dirty = ["ci"]
 # One-line installers are install.ps1 / install.sh in the repository root: they always
 # install the newest release, so dist does not build version-pinned ones.
 installers = []

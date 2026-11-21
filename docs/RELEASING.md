@@ -1,8 +1,9 @@
 # Releasing Cardfile
 
 Releases are built by GitHub Actions from a version tag. [`dist`](https://github.com/axodotdev/cargo-dist)
-generates `.github/workflows/release.yml`. Don't edit that file by hand: change
-`dist-workspace.toml` and run `dist generate`.
+generates `.github/workflows/release.yml`, which is then hardened by hand (see
+[Regenerating release.yml](#regenerating-releaseyml)). Change `dist-workspace.toml` first and
+regenerate; edit the file directly only for the hardening below.
 
 ## What a release contains
 
@@ -38,11 +39,45 @@ in the final `announce` job, after every build, package and publish job:
    signing failed, no release is published at all.
 4. `winget.yml` (`post-announce-jobs`): needs the published release; skips pre-releases.
 
+### Workflow permissions and secrets
+
+Every workflow sets a read-only default token (`permissions: contents: read`); `pull_request`
+runs of `release.yml` (which only run `dist plan`) therefore never get a writable token. Only
+the `announce` job of `release.yml` has `contents: write`, because it creates the GitHub
+Release. Reusable workflows get only the secrets they use, declared under
+`on.workflow_call.secrets`: `sign.yml` receives `MINISIGN_SECRET_KEY`, `winget.yml` receives
+`WINGET_TOKEN` and `package.yml` receives none (`vars` still reach it).
+
+### Regenerating release.yml
+
+dist always writes a workflow-level `contents: write` and `secrets: inherit` for custom jobs;
+it has no option to change either (`github-custom-job-permissions` only covers the called
+jobs). So `release.yml` is edited by hand after generation, and `dist-workspace.toml` sets
+`allow-dirty = ["ci"]` so that `dist plan` (run in the `plan` job) does not reject the edited
+file and `dist generate` does not overwrite it. The flip side: dist no longer keeps
+`release.yml` in sync on its own. After changing CI-related dist settings (version, targets,
+`github-action-commits`, custom jobs):
+
+1. Comment out `allow-dirty = ["ci"]` and run `dist generate` with the `cargo-dist-version`
+   from `dist-workspace.toml` (with `allow-dirty` set, dist skips CI generation and
+   `dist generate --mode ci` refuses to run). Restore `allow-dirty` afterwards.
+2. Re-apply the hand edits, which are marked with a comment above `permissions:`:
+   - workflow-level `permissions: "contents": "read"`;
+   - `permissions: "contents": "write"` on the `announce` job;
+   - no `secrets:` on `custom-package`;
+   - `secrets: MINISIGN_SECRET_KEY: ${{ secrets.MINISIGN_SECRET_KEY }}` on `custom-sign`;
+   - `secrets: WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}` on `custom-winget`.
+3. Review the diff: anything else that changed came from dist.
+
+A new secret for `sign.yml` or `winget.yml` must be declared in that workflow's
+`on.workflow_call.secrets` and passed explicitly from `release.yml`.
+
 ### Pinned third-party code
 
 Actions are pinned to full commit SHAs (with the tag in a comment). For `release.yml` the pins
 live in `github-action-commits` in `dist-workspace.toml`; regenerate with `dist generate`.
-`package.yml` downloads a fixed `linuxdeploy` release and checks its SHA-256, and
+`package.yml` installs exact versions of `cargo-deb` and `cargo-generate-rpm`, `ci.yml` pins
+PyYAML, and `package.yml` downloads a fixed `linuxdeploy` release and checks its SHA-256, and
 `scripts/fetch-dictionaries.sh` fetches the dictionaries from a fixed commit and checks their
 SHA-256. Update the hashes together with the pins. The Inno Setup installer must keep the `/RELAUNCH` `[Run]` entry in
 `installer.iss`: the app quits and the silent installer starts it again.

@@ -14,8 +14,12 @@
 # title/body based on your changelogs.
 
 name: Release
+# Hand-edited after `dist generate` (allow-dirty = ["ci"] in dist-workspace.toml): the
+# token is read-only by default, also for pull_request runs, and only `announce` (which
+# creates the GitHub Release) gets "contents": "write". Reusable workflows receive only the
+# secrets they use instead of `secrets: inherit`. See docs/RELEASING.md before regenerating.
 permissions:
-  "contents": "write"
+  "contents": "read"
 
 # This task will run whenever you push a git tag that looks like a version
 # like "1.0.0", "v0.1.0-prerelease.1", "my-app/0.1.0", "releases/v1.0.0", etc.
@@ -235,7 +239,6 @@ jobs:
     uses: ./.github/workflows/package.yml
     with:
       plan: ${{ needs.plan.outputs.val }}
-    secrets: inherit
   # Determines if we should publish/announce
   host:
     needs:
@@ -291,7 +294,8 @@ jobs:
     uses: ./.github/workflows/sign.yml
     with:
       plan: ${{ needs.plan.outputs.val }}
-    secrets: inherit
+    secrets:
+      MINISIGN_SECRET_KEY: ${{ secrets.MINISIGN_SECRET_KEY }}
     # publish jobs get escalated permissions
     permissions:
       "contents": "read"
@@ -307,6 +311,9 @@ jobs:
     # "host" however must run to completion, no skipping allowed!
     if: ${{ always() && needs.host.result == 'success' && (needs.custom-sign.result == 'skipped' || needs.custom-sign.result == 'success') }}
     runs-on: "ubuntu-latest"
+    # The only job that writes: it creates the GitHub Release.
+    permissions:
+      "contents": "write"
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
@@ -344,6 +351,7 @@ jobs:
     uses: ./.github/workflows/winget.yml
     with:
       plan: ${{ needs.plan.outputs.val }}
-    secrets: inherit
+    secrets:
+      WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
     permissions:
       "contents": "read"
