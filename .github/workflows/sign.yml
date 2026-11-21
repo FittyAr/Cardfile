@@ -13,6 +13,9 @@ on:
       plan:
         required: true
         type: string
+    secrets:
+      MINISIGN_SECRET_KEY:
+        required: true
 
 permissions:
   contents: read

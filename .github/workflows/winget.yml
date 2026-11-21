@@ -3,8 +3,9 @@
 # that has forked microsoft/winget-pkgs. The first version must be submitted manually
 # (see docs/RELEASING.md); later versions are automated here.
 #
-# Called by release.yml as a dist `publish-jobs` entry. A `release` trigger would never
-# fire: the release is created with GITHUB_TOKEN, whose events start no workflows.
+# Called by release.yml as a dist `post-announce-jobs` entry, which passes only
+# WINGET_TOKEN. A `release` trigger would never fire: the release is created with
+# GITHUB_TOKEN, whose events start no workflows.
 name: winget
 
 on:
@@ -13,11 +14,21 @@ on:
       plan:
         required: true
         type: string
+    secrets:
+      # Optional: winget submission is deferred until 2.0.0, so the secret may not exist
+      # yet; a required-but-missing secret would fail the whole release run.
+      WINGET_TOKEN:
+        required: false
   workflow_dispatch:
     inputs:
       tag:
         description: Release tag to submit (e.g. v2.0.0)
         required: true
+
+# The submission uses WINGET_TOKEN (a PAT for the fork of microsoft/winget-pkgs), not
+# GITHUB_TOKEN, so this workflow's own token only needs to read.
+permissions:
+  contents: read
 
 jobs:
   publish:
