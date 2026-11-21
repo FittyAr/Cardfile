@@ -476,6 +476,7 @@ share:
   no_users: "Il n'y a pas encore d'autres utilisateurs. Ajoutez-en dans Paramètres → Utilisateurs."
   no_keys: "%{name} n'a pas encore configuré ses clés. Cette personne doit se connecter (ou déverrouiller une fiche protégée) une fois."
   unlock_encrypted: "Déverrouillez d'abord cette fiche chiffrée pour la partager."
+  unlock_encrypted_unshare: "Déverrouillez d’abord cette fiche chiffrée pour retirer l’accès à quelqu’un."
   shared_by: "%{name} · %{permission}"
   view_only: "Cette fiche est partagée avec vous en lecture seule."
   owner_only: "Seul le propriétaire de la fiche peut faire cela."

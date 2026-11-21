@@ -476,6 +476,7 @@ share:
   no_users: "Er zijn nog geen andere gebruikers. Voeg ze toe in Instellingen → Gebruikers."
   no_keys: "%{name} heeft nog geen sleutels ingesteld. Diegene moet één keer inloggen (of een beveiligde kaart ontgrendelen)."
   unlock_encrypted: "Ontgrendel deze versleutelde kaart eerst om hem te delen."
+  unlock_encrypted_unshare: "Ontgrendel eerst deze versleutelde kaart om iemands toegang in te trekken."
   shared_by: "%{name} · %{permission}"
   view_only: "Deze kaart is met je gedeeld om alleen te bekijken."
   owner_only: "Alleen de eigenaar van de kaart kan dat doen."

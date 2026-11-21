@@ -476,6 +476,7 @@ share:
   no_users: "还没有其他用户。请在“设置 → 用户”中添加。"
   no_keys: "%{name} 尚未设置密钥。对方需要登录一次（或解锁一张受保护的卡片）。"
   unlock_encrypted: "请先解锁此加密卡片再共享。"
+  unlock_encrypted_unshare: "请先解锁这张加密卡片，再移除他人的访问权限。"
   shared_by: "%{name} · %{permission}"
   view_only: "此卡片以仅查看方式与您共享。"
   owner_only: "只有卡片所有者才能执行此操作。"

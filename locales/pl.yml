@@ -476,6 +476,7 @@ share:
   no_users: "Nie ma jeszcze innych użytkowników. Dodaj ich w Ustawienia → Użytkownicy."
   no_keys: "%{name} nie skonfigurował(a) jeszcze swoich kluczy. Wystarczy raz się zalogować (lub odblokować chronioną kartę)."
   unlock_encrypted: "Najpierw odblokuj tę zaszyfrowaną kartę, aby ją udostępnić."
+  unlock_encrypted_unshare: "Najpierw odblokuj tę zaszyfrowaną kartę, aby odebrać komuś dostęp."
   shared_by: "%{name} · %{permission}"
   view_only: "Ta karta jest Ci udostępniona tylko do wyświetlania."
   owner_only: "Tylko właściciel karty może to zrobić."

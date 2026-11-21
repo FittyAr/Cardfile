@@ -476,6 +476,7 @@ share:
   no_users: "Non ci sono ancora altri utenti. Aggiungili in Impostazioni → Utenti."
   no_keys: "%{name} non ha ancora configurato le proprie chiavi. Deve accedere (o sbloccare una scheda protetta) una volta."
   unlock_encrypted: "Sblocca prima questa scheda crittografata per condividerla."
+  unlock_encrypted_unshare: "Sblocca prima questa scheda cifrata per revocare l’accesso a qualcuno."
   shared_by: "%{name} · %{permission}"
   view_only: "Questa scheda è condivisa con te in sola visualizzazione."
   owner_only: "Solo il proprietario della scheda può farlo."

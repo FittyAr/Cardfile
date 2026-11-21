@@ -476,6 +476,7 @@ share:
   no_users: "Henüz başka kullanıcı yok. Ayarlar → Kullanıcılar bölümünden ekleyin."
   no_keys: "%{name} henüz anahtarlarını ayarlamadı. Bir kez oturum açması (veya korumalı bir kartın kilidini açması) gerekiyor."
   unlock_encrypted: "Paylaşmak için önce bu şifreli kartın kilidini açın."
+  unlock_encrypted_unshare: "Birinin erişimini kaldırmak için önce bu şifreli kartın kilidini açın."
   shared_by: "%{name} · %{permission}"
   view_only: "Bu kart sizinle yalnızca görüntüleme için paylaşıldı."
   owner_only: "Bunu yalnızca kartın sahibi yapabilir."

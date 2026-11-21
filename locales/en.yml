@@ -476,6 +476,7 @@ share:
   no_users: "There are no other users yet. Add them in Settings → Users."
   no_keys: "%{name} has not set up their keys yet. They need to sign in (or unlock a protected card) once."
   unlock_encrypted: "Unlock this encrypted card first to share it."
+  unlock_encrypted_unshare: "Unlock this encrypted card first to remove someone's access."
   shared_by: "%{name} · %{permission}"
   view_only: "This card is shared with you as view-only."
   owner_only: "Only the card's owner can do that."
