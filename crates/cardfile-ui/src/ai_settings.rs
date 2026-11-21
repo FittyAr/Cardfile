@@ -1,8 +1,12 @@
 //! Settings → AI: AI services for the assistant, the local MCP server and the API keys
 //! AI clients use, and what the AI did recently.
 
+use std::cell::RefCell;
+use std::collections::HashSet;
+use std::rc::Rc;
+
 use cardfile_ai::{ApiKind, CUSTOM_PRESET_ID, PRESETS, Preset, ProviderConfig};
-use cardfile_core::{ActivityEntry, ApiKey, AuthMode};
+use cardfile_core::{ActivityEntry, ApiKey, AuthMode, UserId};
 use cardfile_i18n::{t, t_args};
 use gpui_kit::assets::IconName;
 use gpui_kit::component::Disableable as _;
@@ -24,24 +28,84 @@ use crate::mcp_host::{McpServer, Status};
 use crate::secrets::AiKeys;
 use crate::state::{AppState, run_db};
 use crate::widgets::{error, field, hint, relative_time, section};
+use zeroize::Zeroizing;
+
+/// The parsed provider list of a settings snapshot. Parsing the JSON on every
+/// render was measurable, so the list is parsed once per change of the raw settings.
+struct ParsedProviders {
+    user: UserId,
+    raw: Vec<serde_json::Value>,
+    parsed: Rc<[ProviderConfig]>,
+}
+
+thread_local! {
+    // GPUI runs on one thread; the cache lives where `App` lives.
+    static PARSED: RefCell<Option<ParsedProviders>> = const { RefCell::new(None) };
+}
+
+/// The signed-in user's providers as stored in the settings (keys kept in the
+/// credential store are not filled in). Re-parsed only when the settings change.
+fn parsed_providers(cx: &App) -> Rc<[ProviderConfig]> {
+    let Some(session) = AppState::session(cx) else {
+        return Rc::from([]);
+    };
+    let (user, raw) = (session.user.id, &session.settings.ai_providers);
+    PARSED.with(|cell| {
+        let mut cache = cell.borrow_mut();
+        if let Some(c) = cache.as_ref().filter(|c| c.user == user && c.raw == *raw) {
+            return c.parsed.clone();
+        }
+        let parsed: Rc<[ProviderConfig]> = raw
+            .iter()
+            .filter_map(|v| serde_json::from_value::<ProviderConfig>(v.clone()).ok())
+            .collect();
+        *cache = Some(ParsedProviders {
+            user,
+            raw: raw.clone(),
+            parsed: parsed.clone(),
+        });
+        parsed
+    })
+}
+
+/// `p` with its API key from the credential store, if the settings hold none.
+fn with_key(mut p: ProviderConfig, cx: &App) -> ProviderConfig {
+    if p.api_key.is_none() {
+        p.api_key = AiKeys::get(cx, &p.id).map(|k| k.as_str().to_owned());
+    }
+    p
+}
+
+/// Whether `p` can send requests, counting a key held in the credential store
+/// without copying it.
+fn is_usable(p: &ProviderConfig, cx: &App) -> bool {
+    if p.key().is_some() || !p.requires_api_key() {
+        return p.is_usable();
+    }
+    if !AiKeys::has(cx, &p.id) {
+        return false;
+    }
+    let probe = ProviderConfig {
+        api_key: Some("set".to_owned()),
+        ..p.clone()
+    };
+    probe.is_usable()
+}
 
 /// The user's configured AI services, with their API keys from the credential store.
 pub fn providers(cx: &App) -> Vec<ProviderConfig> {
-    AppState::user_settings(cx)
-        .ai_providers
-        .into_iter()
-        .filter_map(|v| serde_json::from_value::<ProviderConfig>(v).ok())
-        .map(|mut p| {
-            if p.api_key.is_none() {
-                p.api_key = AiKeys::get(cx, &p.id);
-            }
-            p
-        })
+    parsed_providers(cx)
+        .iter()
+        .map(|p| with_key(p.clone(), cx))
         .collect()
 }
 
 /// Load the signed-in user's AI keys from the OS credential store (in the
 /// background), moving keys that older versions kept in the settings there.
+///
+/// A plaintext key is removed from the settings only for the providers whose key
+/// the credential store accepted; the others keep it and are retried on the next
+/// load.
 pub fn load_keys(cx: &mut App) {
     let Some(session) = AppState::session(cx).cloned() else {
         return;
@@ -56,13 +120,18 @@ pub fn load_keys(cx: &mut App) {
     let task = cx.background_spawn(async move {
         let ok = crate::secrets::store_available();
         let mut keys = std::collections::HashMap::new();
-        let mut migrated = false;
+        let mut migrated = HashSet::new();
         for p in &configs {
             if let Some(k) = p.api_key.as_deref().filter(|k| !k.is_empty()) {
-                if ok && crate::secrets::write(user, &p.id, Some(k)).is_ok() {
-                    migrated = true;
+                if ok {
+                    match crate::secrets::write(user, &p.id, Some(k)) {
+                        Ok(()) => {
+                            migrated.insert(p.id.clone());
+                        }
+                        Err(e) => tracing::warn!("credential store, key kept in settings: {e}"),
+                    }
                 }
-                keys.insert(p.id.clone(), zeroize::Zeroizing::new(k.to_owned()));
+                keys.insert(p.id.clone(), Zeroizing::new(k.to_owned()));
             } else if ok && let Some(k) = crate::secrets::read(user, &p.id) {
                 keys.insert(p.id.clone(), k);
             }
@@ -73,11 +142,13 @@ pub fn load_keys(cx: &mut App) {
         let (keys, ok, migrated) = task.await;
         cx.update(|cx| {
             AiKeys::replace(cx, keys, ok);
-            if migrated {
-                // Rewrite the settings without the plaintext keys.
-                let list = providers(cx);
-                let active = AppState::user_settings(cx).ai_active_provider;
-                save_providers(&list, active, cx);
+            if !migrated.is_empty() {
+                // Drop the plaintext keys that are now in the credential store.
+                AppState::update_user_settings(cx, |s| {
+                    set_settings_keys(&mut s.ai_providers, |id| {
+                        migrated.contains(id).then_some(None)
+                    });
+                });
             }
             cx.refresh_windows();
         });
@@ -85,28 +156,58 @@ pub fn load_keys(cx: &mut App) {
     .detach();
 }
 
+/// Change the `api_key` of the stored provider entries: `f` returns the new key
+/// for an id (`Some(None)` clears it) or `None` to leave the entry alone.
+fn set_settings_keys(
+    providers: &mut [serde_json::Value],
+    f: impl Fn(&str) -> Option<Option<String>>,
+) {
+    for v in providers {
+        let Some(obj) = v.as_object_mut() else {
+            continue;
+        };
+        let Some(key) = obj.get("id").and_then(|id| id.as_str()).and_then(&f) else {
+            continue;
+        };
+        obj.insert(
+            "api_key".to_owned(),
+            key.map_or(serde_json::Value::Null, serde_json::Value::String),
+        );
+    }
+}
+
 /// The service the assistant uses, if one is configured and usable. The assistant
 /// UI is shown only when this is `Some`.
 pub fn active_provider(cx: &App) -> Option<ProviderConfig> {
-    let s = AppState::user_settings(cx);
-    let all = providers(cx);
-    let usable = |p: &ProviderConfig| p.is_usable();
-    s.ai_active_provider
-        .as_ref()
-        .and_then(|id| all.iter().find(|p| &p.id == id && usable(p)))
-        .or_else(|| all.iter().find(|p| usable(p)))
+    find_active(cx).map(|p| with_key(p, cx))
+}
+
+/// Whether an AI service is configured and usable ([`active_provider`] without
+/// copying its API key; meant for render paths).
+pub fn has_active_provider(cx: &App) -> bool {
+    find_active(cx).is_some()
+}
+
+/// The active (or else first usable) provider, without its credential-store key.
+fn find_active(cx: &App) -> Option<ProviderConfig> {
+    let all = parsed_providers(cx);
+    let active = AppState::session(cx).and_then(|s| s.settings.ai_active_provider.as_deref());
+    active
+        .and_then(|id| all.iter().find(|p| p.id == id && is_usable(p, cx)))
+        .or_else(|| all.iter().find(|p| is_usable(p, cx)))
         .cloned()
 }
 
 /// Persist the provider list. API keys go to the OS credential store; they are
-/// kept in the settings only when that store is unavailable.
+/// kept in the settings only when that store is unavailable, or put back there
+/// when writing one to the store fails, so a key is never lost.
 fn save_providers(list: &[ProviderConfig], active: Option<String>, cx: &mut App) {
     let store_ok = AiKeys::store_ok(cx);
-    let old: Vec<String> = providers(cx).into_iter().map(|p| p.id).collect();
-    let mut writes: Vec<(String, Option<String>)> = Vec::new();
+    let old: Vec<String> = parsed_providers(cx).iter().map(|p| p.id.clone()).collect();
+    let mut writes: Vec<(String, Option<Zeroizing<String>>)> = Vec::new();
     for p in list {
         AiKeys::set(cx, &p.id, p.api_key.clone());
-        writes.push((p.id.clone(), p.api_key.clone()));
+        writes.push((p.id.clone(), p.api_key.clone().map(Zeroizing::new)));
     }
     for id in old
         .into_iter()
@@ -116,12 +217,45 @@ fn save_providers(list: &[ProviderConfig], active: Option<String>, cx: &mut App)
         writes.push((id, None));
     }
     if store_ok && let Some(user) = AppState::session(cx).map(|s| s.user.id) {
-        cx.background_spawn(async move {
+        let task = cx.background_spawn(async move {
+            let mut failed = Vec::new();
             for (id, key) in writes {
-                if let Err(e) = crate::secrets::write(user, &id, key.as_deref()) {
-                    tracing::warn!("credential store: {e}");
+                if let Err(e) = crate::secrets::write(user, &id, key.as_deref().map(String::as_str))
+                {
+                    tracing::warn!("credential store, key kept in settings: {e}");
+                    if let Some(key) = key {
+                        failed.push((id, key));
+                    }
                 }
             }
+            failed
+        });
+        cx.spawn(async move |cx| {
+            let failed = task.await;
+            if failed.is_empty() {
+                return;
+            }
+            cx.update(|cx| {
+                // Keep the keys the store refused in the settings (as when it is
+                // unavailable), unless they were changed again meanwhile.
+                let current: Vec<(String, Zeroizing<String>)> = failed
+                    .into_iter()
+                    .filter(|(id, key)| {
+                        AiKeys::get(cx, id).is_some_and(|k| k.as_str() == key.as_str())
+                    })
+                    .collect();
+                if current.is_empty() {
+                    return;
+                }
+                AppState::update_user_settings(cx, |s| {
+                    set_settings_keys(&mut s.ai_providers, |id| {
+                        current
+                            .iter()
+                            .find(|(c, _)| c == id)
+                            .map(|(_, k)| Some(k.as_str().to_owned()))
+                    });
+                });
+            });
         })
         .detach();
     }

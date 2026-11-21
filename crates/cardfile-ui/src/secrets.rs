@@ -53,17 +53,24 @@ pub fn write(user: UserId, provider: &str, key: Option<&str>) -> Result<(), keyr
 }
 
 impl AiKeys {
-    pub fn get(cx: &App, provider: &str) -> Option<String> {
-        cx.try_global::<Self>()?
-            .keys
-            .get(provider)
-            .map(|k| k.as_str().to_owned())
+    /// A copy of `provider`'s key, wiped from memory when dropped.
+    pub fn get(cx: &App, provider: &str) -> Option<Zeroizing<String>> {
+        cx.try_global::<Self>()?.keys.get(provider).cloned()
     }
 
+    /// Whether a non-blank key is cached for `provider` (no copy is made).
+    pub fn has(cx: &App, provider: &str) -> bool {
+        cx.try_global::<Self>()
+            .and_then(|k| k.keys.get(provider))
+            .is_some_and(|k| !k.trim().is_empty())
+    }
+
+    /// Whether the OS credential store works.
     pub fn store_ok(cx: &App) -> bool {
         cx.try_global::<Self>().is_some_and(|k| k.store_ok)
     }
 
+    /// Cache `provider`'s key (`None` forgets it). Does not touch the store.
     pub fn set(cx: &mut App, provider: &str, key: Option<String>) {
         if !cx.has_global::<Self>() {
             cx.set_global(Self::default());
@@ -79,6 +86,7 @@ impl AiKeys {
         }
     }
 
+    /// Replace all cached keys (after loading them from the store).
     pub fn replace(cx: &mut App, keys: HashMap<String, Zeroizing<String>>, store_ok: bool) {
         cx.set_global(Self { keys, store_ok });
     }

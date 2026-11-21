@@ -238,7 +238,7 @@ impl Workspace {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        if crate::ai_settings::active_provider(cx).is_none() {
+        if !crate::ai_settings::has_active_provider(cx) {
             return;
         }
         let open = !AppState::user_settings(cx).ai_panel_open || self.chat.is_none();
@@ -1040,7 +1040,7 @@ impl Workspace {
             .child(
                 h_flex()
                     .gap(px(2.))
-                    .when(crate::ai_settings::active_provider(cx).is_some(), |d| {
+                    .when(crate::ai_settings::has_active_provider(cx), |d| {
                         d.child(
                             Button::new("assistant")
                                 .ghost()
@@ -1404,7 +1404,7 @@ impl Render for Workspace {
         let list = self.render_list(cx);
         let settings = AppState::user_settings(cx);
         // The assistant exists only when an AI service is configured.
-        let chat = (settings.ai_panel_open && crate::ai_settings::active_provider(cx).is_some())
+        let chat = (settings.ai_panel_open && crate::ai_settings::has_active_provider(cx))
             .then(|| self.ensure_chat(window, cx));
         let chat_width = settings.ai_panel_width.clamp(280., 640.);
         let border = cx.theme().border;
