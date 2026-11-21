@@ -32,6 +32,7 @@ pub const TEXT_COLORS: &[(&str, Option<&str>)] = &[
     ("pink", Some("#db2777")),
 ];
 
+/// Highlight colours offered by the toolbar (`None` = no highlight).
 pub const HIGHLIGHT_COLORS: &[(&str, Option<&str>)] = &[
     ("none", None),
     ("yellow", Some("#facc15")),
@@ -43,12 +44,15 @@ pub const HIGHLIGHT_COLORS: &[(&str, Option<&str>)] = &[
     ("gray", Some("#9ca3af")),
 ];
 
+/// Formatting toolbar bound to one [`RichEditor`]; re-renders whenever the
+/// editor changes so its buttons reflect the current selection.
 pub struct EditorToolbar {
     editor: Entity<RichEditor>,
     _sub: Subscription,
 }
 
 impl EditorToolbar {
+    /// A toolbar that drives `editor`.
     pub fn new(editor: Entity<RichEditor>, cx: &mut Context<Self>) -> Self {
         let sub = cx.observe(&editor, |_, _, cx| cx.notify());
         Self { editor, _sub: sub }

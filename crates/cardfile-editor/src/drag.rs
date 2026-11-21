@@ -19,7 +19,9 @@ pub struct DraggedBlock {
     pub source: EntityId,
     /// Its index in the source document when the drag started.
     pub index: usize,
+    /// A copy of the dragged block.
     pub block: Block,
+    /// Text shown under the pointer while dragging (alt text or file name).
     pub label: SharedString,
 }
 
