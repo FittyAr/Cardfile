@@ -198,9 +198,14 @@ fn find_active(cx: &App) -> Option<ProviderConfig> {
         .cloned()
 }
 
-/// Persist the provider list. API keys go to the OS credential store; they are
-/// kept in the settings only when that store is unavailable, or put back there
-/// when writing one to the store fails, so a key is never lost.
+/// Bumped by every [`save_providers`]; a background save that finishes after a newer
+/// one started leaves the settings to the newer one.
+static SAVE_SEQ: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+/// Persist the provider list. API keys go to the OS credential store first; the
+/// settings are written only afterwards, keeping in plain text just the keys the
+/// store refused (or all of them when it is unavailable). If the app dies in between,
+/// the old settings stay as they were, so a key is never in neither place.
 fn save_providers(list: &[ProviderConfig], active: Option<String>, cx: &mut App) {
     let store_ok = AiKeys::store_ok(cx);
     let old: Vec<String> = parsed_providers(cx).iter().map(|p| p.id.clone()).collect();
@@ -216,54 +221,50 @@ fn save_providers(list: &[ProviderConfig], active: Option<String>, cx: &mut App)
         AiKeys::set(cx, &id, None);
         writes.push((id, None));
     }
-    if store_ok && let Some(user) = AppState::session(cx).map(|s| s.user.id) {
-        let task = cx.background_spawn(async move {
-            let mut failed = Vec::new();
-            for (id, key) in writes {
-                if let Err(e) = crate::secrets::write(user, &id, key.as_deref().map(String::as_str))
-                {
-                    tracing::warn!("credential store, key kept in settings: {e}");
-                    if let Some(key) = key {
-                        failed.push((id, key));
-                    }
+    let session_user = AppState::session(cx).map(|s| s.user.id);
+    let (true, Some(user)) = (store_ok, session_user) else {
+        persist_providers(list, active, &HashSet::new(), cx);
+        return;
+    };
+    let seq = SAVE_SEQ.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
+    let list = list.to_vec();
+    let task = cx.background_spawn(async move {
+        let mut stored = HashSet::new();
+        for (id, key) in writes {
+            match crate::secrets::write(user, &id, key.as_deref().map(String::as_str)) {
+                Ok(()) => {
+                    stored.insert(id);
                 }
+                Err(e) => tracing::warn!("credential store, key kept in settings: {e}"),
             }
-            failed
+        }
+        stored
+    });
+    cx.spawn(async move |cx| {
+        let stored = task.await;
+        cx.update(|cx| {
+            if SAVE_SEQ.load(std::sync::atomic::Ordering::SeqCst) != seq {
+                return; // A newer save persists the settings.
+            }
+            persist_providers(&list, active, &stored, cx);
         });
-        cx.spawn(async move |cx| {
-            let failed = task.await;
-            if failed.is_empty() {
-                return;
-            }
-            cx.update(|cx| {
-                // Keep the keys the store refused in the settings (as when it is
-                // unavailable), unless they were changed again meanwhile.
-                let current: Vec<(String, Zeroizing<String>)> = failed
-                    .into_iter()
-                    .filter(|(id, key)| {
-                        AiKeys::get(cx, id).is_some_and(|k| k.as_str() == key.as_str())
-                    })
-                    .collect();
-                if current.is_empty() {
-                    return;
-                }
-                AppState::update_user_settings(cx, |s| {
-                    set_settings_keys(&mut s.ai_providers, |id| {
-                        current
-                            .iter()
-                            .find(|(c, _)| c == id)
-                            .map(|(_, k)| Some(k.as_str().to_owned()))
-                    });
-                });
-            });
-        })
-        .detach();
-    }
+    })
+    .detach();
+}
+
+/// Write the provider list to the settings, without the API keys of the providers in
+/// `in_store` (those live in the OS credential store).
+fn persist_providers(
+    list: &[ProviderConfig],
+    active: Option<String>,
+    in_store: &HashSet<String>,
+    cx: &mut App,
+) {
     let values: Vec<serde_json::Value> = list
         .iter()
         .map(|p| {
             let mut p = p.clone();
-            if store_ok {
+            if in_store.contains(&p.id) {
                 p.api_key = None;
             }
             p
