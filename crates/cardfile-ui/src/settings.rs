@@ -12,7 +12,7 @@ use gpui_kit::component::switch::Switch;
 use gpui_kit::component::{ActiveTheme as _, Sizable as _, WindowExt as _, h_flex, v_flex};
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::{
-    AnyElement, App, AppContext as _, Context, Entity, InteractiveElement as _, IntoElement,
+    AnyElement, App, AppContext as _, Context, Div, Entity, InteractiveElement as _, IntoElement,
     ParentElement as _, Render, SharedString, StatefulInteractiveElement as _, Styled as _, Window,
     div, img, px,
 };
@@ -21,6 +21,7 @@ use cardfile_db::CredentialUpdate;
 use zeroize::Zeroizing;
 
 use crate::keymap::*;
+use crate::local_config::LocalConfig;
 use crate::lock_picker::{PROTECTIONS, lock_choices, lock_label};
 use crate::state::{AppState, run_db};
 use crate::widgets::{error, field, hint, section};
@@ -1286,156 +1287,10 @@ impl SettingsView {
                         )
                     }),
             )
-            .when(admin, |d| {
-                d.child(section(t("data_operations.backups"), cx))
-                    .child(hint(local.backup_directory.display().to_string(), cx))
-                    .child(
-                        h_flex()
-                            .gap(px(8.))
-                            .flex_wrap()
-                            .child(
-                                Button::new("backup-directory")
-                                    .small()
-                                    .outline()
-                                    .label(t("data_operations.choose_backup"))
-                                    .on_click(|_, window, cx| {
-                                        crate::data_operations::choose_backup_folder(window, cx)
-                                    }),
-                            )
-                            .child(
-                                Button::new("open-backups")
-                                    .small()
-                                    .outline()
-                                    .label(t("data_operations.open_backup"))
-                                    .on_click(|_, window, cx| {
-                                        crate::data_operations::open_backup_folder(window, cx)
-                                    }),
-                            )
-                            .child(
-                                Button::new("reset-backups")
-                                    .small()
-                                    .outline()
-                                    .label(t("data_operations.default_backup"))
-                                    .on_click(|_, _, cx| {
-                                        crate::local_config::LocalPreferences::change(cx, |s| {
-                                            s.backup_directory = "backups".into()
-                                        })
-                                    }),
-                            ),
-                    )
-                    .child(Self::row(
-                        t("data_operations.daily"),
-                        Some(t("data_operations.daily_hint")),
-                        Switch::new("daily-backup")
-                            .checked(local.daily_backup)
-                            .on_click(|on, _, cx| {
-                                crate::local_config::LocalPreferences::change(cx, |s| {
-                                    s.daily_backup = *on
-                                });
-                            }),
-                        cx,
-                    ))
-                    .child(Self::row(
-                        t("data_operations.retention"),
-                        None,
-                        h_flex()
-                            .gap(px(8.))
-                            .child(
-                                Button::new("retention-minus")
-                                    .small()
-                                    .outline()
-                                    .label("−")
-                                    .on_click(|_, _, cx| {
-                                        crate::local_config::LocalPreferences::change(cx, |s| {
-                                            s.keep_automatic =
-                                                s.keep_automatic.saturating_sub(1).max(1)
-                                        });
-                                    }),
-                            )
-                            .child(div().child(local.keep_automatic.to_string()))
-                            .child(
-                                Button::new("retention-plus")
-                                    .small()
-                                    .outline()
-                                    .label("+")
-                                    .on_click(|_, _, cx| {
-                                        crate::local_config::LocalPreferences::change(cx, |s| {
-                                            s.keep_automatic =
-                                                s.keep_automatic.saturating_add(1).min(1000)
-                                        });
-                                    }),
-                            ),
-                        cx,
-                    ))
-                    .when_some(local.last_result, |d, result| d.child(hint(result, cx)))
-                    .child(hint(t("data_operations.contents"), cx))
-                    .child(
-                        h_flex()
-                            .gap(px(8.))
-                            .flex_wrap()
-                            .child(
-                                Button::new("restore-backup")
-                                    .small()
-                                    .outline()
-                                    .label(t("data_operations.restore"))
-                                    .on_click(|_, window, cx| {
-                                        crate::data_operations::restore(window, cx)
-                                    }),
-                            )
-                            .child(
-                                Button::new("create-portable")
-                                    .small()
-                                    .outline()
-                                    .label(t("data_operations.portable"))
-                                    .on_click(|_, window, cx| {
-                                        crate::data_operations::create_portable(window, cx)
-                                    }),
-                            ),
-                    )
-            })
+            .when(admin, |d| Self::backup_settings(d, local, cx))
             .child(section(t("settings.data.export"), cx))
             .child(hint(t("settings.data.export_hint"), cx))
-            .child(
-                h_flex()
-                    .gap(px(8.))
-                    .pt(px(4.))
-                    .child(
-                        Button::new("export-md")
-                            .small()
-                            .outline()
-                            .label(t("export.markdown"))
-                            .on_click(|_, window, cx| {
-                                export_all(crate::export::Format::Markdown, window, cx)
-                            }),
-                    )
-                    .child(
-                        Button::new("export-html")
-                            .small()
-                            .outline()
-                            .label(t("export.html"))
-                            .on_click(|_, window, cx| {
-                                export_all(crate::export::Format::Html, window, cx)
-                            }),
-                    )
-                    .child(
-                        Button::new("export-pdf")
-                            .small()
-                            .outline()
-                            .label(t("export.pdf"))
-                            .on_click(|_, window, cx| {
-                                export_all(crate::export::Format::Pdf, window, cx)
-                            }),
-                    )
-                    .child(
-                        Button::new("export-json")
-                            .small()
-                            .outline()
-                            .label(t("export.json"))
-                            .on_click(|_, window, cx| {
-                                export_all(crate::export::Format::Json, window, cx)
-                            }),
-                    ),
-            )
+            .child(Self::export_buttons())
             .child(section(t("nav.recycle_bin"), cx))
             .child(
                 h_flex().pt(px(4.)).child(
@@ -1447,6 +1302,151 @@ impl SettingsView {
                 ),
             )
             .into_any_element()
+    }
+
+    /// Backup location, schedule, retention, restore and portable copy (admins only).
+    fn backup_settings(d: Div, local: LocalConfig, cx: &App) -> Div {
+        d.child(section(t("data_operations.backups"), cx))
+            .child(hint(local.backup_directory.display().to_string(), cx))
+            .child(
+                h_flex()
+                    .gap(px(8.))
+                    .flex_wrap()
+                    .child(
+                        Button::new("backup-directory")
+                            .small()
+                            .outline()
+                            .label(t("data_operations.choose_backup"))
+                            .on_click(|_, window, cx| {
+                                crate::data_operations::choose_backup_folder(window, cx)
+                            }),
+                    )
+                    .child(
+                        Button::new("open-backups")
+                            .small()
+                            .outline()
+                            .label(t("data_operations.open_backup"))
+                            .on_click(|_, window, cx| {
+                                crate::data_operations::open_backup_folder(window, cx)
+                            }),
+                    )
+                    .child(
+                        Button::new("reset-backups")
+                            .small()
+                            .outline()
+                            .label(t("data_operations.default_backup"))
+                            .on_click(|_, _, cx| {
+                                crate::local_config::LocalPreferences::change(cx, |s| {
+                                    s.backup_directory = "backups".into()
+                                })
+                            }),
+                    ),
+            )
+            .child(Self::row(
+                t("data_operations.daily"),
+                Some(t("data_operations.daily_hint")),
+                Switch::new("daily-backup")
+                    .checked(local.daily_backup)
+                    .on_click(|on, _, cx| {
+                        crate::local_config::LocalPreferences::change(cx, |s| s.daily_backup = *on);
+                    }),
+                cx,
+            ))
+            .child(Self::row(
+                t("data_operations.retention"),
+                None,
+                Self::retention_stepper(local.keep_automatic),
+                cx,
+            ))
+            .when_some(local.last_result, |d, result| d.child(hint(result, cx)))
+            .child(hint(t("data_operations.contents"), cx))
+            .child(
+                h_flex()
+                    .gap(px(8.))
+                    .flex_wrap()
+                    .child(
+                        Button::new("restore-backup")
+                            .small()
+                            .outline()
+                            .label(t("data_operations.restore"))
+                            .on_click(|_, window, cx| crate::data_operations::restore(window, cx)),
+                    )
+                    .child(
+                        Button::new("create-portable")
+                            .small()
+                            .outline()
+                            .label(t("data_operations.portable"))
+                            .on_click(|_, window, cx| {
+                                crate::data_operations::create_portable(window, cx)
+                            }),
+                    ),
+            )
+    }
+
+    /// − / count / + for how many automatic backups to keep.
+    fn retention_stepper(keep: usize) -> Div {
+        h_flex()
+            .gap(px(8.))
+            .child(
+                Button::new("retention-minus")
+                    .small()
+                    .outline()
+                    .label("−")
+                    .on_click(|_, _, cx| {
+                        crate::local_config::LocalPreferences::change(cx, |s| {
+                            s.keep_automatic = s.keep_automatic.saturating_sub(1).max(1)
+                        });
+                    }),
+            )
+            .child(div().child(keep.to_string()))
+            .child(
+                Button::new("retention-plus")
+                    .small()
+                    .outline()
+                    .label("+")
+                    .on_click(|_, _, cx| {
+                        crate::local_config::LocalPreferences::change(cx, |s| {
+                            s.keep_automatic = s.keep_automatic.saturating_add(1).min(1000)
+                        });
+                    }),
+            )
+    }
+
+    /// One button per export format, each exporting every card.
+    fn export_buttons() -> Div {
+        h_flex()
+            .gap(px(8.))
+            .pt(px(4.))
+            .child(
+                Button::new("export-md")
+                    .small()
+                    .outline()
+                    .label(t("export.markdown"))
+                    .on_click(|_, window, cx| {
+                        export_all(crate::export::Format::Markdown, window, cx)
+                    }),
+            )
+            .child(
+                Button::new("export-html")
+                    .small()
+                    .outline()
+                    .label(t("export.html"))
+                    .on_click(|_, window, cx| export_all(crate::export::Format::Html, window, cx)),
+            )
+            .child(
+                Button::new("export-pdf")
+                    .small()
+                    .outline()
+                    .label(t("export.pdf"))
+                    .on_click(|_, window, cx| export_all(crate::export::Format::Pdf, window, cx)),
+            )
+            .child(
+                Button::new("export-json")
+                    .small()
+                    .outline()
+                    .label(t("export.json"))
+                    .on_click(|_, window, cx| export_all(crate::export::Format::Json, window, cx)),
+            )
     }
 }
 

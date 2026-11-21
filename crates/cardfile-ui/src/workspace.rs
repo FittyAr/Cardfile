@@ -16,7 +16,7 @@ use gpui_kit::component::scroll::ScrollableElement as _;
 use gpui_kit::component::{ActiveTheme as _, Sizable as _, WindowExt as _, h_flex, v_flex};
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::{
-    AnyElement, App, AppContext as _, Context, Entity, EventEmitter, FocusHandle, Focusable,
+    AnyElement, App, AppContext as _, Context, Div, Entity, EventEmitter, FocusHandle, Focusable,
     FontWeight, Global, HighlightStyle, InteractiveElement as _, IntoElement, ParentElement as _,
     Render, ScrollStrategy, SharedString, StatefulInteractiveElement as _, Styled as _, StyledText,
     Subscription, Task, UniformListScrollHandle, WeakEntity, Window, div, img, px, uniform_list,
@@ -779,90 +779,13 @@ impl Workspace {
     }
 
     fn render_sidebar(&self, cx: &mut Context<Self>) -> AnyElement {
-        let session = AppState::session(cx).cloned();
+        let display_name = AppState::session(cx)
+            .map(|s| s.user.display_name.clone())
+            .unwrap_or_default();
         let multi = AppState::get(cx).app.auth_mode != AuthMode::NoPassword;
         let multi_user = AppState::get(cx).app.auth_mode == AuthMode::MultiUser;
-        let (all, favs, deleted, shared) = self.counts;
-        let mut tags = v_flex().gap(px(1.));
-        for tag in &self.tags {
-            let id = tag.id;
-            let active = self.view == View::Tag(id);
-            let color = cardfile_editor::parse_hex(&tag.color).unwrap_or(cx.theme().primary);
-            let th = cx.theme();
-            let tag_clone = tag.clone();
-            tags = tags.child(
-                h_flex()
-                    .id(SharedString::from(format!("tag-{id}")))
-                    .gap(px(8.))
-                    .px(px(10.))
-                    .py(px(5.))
-                    .rounded(px(6.))
-                    .cursor_pointer()
-                    .text_size(px(14.))
-                    .when(active, |d| d.bg(th.sidebar_accent))
-                    .hover(|d| d.bg(th.sidebar_accent.opacity(0.6)))
-                    .on_click(cx.listener(move |this, _, window, cx| {
-                        this.set_view(View::Tag(id), window, cx)
-                    }))
-                    .child(div().size(px(9.)).rounded_full().bg(color))
-                    .child(cardfile_editor::bidi::display(&tag.name))
-                    .context_menu(move |menu, _, _| {
-                        let edit = tag_clone.clone();
-                        let del = tag_clone.clone();
-                        menu.item(PopupMenuItem::new(t("tags.edit")).on_click(
-                            move |_, window, cx| {
-                                crate::tags::edit_tag_dialog(Some(edit.clone()), window, cx);
-                            },
-                        ))
-                        .item(
-                            PopupMenuItem::new(t("tags.delete")).on_click(move |_, window, cx| {
-                                let id = del.id;
-                                crate::dialogs::confirm(
-                                    t("tags.delete"),
-                                    t_args("tags.delete_body", &[("name", &del.name)]),
-                                    t("tags.delete"),
-                                    window,
-                                    cx,
-                                    move |_, cx| {
-                                        let Some(owner) = Self::owner(cx) else {
-                                            return;
-                                        };
-                                        let db = AppState::db(cx);
-                                        run_db(cx, move |_| db.delete_tag(owner, id))
-                                            .detach_and_log_err(cx);
-                                        cx.set_global(crate::tags::TagsChanged);
-                                    },
-                                );
-                            }),
-                        )
-                    }),
-            );
-        }
+        let tags = self.tag_list(cx);
         let th = cx.theme();
-        let user_menu = Button::new("user-menu")
-            .ghost()
-            .small()
-            .icon(IconName::Settings)
-            .tooltip(t("menu.settings"))
-            .dropdown_menu(move |menu, _, _| {
-                let mut menu = menu
-                    .menu(t("menu.settings"), Box::new(OpenSettings))
-                    .menu(t("menu.command_palette"), Box::new(CommandPalette))
-                    .separator()
-                    .menu(t("menu.export_all"), Box::new(ExportAll))
-                    .menu(t("menu.backup"), Box::new(BackupNow))
-                    .menu(t("menu.open_data_folder"), Box::new(OpenDataFolder))
-                    .separator()
-                    .menu(t("menu.check_updates"), Box::new(CheckForUpdates))
-                    .menu(t("menu.about"), Box::new(About));
-                if multi {
-                    menu = menu
-                        .separator()
-                        .menu(t("menu.lock"), Box::new(LockApp))
-                        .menu(t("menu.sign_out"), Box::new(SignOut));
-                }
-                menu.separator().menu(t("menu.quit"), Box::new(Quit))
-            });
         v_flex()
             .w(px(220.))
             .h_full()
@@ -892,45 +815,7 @@ impl Workspace {
                         .cleanable(true),
                 ),
             )
-            .child(
-                v_flex()
-                    .px(px(6.))
-                    .gap(px(1.))
-                    .child(self.nav_item(
-                        "nav-all",
-                        IconName::NotebookPen,
-                        t("nav.all"),
-                        Some(all),
-                        View::All,
-                        cx,
-                    ))
-                    .child(self.nav_item(
-                        "nav-fav",
-                        IconName::Star,
-                        t("nav.favorites"),
-                        Some(favs),
-                        View::Favorites,
-                        cx,
-                    ))
-                    .when(multi_user || shared > 0, |d| {
-                        d.child(self.nav_item(
-                            "nav-shared",
-                            IconName::Users,
-                            t("nav.shared"),
-                            Some(shared),
-                            View::Shared,
-                            cx,
-                        ))
-                    })
-                    .child(self.nav_item(
-                        "nav-bin",
-                        IconName::Delete,
-                        t("nav.recycle_bin"),
-                        Some(deleted),
-                        View::RecycleBin,
-                        cx,
-                    )),
-            )
+            .child(self.nav_items(multi_user, cx))
             .child(
                 h_flex()
                     .justify_between()
@@ -957,27 +842,158 @@ impl Workspace {
                     .child(tags)
                     .overflow_y_scrollbar(),
             )
+            .child(Self::sidebar_footer(display_name, multi, cx))
+            .into_any_element()
+    }
+
+    /// The fixed views: all cards, favorites, shared with me and the recycle bin.
+    fn nav_items(&self, multi_user: bool, cx: &mut Context<Self>) -> Div {
+        let (all, favs, deleted, shared) = self.counts;
+        v_flex()
+            .px(px(6.))
+            .gap(px(1.))
+            .child(self.nav_item(
+                "nav-all",
+                IconName::NotebookPen,
+                t("nav.all"),
+                Some(all),
+                View::All,
+                cx,
+            ))
+            .child(self.nav_item(
+                "nav-fav",
+                IconName::Star,
+                t("nav.favorites"),
+                Some(favs),
+                View::Favorites,
+                cx,
+            ))
+            .when(multi_user || shared > 0, |d| {
+                d.child(self.nav_item(
+                    "nav-shared",
+                    IconName::Users,
+                    t("nav.shared"),
+                    Some(shared),
+                    View::Shared,
+                    cx,
+                ))
+            })
+            .child(self.nav_item(
+                "nav-bin",
+                IconName::Delete,
+                t("nav.recycle_bin"),
+                Some(deleted),
+                View::RecycleBin,
+                cx,
+            ))
+    }
+
+    fn tag_list(&self, cx: &Context<Self>) -> Div {
+        let mut tags = v_flex().gap(px(1.));
+        for tag in &self.tags {
+            tags = tags.child(self.tag_item(tag, cx));
+        }
+        tags
+    }
+
+    /// One tag in the sidebar: selects its view; right-click edits or deletes it.
+    fn tag_item(&self, tag: &Tag, cx: &Context<Self>) -> impl IntoElement {
+        let id = tag.id;
+        let active = self.view == View::Tag(id);
+        let color = cardfile_editor::parse_hex(&tag.color).unwrap_or(cx.theme().primary);
+        let th = cx.theme();
+        let tag_clone = tag.clone();
+        h_flex()
+            .id(SharedString::from(format!("tag-{id}")))
+            .gap(px(8.))
+            .px(px(10.))
+            .py(px(5.))
+            .rounded(px(6.))
+            .cursor_pointer()
+            .text_size(px(14.))
+            .when(active, |d| d.bg(th.sidebar_accent))
+            .hover(|d| d.bg(th.sidebar_accent.opacity(0.6)))
+            .on_click(
+                cx.listener(move |this, _, window, cx| this.set_view(View::Tag(id), window, cx)),
+            )
+            .child(div().size(px(9.)).rounded_full().bg(color))
+            .child(cardfile_editor::bidi::display(&tag.name))
+            .context_menu(move |menu, _, _| {
+                let edit = tag_clone.clone();
+                let del = tag_clone.clone();
+                menu.item(
+                    PopupMenuItem::new(t("tags.edit")).on_click(move |_, window, cx| {
+                        crate::tags::edit_tag_dialog(Some(edit.clone()), window, cx);
+                    }),
+                )
+                .item(
+                    PopupMenuItem::new(t("tags.delete")).on_click(move |_, window, cx| {
+                        let id = del.id;
+                        crate::dialogs::confirm(
+                            t("tags.delete"),
+                            t_args("tags.delete_body", &[("name", &del.name)]),
+                            t("tags.delete"),
+                            window,
+                            cx,
+                            move |_, cx| {
+                                let Some(owner) = Self::owner(cx) else {
+                                    return;
+                                };
+                                let db = AppState::db(cx);
+                                run_db(cx, move |_| db.delete_tag(owner, id))
+                                    .detach_and_log_err(cx);
+                                cx.set_global(crate::tags::TagsChanged);
+                            },
+                        );
+                    }),
+                )
+            })
+    }
+
+    /// Settings, data, updates and (with accounts) lock / sign out.
+    fn user_menu(multi: bool) -> impl IntoElement {
+        Button::new("user-menu")
+            .ghost()
+            .small()
+            .icon(IconName::Settings)
+            .tooltip(t("menu.settings"))
+            .dropdown_menu(move |menu, _, _| {
+                let mut menu = menu
+                    .menu(t("menu.settings"), Box::new(OpenSettings))
+                    .menu(t("menu.command_palette"), Box::new(CommandPalette))
+                    .separator()
+                    .menu(t("menu.export_all"), Box::new(ExportAll))
+                    .menu(t("menu.backup"), Box::new(BackupNow))
+                    .menu(t("menu.open_data_folder"), Box::new(OpenDataFolder))
+                    .separator()
+                    .menu(t("menu.check_updates"), Box::new(CheckForUpdates))
+                    .menu(t("menu.about"), Box::new(About));
+                if multi {
+                    menu = menu
+                        .separator()
+                        .menu(t("menu.lock"), Box::new(LockApp))
+                        .menu(t("menu.sign_out"), Box::new(SignOut));
+                }
+                menu.separator().menu(t("menu.quit"), Box::new(Quit))
+            })
+    }
+
+    /// The signed-in user's name and the settings menu.
+    fn sidebar_footer(display_name: String, multi: bool, cx: &Context<Self>) -> Div {
+        h_flex()
+            .justify_between()
+            .px(px(12.))
+            .py(px(8.))
+            .border_t_1()
+            .border_color(cx.theme().sidebar_border)
             .child(
                 h_flex()
-                    .justify_between()
-                    .px(px(12.))
-                    .py(px(8.))
-                    .border_t_1()
-                    .border_color(cx.theme().sidebar_border)
-                    .child(
-                        h_flex()
-                            .gap(px(6.))
-                            .min_w_0()
-                            .child(gpui_kit::component::Icon::new(IconName::User).size_4())
-                            .child(
-                                div().text_size(px(13.)).truncate().child(
-                                    session.map(|s| s.user.display_name).unwrap_or_default(),
-                                ),
-                            ),
-                    )
-                    .child(user_menu),
+                    .gap(px(6.))
+                    .min_w_0()
+                    .child(gpui_kit::component::Icon::new(IconName::User).size_4())
+                    .child(div().text_size(px(13.)).truncate().child(display_name)),
             )
-            .into_any_element()
+            .child(Self::user_menu(multi))
     }
 
     fn render_list(&self, cx: &mut Context<Self>) -> AnyElement {

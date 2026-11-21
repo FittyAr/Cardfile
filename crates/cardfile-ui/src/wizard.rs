@@ -380,238 +380,248 @@ impl Wizard {
     fn render_step(&mut self, window: &mut Window, cx: &mut Context<Self>) -> gpui_kit::AnyElement {
         let _ = window;
         match self.current() {
-            Step::Welcome => v_flex()
-                .gap(px(16.))
-                .items_center()
-                .child(img("cardfile/logo.png").size(px(128.)))
-                .child(
-                    div()
-                        .text_size(px(26.))
-                        .font_weight(gpui_kit::FontWeight::BOLD)
-                        .child(t("wizard.welcome.title")),
-                )
-                .child(
-                    div()
-                        .text_center()
-                        .max_w(px(440.))
-                        .text_color(cx.theme().muted_foreground)
-                        .child(t("wizard.welcome.body")),
-                )
-                .into_any_element(),
-            Step::Storage => {
-                // Unknown for a moment while the wizard looks (in the background).
-                let loaded = self.storage.is_some();
-                let portable_ok = self.storage.as_ref().is_some_and(|s| s.portable_available);
-                let standard_path = self
-                    .storage
-                    .as_ref()
-                    .map(|s| s.standard_path.clone())
-                    .unwrap_or_default();
-                v_flex()
-                    .gap(px(10.))
-                    .child(Self::option_card(
-                        "storage-standard",
-                        t("wizard.storage.standard"),
-                        format!("{} {}", t("wizard.storage.standard_desc"), standard_path),
-                        !self.portable,
-                        cx,
-                        |this, _| this.portable = false,
-                    ))
-                    .when(portable_ok, |d| {
-                        d.child(Self::option_card(
-                            "storage-portable",
-                            t("wizard.storage.portable"),
-                            t("wizard.storage.portable_desc"),
-                            self.portable,
-                            cx,
-                            |this, _| this.portable = true,
-                        ))
-                    })
-                    .when(loaded && !portable_ok, |d| {
-                        d.child(hint(t("wizard.storage.portable_unavailable"), cx))
-                    })
-                    .into_any_element()
-            }
-            Step::Security => {
-                let mut col = v_flex()
-                    .gap(px(10.))
-                    .child(Self::option_card(
-                        "auth-none",
-                        t("wizard.security.none"),
-                        t("wizard.security.none_desc"),
-                        self.auth == AuthMode::NoPassword,
-                        cx,
-                        |this, _| this.auth = AuthMode::NoPassword,
-                    ))
-                    .child(Self::option_card(
-                        "auth-single",
-                        t("wizard.security.single"),
-                        t("wizard.security.single_desc"),
-                        self.auth == AuthMode::SingleUser,
-                        cx,
-                        |this, _| this.auth = AuthMode::SingleUser,
-                    ))
-                    .child(Self::option_card(
-                        "auth-multi",
-                        t("wizard.security.multi"),
-                        t("wizard.security.multi_desc"),
-                        self.auth == AuthMode::MultiUser,
-                        cx,
-                        |this, _| this.auth = AuthMode::MultiUser,
-                    ));
-                if self.auth == AuthMode::MultiUser {
-                    col = col.child(
-                        h_flex()
-                            .gap(px(8.))
-                            .child(div().flex_1().child(field(
-                                t("wizard.security.username"),
-                                Input::new(&self.username),
-                                cx,
-                            )))
-                            .child(div().flex_1().child(field(
-                                t("wizard.security.display_name"),
-                                Input::new(&self.display_name),
-                                cx,
-                            ))),
-                    );
-                }
-                let pw_label = if self.auth == AuthMode::NoPassword {
-                    t("wizard.security.lock_password")
-                } else {
-                    t("wizard.security.password")
-                };
-                col = col.child(
-                    h_flex()
-                        .gap(px(8.))
-                        .child(div().flex_1().child(field(
-                            pw_label,
-                            Input::new(&self.password).mask_toggle(),
-                            cx,
-                        )))
-                        .child(div().flex_1().child(field(
-                            t("wizard.security.confirm"),
-                            Input::new(&self.confirm).mask_toggle(),
-                            cx,
-                        ))),
-                );
-                if self.auth == AuthMode::NoPassword {
-                    col = col.child(hint(t("wizard.security.lock_password_hint"), cx));
-                }
-                if self.auth == AuthMode::MultiUser {
-                    let allow = self.allow_registration;
-                    col = col.child(
-                        Checkbox::new("allow-registration")
-                            .label(t("wizard.security.allow_registration"))
-                            .checked(allow)
-                            .on_click(cx.listener(|this, checked: &bool, _, cx| {
-                                this.allow_registration = *checked;
-                                cx.notify();
-                            })),
-                    );
-                }
-                col.into_any_element()
-            }
-            Step::Protection => {
-                let mut col = v_flex()
+            Step::Welcome => self.render_welcome(cx),
+            Step::Storage => self.render_storage(cx),
+            Step::Security => self.render_security(cx),
+            Step::Protection => self.render_protection(cx),
+            Step::Appearance => self.render_appearance(cx),
+            Step::Finish => self.render_finish(cx),
+        }
+    }
+
+    fn render_welcome(&self, cx: &Context<Self>) -> gpui_kit::AnyElement {
+        v_flex()
+            .gap(px(16.))
+            .items_center()
+            .child(img("cardfile/logo.png").size(px(128.)))
+            .child(
+                div()
+                    .text_size(px(26.))
+                    .font_weight(gpui_kit::FontWeight::BOLD)
+                    .child(t("wizard.welcome.title")),
+            )
+            .child(
+                div()
+                    .text_center()
+                    .max_w(px(440.))
+                    .text_color(cx.theme().muted_foreground)
+                    .child(t("wizard.welcome.body")),
+            )
+            .into_any_element()
+    }
+
+    fn render_storage(&self, cx: &Context<Self>) -> gpui_kit::AnyElement {
+        // Unknown for a moment while the wizard looks (in the background).
+        let loaded = self.storage.is_some();
+        let portable_ok = self.storage.as_ref().is_some_and(|s| s.portable_available);
+        let standard_path = self
+            .storage
+            .as_ref()
+            .map(|s| s.standard_path.clone())
+            .unwrap_or_default();
+        v_flex()
+            .gap(px(10.))
+            .child(Self::option_card(
+                "storage-standard",
+                t("wizard.storage.standard"),
+                format!("{} {}", t("wizard.storage.standard_desc"), standard_path),
+                !self.portable,
+                cx,
+                |this, _| this.portable = false,
+            ))
+            .when(portable_ok, |d| {
+                d.child(Self::option_card(
+                    "storage-portable",
+                    t("wizard.storage.portable"),
+                    t("wizard.storage.portable_desc"),
+                    self.portable,
+                    cx,
+                    |this, _| this.portable = true,
+                ))
+            })
+            .when(loaded && !portable_ok, |d| {
+                d.child(hint(t("wizard.storage.portable_unavailable"), cx))
+            })
+            .into_any_element()
+    }
+
+    fn render_security(&self, cx: &Context<Self>) -> gpui_kit::AnyElement {
+        let mut col = v_flex()
+            .gap(px(10.))
+            .child(Self::option_card(
+                "auth-none",
+                t("wizard.security.none"),
+                t("wizard.security.none_desc"),
+                self.auth == AuthMode::NoPassword,
+                cx,
+                |this, _| this.auth = AuthMode::NoPassword,
+            ))
+            .child(Self::option_card(
+                "auth-single",
+                t("wizard.security.single"),
+                t("wizard.security.single_desc"),
+                self.auth == AuthMode::SingleUser,
+                cx,
+                |this, _| this.auth = AuthMode::SingleUser,
+            ))
+            .child(Self::option_card(
+                "auth-multi",
+                t("wizard.security.multi"),
+                t("wizard.security.multi_desc"),
+                self.auth == AuthMode::MultiUser,
+                cx,
+                |this, _| this.auth = AuthMode::MultiUser,
+            ));
+        if self.auth == AuthMode::MultiUser {
+            col = col.child(
+                h_flex()
                     .gap(px(8.))
-                    .child(hint(t("wizard.protection.intro"), cx));
-                for mode in PROTECTIONS {
-                    let checked = self.lock_modes.contains(&mode);
-                    col =
-                        col.child(
-                            v_flex()
-                                .child(
-                                    Checkbox::new(SharedString::from(format!(
-                                        "lock-{}",
-                                        mode.as_str()
-                                    )))
-                                    .label(lock_label(mode))
-                                    .checked(checked)
-                                    .on_click(cx.listener(move |this, on: &bool, _, cx| {
-                                        if *on {
-                                            this.lock_modes.push(mode);
-                                        } else {
-                                            this.lock_modes.retain(|m| *m != mode);
-                                            if this.default_lock == mode {
-                                                this.default_lock = LockMode::None;
-                                            }
-                                        }
-                                        cx.notify();
-                                    })),
-                                )
-                                .child(div().pl(px(24.)).child(hint(lock_description(mode), cx))),
-                        );
-                }
-                let options = lock_choices(&self.lock_modes, false);
-                let selected = options.iter().position(|m| *m == self.default_lock);
-                let mut group = RadioGroup::horizontal("default-lock").selected_index(selected);
-                for m in &options {
-                    group = group.child(
-                        Radio::new(SharedString::from(format!("default-{}", m.as_str())))
-                            .label(lock_label(*m)),
-                    );
-                }
-                let opts = options.clone();
-                col = col.child(field(
-                    t("wizard.protection.default"),
-                    group.on_click(cx.listener(move |this, ix: &usize, _, cx| {
-                        this.default_lock = opts.get(*ix).copied().unwrap_or_default();
+                    .child(div().flex_1().child(field(
+                        t("wizard.security.username"),
+                        Input::new(&self.username),
+                        cx,
+                    )))
+                    .child(div().flex_1().child(field(
+                        t("wizard.security.display_name"),
+                        Input::new(&self.display_name),
+                        cx,
+                    ))),
+            );
+        }
+        let pw_label = if self.auth == AuthMode::NoPassword {
+            t("wizard.security.lock_password")
+        } else {
+            t("wizard.security.password")
+        };
+        col = col.child(
+            h_flex()
+                .gap(px(8.))
+                .child(div().flex_1().child(field(
+                    pw_label,
+                    Input::new(&self.password).mask_toggle(),
+                    cx,
+                )))
+                .child(div().flex_1().child(field(
+                    t("wizard.security.confirm"),
+                    Input::new(&self.confirm).mask_toggle(),
+                    cx,
+                ))),
+        );
+        if self.auth == AuthMode::NoPassword {
+            col = col.child(hint(t("wizard.security.lock_password_hint"), cx));
+        }
+        if self.auth == AuthMode::MultiUser {
+            let allow = self.allow_registration;
+            col = col.child(
+                Checkbox::new("allow-registration")
+                    .label(t("wizard.security.allow_registration"))
+                    .checked(allow)
+                    .on_click(cx.listener(|this, checked: &bool, _, cx| {
+                        this.allow_registration = *checked;
                         cx.notify();
                     })),
-                    cx,
-                ));
-                if self.lock_modes.iter().any(|m| m.hides_content())
-                    && self.auth == AuthMode::NoPassword
-                    && self.password.read(cx).value().is_empty()
-                {
-                    col = col.child(hint(t("wizard.protection.needs_password"), cx));
-                }
-                col.into_any_element()
-            }
-            Step::Appearance => {
-                let mut grid = h_flex().flex_wrap().gap(px(8.));
-                for name in crate::themes::names(cx) {
-                    let selected = name == self.theme;
-                    let n = name.clone();
-                    grid = grid.child(
-                        Button::new(SharedString::from(format!("theme-{name}")))
-                            .label(name.clone())
-                            .when(selected, |b| b.primary())
-                            .when(!selected, |b| b.outline())
-                            .on_click(cx.listener(move |this, _, _, cx| {
-                                this.theme = n.clone();
-                                crate::themes::apply(&n, cx);
+            );
+        }
+        col.into_any_element()
+    }
+
+    fn render_protection(&self, cx: &Context<Self>) -> gpui_kit::AnyElement {
+        let mut col = v_flex()
+            .gap(px(8.))
+            .child(hint(t("wizard.protection.intro"), cx));
+        for mode in PROTECTIONS {
+            let checked = self.lock_modes.contains(&mode);
+            col = col.child(
+                v_flex()
+                    .child(
+                        Checkbox::new(SharedString::from(format!("lock-{}", mode.as_str())))
+                            .label(lock_label(mode))
+                            .checked(checked)
+                            .on_click(cx.listener(move |this, on: &bool, _, cx| {
+                                if *on {
+                                    this.lock_modes.push(mode);
+                                } else {
+                                    this.lock_modes.retain(|m| *m != mode);
+                                    if this.default_lock == mode {
+                                        this.default_lock = LockMode::None;
+                                    }
+                                }
                                 cx.notify();
                             })),
-                    );
-                }
-                v_flex()
-                    .gap(px(10.))
-                    .child(hint(t("wizard.appearance.intro"), cx))
-                    .child(grid)
-                    .into_any_element()
-            }
-            Step::Finish => {
-                let auth = t(match self.auth {
-                    AuthMode::NoPassword => "wizard.security.none",
-                    AuthMode::SingleUser => "wizard.security.single",
-                    AuthMode::MultiUser => "wizard.security.multi",
-                });
-                let storage = if self.portable {
-                    t("wizard.storage.portable")
-                } else {
-                    t("wizard.storage.standard")
-                };
-                v_flex()
-                    .gap(px(6.))
-                    .child(hint(t("wizard.finish.intro"), cx))
-                    .child(format!("• {}: {storage}", t("wizard.step.storage")))
-                    .child(format!("• {}: {auth}", t("wizard.step.security")))
-                    .child(format!("• {}: {}", t("wizard.step.appearance"), self.theme))
-                    .child(hint(t("wizard.finish.later"), cx))
-                    .into_any_element()
-            }
+                    )
+                    .child(div().pl(px(24.)).child(hint(lock_description(mode), cx))),
+            );
         }
+        let options = lock_choices(&self.lock_modes, false);
+        let selected = options.iter().position(|m| *m == self.default_lock);
+        let mut group = RadioGroup::horizontal("default-lock").selected_index(selected);
+        for m in &options {
+            group = group.child(
+                Radio::new(SharedString::from(format!("default-{}", m.as_str())))
+                    .label(lock_label(*m)),
+            );
+        }
+        let opts = options.clone();
+        col = col.child(field(
+            t("wizard.protection.default"),
+            group.on_click(cx.listener(move |this, ix: &usize, _, cx| {
+                this.default_lock = opts.get(*ix).copied().unwrap_or_default();
+                cx.notify();
+            })),
+            cx,
+        ));
+        if self.lock_modes.iter().any(|m| m.hides_content())
+            && self.auth == AuthMode::NoPassword
+            && self.password.read(cx).value().is_empty()
+        {
+            col = col.child(hint(t("wizard.protection.needs_password"), cx));
+        }
+        col.into_any_element()
+    }
+
+    fn render_appearance(&self, cx: &Context<Self>) -> gpui_kit::AnyElement {
+        let mut grid = h_flex().flex_wrap().gap(px(8.));
+        for name in crate::themes::names(cx) {
+            let selected = name == self.theme;
+            let n = name.clone();
+            grid = grid.child(
+                Button::new(SharedString::from(format!("theme-{name}")))
+                    .label(name.clone())
+                    .when(selected, |b| b.primary())
+                    .when(!selected, |b| b.outline())
+                    .on_click(cx.listener(move |this, _, _, cx| {
+                        this.theme = n.clone();
+                        crate::themes::apply(&n, cx);
+                        cx.notify();
+                    })),
+            );
+        }
+        v_flex()
+            .gap(px(10.))
+            .child(hint(t("wizard.appearance.intro"), cx))
+            .child(grid)
+            .into_any_element()
+    }
+
+    fn render_finish(&self, cx: &Context<Self>) -> gpui_kit::AnyElement {
+        let auth = t(match self.auth {
+            AuthMode::NoPassword => "wizard.security.none",
+            AuthMode::SingleUser => "wizard.security.single",
+            AuthMode::MultiUser => "wizard.security.multi",
+        });
+        let storage = if self.portable {
+            t("wizard.storage.portable")
+        } else {
+            t("wizard.storage.standard")
+        };
+        v_flex()
+            .gap(px(6.))
+            .child(hint(t("wizard.finish.intro"), cx))
+            .child(format!("• {}: {storage}", t("wizard.step.storage")))
+            .child(format!("• {}: {auth}", t("wizard.step.security")))
+            .child(format!("• {}: {}", t("wizard.step.appearance"), self.theme))
+            .child(hint(t("wizard.finish.later"), cx))
+            .into_any_element()
     }
 }
 

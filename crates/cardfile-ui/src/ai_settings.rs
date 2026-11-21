@@ -8,6 +8,7 @@ use std::rc::Rc;
 use cardfile_ai::{ApiKind, CUSTOM_PRESET_ID, PRESETS, Preset, ProviderConfig};
 use cardfile_core::{ActivityEntry, ApiKey, AuthMode, UserId};
 use cardfile_i18n::{t, t_args};
+use gpui_kit::Div;
 use gpui_kit::assets::IconName;
 use gpui_kit::component::Disableable as _;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
@@ -716,7 +717,6 @@ impl AiSettings {
         let custom = cfg.preset == CUSTOM_PRESET_ID;
         let preset = cfg.preset_info();
         let is_new = !providers(cx).iter().any(|p| p.id == cfg.id);
-        let th = cx.theme();
         let kind = cfg.kind;
         let needs_key = cfg.requires_api_key() || custom;
         let local = preset.is_some_and(|p| p.local);
@@ -726,8 +726,67 @@ impl AiSettings {
             .filter(|_| !custom)
             .unwrap_or_else(|| t("ai.services.custom"));
 
+        // Step-by-step form: key, model, name; technical details under "Advanced".
+        let mut form = v_flex()
+            .gap(px(12.))
+            .child(Self::editor_heading(is_new, &name, cx));
+        if local {
+            form = form.child(hint(t("ai.services.local_steps"), cx));
+        }
+        if needs_key || !local {
+            form = form.child(self.key_step(needs_key, key_url, cx));
+        }
+        form = form
+            .child(step(
+                "2",
+                t("ai.provider.model"),
+                Some(t("ai.services.model_hint")),
+                h_flex()
+                    .gap(px(8.))
+                    .child(div().flex_1().child(Input::new(&self.f_model)))
+                    .when(!self.models.is_empty(), |d| d.child(self.model_menu(cx)))
+                    .into_any_element(),
+                cx,
+            ))
+            .child(step(
+                "3",
+                t("ai.provider.name"),
+                None,
+                Input::new(&self.f_name).into_any_element(),
+                cx,
+            ));
+        // Advanced: endpoint and wire format, needed for custom and Azure.
+        let advanced = self.advanced || custom || kind == ApiKind::AzureOpenAi;
+        form = form.child(Self::advanced_toggle(advanced, cx));
+        if advanced {
+            form = form.child(self.advanced_fields(kind, cx));
+        }
+        if let Some((ok, msg)) = &self.test {
+            form = form.child(
+                div()
+                    .px(px(10.))
+                    .py(px(6.))
+                    .rounded(px(6.))
+                    .bg(if *ok {
+                        cx.theme().success
+                    } else {
+                        cx.theme().danger
+                    }
+                    .opacity(0.12))
+                    .text_size(px(12.))
+                    .child(msg.clone()),
+            );
+        }
+        form = form
+            .child(error(self.error.as_ref(), cx))
+            .child(self.editor_actions(cx));
+        form.into_any_element()
+    }
+
+    /// The wire format dropdown of the advanced section.
+    fn kind_menu(kind: ApiKind, cx: &Context<Self>) -> impl IntoElement {
         let view = cx.entity();
-        let kind_menu = Button::new("api-kind")
+        Button::new("api-kind")
             .small()
             .outline()
             .label(kind.display_name())
@@ -749,10 +808,14 @@ impl AiSettings {
                     );
                 }
                 menu
-            });
+            })
+    }
+
+    /// Fill the model field from the models the service listed.
+    fn model_menu(&self, cx: &Context<Self>) -> impl IntoElement {
         let view = cx.entity();
         let models = self.models.clone();
-        let model_menu = Button::new("model-pick")
+        Button::new("model-pick")
             .small()
             .outline()
             .label(t("ai.provider.pick_model"))
@@ -771,149 +834,128 @@ impl AiSettings {
                     ));
                 }
                 menu
-            });
+            })
+    }
 
-        // Step-by-step form: key, model, name; technical details under "Advanced".
-        let mut form = v_flex().gap(px(12.)).child(
-            h_flex()
-                .gap(px(8.))
-                .child(
-                    Button::new("back-services")
-                        .small()
-                        .ghost()
-                        .icon(IconName::ArrowLeft)
-                        .label(t("common.back"))
-                        .on_click(cx.listener(|this, _, _, cx| {
-                            this.editing = None;
-                            this.error = None;
-                            cx.notify();
-                        })),
-                )
-                .child(
-                    div()
-                        .text_size(px(16.))
-                        .font_weight(gpui_kit::FontWeight::SEMIBOLD)
-                        .child(if is_new {
-                            t_args("ai.services.connect", &[("name", &name)])
-                        } else {
-                            t_args("ai.services.edit", &[("name", &name)])
-                        }),
-                ),
-        );
-        if local {
-            form = form.child(hint(t("ai.services.local_steps"), cx));
-        }
-        if needs_key || !local {
-            let mut key_row = h_flex()
-                .gap(px(8.))
-                .child(div().flex_1().child(Input::new(&self.f_key).mask_toggle()));
-            if let Some(url) = key_url {
-                key_row = key_row.child(
-                    Button::new("get-key")
-                        .small()
-                        .outline()
-                        .icon(IconName::ExternalLink)
-                        .label(t("ai.provider.get_key"))
-                        .on_click(move |_, _, cx| cx.open_url(url)),
-                );
-            }
-            form = form.child(step(
-                "1",
-                if needs_key {
-                    t("ai.provider.key")
-                } else {
-                    t("ai.provider.key_optional")
-                },
-                Some(t("ai.services.key_hint")),
-                key_row.into_any_element(),
-                cx,
-            ));
-        }
-        form = form
-            .child(step(
-                "2",
-                t("ai.provider.model"),
-                Some(t("ai.services.model_hint")),
-                h_flex()
-                    .gap(px(8.))
-                    .child(div().flex_1().child(Input::new(&self.f_model)))
-                    .when(!self.models.is_empty(), |d| d.child(model_menu))
-                    .into_any_element(),
-                cx,
-            ))
-            .child(step(
-                "3",
-                t("ai.provider.name"),
-                None,
-                Input::new(&self.f_name).into_any_element(),
-                cx,
-            ));
-        // Advanced: endpoint and wire format, needed for custom and Azure.
-        let advanced = self.advanced || custom || kind == ApiKind::AzureOpenAi;
-        form = form.child(
-            Button::new("toggle-advanced")
-                .xsmall()
-                .ghost()
-                .icon(if advanced {
-                    IconName::ChevronDown
-                } else {
-                    IconName::ChevronRight
-                })
-                .label(t("ai.services.advanced"))
-                .on_click(cx.listener(|this, _, _, cx| {
-                    this.advanced = !this.advanced;
-                    cx.notify();
-                })),
-        );
-        if advanced {
-            let mut adv = v_flex()
-                .gap(px(8.))
-                .pl(px(12.))
-                .border_l_2()
-                .border_color(th.border)
-                .child(field(t("ai.provider.url"), Input::new(&self.f_url), cx))
-                .child(field(t("ai.provider.kind"), kind_menu, cx));
-            if kind == ApiKind::AzureOpenAi {
-                adv = adv.child(field(
-                    t("ai.provider.api_version"),
-                    Input::new(&self.f_version),
-                    cx,
-                ));
-            }
-            form = form.child(adv);
-        }
-        if let Some((ok, msg)) = &self.test {
-            form = form.child(
+    /// "Back" and the "Connect / Edit <service>" title.
+    fn editor_heading(is_new: bool, name: &str, cx: &Context<Self>) -> Div {
+        h_flex()
+            .gap(px(8.))
+            .child(
+                Button::new("back-services")
+                    .small()
+                    .ghost()
+                    .icon(IconName::ArrowLeft)
+                    .label(t("common.back"))
+                    .on_click(cx.listener(|this, _, _, cx| {
+                        this.editing = None;
+                        this.error = None;
+                        cx.notify();
+                    })),
+            )
+            .child(
                 div()
-                    .px(px(10.))
-                    .py(px(6.))
-                    .rounded(px(6.))
-                    .bg(if *ok { th.success } else { th.danger }.opacity(0.12))
-                    .text_size(px(12.))
-                    .child(msg.clone()),
+                    .text_size(px(16.))
+                    .font_weight(gpui_kit::FontWeight::SEMIBOLD)
+                    .child(if is_new {
+                        t_args("ai.services.connect", &[("name", name)])
+                    } else {
+                        t_args("ai.services.edit", &[("name", name)])
+                    }),
+            )
+    }
+
+    /// Step 1: the API key, with a link to get one when the preset has it.
+    fn key_step(
+        &self,
+        needs_key: bool,
+        key_url: Option<&'static str>,
+        cx: &Context<Self>,
+    ) -> AnyElement {
+        let mut key_row = h_flex()
+            .gap(px(8.))
+            .child(div().flex_1().child(Input::new(&self.f_key).mask_toggle()));
+        if let Some(url) = key_url {
+            key_row = key_row.child(
+                Button::new("get-key")
+                    .small()
+                    .outline()
+                    .icon(IconName::ExternalLink)
+                    .label(t("ai.provider.get_key"))
+                    .on_click(move |_, _, cx| cx.open_url(url)),
             );
         }
-        form = form.child(error(self.error.as_ref(), cx)).child(
-            h_flex()
-                .justify_end()
-                .gap(px(6.))
-                .child(
-                    Button::new("test-provider")
-                        .small()
-                        .outline()
-                        .loading(self.testing)
-                        .label(t("ai.provider.test"))
-                        .on_click(cx.listener(|this, _, _, cx| this.test_provider(cx))),
-                )
-                .child(
-                    Button::new("save-provider")
-                        .small()
-                        .primary()
-                        .label(t("common.save"))
-                        .on_click(cx.listener(|this, _, _, cx| this.save_provider(cx))),
-                ),
-        );
-        form.into_any_element()
+        step(
+            "1",
+            if needs_key {
+                t("ai.provider.key")
+            } else {
+                t("ai.provider.key_optional")
+            },
+            Some(t("ai.services.key_hint")),
+            key_row.into_any_element(),
+            cx,
+        )
+    }
+
+    /// Shows or hides the advanced section.
+    fn advanced_toggle(advanced: bool, cx: &Context<Self>) -> impl IntoElement {
+        Button::new("toggle-advanced")
+            .xsmall()
+            .ghost()
+            .icon(if advanced {
+                IconName::ChevronDown
+            } else {
+                IconName::ChevronRight
+            })
+            .label(t("ai.services.advanced"))
+            .on_click(cx.listener(|this, _, _, cx| {
+                this.advanced = !this.advanced;
+                cx.notify();
+            }))
+    }
+
+    /// Endpoint, wire format and (for Azure) API version.
+    fn advanced_fields(&self, kind: ApiKind, cx: &Context<Self>) -> Div {
+        let kind_menu = Self::kind_menu(kind, cx);
+        let th = cx.theme();
+        let mut adv = v_flex()
+            .gap(px(8.))
+            .pl(px(12.))
+            .border_l_2()
+            .border_color(th.border)
+            .child(field(t("ai.provider.url"), Input::new(&self.f_url), cx))
+            .child(field(t("ai.provider.kind"), kind_menu, cx));
+        if kind == ApiKind::AzureOpenAi {
+            adv = adv.child(field(
+                t("ai.provider.api_version"),
+                Input::new(&self.f_version),
+                cx,
+            ));
+        }
+        adv
+    }
+
+    /// "Test" and "Save".
+    fn editor_actions(&self, cx: &Context<Self>) -> Div {
+        h_flex()
+            .justify_end()
+            .gap(px(6.))
+            .child(
+                Button::new("test-provider")
+                    .small()
+                    .outline()
+                    .loading(self.testing)
+                    .label(t("ai.provider.test"))
+                    .on_click(cx.listener(|this, _, _, cx| this.test_provider(cx))),
+            )
+            .child(
+                Button::new("save-provider")
+                    .small()
+                    .primary()
+                    .label(t("common.save"))
+                    .on_click(cx.listener(|this, _, _, cx| this.save_provider(cx))),
+            )
     }
 
     // -----------------------------------------------------------------

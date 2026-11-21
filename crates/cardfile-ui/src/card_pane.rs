@@ -1239,140 +1239,14 @@ impl CardPane {
         let card = self.card.as_ref();
         let pinned = card.is_some_and(|c| c.is_pinned);
         let favorite = card.is_some_and(|c| c.is_favorite);
-        let mode = card.map(|c| c.lock_mode).unwrap_or_default();
-        let choices = lock_choices(&AppState::get(cx).app.enabled_lock_modes, true);
         let deleted = self.access == Access::Deleted;
         let owner = self.card_access.is_owner();
         let can_share =
             owner && AppState::get(cx).app.auth_mode == cardfile_core::AuthMode::MultiUser;
-        let pane = cx.entity();
-        let lock_icon = match mode {
-            LockMode::None => IconName::LockOpen,
-            _ => IconName::Lock,
-        };
-        let protect = {
-            let pane = pane.clone();
-            Button::new("protection")
-                .icon(lock_icon)
-                .label(lock_label(mode))
-                .ghost()
-                .small()
-                .dropdown_caret(true)
-                .tooltip(t("card.protect.tooltip"))
-                .dropdown_menu(move |menu, _, _| {
-                    let pane = pane.clone();
-                    lock_menu(menu, &choices, mode, move |m, window, cx| {
-                        pane.update(cx, |p, cx| p.set_lock_mode(m, window, cx))
-                    })
-                })
-        };
-        let tags_menu = {
-            let pane = pane.clone();
-            let all = self.tags.clone();
-            let selected = card.map(|c| c.tags.clone()).unwrap_or_default();
-            Button::new("tags")
-                .icon(IconName::Tag)
-                .ghost()
-                .small()
-                .tooltip(t("card.tags"))
-                .dropdown_menu(move |mut menu, _, _| {
-                    for tag in &all {
-                        let pane = pane.clone();
-                        let id = tag.id;
-                        menu = menu.item(
-                            PopupMenuItem::new(tag.name.clone())
-                                .checked(selected.contains(&id))
-                                .on_click(move |_, _, cx| {
-                                    pane.update(cx, |p, cx| p.toggle_tag(id, cx))
-                                }),
-                        );
-                    }
-                    if !all.is_empty() {
-                        menu = menu.separator();
-                    }
-                    menu.item(
-                        PopupMenuItem::new(t("tags.new"))
-                            .on_click(|_, window, cx| crate::tags::new_tag_dialog(window, cx)),
-                    )
-                })
-        };
-        let more = {
-            let pane = pane.clone();
-            Button::new("card-more")
-                .icon(IconName::Ellipsis)
-                .ghost()
-                .small()
-                .dropdown_menu(move |menu, _, _| {
-                    let p1 = pane.clone();
-                    let p2 = pane.clone();
-                    let p3 = pane.clone();
-                    let p4 = pane.clone();
-                    let p5 = pane.clone();
-                    let p6 = pane.clone();
-                    let p7 = pane.clone();
-                    let menu = if can_share {
-                        menu.item(
-                            PopupMenuItem::new(t("share.button"))
-                                .on_click(move |_, w, cx| p7.update(cx, |p, cx| p.share(w, cx))),
-                        )
-                        .separator()
-                    } else {
-                        menu
-                    };
-                    let menu = menu.item(
-                        PopupMenuItem::new(t("card.history"))
-                            .on_click(move |_, w, cx| p1.update(cx, |p, cx| p.show_history(w, cx))),
-                    );
-                    menu.separator()
-                        .item(
-                            PopupMenuItem::new(t("export.markdown")).on_click(move |_, w, cx| {
-                                p2.update(cx, |p, cx| {
-                                    p.export(crate::export::Format::Markdown, w, cx)
-                                })
-                            }),
-                        )
-                        .item(
-                            PopupMenuItem::new(t("export.html")).on_click(move |_, w, cx| {
-                                p3.update(cx, |p, cx| p.export(crate::export::Format::Html, w, cx))
-                            }),
-                        )
-                        .item(
-                            PopupMenuItem::new(t("export.pdf")).on_click(move |_, w, cx| {
-                                p4.update(cx, |p, cx| p.export(crate::export::Format::Pdf, w, cx))
-                            }),
-                        )
-                        .item(
-                            PopupMenuItem::new(t("export.json")).on_click(move |_, w, cx| {
-                                p5.update(cx, |p, cx| p.export(crate::export::Format::Json, w, cx))
-                            }),
-                        )
-                        .when(owner, |m| {
-                            m.separator().item(
-                                PopupMenuItem::new(t("card.delete")).on_click(move |_, w, cx| {
-                                    p6.update(cx, |p, cx| p.delete(w, cx))
-                                }),
-                            )
-                        })
-                })
-        };
-        let shared_badge = self.owner_name.clone().map(|name| {
-            let perm = match self.card_access {
-                CardAccess::Shared(cardfile_core::SharePermission::Edit) => t("share.edit"),
-                _ => t("share.view"),
-            };
-            h_flex()
-                .gap(px(4.))
-                .px(px(8.))
-                .py(px(2.))
-                .rounded_full()
-                .bg(cx.theme().accent)
-                .text_size(px(12.))
-                .child(gpui_kit::component::Icon::new(IconName::Users).size_3())
-                .child(t_args(
-                    "share.shared_by",
-                    &[("name", &name), ("permission", &perm)],
-                ))
-        });
+        let protect = self.protection_menu(cx);
+        let tags_menu = self.tags_menu(cx);
+        let more = Self::more_menu(owner, can_share, cx);
+        let shared_badge = self.shared_badge(cx);
         let th = cx.theme();
         h_flex()
             .w_full()
@@ -1434,6 +1308,146 @@ impl CardPane {
             })
             .when(!deleted, |d| d.child(more))
             .into_any_element()
+    }
+
+    /// The protection (lock mode) dropdown, labelled with the card's current mode.
+    fn protection_menu(&self, cx: &Context<Self>) -> impl IntoElement {
+        let mode = self.card.as_ref().map(|c| c.lock_mode).unwrap_or_default();
+        let choices = lock_choices(&AppState::get(cx).app.enabled_lock_modes, true);
+        let pane = cx.entity();
+        let lock_icon = match mode {
+            LockMode::None => IconName::LockOpen,
+            _ => IconName::Lock,
+        };
+        Button::new("protection")
+            .icon(lock_icon)
+            .label(lock_label(mode))
+            .ghost()
+            .small()
+            .dropdown_caret(true)
+            .tooltip(t("card.protect.tooltip"))
+            .dropdown_menu(move |menu, _, _| {
+                let pane = pane.clone();
+                lock_menu(menu, &choices, mode, move |m, window, cx| {
+                    pane.update(cx, |p, cx| p.set_lock_mode(m, window, cx))
+                })
+            })
+    }
+
+    /// The dropdown that toggles the card's tags and creates new ones.
+    fn tags_menu(&self, cx: &Context<Self>) -> impl IntoElement {
+        let pane = cx.entity();
+        let all = self.tags.clone();
+        let selected = self
+            .card
+            .as_ref()
+            .map(|c| c.tags.clone())
+            .unwrap_or_default();
+        Button::new("tags")
+            .icon(IconName::Tag)
+            .ghost()
+            .small()
+            .tooltip(t("card.tags"))
+            .dropdown_menu(move |mut menu, _, _| {
+                for tag in &all {
+                    let pane = pane.clone();
+                    let id = tag.id;
+                    menu = menu.item(
+                        PopupMenuItem::new(tag.name.clone())
+                            .checked(selected.contains(&id))
+                            .on_click(move |_, _, cx| {
+                                pane.update(cx, |p, cx| p.toggle_tag(id, cx))
+                            }),
+                    );
+                }
+                if !all.is_empty() {
+                    menu = menu.separator();
+                }
+                menu.item(
+                    PopupMenuItem::new(t("tags.new"))
+                        .on_click(|_, window, cx| crate::tags::new_tag_dialog(window, cx)),
+                )
+            })
+    }
+
+    /// The overflow menu: share, history, export and delete.
+    fn more_menu(owner: bool, can_share: bool, cx: &Context<Self>) -> impl IntoElement {
+        let pane = cx.entity();
+        Button::new("card-more")
+            .icon(IconName::Ellipsis)
+            .ghost()
+            .small()
+            .dropdown_menu(move |menu, _, _| {
+                let p1 = pane.clone();
+                let p2 = pane.clone();
+                let p3 = pane.clone();
+                let p4 = pane.clone();
+                let p5 = pane.clone();
+                let p6 = pane.clone();
+                let p7 = pane.clone();
+                let menu = if can_share {
+                    menu.item(
+                        PopupMenuItem::new(t("share.button"))
+                            .on_click(move |_, w, cx| p7.update(cx, |p, cx| p.share(w, cx))),
+                    )
+                    .separator()
+                } else {
+                    menu
+                };
+                let menu = menu.item(
+                    PopupMenuItem::new(t("card.history"))
+                        .on_click(move |_, w, cx| p1.update(cx, |p, cx| p.show_history(w, cx))),
+                );
+                menu.separator()
+                    .item(
+                        PopupMenuItem::new(t("export.markdown")).on_click(move |_, w, cx| {
+                            p2.update(cx, |p, cx| p.export(crate::export::Format::Markdown, w, cx))
+                        }),
+                    )
+                    .item(
+                        PopupMenuItem::new(t("export.html")).on_click(move |_, w, cx| {
+                            p3.update(cx, |p, cx| p.export(crate::export::Format::Html, w, cx))
+                        }),
+                    )
+                    .item(
+                        PopupMenuItem::new(t("export.pdf")).on_click(move |_, w, cx| {
+                            p4.update(cx, |p, cx| p.export(crate::export::Format::Pdf, w, cx))
+                        }),
+                    )
+                    .item(
+                        PopupMenuItem::new(t("export.json")).on_click(move |_, w, cx| {
+                            p5.update(cx, |p, cx| p.export(crate::export::Format::Json, w, cx))
+                        }),
+                    )
+                    .when(owner, |m| {
+                        m.separator().item(
+                            PopupMenuItem::new(t("card.delete"))
+                                .on_click(move |_, w, cx| p6.update(cx, |p, cx| p.delete(w, cx))),
+                        )
+                    })
+            })
+    }
+
+    /// "Shared by …" for a card someone else owns.
+    fn shared_badge(&self, cx: &Context<Self>) -> Option<gpui_kit::Div> {
+        self.owner_name.clone().map(|name| {
+            let perm = match self.card_access {
+                CardAccess::Shared(cardfile_core::SharePermission::Edit) => t("share.edit"),
+                _ => t("share.view"),
+            };
+            h_flex()
+                .gap(px(4.))
+                .px(px(8.))
+                .py(px(2.))
+                .rounded_full()
+                .bg(cx.theme().accent)
+                .text_size(px(12.))
+                .child(gpui_kit::component::Icon::new(IconName::Users).size_3())
+                .child(t_args(
+                    "share.shared_by",
+                    &[("name", &name), ("permission", &perm)],
+                ))
+        })
     }
 
     fn render_tags(&self, cx: &Context<Self>) -> Option<AnyElement> {
