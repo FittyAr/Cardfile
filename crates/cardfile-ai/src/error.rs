@@ -31,6 +31,12 @@ pub enum AiError {
     /// The configuration is incomplete (missing base URL or model).
     #[error("invalid provider configuration: {0}")]
     Config(String),
+    /// The base URL uses plain `http://` for a host other than this computer, which
+    /// would send the API key and the conversation unencrypted.
+    #[error(
+        "plain http:// is only allowed for providers on this computer (localhost); use https://"
+    )]
+    InsecureUrl,
     /// The operation is not supported by this provider.
     #[error("not supported: {0}")]
     Unsupported(String),

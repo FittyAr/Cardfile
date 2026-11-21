@@ -76,6 +76,11 @@ pub(crate) fn validate(cfg: &ProviderConfig) -> Result<(), AiError> {
             "the base URL must start with http:// or https://".into(),
         ));
     }
+    // Credentials, card contents and replies travel in clear over plain HTTP. That
+    // is only acceptable when the traffic never leaves this computer.
+    if url.starts_with("http://") && !crate::config::is_loopback_url(url) {
+        return Err(AiError::InsecureUrl);
+    }
     if cfg.requires_api_key() && cfg.key().is_none() {
         return Err(AiError::MissingApiKey);
     }
@@ -253,6 +258,42 @@ mod tests {
                 ("X-A".into(), "b".into())
             ]
         );
+    }
+
+    fn with_url(url: &str) -> crate::ProviderConfig {
+        let mut cfg = crate::ProviderConfig::from_preset(preset("openai").unwrap());
+        cfg.api_key = Some("sk-abcdef".into());
+        cfg.base_url = url.into();
+        cfg
+    }
+
+    #[test]
+    fn plain_http_only_for_loopback() {
+        for ok in [
+            "https://api.openai.com/v1",
+            "http://localhost:11434/v1",
+            "http://LOCALHOST:1234",
+            "http://ollama.localhost/v1",
+            "http://127.0.0.1:1234/v1",
+            "http://127.1.2.3/v1",
+            "http://[::1]:8080/v1",
+            "  http://localhost/v1  ",
+        ] {
+            assert_eq!(validate(&with_url(ok)), Ok(()), "{ok}");
+        }
+        for bad in [
+            "http://api.openai.com/v1",
+            "http://192.168.1.20:8080",
+            "http://10.0.0.2/v1",
+            "http://my-box.local:11434",
+            "http://localhost.evil.com/v1",
+            "http://127.0.0.1.nip.io/v1",
+            "http://user:pw@example.com/v1",
+            "http://localhost@example.com/v1",
+            "http://[::ffff:8.8.8.8]/v1",
+        ] {
+            assert_eq!(validate(&with_url(bad)), Err(AiError::InsecureUrl), "{bad}");
+        }
     }
 
     #[test]
