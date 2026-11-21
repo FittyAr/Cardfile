@@ -33,6 +33,9 @@ pub struct Downloaded {
     pub(crate) kind: InstallKind,
     pub(crate) asset: Asset,
     pub(crate) path: TempPath,
+    /// Lowercase hex SHA-256 from the signed `SHA256SUMS`, so the installer can be
+    /// checked again right before it runs.
+    pub(crate) sha256: String,
 }
 
 impl Downloaded {
@@ -69,7 +72,7 @@ pub fn parse_checksums(text: &str) -> Result<HashMap<String, String>, UpdateErro
     Ok(sums)
 }
 
-fn hex(bytes: &[u8]) -> String {
+pub(crate) fn hex(bytes: &[u8]) -> String {
     bytes.iter().fold(String::with_capacity(64), |mut s, b| {
         // Writing to a String cannot fail.
         let _ = write!(s, "{b:02x}");
@@ -174,6 +177,7 @@ pub fn download(
         kind: kind.clone(),
         asset,
         path: file.into_temp_path(),
+        sha256: expected,
     })
 }
 
