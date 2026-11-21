@@ -410,8 +410,16 @@ mod tests {
     fn updates_of_unknown_users_are_not_found() {
         let (db, alice) = db_with_user();
         let ghost = cardfile_core::UserId::new();
-        assert!(db.update_user(ghost, "x", false).unwrap_err().is_not_found());
-        assert!(db.set_lock_hash(ghost, Some("h")).unwrap_err().is_not_found());
+        assert!(
+            db.update_user(ghost, "x", false)
+                .unwrap_err()
+                .is_not_found()
+        );
+        assert!(
+            db.set_lock_hash(ghost, Some("h"))
+                .unwrap_err()
+                .is_not_found()
+        );
         assert!(
             db.set_password_hash(ghost, Some("h"))
                 .unwrap_err()
@@ -421,7 +429,11 @@ mod tests {
             password_hash: Some(Some("h".into())),
             ..Default::default()
         };
-        assert!(db.update_credentials(ghost, &update).unwrap_err().is_not_found());
+        assert!(
+            db.update_credentials(ghost, &update)
+                .unwrap_err()
+                .is_not_found()
+        );
         // Known users still update.
         db.update_user(alice.id, "Alice A.", true).unwrap();
         assert_eq!(db.user(alice.id).unwrap().display_name, "Alice A.");
