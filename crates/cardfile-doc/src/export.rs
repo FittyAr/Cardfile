@@ -132,11 +132,13 @@ pub fn to_markdown(
                 let _ = writeln!(out, "> {}\n", text("> "));
             }
             BlockKind::Code { language } => {
-                let fence = if block.text.text.contains("```") {
-                    "````"
-                } else {
-                    "```"
-                };
+                // Longer than any backtick run inside, so no line can close it early.
+                let fence = "`".repeat(longest_run(&block.text.text, '`').max(2) + 1);
+                // The info string of a backtick fence may not contain backticks.
+                let language: String = language
+                    .chars()
+                    .filter(|c| *c != '`' && !c.is_control())
+                    .collect();
                 let _ = writeln!(out, "{fence}{language}\n{}\n{fence}\n", block.text.text);
             }
             BlockKind::Divider => out.push_str("---\n\n"),
@@ -175,6 +177,32 @@ pub fn to_markdown(
         out.pop();
     }
     out
+}
+
+/// Length of the longest run of `ch` in `s`.
+fn longest_run(s: &str, ch: char) -> usize {
+    let (mut best, mut cur) = (0, 0);
+    for c in s.chars() {
+        if c == ch {
+            cur += 1;
+            best = best.max(cur);
+        } else {
+            cur = 0;
+        }
+    }
+    best
+}
+
+/// An inline code span for `code` (a single line). The delimiter is one backtick
+/// longer than the longest backtick run inside, and content that begins or ends
+/// with a backtick is padded with a space, which CommonMark strips again.
+fn code_span(code: &str) -> String {
+    let ticks = "`".repeat(longest_run(code, '`') + 1);
+    if code.starts_with('`') || code.ends_with('`') {
+        format!("{ticks} {code} {ticks}")
+    } else {
+        format!("{ticks}{code}{ticks}")
+    }
 }
 
 fn wrap_align(text: String, align: Align, opts: &MarkdownOptions) -> String {
@@ -295,7 +323,6 @@ fn md_inline(rt: &RichText, opts: &MarkdownOptions, in_table: bool) -> String {
             continue;
         }
         let mut s = if style.code {
-            let ticks = if trimmed.contains('`') { "``" } else { "`" };
             // A code span can't hold a line break: one span per line.
             trimmed
                 .split('\n')
@@ -310,7 +337,7 @@ fn md_inline(rt: &RichText, opts: &MarkdownOptions, in_table: bool) -> String {
                     if part.is_empty() {
                         part
                     } else {
-                        format!("{ticks}{part}{ticks}")
+                        code_span(&part)
                     }
                 })
                 .collect::<Vec<_>>()
@@ -811,6 +838,63 @@ mod tests {
         assert!(!html.contains("<script>"));
         assert!(!html.contains("javascript:"));
         assert!(html.contains("&lt;script&gt;"));
+    }
+
+    #[test]
+    fn code_blocks_with_backtick_runs_round_trip() {
+        for code in [
+            "plain",
+            "a ``` fence",
+            "```\nnot a fence\n```",
+            "````",
+            "x\n`````\ny",
+            "`",
+        ] {
+            let doc = doc_of(vec![Block::new(
+                BlockKind::Code {
+                    language: "rust".into(),
+                },
+                code,
+            )]);
+            let back = crate::from_markdown(&md(&doc));
+            assert_eq!(back.blocks.len(), 1, "{code:?}: {}", md(&doc));
+            assert_eq!(back.blocks[0].text.text, code, "{}", md(&doc));
+            assert_eq!(
+                back.blocks[0].kind,
+                BlockKind::Code {
+                    language: "rust".into()
+                }
+            );
+        }
+        // A backtick in the language would break the fence; it is dropped.
+        let doc = doc_of(vec![Block::new(
+            BlockKind::Code {
+                language: "r`s".into(),
+            },
+            "x",
+        )]);
+        let back = crate::from_markdown(&md(&doc));
+        assert_eq!(back.blocks[0].text.text, "x");
+    }
+
+    #[test]
+    fn inline_code_with_backticks_round_trips() {
+        for code in ["a`b", "a``b`c", "`start", "end`", "`both`", "``", "x ``` y"] {
+            let text = format!("see {code} here");
+            let mut p = Block::paragraph(&text);
+            p.text.toggle_mark(4..4 + code.len(), Mark::Code);
+            let doc = doc_of(vec![p]);
+            let out = md(&doc);
+            let back = crate::from_markdown(&out);
+            let rt = &back.blocks[0].text;
+            assert_eq!(rt.text, text, "{out}");
+            let coded: String = rt
+                .spans()
+                .filter(|(_, s)| s.code)
+                .map(|(r, _)| &rt.text[r])
+                .collect();
+            assert_eq!(coded, code, "{out}");
+        }
     }
 
     #[test]
