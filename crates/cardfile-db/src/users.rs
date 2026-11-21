@@ -13,8 +13,11 @@ const AI_USERNAME: &str = "cardfile-ai";
 /// for the owner. See [`Database::update_credentials`] and [`Database::apply_rekey`].
 #[derive(Clone, Debug, Default)]
 pub struct Rekey {
+    /// New ciphertext for each re-encrypted card.
     pub cards: Vec<(CardId, EncryptedPayload)>,
+    /// New ciphertext for each re-encrypted revision snapshot.
     pub revisions: Vec<(RevisionId, EncryptedPayload)>,
+    /// Card keys wrapped for a user: `(card, user, wrapped key as base64)`.
     pub card_keys: Vec<(CardId, UserId, String)>,
 }
 
@@ -23,10 +26,13 @@ pub struct Rekey {
 /// and the sealed secret key.
 #[derive(Clone, Default)]
 pub struct CredentialUpdate {
+    /// New sign-in password hash (Argon2id PHC string).
     pub password_hash: Option<Option<String>>,
+    /// New separate lock password hash (Argon2id PHC string).
     pub lock_hash: Option<Option<String>>,
     /// Public key and sealed secret key.
     pub keys: Option<(String, EncryptedPayload)>,
+    /// Ciphertext to rewrite in the same transaction.
     pub rekey: Rekey,
 }
 

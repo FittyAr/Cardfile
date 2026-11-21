@@ -37,6 +37,8 @@ fn cards_with_tag(conn: &mut SqliteConnection, id: TagId) -> DbResult<Vec<String
 }
 
 impl Database {
+    /// Create a tag for `owner`. The name is trimmed; a live tag with the same
+    /// name (case-insensitive) for that owner fails with a unique violation.
     pub fn create_tag(&self, owner: UserId, name: &str, color: &str) -> DbResult<Tag> {
         let now = now_millis();
         let row = TagRow {
@@ -58,6 +60,7 @@ impl Database {
         })
     }
 
+    /// The owner's live tags, sorted by name.
     pub fn list_tags(&self, owner: UserId) -> DbResult<Vec<Tag>> {
         self.with(|conn| {
             tags::table

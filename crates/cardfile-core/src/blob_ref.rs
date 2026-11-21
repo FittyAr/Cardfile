@@ -17,6 +17,8 @@ pub struct BlobRef<'a> {
 }
 
 impl<'a> BlobRef<'a> {
+    /// Split a stored reference into blob id and key. Anything that is not a
+    /// well-formed `sealed:<id>:<key>` is treated as a plain blob id; parsing never fails.
     pub fn parse(reference: &'a str) -> Self {
         reference
             .strip_prefix(SEALED_PREFIX)

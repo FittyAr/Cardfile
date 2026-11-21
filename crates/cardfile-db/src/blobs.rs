@@ -52,6 +52,7 @@ impl Database {
         })
     }
 
+    /// Load a blob with its bytes; `None` when no blob has this id.
     pub fn blob(&self, id: &str) -> DbResult<Option<Blob>> {
         self.with(|conn| {
             let row: Option<BlobRow> = blobs::table

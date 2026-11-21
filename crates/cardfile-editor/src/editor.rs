@@ -26,93 +26,181 @@ pub const KEY_CONTEXT: &str = "RichEditor";
 actions!(
     rich_editor,
     [
+        /// Move the caret one character left.
         MoveLeft,
+        /// Move the caret one character right.
         MoveRight,
+        /// Move the caret one visual line up.
         MoveUp,
+        /// Move the caret one visual line down.
         MoveDown,
+        /// Move the caret to the previous word start.
         MoveWordLeft,
+        /// Move the caret to the next word end.
         MoveWordRight,
+        /// Move the caret to the start of the visual line.
         MoveLineStart,
+        /// Move the caret to the end of the visual line.
         MoveLineEnd,
+        /// Move the caret to the start of the document.
         MoveDocStart,
+        /// Move the caret to the end of the document.
         MoveDocEnd,
+        /// Move the caret one screen up.
         MovePageUp,
+        /// Move the caret one screen down.
         MovePageDown,
+        /// Extend the selection one character left.
         SelectLeft,
+        /// Extend the selection one character right.
         SelectRight,
+        /// Extend the selection one visual line up.
         SelectUp,
+        /// Extend the selection one visual line down.
         SelectDown,
+        /// Extend the selection to the previous word start.
         SelectWordLeft,
+        /// Extend the selection to the next word end.
         SelectWordRight,
+        /// Extend the selection to the start of the visual line.
         SelectLineStart,
+        /// Extend the selection to the end of the visual line.
         SelectLineEnd,
+        /// Extend the selection to the start of the document.
         SelectDocStart,
+        /// Extend the selection to the end of the document.
         SelectDocEnd,
+        /// Select the whole document.
         SelectAll,
+        /// Delete the selection or the character before the caret.
         Backspace,
+        /// Delete the selection or the character after the caret.
         Delete,
+        /// Delete back to the previous word start.
         DeleteWordLeft,
+        /// Delete forward to the next word end.
         DeleteWordRight,
+        /// Split the block at the caret (submits a single-line editor).
         Enter,
+        /// Insert a line break inside the current block (submits a single-line editor).
         SoftBreak,
+        /// Next table cell, indent a list item, or insert spaces.
         Tab,
+        /// Previous table cell, or outdent the block.
         ShiftTab,
+        /// Undo the last edit.
         Undo,
+        /// Redo the last undone edit.
         Redo,
+        /// Copy the selection.
         Copy,
+        /// Cut the selection.
         Cut,
+        /// Paste with formatting, images and files.
         Paste,
+        /// Paste as plain text.
         PastePlain,
+        /// Toggle bold on the selection.
         Bold,
+        /// Toggle italic on the selection.
         Italic,
+        /// Toggle underline on the selection.
         Underline,
+        /// Toggle strikethrough on the selection.
         Strikethrough,
+        /// Toggle inline code on the selection.
         InlineCode,
+        /// Remove inline formatting from the selection.
         ClearFormatting,
+        /// Turn the selected blocks into paragraphs.
         Paragraph,
+        /// Toggle level 1 headings on the selected blocks.
         Heading1,
+        /// Toggle level 2 headings on the selected blocks.
         Heading2,
+        /// Toggle level 3 headings on the selected blocks.
         Heading3,
+        /// Toggle a bulleted list on the selected blocks.
         BulletList,
+        /// Toggle a numbered list on the selected blocks.
         NumberedList,
+        /// Toggle a check list on the selected blocks.
         CheckList,
+        /// Toggle a block quote on the selected blocks.
         Quote,
+        /// Toggle a code block on the selected blocks.
         CodeBlock,
+        /// Align the block to the start edge.
         AlignLeft,
+        /// Centre the block.
         AlignCenter,
+        /// Align the block to the end edge.
         AlignRight,
+        /// Justify the block.
         AlignJustify,
+        /// Add or edit a link on the selection.
         InsertLink,
+        /// Remove the link at the caret or selection.
         RemoveLink,
+        /// Insert a horizontal rule.
         InsertDivider,
+        /// Insert a table.
         InsertTable,
+        /// Pick an image file and insert it.
         InsertImage,
+        /// Pick a file and attach it.
         InsertAttachment,
+        /// Insert a table row above the caret.
         TableInsertRowAbove,
+        /// Insert a table row below the caret.
         TableInsertRowBelow,
+        /// Insert a table column left of the caret.
         TableInsertColumnLeft,
+        /// Insert a table column right of the caret.
         TableInsertColumnRight,
+        /// Delete the caret's table row.
         TableDeleteRow,
+        /// Delete the caret's table column.
         TableDeleteColumn,
+        /// Delete the whole table.
         TableDelete,
+        /// Turn the table's header row on or off.
         TableToggleHeader,
+        /// Increase the block's indent level.
         Indent,
+        /// Decrease the block's indent level.
         Outdent,
+        /// Tick or untick the check list item at the caret.
         ToggleCheck,
+        /// Set the block's text size to small.
         TextSmall,
+        /// Set the block's text size to normal.
         TextNormal,
+        /// Set the block's text size to large.
         TextLarge,
+        /// Set the block's text size to huge.
         TextHuge,
+        /// Shrink the image at the caret by 20 %.
         ImageSmaller,
+        /// Grow the image at the caret by 25 %.
         ImageLarger,
+        /// Reset the image at the caret to fit the editor width.
         ImageFit,
+        /// Drop a stretched height so the image keeps its aspect ratio.
         ImageKeepRatio,
+        /// Open the link under the caret.
         OpenLinkAtCaret,
+        /// Add the misspelled word at the caret to the personal dictionary.
         AddWordToDictionary,
+        /// Open the find bar.
         Find,
+        /// Open the find bar with replace.
         FindReplace,
+        /// Go to the next match.
         FindNext,
+        /// Go to the previous match.
         FindPrevious,
+        /// Close a menu or the find bar, or collapse the selection.
         Cancel,
     ]
 );
@@ -155,11 +243,15 @@ impl Global for InternalClipboard {}
 
 /// Spell checking backend.
 pub trait SpellChecker: Send + Sync + 'static {
+    /// Whether `word` is spelled correctly.
     fn check(&self, word: &str) -> bool;
+    /// Replacement suggestions for a misspelled `word`, best first.
     fn suggest(&self, word: &str) -> Vec<String>;
+    /// Accept `word` from now on (personal dictionary).
     fn add_word(&self, word: &str);
 }
 
+/// Events the editor emits to its host.
 #[derive(Clone, Debug, PartialEq)]
 pub enum EditorEvent {
     /// The document changed (debounce before saving).
@@ -170,10 +262,14 @@ pub enum EditorEvent {
     EditBlocked,
     /// Enter was pressed in a single-line editor.
     Submit,
+    /// The user asked to open an attachment with the system's default app.
     OpenAttachment {
+        /// Blob reference of the attachment.
         blob: String,
+        /// Original file name, for a temporary copy with the right extension.
         file_name: String,
     },
+    /// The user asked to open a link; carries the URL.
     OpenLink(String),
 }
 
@@ -260,6 +356,10 @@ pub fn init(cx: &mut App) {
     cx.bind_keys(default_key_bindings());
 }
 
+/// The WYSIWYG editor view over one [`Document`].
+///
+/// The host loads documents with [`RichEditor::set_document`], listens for
+/// [`EditorEvent`]s and reads the result back with [`RichEditor::document`].
 pub struct RichEditor {
     pub(crate) model: Model,
     history: History,
@@ -314,6 +414,7 @@ impl Focusable for RichEditor {
 }
 
 impl RichEditor {
+    /// An editable editor showing `doc`, with an empty undo history.
     pub fn new(doc: Document, cx: &mut Context<Self>) -> Self {
         Self {
             model: Model::new(doc),
@@ -395,6 +496,7 @@ impl RichEditor {
     // Public API
     // ---------------------------------------------------------------------
 
+    /// The document as currently edited.
     pub fn document(&self) -> &Document {
         &self.model.doc
     }
@@ -441,15 +543,20 @@ impl RichEditor {
         false
     }
 
+    /// Allow or forbid edits. Edits attempted while read-only emit
+    /// [`EditorEvent::EditBlocked`]; the caret can still move and text can be copied.
     pub fn set_read_only(&mut self, read_only: bool, cx: &mut Context<Self>) {
         self.read_only = read_only;
         cx.notify();
     }
 
+    /// Whether edits are forbidden.
     pub fn is_read_only(&self) -> bool {
         self.read_only
     }
 
+    /// Set where images and attachments are read from and stored. Clears the
+    /// image cache.
     pub fn set_blob_store(&mut self, store: Arc<dyn BlobStore>) {
         self.blobs = Some(store);
         self.image_cache.clear();
@@ -457,6 +564,7 @@ impl RichEditor {
         self.image_unavailable.clear();
     }
 
+    /// Set or remove the spell checker. Clears cached results.
     pub fn set_spell_checker(
         &mut self,
         spell: Option<Arc<dyn SpellChecker>>,
@@ -467,35 +575,43 @@ impl RichEditor {
         cx.notify();
     }
 
+    /// Enable or disable Markdown-style input rules (`# `, `**bold**`, …).
     pub fn set_input_rules(&mut self, on: bool) {
         self.model.input_rules = on;
     }
 
+    /// Base font size of the text, in logical pixels.
     pub fn set_font_size(&mut self, size: Pixels, cx: &mut Context<Self>) {
         self.base_font_size = size;
         cx.notify();
     }
 
+    /// Text shown greyed out while the document is empty.
     pub fn set_placeholder(&mut self, text: Option<String>) {
         self.placeholder = text;
     }
 
+    /// Whether there is an edit to undo.
     pub fn can_undo(&self) -> bool {
         self.history.can_undo()
     }
 
+    /// Whether there is an undone edit to redo.
     pub fn can_redo(&self) -> bool {
         self.history.can_redo()
     }
 
+    /// Whether `mark` applies to the whole selection (or to text typed at the caret).
     pub fn has_mark(&self, mark: Mark) -> bool {
         self.model.has_mark(mark)
     }
 
+    /// Kind of the block at the caret; `None` inside a table cell.
     pub fn current_block_kind(&self) -> Option<BlockKind> {
         self.model.current_block_kind()
     }
 
+    /// Alignment of the block at the caret.
     pub fn current_align(&self) -> Align {
         self.model
             .doc
@@ -509,10 +625,12 @@ impl RichEditor {
         self.model.selected_text()
     }
 
+    /// Whether the caret is inside a table cell.
     pub fn in_table(&self) -> bool {
         self.model.in_table()
     }
 
+    /// Whether the caret is on an image block.
     pub fn selected_image(&self) -> bool {
         let slot = self.model.caret().slot;
         matches!(

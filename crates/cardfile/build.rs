@@ -1,4 +1,4 @@
-// Embed the icon and version information into the Windows executable.
+//! Build script: embed the icon and version information into the Windows executable.
 fn main() {
     #[cfg(windows)]
     {
