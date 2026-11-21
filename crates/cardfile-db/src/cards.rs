@@ -23,26 +23,54 @@ pub struct ContentUpdate {
     pub blob_ids: Vec<String>,
 }
 
-/// Fail unless `actor` may edit `card` (owner, or shared with edit permission).
+/// Fail unless `actor` may edit `card` (owner, or shared with edit permission) and
+/// the card is not in the recycle bin.
 pub(crate) fn ensure_can_edit(
     conn: &mut SqliteConnection,
     actor: &Actor,
     card: &str,
 ) -> DbResult<()> {
     match crate::shares::access_of(conn, card, &actor.principal().to_string())? {
-        Some(a) if a.can_edit() => Ok(()),
+        Some(a) if a.can_edit() => ensure_not_trashed(conn, card),
         Some(_) => Err(DbError::Domain(cardfile_core::Error::PermissionDenied)),
         None => Err(DbError::Query(diesel::result::Error::NotFound)),
     }
 }
 
-/// Fail unless `actor` owns `card`.
+/// Fail unless `actor` owns `card`. Trashed cards pass: restoring, purging and
+/// clearing history work on them. Changes to a card's content or settings use
+/// [`ensure_live_owner`].
 pub(crate) fn ensure_owner(conn: &mut SqliteConnection, actor: &Actor, card: &str) -> DbResult<()> {
     match crate::shares::access_of(conn, card, &actor.principal().to_string())? {
         Some(a) if a.is_owner() => Ok(()),
         Some(_) => Err(DbError::Domain(cardfile_core::Error::PermissionDenied)),
         None => Err(DbError::Query(diesel::result::Error::NotFound)),
     }
+}
+
+/// Fail unless `actor` owns `card` and it is not in the recycle bin.
+pub(crate) fn ensure_live_owner(
+    conn: &mut SqliteConnection,
+    actor: &Actor,
+    card: &str,
+) -> DbResult<()> {
+    ensure_owner(conn, actor, card)?;
+    ensure_not_trashed(conn, card)
+}
+
+/// A card in the recycle bin is frozen until it is restored.
+pub(crate) fn ensure_not_trashed(conn: &mut SqliteConnection, card: &str) -> DbResult<()> {
+    let deleted: Option<i64> = cards::table
+        .find(card)
+        .select(cards::deleted_at)
+        .first(conn)?;
+    if deleted.is_some() {
+        return Err(cardfile_core::Error::Invalid(
+            "the card is in the recycle bin; restore it first".into(),
+        )
+        .into());
+    }
+    Ok(())
 }
 
 /// Fail unless `update` fits the card's current protection: an encrypted card takes
@@ -81,7 +109,17 @@ fn title_of(conn: &mut SqliteConnection, card: &str) -> DbResult<String> {
 
 impl Database {
     /// Create a card for `actor`'s principal, at the top of their manual order.
+    ///
+    /// [`NewCard`] carries plain content only, so a card cannot be created as
+    /// [`LockMode::Encrypted`]: create it unprotected and encrypt it with
+    /// [`Self::set_card_lock`], which takes the ciphertext and the wrapped keys.
     pub fn create_card(&self, actor: &Actor, new: NewCard) -> DbResult<Card> {
+        if new.lock_mode == LockMode::Encrypted {
+            return Err(cardfile_core::Error::Invalid(
+                "an encrypted card needs a payload; create it plain and encrypt it".into(),
+            )
+            .into());
+        }
         let owner = actor.principal();
         self.tx(|conn| {
             // New cards go on top: generate a key before the current minimum.
@@ -203,7 +241,7 @@ impl Database {
             .into());
         }
         let card = self.tx(|conn| {
-            ensure_owner(conn, actor, &id.to_string())?;
+            ensure_live_owner(conn, actor, &id.to_string())?;
             let was_encrypted = cards::table
                 .find(id.to_string())
                 .select(cards::lock_mode)
@@ -263,7 +301,7 @@ impl Database {
 
     pub fn set_card_pinned(&self, actor: &Actor, id: CardId, pinned: bool) -> DbResult<()> {
         let action = if pinned { "pin" } else { "unpin" };
-        self.touch(actor, id, action, true, |conn, id| {
+        self.touch(actor, id, action, false, |conn, id| {
             diesel::update(cards::table.find(id))
                 .set(cards::is_pinned.eq(pinned))
                 .execute(conn)
@@ -272,7 +310,7 @@ impl Database {
 
     pub fn set_card_favorite(&self, actor: &Actor, id: CardId, favorite: bool) -> DbResult<()> {
         let action = if favorite { "favorite" } else { "unfavorite" };
-        self.touch(actor, id, action, true, |conn, id| {
+        self.touch(actor, id, action, false, |conn, id| {
             diesel::update(cards::table.find(id))
                 .set(cards::is_favorite.eq(favorite))
                 .execute(conn)
@@ -280,6 +318,9 @@ impl Database {
     }
 
     /// Move a card between two neighbours in the manual order (`None` = list edge).
+    ///
+    /// Neighbours must be other live cards of the same owner (the manual order is
+    /// per owner); anything else is refused as invalid input.
     pub fn move_card(
         &self,
         actor: &Actor,
@@ -288,17 +329,30 @@ impl Database {
         after: Option<CardId>,
     ) -> DbResult<()> {
         self.tx(|conn| {
-            ensure_owner(conn, actor, &id.to_string())?;
+            ensure_live_owner(conn, actor, &id.to_string())?;
+            let owner = actor.principal().to_string();
             let key_of =
                 |conn: &mut SqliteConnection, c: Option<CardId>| -> DbResult<Option<String>> {
-                    c.map(|c| {
-                        cards::table
-                            .find(c.to_string())
-                            .select(cards::sort_key)
-                            .first::<String>(conn)
-                            .map_err(DbError::from)
-                    })
-                    .transpose()
+                    let Some(c) = c else {
+                        return Ok(None);
+                    };
+                    let invalid = || {
+                        DbError::from(cardfile_core::Error::Invalid(format!(
+                            "{c} is not a neighbour in this list"
+                        )))
+                    };
+                    if c == id {
+                        return Err(invalid());
+                    }
+                    cards::table
+                        .find(c.to_string())
+                        .filter(cards::owner_id.eq(&owner))
+                        .filter(cards::deleted_at.is_null())
+                        .select(cards::sort_key)
+                        .first::<String>(conn)
+                        .optional()?
+                        .map(Some)
+                        .ok_or_else(invalid)
                 };
             // `before` is the card that will sit above, `after` the one below.
             let lo = key_of(conn, before)?;
@@ -410,20 +464,22 @@ impl Database {
         })
     }
 
-    /// Bump `updated_at`/`rev` around a small update, check permissions and log it.
+    /// Bump `updated_at`/`rev` around a small owner-only update, check permissions
+    /// and log it. `allow_trashed` lets it run on a card in the recycle bin (moving
+    /// it there or restoring it); other changes need a live card.
     fn touch(
         &self,
         actor: &Actor,
         id: CardId,
         action: &str,
-        owner_only: bool,
+        allow_trashed: bool,
         f: impl FnOnce(&mut SqliteConnection, String) -> QueryResult<usize>,
     ) -> DbResult<()> {
         self.tx(|conn| {
-            if owner_only {
+            if allow_trashed {
                 ensure_owner(conn, actor, &id.to_string())?;
             } else {
-                ensure_can_edit(conn, actor, &id.to_string())?;
+                ensure_live_owner(conn, actor, &id.to_string())?;
             }
             let n = f(conn, id.to_string())?;
             if n == 0 {
@@ -1064,6 +1120,128 @@ mod tests {
         let list = db.list_cards(user.id, &CardFilter::default()).unwrap();
         assert!(list.iter().all(|c| c.sort_key.len() <= 3), "{list:?}");
         assert!(list.windows(2).all(|w| w[0].sort_key < w[1].sort_key));
+    }
+
+    #[test]
+    fn trashed_cards_are_frozen_until_restored() {
+        let (db, alice) = db_with_user();
+        let bob = db.create_user("bob", "Bob", None, false).unwrap();
+        let a = Actor::user(alice.id);
+        let b = Actor::user(bob.id);
+        let card = db.create_card(&a, new_card("c")).unwrap();
+        let other = db.create_card(&a, new_card("other")).unwrap();
+        let tag = db.create_tag(alice.id, "t", "#ff0000").unwrap();
+        db.share_card(
+            &a,
+            card.id,
+            bob.id,
+            cardfile_core::SharePermission::Edit,
+            None,
+        )
+        .unwrap();
+        db.delete_card(&a, card.id).unwrap();
+        let rev = db.card(card.id).unwrap().rev;
+        let upd = ContentUpdate {
+            title: "edited".into(),
+            content: "x".into(),
+            ..Default::default()
+        };
+        let invalid = |e: DbError| matches!(e, DbError::Domain(cardfile_core::Error::Invalid(_)));
+        // Neither the owner nor an editor can change it in the bin...
+        assert!(invalid(
+            db.update_card_content(&a, card.id, upd.clone(), 10, 0)
+                .unwrap_err()
+        ));
+        // ...and the recipient no longer sees it at all.
+        assert_eq!(db.card_access(card.id, bob.id).unwrap(), None);
+        assert!(
+            db.update_card_content(&b, card.id, upd.clone(), 10, 0)
+                .unwrap_err()
+                .is_not_found()
+        );
+        assert!(invalid(db.set_card_pinned(&a, card.id, true).unwrap_err()));
+        assert!(invalid(
+            db.set_card_favorite(&a, card.id, true).unwrap_err()
+        ));
+        assert!(invalid(
+            db.set_card_tags(&a, card.id, &[tag.id]).unwrap_err()
+        ));
+        assert!(invalid(
+            db.move_card(&a, card.id, Some(other.id), None).unwrap_err()
+        ));
+        assert!(invalid(
+            db.set_card_lock(&a, card.id, LockMode::ReadOnly, "{}", "", None, &[], &[])
+                .unwrap_err()
+        ));
+        assert!(invalid(
+            db.share_card(
+                &a,
+                card.id,
+                bob.id,
+                cardfile_core::SharePermission::View,
+                None
+            )
+            .unwrap_err()
+        ));
+        let still = db.card(card.id).unwrap();
+        assert_eq!((still.title.as_str(), still.rev), ("c", rev));
+        // Restoring thaws it, for the owner and the editor.
+        db.restore_card(&a, card.id).unwrap();
+        db.update_card_content(&b, card.id, upd, 10, 0).unwrap();
+        assert_eq!(db.card(card.id).unwrap().title, "edited");
+    }
+
+    #[test]
+    fn encrypted_cards_cannot_be_created_with_plaintext() {
+        let (db, user) = db_with_user();
+        let me = Actor::user(user.id);
+        let err = db
+            .create_card(
+                &me,
+                NewCard {
+                    title: "t".into(),
+                    content: "{\"secret\":1}".into(),
+                    plain_text: "secret".into(),
+                    lock_mode: LockMode::Encrypted,
+                },
+            )
+            .unwrap_err();
+        assert!(matches!(
+            err,
+            DbError::Domain(cardfile_core::Error::Invalid(_))
+        ));
+        assert!(
+            db.list_cards(user.id, &CardFilter::default())
+                .unwrap()
+                .is_empty()
+        );
+    }
+
+    #[test]
+    fn move_card_only_between_own_live_cards() {
+        let (db, alice) = db_with_user();
+        let bob = db.create_user("bob", "Bob", None, false).unwrap();
+        let a = Actor::user(alice.id);
+        let mine = db.create_card(&a, new_card("mine")).unwrap();
+        let next = db.create_card(&a, new_card("next")).unwrap();
+        let binned = db.create_card(&a, new_card("binned")).unwrap();
+        db.delete_card(&a, binned.id).unwrap();
+        let theirs = db
+            .create_card(&Actor::user(bob.id), new_card("theirs"))
+            .unwrap();
+        let invalid = |e: DbError| matches!(e, DbError::Domain(cardfile_core::Error::Invalid(_)));
+        for neighbour in [theirs.id, binned.id, mine.id, CardId::new()] {
+            assert!(invalid(
+                db.move_card(&a, mine.id, Some(neighbour), None)
+                    .unwrap_err()
+            ));
+            assert!(invalid(
+                db.move_card(&a, mine.id, None, Some(neighbour))
+                    .unwrap_err()
+            ));
+        }
+        assert_eq!(db.card(mine.id).unwrap().rev, 1);
+        db.move_card(&a, mine.id, Some(next.id), None).unwrap();
     }
 
     #[test]

@@ -134,7 +134,7 @@ impl Database {
         let card_id = card.to_string();
         let wanted: HashSet<String> = tag_ids.iter().map(ToString::to_string).collect();
         self.tx(|conn| {
-            crate::cards::ensure_owner(conn, actor, &card_id)?;
+            crate::cards::ensure_live_owner(conn, actor, &card_id)?;
             let owner = actor.principal().to_string();
             let valid: HashSet<String> = tags::table
                 .filter(tags::id.eq_any(&wanted))

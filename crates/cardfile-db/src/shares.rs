@@ -39,16 +39,21 @@ pub(crate) fn access_of(
     card: &str,
     user: &str,
 ) -> DbResult<Option<CardAccess>> {
-    let owner: Option<String> = cards::table
+    let row: Option<(String, Option<i64>)> = cards::table
         .find(card)
-        .select(cards::owner_id)
+        .select((cards::owner_id, cards::deleted_at))
         .first(conn)
         .optional()?;
-    let Some(owner) = owner else {
+    let Some((owner, deleted_at)) = row else {
         return Ok(None);
     };
     if owner == user {
         return Ok(Some(CardAccess::Owner));
+    }
+    // A card in the owner's recycle bin is hidden from the people it is shared with
+    // (as in their lists) until it is restored.
+    if deleted_at.is_some() {
+        return Ok(None);
     }
     let perm: Option<String> = card_shares::table
         .find((card, user))
@@ -124,6 +129,7 @@ impl Database {
             if owner != actor.principal().to_string() {
                 return Err(DbError::Domain(cardfile_core::Error::PermissionDenied));
             }
+            crate::cards::ensure_not_trashed(conn, &card_id)?;
             if owner == user.to_string() {
                 return Err(
                     cardfile_core::Error::Invalid("cannot share with the owner".into()).into(),
@@ -333,15 +339,28 @@ mod tests {
         let (db, alice) = db_with_user();
         let bob = db.create_user("bob", "Bob", None, false).unwrap();
         let a = Actor::user(alice.id);
-        let card = db
-            .create_card(
-                &a,
-                NewCard {
-                    lock_mode: LockMode::Encrypted,
-                    ..Default::default()
-                },
-            )
-            .unwrap();
+        let card = db.create_card(&a, NewCard::default()).unwrap();
+        let payload = cardfile_core::EncryptedPayload {
+            v: 2,
+            salt: String::new(),
+            nonce: "n".into(),
+            m_cost: 0,
+            t_cost: 0,
+            p_cost: 0,
+            ciphertext: "c".into(),
+            key_id: String::new(),
+        };
+        db.set_card_lock(
+            &a,
+            card.id,
+            LockMode::Encrypted,
+            "",
+            "",
+            Some(&payload),
+            &[(alice.id, "owner-key".into())],
+            &[],
+        )
+        .unwrap();
         assert!(
             db.share_card(&a, card.id, bob.id, SharePermission::View, None)
                 .is_err()
