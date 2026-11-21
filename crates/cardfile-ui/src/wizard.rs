@@ -15,6 +15,7 @@ use gpui_kit::{
     div, img, px,
 };
 
+use crate::lock_picker::{PROTECTIONS, lock_choices, lock_description, lock_label};
 use crate::paths::DataPaths;
 use crate::state::{AppState, Session};
 use crate::widgets::{error, field, hint};
@@ -514,17 +515,17 @@ impl Wizard {
                 let mut col = v_flex()
                     .gap(px(8.))
                     .child(hint(t("wizard.protection.intro"), cx));
-                for (mode, key) in [
-                    (LockMode::ReadOnly, "read_only"),
-                    (LockMode::Private, "private"),
-                    (LockMode::Encrypted, "encrypted"),
-                ] {
+                for mode in PROTECTIONS {
                     let checked = self.lock_modes.contains(&mode);
-                    col = col.child(
-                        v_flex()
-                            .child(
-                                Checkbox::new(SharedString::from(format!("lock-{key}")))
-                                    .label(t(&format!("lock.{key}")))
+                    col =
+                        col.child(
+                            v_flex()
+                                .child(
+                                    Checkbox::new(SharedString::from(format!(
+                                        "lock-{}",
+                                        mode.as_str()
+                                    )))
+                                    .label(lock_label(mode))
                                     .checked(checked)
                                     .on_click(cx.listener(move |this, on: &bool, _, cx| {
                                         if *on {
@@ -537,27 +538,17 @@ impl Wizard {
                                         }
                                         cx.notify();
                                     })),
-                            )
-                            .child(
-                                div()
-                                    .pl(px(24.))
-                                    .child(hint(t(&format!("lock.{key}_desc")), cx)),
-                            ),
-                    );
+                                )
+                                .child(div().pl(px(24.)).child(hint(lock_description(mode), cx))),
+                        );
                 }
-                let mut options = vec![LockMode::None];
-                options.extend(
-                    self.lock_modes
-                        .iter()
-                        .copied()
-                        .filter(|m| *m != LockMode::Encrypted),
-                );
+                let options = lock_choices(&self.lock_modes, false);
                 let selected = options.iter().position(|m| *m == self.default_lock);
                 let mut group = RadioGroup::horizontal("default-lock").selected_index(selected);
                 for m in &options {
                     group = group.child(
                         Radio::new(SharedString::from(format!("default-{}", m.as_str())))
-                            .label(t(&format!("lock.{}", m.as_str()))),
+                            .label(lock_label(*m)),
                     );
                 }
                 let opts = options.clone();

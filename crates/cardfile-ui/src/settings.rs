@@ -1,6 +1,6 @@
 //! Settings dialog.
 
-use cardfile_core::{AuthMode, LockMode, SearchScope, User, UserId};
+use cardfile_core::{AuthMode, SearchScope, User, UserId};
 use cardfile_i18n::{t, t_args};
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
@@ -21,6 +21,7 @@ use cardfile_db::CredentialUpdate;
 use zeroize::Zeroizing;
 
 use crate::keymap::*;
+use crate::lock_picker::{PROTECTIONS, lock_choices, lock_label};
 use crate::state::{AppState, run_db};
 use crate::widgets::{error, field, hint, section};
 use crate::workspace::Workspace;
@@ -646,13 +647,10 @@ impl SettingsView {
     fn editor(&mut self, cx: &mut Context<Self>) -> AnyElement {
         let s = AppState::user_settings(cx);
         let view = cx.entity();
-        let enabled = AppState::get(cx).app.enabled_lock_modes.clone();
-        let mut lock_options = vec![(LockMode::None, t("lock.none"))];
-        for m in [LockMode::ReadOnly, LockMode::Private] {
-            if enabled.contains(&m) {
-                lock_options.push((m, t(&format!("lock.{}", m.as_str()))));
-            }
-        }
+        let lock_options = lock_choices(&AppState::get(cx).app.enabled_lock_modes, false)
+            .into_iter()
+            .map(|m| (m, lock_label(m)))
+            .collect();
         let dict_langs: Vec<(usize, String)> = self
             .dictionaries
             .clone()
@@ -855,11 +853,11 @@ impl SettingsView {
                 .child(div().pt(px(4.)).child(row))
                 .child(error(self.auth_error.as_ref(), cx));
             col = col.child(section(t("settings.security.lock_modes"), cx));
-            for m in [LockMode::ReadOnly, LockMode::Private, LockMode::Encrypted] {
+            for m in PROTECTIONS {
                 let on = app.enabled_lock_modes.contains(&m);
                 col = col.child(
                     Checkbox::new(SharedString::from(format!("enabled-{}", m.as_str())))
-                        .label(t(&format!("lock.{}", m.as_str())))
+                        .label(lock_label(m))
                         .checked(on)
                         .on_click(cx.listener(move |v, checked: &bool, _, cx| {
                             let checked = *checked;

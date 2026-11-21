@@ -23,6 +23,7 @@ use gpui_kit::{
 };
 use zeroize::Zeroizing;
 
+use crate::lock_picker::{lock_choices, lock_label, lock_menu};
 use crate::state::{AppState, DbBlobs, Latch, SnapshotWriter, run_db};
 use crate::widgets::{error, format_date};
 
@@ -1239,7 +1240,7 @@ impl CardPane {
         let pinned = card.is_some_and(|c| c.is_pinned);
         let favorite = card.is_some_and(|c| c.is_favorite);
         let mode = card.map(|c| c.lock_mode).unwrap_or_default();
-        let enabled = AppState::get(cx).app.enabled_lock_modes.clone();
+        let choices = lock_choices(&AppState::get(cx).app.enabled_lock_modes, true);
         let deleted = self.access == Access::Deleted;
         let owner = self.card_access.is_owner();
         let can_share =
@@ -1253,26 +1254,16 @@ impl CardPane {
             let pane = pane.clone();
             Button::new("protection")
                 .icon(lock_icon)
-                .label(t(&format!("lock.{}", mode.as_str())))
+                .label(lock_label(mode))
                 .ghost()
                 .small()
                 .dropdown_caret(true)
                 .tooltip(t("card.protect.tooltip"))
-                .dropdown_menu(move |mut menu, _, _| {
-                    for m in LockMode::ALL {
-                        if m != LockMode::None && !enabled.contains(&m) {
-                            continue;
-                        }
-                        let pane = pane.clone();
-                        menu = menu.item(
-                            PopupMenuItem::new(t(&format!("lock.{}", m.as_str())))
-                                .checked(m == mode)
-                                .on_click(move |_, window, cx| {
-                                    pane.update(cx, |p, cx| p.set_lock_mode(m, window, cx))
-                                }),
-                        );
-                    }
-                    menu
+                .dropdown_menu(move |menu, _, _| {
+                    let pane = pane.clone();
+                    lock_menu(menu, &choices, mode, move |m, window, cx| {
+                        pane.update(cx, |p, cx| p.set_lock_mode(m, window, cx))
+                    })
                 })
         };
         let tags_menu = {

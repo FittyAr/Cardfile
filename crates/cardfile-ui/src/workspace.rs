@@ -1178,7 +1178,7 @@ impl Workspace {
                     .into_any_element()
             }
             None if card.lock_mode.hides_content() => {
-                t(&format!("lock.{}", card.lock_mode.as_str())).into_any_element()
+                crate::lock_picker::lock_label(card.lock_mode).into_any_element()
             }
             None => cardfile_editor::bidi::display(&card.preview).into_any_element(),
         };

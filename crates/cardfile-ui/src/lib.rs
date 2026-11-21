@@ -12,6 +12,7 @@ mod export;
 mod history;
 pub mod keymap;
 mod local_config;
+mod lock_picker;
 mod locks;
 mod login;
 mod mcp_host;
