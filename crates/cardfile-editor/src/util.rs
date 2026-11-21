@@ -55,6 +55,17 @@ fn whitespace_tokens(text: &str) -> Vec<Range<usize>> {
     out
 }
 
+/// The index after (`forward`) or before `i` in a list of `n` items, wrapping
+/// around at both ends. An empty list stays at 0.
+pub(crate) fn cycle(i: usize, n: usize, forward: bool) -> usize {
+    let n = n.max(1);
+    if forward {
+        (i + 1) % n
+    } else {
+        (i + n - 1) % n
+    }
+}
+
 /// MIME type guessed from a file extension.
 pub fn mime_for_path(path: &Path) -> String {
     let ext = path
@@ -107,6 +118,29 @@ pub fn format_size(bytes: u64) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn cycle_wraps_at_both_ends() {
+        assert_eq!(cycle(0, 3, true), 1);
+        assert_eq!(cycle(2, 3, true), 0);
+        assert_eq!(cycle(0, 3, false), 2);
+        assert_eq!(cycle(1, 3, false), 0);
+    }
+
+    #[test]
+    fn cycle_handles_tiny_lists() {
+        assert_eq!(cycle(0, 1, true), 0);
+        assert_eq!(cycle(0, 1, false), 0);
+        assert_eq!(cycle(0, 0, true), 0);
+        assert_eq!(cycle(0, 0, false), 0);
+    }
+
+    #[test]
+    fn cycle_from_a_stale_index_lands_inside_the_list() {
+        // The list shrank under the selection (e.g. the query filtered items out).
+        assert_eq!(cycle(7, 3, true), 2);
+        assert_eq!(cycle(7, 3, false), 0);
+    }
 
     #[test]
     fn finds_misspellings() {

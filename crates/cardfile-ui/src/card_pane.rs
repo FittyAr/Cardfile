@@ -121,6 +121,22 @@ struct PendingSave {
 
 impl EventEmitter<CardPaneEvent> for CardPane {}
 
+/// The (editor revision, title generation) the shown document is known to be saved
+/// at: the newest running save of card `open` in document `epoch`, else `saved`, the
+/// last confirmed one. Saves of other cards or of a replaced document do not count.
+fn save_baseline(
+    pending: &[PendingSave],
+    open: Option<CardId>,
+    epoch: u64,
+    saved: (u64, u64),
+) -> (u64, u64) {
+    pending
+        .iter()
+        .rev()
+        .find(|p| Some(p.card) == open && p.epoch == epoch)
+        .map_or(saved, |p| (p.revision, p.title_gen))
+}
+
 impl CardPane {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let blobs = crate::state::blob_store(cx);
@@ -456,16 +472,12 @@ impl CardPane {
 
     /// Whether the editor holds changes that no finished or running save covers.
     fn is_dirty(&self, cx: &gpui_kit::App) -> bool {
-        let open = self.card_id();
-        // The newest running save of the shown document, else the last confirmed one.
-        let (revision, title_gen) = self
-            .pending
-            .iter()
-            .rev()
-            .find(|p| Some(p.card) == open && p.epoch == self.doc_epoch)
-            .map_or((self.saved_revision, self.saved_title_gen), |p| {
-                (p.revision, p.title_gen)
-            });
+        let (revision, title_gen) = save_baseline(
+            &self.pending,
+            self.card_id(),
+            self.doc_epoch,
+            (self.saved_revision, self.saved_title_gen),
+        );
         self.title_gen != title_gen || self.editor.read(cx).revision() != revision
     }
 
@@ -1679,5 +1691,49 @@ impl Render for CardPane {
             .child(body)
             .child(status)
             .into_any_element()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn save(card: CardId, epoch: u64, revision: u64, title_gen: u64) -> PendingSave {
+        PendingSave {
+            card,
+            ticket: 0,
+            epoch,
+            revision,
+            title_gen,
+            done: Latch::default(),
+            error: Arc::default(),
+        }
+    }
+
+    #[test]
+    fn without_running_saves_the_confirmed_state_counts() {
+        let card = CardId::new();
+        assert_eq!(save_baseline(&[], Some(card), 0, (5, 2)), (5, 2));
+        assert_eq!(save_baseline(&[], None, 0, (5, 2)), (5, 2));
+    }
+
+    #[test]
+    fn the_newest_running_save_of_the_shown_document_counts() {
+        let card = CardId::new();
+        let pending = [save(card, 1, 7, 3), save(card, 1, 9, 4)];
+        assert_eq!(save_baseline(&pending, Some(card), 1, (5, 2)), (9, 4));
+    }
+
+    #[test]
+    fn saves_of_other_cards_or_documents_are_ignored() {
+        let (card, other) = (CardId::new(), CardId::new());
+        let pending = [
+            save(card, 1, 7, 3),
+            save(other, 1, 9, 4),
+            save(card, 0, 8, 8),
+        ];
+        assert_eq!(save_baseline(&pending, Some(card), 1, (5, 2)), (7, 3));
+        assert_eq!(save_baseline(&pending, Some(card), 2, (5, 2)), (5, 2));
+        assert_eq!(save_baseline(&pending, None, 1, (5, 2)), (5, 2));
     }
 }

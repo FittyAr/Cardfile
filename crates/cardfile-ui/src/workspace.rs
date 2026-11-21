@@ -1166,29 +1166,13 @@ impl Workspace {
         };
         let secondary: AnyElement = match &card.snippet {
             Some(snippet) => {
-                // Matches are wrapped in \u{1}…\u{2}.
-                let mut text = String::new();
-                let mut highlights = Vec::new();
-                let mut start = None;
-                for ch in snippet.chars() {
-                    match ch {
-                        '\u{1}' => start = Some(text.len()),
-                        '\u{2}' => {
-                            if let Some(s) = start.take() {
-                                highlights.push((
-                                    s..text.len(),
-                                    HighlightStyle {
-                                        font_weight: Some(FontWeight::BOLD),
-                                        background_color: Some(th.warning.opacity(0.3)),
-                                        ..Default::default()
-                                    },
-                                ));
-                            }
-                        }
-                        '\n' => text.push(' '),
-                        c => text.push(c),
-                    }
-                }
+                let (text, ranges) = parse_snippet(snippet);
+                let style = HighlightStyle {
+                    font_weight: Some(FontWeight::BOLD),
+                    background_color: Some(th.warning.opacity(0.3)),
+                    ..Default::default()
+                };
+                let highlights: Vec<_> = ranges.into_iter().map(|r| (r, style)).collect();
                 StyledText::new(text)
                     .with_highlights(highlights)
                     .into_any_element()
@@ -1458,5 +1442,76 @@ impl Render for Workspace {
                     .border_color(border)
                     .child(chat)
             }))
+    }
+}
+
+/// Split a search snippet into display text and the byte ranges of its matches.
+/// The database wraps matches in `\u{1}`…`\u{2}`; line breaks become spaces so the
+/// snippet stays on one line. A stray `\u{2}` is dropped and an unclosed `\u{1}`
+/// highlights nothing.
+fn parse_snippet(snippet: &str) -> (String, Vec<std::ops::Range<usize>>) {
+    let mut text = String::with_capacity(snippet.len());
+    let mut ranges = Vec::new();
+    let mut start = None;
+    for ch in snippet.chars() {
+        match ch {
+            '\u{1}' => start = Some(text.len()),
+            '\u{2}' => {
+                if let Some(s) = start.take() {
+                    ranges.push(s..text.len());
+                }
+            }
+            '\n' => text.push(' '),
+            c => text.push(c),
+        }
+    }
+    (text, ranges)
+}
+
+#[cfg(test)]
+// Ranges are what is compared, not range contents.
+#[allow(clippy::single_range_in_vec_init)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn snippet_without_markers_is_unchanged() {
+        assert_eq!(parse_snippet(""), (String::new(), vec![]));
+        assert_eq!(parse_snippet("plain text"), ("plain text".into(), vec![]));
+    }
+
+    #[test]
+    fn snippet_matches_become_byte_ranges() {
+        let (text, ranges) = parse_snippet("a \u{1}cat\u{2} and a \u{1}dog\u{2}");
+        assert_eq!(text, "a cat and a dog");
+        assert_eq!(ranges, vec![2..5, 12..15]);
+        assert_eq!(&text[ranges[1].clone()], "dog");
+    }
+
+    #[test]
+    fn snippet_ranges_count_bytes_of_multibyte_text() {
+        let (text, ranges) = parse_snippet("ñandú \u{1}café\u{2} 日本");
+        assert_eq!(ranges, vec![8..13]);
+        assert_eq!(&text[ranges[0].clone()], "café");
+    }
+
+    #[test]
+    fn snippet_newlines_become_spaces() {
+        let (text, ranges) = parse_snippet("one\ntwo\n\u{1}three\u{2}");
+        assert_eq!(text, "one two three");
+        assert_eq!(ranges, vec![8..13]);
+    }
+
+    #[test]
+    fn snippet_unbalanced_markers_are_dropped() {
+        assert_eq!(parse_snippet("x\u{2}y"), ("xy".into(), vec![]));
+        assert_eq!(parse_snippet("x\u{1}y"), ("xy".into(), vec![]));
+        // A second opener restarts the match.
+        assert_eq!(
+            parse_snippet("\u{1}a\u{1}b\u{2}"),
+            ("ab".into(), vec![1..2])
+        );
+        // An empty match stays an empty range.
+        assert_eq!(parse_snippet("a\u{1}\u{2}b"), ("ab".into(), vec![1..1]));
     }
 }

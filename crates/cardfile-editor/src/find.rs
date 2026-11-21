@@ -139,11 +139,7 @@ impl RichEditor {
         if n == 0 {
             return;
         }
-        bar.current = Some(match bar.current {
-            Some(i) if forward => (i + 1) % n,
-            Some(i) => (i + n - 1) % n,
-            None => 0,
-        });
+        bar.current = Some(bar.current.map_or(0, |i| crate::util::cycle(i, n, forward)));
         self.select_current_match(cx);
     }
 

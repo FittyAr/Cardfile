@@ -89,6 +89,23 @@ pub(crate) struct SlashMenu {
     pub selected: usize,
 }
 
+/// The lower-cased query typed after the `/` at byte `start`, up to the caret at
+/// byte `caret`. `None` when the caret is not past the `/`, the `/` is gone or the
+/// query holds a space (the user moved on to normal text).
+fn query_at(text: &str, start: usize, caret: usize) -> Option<String> {
+    if caret <= start || !text.get(start..)?.starts_with('/') {
+        return None;
+    }
+    let q = text.get(start + 1..caret)?;
+    (!q.contains(' ')).then(|| q.to_lowercase())
+}
+
+/// Whether an item with this translated `label` and search `words` matches the
+/// lower-cased query `q`. An empty query matches everything.
+fn item_matches(q: &str, label: &str, words: &str) -> bool {
+    q.is_empty() || label.to_lowercase().contains(q) || words.contains(q)
+}
+
 impl RichEditor {
     /// Called after text input: open the menu on `/` typed in an empty paragraph.
     pub(crate) fn maybe_open_slash(&mut self, typed: &str) {
@@ -116,14 +133,10 @@ impl RichEditor {
         let menu = self.slash.as_ref()?;
         let caret = self.model.caret();
         let text = self.model.doc.slot_text(menu.slot)?;
-        if caret.slot != menu.slot
-            || caret.offset <= menu.start
-            || !text.text[menu.start..].starts_with('/')
-        {
+        if caret.slot != menu.slot {
             return None;
         }
-        let q = text.text.get(menu.start + 1..caret.offset)?;
-        (!q.contains(' ')).then(|| q.to_lowercase())
+        query_at(&text.text, menu.start, caret.offset)
     }
 
     fn slash_items(&self) -> Vec<(SlashItem, String)> {
@@ -131,9 +144,7 @@ impl RichEditor {
         ITEMS
             .iter()
             .map(|(item, key, words)| (*item, t(key), *words))
-            .filter(|(_, label, words)| {
-                q.is_empty() || label.to_lowercase().contains(&q) || words.contains(q.as_str())
-            })
+            .filter(|(_, label, words)| item_matches(&q, label, words))
             .map(|(item, label, _)| (item, label))
             .collect()
     }
@@ -154,11 +165,7 @@ impl RichEditor {
         match key {
             SlashKey::Up | SlashKey::Down => {
                 if let Some(m) = &mut self.slash {
-                    m.selected = if key == SlashKey::Down {
-                        (m.selected + 1) % n.max(1)
-                    } else {
-                        (m.selected + n.max(1) - 1) % n.max(1)
-                    };
+                    m.selected = crate::util::cycle(m.selected, n, key == SlashKey::Down);
                 }
                 cx.notify();
             }
@@ -269,4 +276,49 @@ pub(crate) enum SlashKey {
     Down,
     Enter,
     Escape,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn query_is_the_text_between_slash_and_caret() {
+        assert_eq!(query_at("/", 0, 1).as_deref(), Some(""));
+        assert_eq!(query_at("/Head", 0, 5).as_deref(), Some("head"));
+        assert_eq!(query_at("/heading", 0, 3).as_deref(), Some("he"));
+    }
+
+    #[test]
+    fn query_needs_the_caret_after_the_slash() {
+        assert_eq!(query_at("/h", 0, 0), None);
+        assert_eq!(query_at("x/h", 1, 1), None);
+        assert_eq!(query_at("x/h", 1, 3).as_deref(), Some("h"));
+    }
+
+    #[test]
+    fn query_ends_when_the_slash_is_gone_or_a_space_is_typed() {
+        assert_eq!(query_at("h", 0, 1), None);
+        assert_eq!(query_at("/a b", 0, 4), None);
+        assert_eq!(query_at("", 0, 1), None);
+        // The menu start past the end of the text (the text was cut).
+        assert_eq!(query_at("/", 3, 4), None);
+    }
+
+    #[test]
+    fn query_out_of_char_bounds_is_rejected_not_a_panic() {
+        // 'é' is two bytes: offset 2 falls inside it.
+        assert_eq!(query_at("/é", 0, 2), None);
+        assert_eq!(query_at("/é", 0, 3).as_deref(), Some("é"));
+        assert_eq!(query_at("/ÉCOLE", 0, 7).as_deref(), Some("école"));
+    }
+
+    #[test]
+    fn items_match_by_label_or_keywords() {
+        assert!(item_matches("", "Heading 1", "h1 title heading"));
+        assert!(item_matches("head", "Heading 1", "h1 title heading"));
+        assert!(item_matches("h1", "Heading 1", "h1 title heading"));
+        assert!(item_matches("título", "Título 1", "h1 title heading"));
+        assert!(!item_matches("table", "Heading 1", "h1 title heading"));
+    }
 }

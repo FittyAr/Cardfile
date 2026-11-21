@@ -193,10 +193,18 @@ pub fn has_active_provider(cx: &App) -> bool {
 fn find_active(cx: &App) -> Option<ProviderConfig> {
     let all = parsed_providers(cx);
     let active = AppState::session(cx).and_then(|s| s.settings.ai_active_provider.as_deref());
+    pick_active(&all, active, |p| is_usable(p, cx)).cloned()
+}
+
+/// The provider with id `active` when it is usable, else the first usable one.
+fn pick_active<'a>(
+    all: &'a [ProviderConfig],
+    active: Option<&str>,
+    usable: impl Fn(&ProviderConfig) -> bool,
+) -> Option<&'a ProviderConfig> {
     active
-        .and_then(|id| all.iter().find(|p| p.id == id && is_usable(p, cx)))
-        .or_else(|| all.iter().find(|p| is_usable(p, cx)))
-        .cloned()
+        .and_then(|id| all.iter().find(|p| p.id == id && usable(p)))
+        .or_else(|| all.iter().find(|p| usable(p)))
 }
 
 /// Bumped by every [`save_providers`]; a background save that finishes after a newer
@@ -1350,5 +1358,43 @@ impl Render for AiSettings {
                 .into_any_element(),
             AiPage::Mcp => self.render_mcp(cx),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn provider(id: &str) -> ProviderConfig {
+        ProviderConfig {
+            id: id.into(),
+            ..Default::default()
+        }
+    }
+
+    fn ids(p: Option<&ProviderConfig>) -> Option<&str> {
+        p.map(|p| p.id.as_str())
+    }
+
+    #[test]
+    fn the_active_provider_wins_when_usable() {
+        let all = [provider("a"), provider("b"), provider("c")];
+        assert_eq!(ids(pick_active(&all, Some("b"), |_| true)), Some("b"));
+    }
+
+    #[test]
+    fn an_unusable_or_unknown_active_provider_falls_back_to_the_first_usable() {
+        let all = [provider("a"), provider("b"), provider("c")];
+        let usable = |p: &ProviderConfig| p.id != "a" && p.id != "c";
+        assert_eq!(ids(pick_active(&all, Some("c"), usable)), Some("b"));
+        assert_eq!(ids(pick_active(&all, Some("gone"), usable)), Some("b"));
+        assert_eq!(ids(pick_active(&all, None, usable)), Some("b"));
+    }
+
+    #[test]
+    fn nothing_usable_means_no_provider() {
+        let all = [provider("a")];
+        assert_eq!(ids(pick_active(&all, Some("a"), |_| false)), None);
+        assert_eq!(ids(pick_active(&[], Some("a"), |_| true)), None);
     }
 }

@@ -737,3 +737,65 @@ impl Render for ChatPanel {
             .child(footer)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use cardfile_ai::AiError;
+    use serde_json::json;
+
+    #[test]
+    fn summary_prefers_the_first_known_non_empty_field() {
+        assert_eq!(summarize_args(&json!({})), "");
+        assert_eq!(
+            summarize_args(&json!({"title": "", "query": "rust"})),
+            "“rust”"
+        );
+        assert_eq!(
+            summarize_args(&json!({"query": "q", "title": "Groceries"})),
+            "“Groceries”"
+        );
+        assert_eq!(summarize_args(&json!({"tags": ["a", 1, "b"]})), "a, b");
+        assert_eq!(summarize_args(&json!({"tags": [], "name": "x"})), "“x”");
+        assert_eq!(summarize_args(&json!({"other": "ignored"})), "");
+        assert_eq!(summarize_args(&json!("not an object")), "");
+    }
+
+    #[test]
+    fn summary_truncates_by_characters_not_bytes() {
+        let long = "ñ".repeat(80);
+        let out = summarize_args(&json!({ "title": long }));
+        assert_eq!(out.chars().count(), 62);
+        assert_eq!(out, format!("“{}”", "ñ".repeat(60)));
+    }
+
+    #[test]
+    fn auth_failures_map_to_the_auth_message() {
+        let http = |status| AiError::Http {
+            status,
+            message: String::new(),
+        };
+        assert_eq!(ai_error_key(&http(401)), "chat.error.auth");
+        assert_eq!(ai_error_key(&http(403)), "chat.error.auth");
+        assert_eq!(ai_error_key(&AiError::MissingApiKey), "chat.error.auth");
+        assert_eq!(ai_error_key(&http(500)), "chat.error.generic");
+        assert_eq!(ai_error_key(&http(404)), "chat.error.generic");
+    }
+
+    #[test]
+    fn transport_failures_have_their_own_messages() {
+        assert_eq!(
+            ai_error_key(&AiError::Network("reset".into())),
+            "chat.error.network"
+        );
+        assert_eq!(ai_error_key(&AiError::Timeout), "chat.error.timeout");
+        assert_eq!(
+            ai_error_key(&AiError::InsecureUrl),
+            "chat.error.insecure_url"
+        );
+        assert_eq!(
+            ai_error_key(&AiError::Decode("bad".into())),
+            "chat.error.generic"
+        );
+    }
+}
