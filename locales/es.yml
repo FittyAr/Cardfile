@@ -254,6 +254,7 @@ card:
   read_only_banner: Esta ficha es de solo lectura.
   unlock_edit: Editar
   deleted_banner: Esta ficha está en la papelera.
+  invalid_content: "No se pudo leer el contenido guardado de esta ficha. Se muestra en solo lectura para no sobrescribirlo; restaura una versión del historial para editarla."
   saving: Guardando…
   updated: "Guardado %{date}"
   words: "%{n} palabras"
@@ -485,6 +486,7 @@ drag:
   copied: "Copiado a «%{title}»"
   cannot_edit: "No puedes editar esa ficha."
   protected: "Desbloquea esa ficha antes de soltar archivos en ella."
+  source_kept: "Copiado a «%{title}». La ficha original cambió mientras tanto, así que el bloque también se quedó en ella."
 
 activity:
   create: "Creada"

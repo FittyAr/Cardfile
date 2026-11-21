@@ -254,6 +254,7 @@ card:
   read_only_banner: Diese Karte ist schreibgeschützt.
   unlock_edit: Bearbeiten
   deleted_banner: Diese Karte befindet sich im Papierkorb.
+  invalid_content: "Der gespeicherte Inhalt dieser Karte konnte nicht gelesen werden. Sie wird schreibgeschützt angezeigt, damit er nicht überschrieben wird; stelle eine Version aus dem Verlauf wieder her, um sie zu bearbeiten."
   saving: Wird gespeichert…
   updated: "Gespeichert %{date}"
   words: "%{n} Wörter"
@@ -485,6 +486,7 @@ drag:
   copied: "Nach „%{title}“ kopiert"
   cannot_edit: "Sie können diese Karte nicht bearbeiten."
   protected: "Entsperren Sie diese Karte, bevor Sie Dateien darauf ablegen."
+  source_kept: "Nach „%{title}“ kopiert. Die ursprüngliche Karte hat sich inzwischen geändert, daher blieb der Block auch dort."
 
 activity:
   create: "Erstellt"

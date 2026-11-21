@@ -254,6 +254,7 @@ card:
   read_only_banner: 此卡片为只读。
   unlock_edit: 编辑
   deleted_banner: 此卡片在回收站中。
+  invalid_content: "无法读取此卡片已保存的内容。为避免被覆盖，卡片以只读方式显示；请从历史记录恢复一个版本后再编辑。"
   saving: 正在保存…
   updated: "已保存 %{date}"
   words: "%{n} 字"
@@ -485,6 +486,7 @@ drag:
   copied: "已复制到“%{title}”"
   cannot_edit: "您无法编辑该卡片。"
   protected: "请先解锁该卡片，再将文件拖入。"
+  source_kept: "已复制到“%{title}”。原卡片在此期间已更改，因此该块也保留在原卡片中。"
 
 activity:
   create: "已创建"

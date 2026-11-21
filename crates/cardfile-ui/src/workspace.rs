@@ -487,6 +487,10 @@ impl Workspace {
         if pane.card_id() == Some(target) || pane.editor().entity_id() != dragged.source {
             return;
         }
+        // The block is removed from the source only if the pane still shows the same
+        // document when the copy is done; the editor is reused for every card.
+        let source_card = pane.card_id();
+        let source_generation = pane.editor().read(cx).document_generation();
         let Some(actor) = AppState::actor(cx) else {
             return;
         };
@@ -546,18 +550,29 @@ impl Workspace {
             let result = task.await;
             let _ = this.update_in(cx, |this, window, cx| match result {
                 Ok(title) => {
-                    if !copy {
-                        let editor = this.pane.read(cx).editor().clone();
-                        editor.update(cx, |e, cx| e.take_block(index, &original, cx));
-                    }
-                    let key = if copy { "drag.copied" } else { "drag.moved" };
-                    window.push_notification(
+                    let removed = !copy && {
+                        let pane = this.pane.read(cx);
+                        let editor = pane.editor().clone();
+                        let same = pane.card_id() == source_card
+                            && editor.read(cx).document_generation() == source_generation;
+                        if !same {
+                            tracing::warn!("drag move: source card changed; block left in place");
+                        }
+                        same && editor.update(cx, |e, cx| e.take_block(index, &original, cx))
+                    };
+                    let notification = if copy || removed {
+                        let key = if copy { "drag.copied" } else { "drag.moved" };
                         gpui_kit::component::notification::Notification::success(t_args(
                             key,
                             &[("title", &title)],
-                        )),
-                        cx,
-                    );
+                        ))
+                    } else {
+                        gpui_kit::component::notification::Notification::warning(t_args(
+                            "drag.source_kept",
+                            &[("title", &title)],
+                        ))
+                    };
+                    window.push_notification(notification, cx);
                     this.reload(window, cx);
                 }
                 Err(e) => window.push_notification(

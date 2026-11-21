@@ -254,6 +254,7 @@ card:
   read_only_banner: Bu kart salt okunurdur.
   unlock_edit: Düzenle
   deleted_banner: Bu kart geri dönüşüm kutusunda.
+  invalid_content: "Bu kartın kayıtlı içeriği okunamadı. Üzerine yazılmaması için salt okunur gösteriliyor; düzenlemek için geçmişten bir sürümü geri yükleyin."
   saving: Kaydediliyor…
   updated: "%{date} kaydedildi"
   words: "%{n} sözcük"
@@ -485,6 +486,7 @@ drag:
   copied: "“%{title}” kartına kopyalandı"
   cannot_edit: "O kartı düzenleyemezsiniz."
   protected: "Dosya bırakmadan önce o kartın kilidini açın."
+  source_kept: "“%{title}” kartına kopyalandı. Bu sırada özgün kart değiştiği için blok orada da bırakıldı."
 
 activity:
   create: "Oluşturuldu"

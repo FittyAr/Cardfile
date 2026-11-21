@@ -254,6 +254,7 @@ card:
   read_only_banner: Kartu ini hanya-baca.
   unlock_edit: Edit
   deleted_banner: Kartu ini ada di tempat sampah.
+  invalid_content: "Konten tersimpan kartu ini tidak dapat dibaca. Kartu ditampilkan hanya-baca agar tidak tertimpa; pulihkan versi dari riwayat untuk mengeditnya."
   saving: Menyimpan…
   updated: "Disimpan %{date}"
   words: "%{n} kata"
@@ -485,6 +486,7 @@ drag:
   copied: "Disalin ke “%{title}”"
   cannot_edit: "Anda tidak dapat mengedit kartu itu."
   protected: "Buka kunci kartu itu sebelum melepaskan file ke dalamnya."
+  source_kept: "Disalin ke “%{title}”. Kartu asal berubah sementara itu, jadi bloknya juga tetap ada di sana."
 
 activity:
   create: "Dibuat"

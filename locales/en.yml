@@ -254,6 +254,7 @@ card:
   read_only_banner: This card is read-only.
   unlock_edit: Edit
   deleted_banner: This card is in the recycle bin.
+  invalid_content: "This card's stored content could not be read. It is shown read-only so it is not overwritten; restore a version from the history to edit it."
   saving: Saving…
   updated: "Saved %{date}"
   save_failed: "Could not save the card: %{error}. Your changes are kept and saved again with your next edit."
@@ -485,6 +486,7 @@ drag:
   copied: "Copied to “%{title}”"
   cannot_edit: "You cannot edit that card."
   protected: "Unlock that card before dropping files into it."
+  source_kept: "Copied to “%{title}”. The original card changed meanwhile, so the block was left in it too."
 
 activity:
   create: "Created"

@@ -254,6 +254,7 @@ card:
   read_only_banner: Cette fiche est en lecture seule.
   unlock_edit: Modifier
   deleted_banner: Cette fiche est dans la corbeille.
+  invalid_content: "Le contenu enregistré de cette fiche n’a pas pu être lu. Elle est affichée en lecture seule pour ne pas l’écraser ; restaurez une version depuis l’historique pour la modifier."
   saving: Enregistrement…
   updated: "Enregistré %{date}"
   words: "%{n} mots"
@@ -485,6 +486,7 @@ drag:
   copied: "Copié vers « %{title} »"
   cannot_edit: "Vous ne pouvez pas modifier cette fiche."
   protected: "Déverrouillez cette fiche avant d'y déposer des fichiers."
+  source_kept: "Copié dans « %{title} ». La fiche d’origine a changé entre-temps, le bloc y a donc aussi été conservé."
 
 activity:
   create: "Créée"
