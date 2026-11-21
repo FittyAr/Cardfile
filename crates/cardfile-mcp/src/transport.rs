@@ -8,6 +8,7 @@
 //!   version, mirrored in the `MCP-Protocol-Version`, `Mcp-Method` and `Mcp-Name` headers.
 
 use std::io::Read;
+use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::time::Duration;
 
 use base64::Engine as _;
@@ -78,6 +79,11 @@ impl HttpResponse {
         Self::json(status, &jsonrpc::failure(id, error))
     }
 
+    /// A 500 with a JSON-RPC internal error, for a handler that panicked.
+    pub(crate) fn internal_error() -> Self {
+        Self::error(500, None, &RpcError::internal("Internal error"))
+    }
+
     fn with_header(mut self, name: &'static str, value: String) -> Self {
         self.headers.push((name, value));
         self
@@ -125,10 +131,20 @@ impl<H: Handler> Endpoint<H> {
         }
         let principal = match bearer_token(req.header("authorization")) {
             None => return unauthorized(false),
-            Some(token) => match self.protocol.handler().authenticate(token) {
-                None => return unauthorized(true),
-                Some(p) => p,
-            },
+            Some(token) => {
+                // The handler is application code: a panic in it must answer this
+                // request with a 500, not kill the worker thread.
+                match catch_unwind(AssertUnwindSafe(|| {
+                    self.protocol.handler().authenticate(token)
+                })) {
+                    Err(_) => {
+                        tracing::error!("MCP authentication panicked");
+                        return HttpResponse::internal_error();
+                    }
+                    Ok(None) => return unauthorized(true),
+                    Ok(Some(p)) => p,
+                }
+            }
         };
         match req.method {
             "POST" => self.post(req, principal),

@@ -2,6 +2,7 @@
 
 use std::io::ErrorKind;
 use std::net::{Ipv4Addr, SocketAddr, TcpListener, TcpStream};
+use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::JoinHandle;
@@ -9,7 +10,7 @@ use std::time::{Duration, Instant};
 
 use crate::error::McpError;
 use crate::protocol::Protocol;
-use crate::transport::{Endpoint, HttpRequest};
+use crate::transport::{Endpoint, HttpRequest, HttpResponse};
 use crate::types::{Handler, ServerConfig, ServerInfo};
 
 /// How often idle workers re-check the stop flag.
@@ -82,15 +83,22 @@ pub fn start<H: Handler>(
     Ok(handle)
 }
 
+/// Serves requests until `stop` is set. Each iteration runs under `catch_unwind`, so
+/// a panic anywhere while serving one request (the handler, response writing) costs
+/// that request only: the worker keeps serving and the pool never shrinks. A dropped
+/// `tiny_http::Request` that was never answered is closed by tiny_http with a 500.
 fn worker_loop<H: Handler>(server: &tiny_http::Server, endpoint: &Endpoint<H>, stop: &AtomicBool) {
     while !stop.load(Ordering::Acquire) {
-        match server.recv_timeout(POLL) {
+        let step = catch_unwind(AssertUnwindSafe(|| match server.recv_timeout(POLL) {
             Ok(Some(request)) => serve(request, endpoint),
             Ok(None) => {}
             Err(e) => {
                 tracing::debug!(error = %e, "MCP listener error");
                 std::thread::sleep(Duration::from_millis(50));
             }
+        }));
+        if step.is_err() {
+            tracing::error!("MCP request handling panicked; the worker keeps running");
         }
     }
 }
@@ -109,12 +117,18 @@ fn serve<H: Handler>(mut request: tiny_http::Request, endpoint: &Endpoint<H>) {
     let method = request.method().as_str().to_owned();
     let url = request.url().to_owned();
     let content_length = request.body_length();
-    let response = endpoint.handle(&mut HttpRequest {
-        method: &method,
-        url: &url,
-        headers: &headers,
-        content_length,
-        body: request.as_reader(),
+    let response = catch_unwind(AssertUnwindSafe(|| {
+        endpoint.handle(&mut HttpRequest {
+            method: &method,
+            url: &url,
+            headers: &headers,
+            content_length,
+            body: request.as_reader(),
+        })
+    }))
+    .unwrap_or_else(|_| {
+        tracing::error!(%method, "MCP request handler panicked");
+        HttpResponse::internal_error()
     });
     tracing::debug!(%method, status = response.status, "MCP request");
 

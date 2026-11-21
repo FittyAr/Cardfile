@@ -612,6 +612,94 @@ fn stop_frees_the_port_and_port_in_use_is_reported() {
     TcpListener::bind(addr).expect("port is free after drop");
 }
 
+/// A host whose code panics: in authentication for one token, in `tools` for
+/// another, and in every tool call.
+struct PanickingHandler;
+
+impl Handler for PanickingHandler {
+    type Principal = String;
+
+    fn authenticate(&self, token: &str) -> Option<String> {
+        match token {
+            "boom" => panic!("authentication exploded"),
+            other => Some(other.to_owned()),
+        }
+    }
+
+    fn tools(&self, who: &String) -> Vec<Tool> {
+        if who == "broken-tools" {
+            panic!("tools exploded");
+        }
+        vec![Tool::new("echo", "Echoes", json!({"type":"object"}))]
+    }
+
+    fn call_tool(&self, _: &String, _: &str, _: Value) -> Result<ToolOutput, String> {
+        panic!("call exploded")
+    }
+}
+
+#[test]
+fn panicking_handler_gets_500_and_workers_survive() {
+    const V: &str = "2025-11-25";
+    let server = cardfile_mcp::start(
+        ServerConfig {
+            threads: 1,
+            ..ServerConfig::default()
+        },
+        ServerInfo::new("x", "1"),
+        Arc::new(PanickingHandler),
+    )
+    .unwrap();
+    let url = server.url();
+    let init = json!({"jsonrpc":"2.0","id":0,"method":"initialize","params":{
+        "protocolVersion": V, "capabilities": {}, "clientInfo": {"name":"t","version":"0"}
+    }})
+    .to_string();
+    // More panics than workers: if a panic killed the only worker, later requests
+    // would never be answered.
+    for _ in 0..3 {
+        let r = post(&url, &[("Authorization", "Bearer boom")], &init);
+        assert_eq!(r.status, 500);
+        assert_eq!(r.body.unwrap()["error"]["code"], -32603);
+    }
+    let call = |token: &str, session: &str, body: Value| {
+        let auth = bearer(token);
+        post(
+            &url,
+            &[
+                ("Authorization", &auth),
+                ("Mcp-Session-Id", session),
+                ("MCP-Protocol-Version", V),
+            ],
+            &body.to_string(),
+        )
+    };
+    let (session, _) = initialize(&url, "broken-tools", V);
+    for method in ["tools/list", "tools/call"] {
+        let r = call(
+            "broken-tools",
+            &session,
+            json!({"jsonrpc":"2.0","id":2,"method":method,"params":{"name":"echo"}}),
+        );
+        assert_eq!(r.body.unwrap()["error"]["code"], -32603, "{method}");
+    }
+    let (session, _) = initialize(&url, "fine", V);
+    let r = call(
+        "fine",
+        &session,
+        json!({"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"echo"}}),
+    );
+    assert_eq!(r.body.unwrap()["error"]["code"], -32603);
+    // Still serving after every kind of panic.
+    let r = call(
+        "fine",
+        &session,
+        json!({"jsonrpc":"2.0","id":4,"method":"ping"}),
+    );
+    assert_eq!(r.status, 200);
+    assert_eq!(r.body.unwrap()["result"], json!({}));
+}
+
 #[test]
 fn invalid_config_is_rejected() {
     let err = cardfile_mcp::start(
