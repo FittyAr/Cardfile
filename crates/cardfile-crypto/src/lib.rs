@@ -45,20 +45,29 @@ fn params_in_range(m: u32, t: u32, p: u32) -> bool {
     m <= MAX_M_COST && t <= MAX_T_COST && p <= MAX_P_COST
 }
 
+/// Errors from hashing, key handling and card encryption.
 #[derive(Debug, Error)]
 pub enum CryptoError {
+    /// Authentication failed: the password or key is wrong, or the ciphertext was
+    /// altered. The two cases cannot be told apart by design.
     #[error("wrong password or corrupted data")]
     Decrypt,
+    /// The payload uses an envelope version this build does not know.
     #[error("unsupported encryption format version {0}")]
     UnsupportedVersion(u32),
+    /// The payload or a key is not valid base64 or has the wrong length; the
+    /// string says which part.
     #[error("invalid encrypted payload: {0}")]
     Malformed(String),
+    /// The operating system's random number generator failed.
     #[error("system random number generator failed")]
     Random,
+    /// Argon2 rejected its parameters or failed to derive a key.
     #[error("key derivation failed: {0}")]
     Kdf(String),
 }
 
+/// Result type of this crate.
 pub type CryptoResult<T> = Result<T, CryptoError>;
 
 fn argon2(m: u32, t: u32, p: u32) -> CryptoResult<Argon2<'static>> {

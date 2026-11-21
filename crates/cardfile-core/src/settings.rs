@@ -33,6 +33,7 @@ pub enum AuthMode {
 pub struct AppSettings {
     /// `false` until the first-run wizard completes.
     pub initialized: bool,
+    /// How people sign in.
     pub auth_mode: AuthMode,
     /// Lock modes users may choose from. Unknown names (e.g. from a newer version)
     /// are skipped instead of discarding the whole list.
@@ -116,6 +117,7 @@ impl AppSettings {
         parse_lenient(json)
     }
 
+    /// Whether users may choose `mode`. [`LockMode::None`] is always allowed.
     pub fn lock_mode_enabled(&self, mode: LockMode) -> bool {
         mode == LockMode::None || self.enabled_lock_modes.contains(&mode)
     }
@@ -125,11 +127,17 @@ impl AppSettings {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct UserSettings {
+    /// Name of the GPUI colour theme.
     pub theme: String,
+    /// Base font size of the interface in logical pixels.
     pub ui_font_size: f32,
+    /// Font size of card text in the editor, in logical pixels.
     pub editor_font_size: f32,
+    /// Fields the search box looks at.
     pub search_scope: SearchScope,
+    /// Order of the card list.
     pub sort: SortOrder,
+    /// Protection given to new cards.
     pub default_lock_mode: LockMode,
     /// Lock the session after this many idle seconds (0 = never).
     pub auto_lock_secs: u32,
@@ -137,15 +145,21 @@ pub struct UserSettings {
     pub relock_card_secs: u32,
     /// Visible leading characters of a masked private title.
     pub mask_visible_chars: usize,
+    /// Underline misspelled words in the editor.
     pub spellcheck: bool,
+    /// Dictionary used for spell checking, e.g. `en_US`.
     pub spellcheck_language: String,
+    /// Turn Markdown-like typing (`# `, `- `, `**bold**`, …) into formatting.
     pub markdown_shortcuts: bool,
     /// Snapshots kept per card (0 disables history).
     pub max_revisions: u32,
+    /// Look for a newer version on GitHub Releases automatically.
     pub check_for_updates: bool,
     /// Explicit opt-in to prerelease updates; independent of the running version.
     pub update_channel: UpdateChannel,
+    /// Ask before moving a card to the recycle bin.
     pub confirm_delete: bool,
+    /// UI locale code, e.g. `en`.
     pub language: String,
     /// Width of the card list column in logical pixels.
     pub list_width: f32,
