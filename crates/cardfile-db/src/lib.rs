@@ -104,6 +104,7 @@ impl Database {
         })
     }
 
+    /// File the database was opened from; `None` for an in-memory database.
     pub fn path(&self) -> Option<&Path> {
         self.path.as_deref()
     }

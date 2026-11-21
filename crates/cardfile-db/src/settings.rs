@@ -31,6 +31,7 @@ impl Database {
         })
     }
 
+    /// Store the installation-wide settings, replacing the previous ones.
     pub fn save_app_settings(&self, settings: &AppSettings) -> DbResult<()> {
         let value = serde_json::to_string(settings).map_err(|e| DbError::Corrupt(e.to_string()))?;
         self.with(|conn| {

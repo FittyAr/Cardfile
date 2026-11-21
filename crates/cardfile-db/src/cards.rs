@@ -13,9 +13,12 @@ use crate::{Database, DbError, DbResult};
 /// Changes to a card's title and content.
 #[derive(Clone, Debug, Default)]
 pub struct ContentUpdate {
+    /// New title in plain text.
     pub title: String,
     /// Document JSON; empty for encrypted cards.
     pub content: String,
+    /// Plain text of the document, for search and previews (empty for
+    /// encrypted cards).
     pub plain_text: String,
     /// Replaces the ciphertext when the card is encrypted.
     pub encrypted: Option<EncryptedPayload>,
@@ -170,6 +173,8 @@ impl Database {
         })
     }
 
+    /// Load a card with its tags by id, including cards in the recycle bin. Does
+    /// not check access; fails with a not-found error when the id is unknown.
     pub fn card(&self, id: CardId) -> DbResult<Card> {
         self.with(|conn| load_card(conn, id))
     }
@@ -314,6 +319,8 @@ impl Database {
         Ok(card)
     }
 
+    /// Pin or unpin a live card. Only the owner may; logged as `pin`/`unpin`.
+    /// Bumps `updated_at` and `rev`.
     pub fn set_card_pinned(&self, actor: &Actor, id: CardId, pinned: bool) -> DbResult<()> {
         let action = if pinned { "pin" } else { "unpin" };
         self.touch(actor, id, action, false, |conn, id| {
@@ -323,6 +330,8 @@ impl Database {
         })
     }
 
+    /// Mark or unmark a live card as favourite. Only the owner may; logged as
+    /// `favorite`/`unfavorite`. Bumps `updated_at` and `rev`.
     pub fn set_card_favorite(&self, actor: &Actor, id: CardId, favorite: bool) -> DbResult<()> {
         let action = if favorite { "favorite" } else { "unfavorite" };
         self.touch(actor, id, action, false, |conn, id| {
@@ -356,6 +365,7 @@ impl Database {
         })
     }
 
+    /// Move a card out of the recycle bin. Only the owner may; logged as `restore`.
     pub fn restore_card(&self, actor: &Actor, id: CardId) -> DbResult<()> {
         self.touch(actor, id, "restore", true, |conn, id| {
             diesel::update(cards::table.find(id))
@@ -400,6 +410,7 @@ impl Database {
         })
     }
 
+    /// Snapshots of a card, newest first. Does not check access.
     pub fn card_revisions(&self, id: CardId) -> DbResult<Vec<CardRevision>> {
         self.with(|conn| {
             card_revisions::table
@@ -428,6 +439,7 @@ impl Database {
         })
     }
 
+    /// Load one snapshot by id; fails with a not-found error when it is unknown.
     pub fn card_revision(&self, id: RevisionId) -> DbResult<CardRevision> {
         self.with(|conn| {
             card_revisions::table
