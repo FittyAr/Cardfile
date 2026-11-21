@@ -608,6 +608,20 @@ chat:
     restore_card: "카드 복원함"
 
   step_limit: "너무 많은 단계를 거쳐 완료하지 못해 도우미가 중지되었습니다. 필요하면 계속하도록 요청하세요."
+  error:
+    start: "어시스턴트를 시작할 수 없습니다."
+    generic: "어시스턴트가 답변하지 못했습니다."
+    network: "AI 서비스에 연결할 수 없습니다. 인터넷 연결을 확인하세요."
+    timeout: "AI 서비스의 응답이 너무 오래 걸렸습니다. 다시 시도하세요."
+    auth: "AI 서비스가 API 키를 거부했습니다. 설정 → AI에서 확인하세요."
+    insecure_url: "이 AI 서비스는 다른 컴퓨터에서 http://를 사용하므로 키와 카드가 암호화되지 않은 채 전송됩니다. https://를 사용하세요(http://는 localhost에만 허용됩니다)."
+  approval:
+    title: "어시스턴트가 이 작업을 하도록 허용할까요?"
+    approve: "허용"
+    approve_all: "이 대화에서 모두 허용"
+    reject: "거부"
+    declined: "허용되지 않음"
+    more: "외 %{count}개"
 attachment:
   no_app: "이 컴퓨터에는 “%{name}”을(를) 열 수 있는 애플리케이션이 없습니다. 이 파일 형식용 프로그램(동영상의 경우 VLC 같은 미디어 플레이어)을 설치한 후 다시 시도하세요."
   not_found: "첨부 파일을 찾을 수 없습니다."

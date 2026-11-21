@@ -608,6 +608,20 @@ chat:
     restore_card: "Memulihkan kartu"
 
   step_limit: "Asisten berhenti setelah terlalu banyak langkah tanpa selesai. Minta untuk melanjutkan jika perlu."
+  error:
+    start: "Asisten tidak dapat dimulai."
+    generic: "Asisten tidak dapat menjawab."
+    network: "Layanan AI tidak dapat dijangkau. Periksa koneksi internet Anda."
+    timeout: "Layanan AI terlalu lama menjawab. Coba lagi."
+    auth: "Layanan AI menolak kunci API. Periksa di Pengaturan → AI."
+    insecure_url: "Layanan AI ini memakai http:// di komputer lain, sehingga kunci dan kartu Anda dikirim tanpa enkripsi. Gunakan https:// (http:// hanya diizinkan untuk localhost)."
+  approval:
+    title: "Izinkan asisten melakukan ini?"
+    approve: "Izinkan"
+    approve_all: "Izinkan semua di percakapan ini"
+    reject: "Tolak"
+    declined: "Tidak diizinkan"
+    more: "dan %{count} lainnya"
 attachment:
   no_app: "Tidak ada aplikasi di komputer ini yang dapat membuka “%{name}”. Instal program untuk jenis file ini (untuk video, pemutar media seperti VLC) lalu coba lagi."
   not_found: "Lampiran tidak ditemukan."

@@ -80,6 +80,15 @@ impl<H: Handler> Protocol<H> {
         Ok(Value::Object(result))
     }
 
+    /// The handler's tools for `who`. A panicking handler becomes a JSON-RPC internal
+    /// error instead of taking the worker thread down.
+    fn tools(&self, who: &H::Principal) -> Result<Vec<Tool>, RpcError> {
+        catch_unwind(AssertUnwindSafe(|| self.handler.tools(who))).map_err(|_| {
+            tracing::error!("MCP tool listing panicked");
+            RpcError::internal("Listing tools failed unexpectedly")
+        })
+    }
+
     fn discover(&self) -> Map<String, Value> {
         let mut result = Map::new();
         result.insert(
@@ -107,8 +116,7 @@ impl<H: Handler> Protocol<H> {
             return Err(RpcError::invalid_params("Invalid cursor"));
         }
         let tools: Vec<Value> = self
-            .handler
-            .tools(who)
+            .tools(who)?
             .iter()
             .map(|t| tool_json(t, version))
             .collect();
@@ -136,7 +144,7 @@ impl<H: Handler> Protocol<H> {
             Some(v @ Value::Object(_)) => v.clone(),
             Some(_) => return Err(RpcError::invalid_params("\"arguments\" must be an object")),
         };
-        if !self.handler.tools(who).iter().any(|t| t.name == name) {
+        if !self.tools(who)?.iter().any(|t| t.name == name) {
             return Err(RpcError::invalid_params(format!("Unknown tool: {name}")));
         }
         let outcome = catch_unwind(AssertUnwindSafe(|| {
@@ -253,6 +261,34 @@ mod tests {
 
     fn params(v: Value) -> Map<String, Value> {
         v.as_object().cloned().unwrap()
+    }
+
+    struct Broken;
+
+    impl Handler for Broken {
+        type Principal = ();
+        fn authenticate(&self, _: &str) -> Option<()> {
+            Some(())
+        }
+        fn tools(&self, _: &()) -> Vec<Tool> {
+            panic!("tools exploded")
+        }
+        fn call_tool(&self, _: &(), _: &str, _: Value) -> Result<ToolOutput, String> {
+            Ok(ToolOutput::Text(String::new()))
+        }
+    }
+
+    #[test]
+    fn panicking_tool_listing_is_an_internal_error() {
+        let p = Protocol::new(Arc::new(Broken), ServerInfo::new("t", "1"), 0);
+        let v = ProtocolVersion::V2025_11_25;
+        for (method, args) in [
+            ("tools/list", Map::new()),
+            ("tools/call", params(json!({"name": "x"}))),
+        ] {
+            let e = p.call(&(), v, method, &args).unwrap_err();
+            assert_eq!(e.code, crate::jsonrpc::code::INTERNAL_ERROR, "{method}");
+        }
     }
 
     #[test]

@@ -3,7 +3,14 @@
 //!
 //! The model runs on its own thread; its events reach the UI through a channel
 //! drained by a short foreground timer.
+//!
+//! Tools that remove or overwrite data ([`cardfile_agent::ToolDef::destructive`])
+//! only run after the user allows them in the panel: card text is untrusted input
+//! for the model, and a card could otherwise talk it into mass edits or deletions.
+//! The assistant thread waits for the answer on a channel; the UI thread never
+//! blocks.
 
+use std::collections::HashSet;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc;
@@ -11,9 +18,9 @@ use std::time::Duration;
 
 use cardfile_agent::Scope;
 use cardfile_ai::{AgentEvent, Message, ProviderConfig, ToolSpec};
-use cardfile_core::CardId;
+use cardfile_core::{CardId, LockMode, mask_title};
 use cardfile_editor::{EditorEvent, RichEditor};
-use cardfile_i18n::t;
+use cardfile_i18n::{t, t_args};
 use gpui_kit::assets::IconName;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::menu::{DropdownMenu as _, PopupMenuItem};
@@ -32,6 +39,13 @@ use crate::state::AppState;
 /// Most model ↔ tool round trips per request.
 const MAX_STEPS: usize = 16;
 
+/// Tool result sent to the model when the user does not allow a call.
+const DECLINED: &str = "The user did not allow this action. Do not retry it unless the user asks.";
+
+/// How often the assistant thread re-checks the cancel flag while it waits for the
+/// user to allow or deny a tool call.
+const APPROVAL_POLL: Duration = Duration::from_millis(100);
+
 pub enum ChatEvent {
     /// About to run: unsaved edits should be written first.
     BeforeRun,
@@ -48,13 +62,37 @@ enum Item {
         ok: bool,
         detail: String,
     },
-    Error(SharedString),
+    /// A translated message, with technical details shown smaller below it.
+    Error {
+        message: SharedString,
+        detail: Option<SharedString>,
+    },
+}
+
+impl Item {
+    fn error(message: String, detail: Option<String>) -> Self {
+        Self::Error {
+            message: message.into(),
+            detail: detail.map(Into::into),
+        }
+    }
+}
+
+/// A tool call waiting for the user's permission.
+struct Approval {
+    /// Tool name (for the translated label).
+    name: String,
+    /// What the call touches, e.g. the card title.
+    detail: String,
+    /// `true` runs the call, `false` refuses it. Dropping the sender refuses too.
+    reply: mpsc::Sender<bool>,
 }
 
 enum Msg {
     Event(AgentEvent),
     Changed(Option<CardId>),
-    Done(Vec<Message>, Option<String>),
+    Approve(Approval),
+    Done(Vec<Message>, Option<Item>),
 }
 
 pub struct ChatPanel {
@@ -63,6 +101,10 @@ pub struct ChatPanel {
     /// One-line editor: unlike the toolkit's input it handles right-to-left text.
     input: Entity<RichEditor>,
     cancel: Option<Arc<AtomicBool>>,
+    /// The tool call the assistant is waiting to have allowed, if any.
+    pending: Option<Approval>,
+    /// The user allowed every remaining call of this conversation.
+    approve_all: Arc<AtomicBool>,
     poll: Option<Task<()>>,
     scroll: ScrollHandle,
     _subs: Vec<Subscription>,
@@ -92,6 +134,8 @@ impl ChatPanel {
             history: Vec::new(),
             input,
             cancel: None,
+            pending: None,
+            approve_all: Arc::new(AtomicBool::new(false)),
             poll: None,
             scroll: ScrollHandle::new(),
             _subs: subs,
@@ -113,12 +157,33 @@ impl ChatPanel {
         }
         self.items.clear();
         self.history.clear();
+        // A new conversation asks again before destructive changes.
+        self.approve_all = Arc::new(AtomicBool::new(false));
         cx.notify();
     }
 
     fn stop(&mut self, cx: &mut Context<Self>) {
+        self.cancel_run();
+        cx.notify();
+    }
+
+    /// Ask the assistant thread to stop and release it if it waits for an approval.
+    fn cancel_run(&mut self) {
         if let Some(c) = &self.cancel {
             c.store(true, Ordering::Relaxed);
+        }
+        // Dropping the reply sender wakes the waiting thread (as a refusal).
+        self.pending = None;
+    }
+
+    /// Answer the pending approval: `allow` runs the call, `all` also allows every
+    /// later call of this conversation.
+    fn decide(&mut self, allow: bool, all: bool, cx: &mut Context<Self>) {
+        if let Some(p) = self.pending.take() {
+            if allow && all {
+                self.approve_all.store(true, Ordering::Relaxed);
+            }
+            let _ = p.reply.send(allow);
         }
         cx.notify();
     }
@@ -132,7 +197,7 @@ impl ChatPanel {
             return;
         }
         let Some(cfg) = active_provider(cx) else {
-            self.items.push(Item::Error(t("chat.no_provider").into()));
+            self.items.push(Item::error(t("chat.no_provider"), None));
             cx.notify();
             return;
         };
@@ -154,6 +219,7 @@ impl ChatPanel {
         let mut history = self.history.clone();
         let cancel = Arc::new(AtomicBool::new(false));
         self.cancel = Some(cancel.clone());
+        let approve_all = self.approve_all.clone();
         let (tx, rx) = mpsc::channel::<Msg>();
         let spawned = std::thread::Builder::new()
             .name("cardfile-assistant".into())
@@ -167,11 +233,18 @@ impl ChatPanel {
                         read_only: false,
                     },
                     Err(e) => {
-                        let _ = tx.send(Msg::Done(history, Some(e.to_string())));
+                        let error = Item::error(t("chat.error.start"), Some(e.to_string()));
+                        let _ = tx.send(Msg::Done(history, Some(error)));
                         return;
                     }
                 };
-                let tools: Vec<ToolSpec> = cardfile_agent::tools(&scope)
+                let defs = cardfile_agent::tools(&scope);
+                let destructive: HashSet<&'static str> = defs
+                    .iter()
+                    .filter(|t| t.destructive)
+                    .map(|t| t.name)
+                    .collect();
+                let tools: Vec<ToolSpec> = defs
                     .into_iter()
                     .map(|t| ToolSpec {
                         name: t.name.to_owned(),
@@ -181,6 +254,21 @@ impl ChatPanel {
                     .collect();
                 let tx_exec = tx.clone();
                 let mut exec = |call: &cardfile_ai::ToolCall| {
+                    if destructive.contains(call.name.as_str())
+                        && !approve_all.load(Ordering::Relaxed)
+                    {
+                        let (reply, answer) = mpsc::channel();
+                        let ask = Approval {
+                            name: call.name.clone(),
+                            detail: describe_call(&db, &scope, &call.arguments),
+                            reply,
+                        };
+                        if tx_exec.send(Msg::Approve(ask)).is_err()
+                            || !wait_for_answer(&answer, &cancel)
+                        {
+                            return Err(DECLINED.to_owned());
+                        }
+                    }
                     let outcome = cardfile_agent::call(&db, &scope, &call.name, &call.arguments)?;
                     if outcome.changed {
                         let _ = tx_exec.send(Msg::Changed(outcome.card));
@@ -205,15 +293,18 @@ impl ChatPanel {
                     Ok(cardfile_ai::AgentOutcome::Finished) => None,
                     // The model still wanted to work: say so instead of stopping
                     // silently, so the user knows to ask it to continue.
-                    Ok(cardfile_ai::AgentOutcome::StepLimit) => Some(t("chat.step_limit")),
+                    Ok(cardfile_ai::AgentOutcome::StepLimit) => {
+                        Some(Item::error(t("chat.step_limit"), None))
+                    }
                     Err(cardfile_ai::AiError::Cancelled) => None,
-                    Err(e) => Some(e.to_string()),
+                    Err(e) => Some(Item::error(t(ai_error_key(&e)), Some(e.to_string()))),
                 };
                 let _ = tx.send(Msg::Done(history, error));
             });
         if let Err(e) = spawned {
             self.cancel = None;
-            self.items.push(Item::Error(e.to_string().into()));
+            self.items
+                .push(Item::error(t("chat.error.start"), Some(e.to_string())));
             cx.notify();
             return;
         }
@@ -242,12 +333,14 @@ impl ChatPanel {
                             Msg::Changed(card) => {
                                 changed = Some(card.or(changed.flatten()));
                             }
+                            Msg::Approve(ask) => this.pending = Some(ask),
                             Msg::Done(history, error) => {
                                 this.history = history;
                                 if let Some(e) = error {
-                                    this.items.push(Item::Error(e.into()));
+                                    this.items.push(e);
                                 }
                                 this.cancel = None;
+                                this.pending = None;
                                 done = true;
                             }
                         }
@@ -262,6 +355,7 @@ impl ChatPanel {
                     if alive.is_ok() {
                         let _ = this.update(cx, |this, cx| {
                             this.cancel = None;
+                            this.pending = None;
                             cx.notify();
                         });
                     }
@@ -284,7 +378,9 @@ impl ChatPanel {
                 result,
                 is_error,
             } => {
-                let detail = if is_error {
+                let detail = if is_error && result == DECLINED {
+                    t("chat.approval.declined")
+                } else if is_error {
                     result
                 } else {
                     summarize_args(&call.arguments)
@@ -336,12 +432,148 @@ impl ChatPanel {
                         .child(format!("{} {detail}", t(&format!("chat.tool.{name}")))),
                 )
                 .into_any_element(),
-            Item::Error(e) => div()
+            Item::Error { message, detail } => v_flex()
+                .gap(px(2.))
                 .text_size(px(12.))
                 .text_color(th.danger)
-                .child(e.clone())
+                .child(message.clone())
+                .when_some(detail.clone(), |d, detail| {
+                    d.child(
+                        div()
+                            .text_size(px(11.))
+                            .text_color(th.muted_foreground)
+                            .child(detail),
+                    )
+                })
                 .into_any_element(),
         }
+    }
+
+    /// The inline "allow this?" prompt for the pending tool call.
+    fn render_approval(&self, ask: &Approval, cx: &Context<Self>) -> AnyElement {
+        let th = cx.theme();
+        let action = t(&format!("chat.tool.{}", ask.name));
+        let what = if ask.detail.is_empty() {
+            action
+        } else {
+            format!("{action} {}", ask.detail)
+        };
+        v_flex()
+            .gap(px(8.))
+            .p(px(10.))
+            .rounded(px(8.))
+            .border_1()
+            .border_color(th.warning)
+            .bg(th.muted.opacity(0.5))
+            .text_size(px(12.))
+            .child(
+                div()
+                    .font_weight(gpui_kit::FontWeight::SEMIBOLD)
+                    .child(t("chat.approval.title")),
+            )
+            .child(div().child(what))
+            .child(
+                h_flex()
+                    .flex_wrap()
+                    .gap(px(6.))
+                    .child(
+                        Button::new("chat-approve")
+                            .xsmall()
+                            .primary()
+                            .label(t("chat.approval.approve"))
+                            .on_click(cx.listener(|this, _, _, cx| this.decide(true, false, cx))),
+                    )
+                    .child(
+                        Button::new("chat-approve-all")
+                            .xsmall()
+                            .outline()
+                            .label(t("chat.approval.approve_all"))
+                            .on_click(cx.listener(|this, _, _, cx| this.decide(true, true, cx))),
+                    )
+                    .child(
+                        Button::new("chat-reject")
+                            .xsmall()
+                            .ghost()
+                            .label(t("chat.approval.reject"))
+                            .on_click(cx.listener(|this, _, _, cx| this.decide(false, false, cx))),
+                    ),
+            )
+            .into_any_element()
+    }
+}
+
+impl Drop for ChatPanel {
+    /// Closing the panel (or the window) stops a running assistant instead of
+    /// leaving its thread calling the model and changing cards in the background.
+    fn drop(&mut self) {
+        self.cancel_run();
+    }
+}
+
+/// Block the assistant thread until the user answers an approval. `false` when the
+/// user refused, the panel went away or the run was cancelled.
+fn wait_for_answer(answer: &mpsc::Receiver<bool>, cancel: &AtomicBool) -> bool {
+    loop {
+        if cancel.load(Ordering::Relaxed) {
+            return false;
+        }
+        match answer.recv_timeout(APPROVAL_POLL) {
+            Ok(allow) => return allow,
+            Err(mpsc::RecvTimeoutError::Timeout) => {}
+            Err(mpsc::RecvTimeoutError::Disconnected) => return false,
+        }
+    }
+}
+
+/// What a tool call touches, for the approval prompt: the card title(s) when the
+/// call names cards, otherwise a short trace of its arguments. Private titles are
+/// masked like in the card list. Runs on the assistant thread (database access).
+fn describe_call(db: &cardfile_db::Database, scope: &Scope, args: &serde_json::Value) -> String {
+    let title = |raw: &str| -> Option<String> {
+        let id: CardId = raw.trim().parse().ok()?;
+        db.card_access(id, scope.principal).ok()??;
+        let card = db.card(id).ok()?;
+        Some(if card.lock_mode == LockMode::Private {
+            mask_title(&card.title, 3)
+        } else {
+            card.title
+        })
+    };
+    if let Some(t) = args.get("id").and_then(|v| v.as_str()).and_then(title) {
+        let t: String = t.chars().take(60).collect();
+        return format!("“{t}”");
+    }
+    if let Some(ids) = args.get("ids").and_then(|v| v.as_array()) {
+        let names: Vec<String> = ids
+            .iter()
+            .filter_map(|v| v.as_str())
+            .filter_map(title)
+            .take(5)
+            .map(|t| format!("“{}”", t.chars().take(40).collect::<String>()))
+            .collect();
+        let mut out = names.join(", ");
+        if ids.len() > names.len() {
+            let rest = (ids.len() - names.len()).to_string();
+            out.push(' ');
+            out.push_str(&t_args("chat.approval.more", &[("count", &rest)]));
+        }
+        return out;
+    }
+    summarize_args(args)
+}
+
+/// The translation key that explains `e` to the user.
+fn ai_error_key(e: &cardfile_ai::AiError) -> &'static str {
+    use cardfile_ai::AiError;
+    match e {
+        AiError::Network(_) => "chat.error.network",
+        AiError::Timeout => "chat.error.timeout",
+        AiError::Http {
+            status: 401 | 403, ..
+        }
+        | AiError::MissingApiKey => "chat.error.auth",
+        AiError::InsecureUrl => "chat.error.insecure_url",
+        _ => "chat.error.generic",
     }
 }
 
@@ -448,7 +680,9 @@ impl Render for ChatPanel {
         for (ix, item) in self.items.iter().enumerate() {
             list = list.child(self.render_item(ix, item, cx));
         }
-        if self.running() {
+        if let Some(ask) = &self.pending {
+            list = list.child(self.render_approval(ask, cx));
+        } else if self.running() {
             list = list.child(
                 div()
                     .text_size(px(12.))

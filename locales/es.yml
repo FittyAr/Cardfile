@@ -608,6 +608,20 @@ chat:
     restore_card: "Ficha restaurada"
 
   step_limit: "El asistente se detuvo tras demasiados pasos sin terminar. Pedile que continúe si hace falta."
+  error:
+    start: "El asistente no pudo iniciarse."
+    generic: "El asistente no pudo responder."
+    network: "No se pudo conectar con el servicio de IA. Revisa tu conexión a internet."
+    timeout: "El servicio de IA tardó demasiado en responder. Inténtalo de nuevo."
+    auth: "El servicio de IA rechazó la clave de API. Revísala en Ajustes → IA."
+    insecure_url: "Este servicio de IA usa http:// en otro equipo, lo que enviaría tu clave y tus fichas sin cifrar. Usa https:// (http:// solo se permite para localhost)."
+  approval:
+    title: "¿Permitir que el asistente haga esto?"
+    approve: "Permitir"
+    approve_all: "Permitir todo en esta conversación"
+    reject: "Denegar"
+    declined: "No permitido"
+    more: "y %{count} más"
 attachment:
   no_app: "Ninguna aplicación de este equipo puede abrir «%{name}». Instala un programa para este tipo de archivo (para vídeos, un reproductor como VLC) y vuelve a intentarlo."
   not_found: "No se encontró el adjunto."

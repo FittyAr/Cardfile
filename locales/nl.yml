@@ -608,6 +608,20 @@ chat:
     restore_card: "Kaart hersteld"
 
   step_limit: "De assistent is na te veel stappen gestopt zonder het werk af te maken. Vraag zo nodig om verder te gaan."
+  error:
+    start: "De assistent kon niet starten."
+    generic: "De assistent kon niet antwoorden."
+    network: "De AI-dienst is niet bereikbaar. Controleer je internetverbinding."
+    timeout: "De AI-dienst deed er te lang over om te antwoorden. Probeer het opnieuw."
+    auth: "De AI-dienst heeft de API-sleutel geweigerd. Controleer hem in Instellingen → AI."
+    insecure_url: "Deze AI-dienst gebruikt http:// op een andere computer, waardoor je sleutel en kaarten onversleuteld worden verstuurd. Gebruik https:// (http:// is alleen toegestaan voor localhost)."
+  approval:
+    title: "Mag de assistent dit doen?"
+    approve: "Toestaan"
+    approve_all: "Alles toestaan in dit gesprek"
+    reject: "Weigeren"
+    declined: "Niet toegestaan"
+    more: "en nog %{count}"
 attachment:
   no_app: "Geen enkele app op deze computer kan “%{name}” openen. Installeer een programma voor dit bestandstype (voor video's een mediaspeler zoals VLC) en probeer het opnieuw."
   not_found: "De bijlage is niet gevonden."

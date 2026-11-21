@@ -2,7 +2,7 @@
 
 use std::ffi::OsStr;
 use std::fs;
-use std::io;
+use std::io::{self, Read as _};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -43,7 +43,12 @@ pub(crate) fn installer_dir() -> PathBuf {
 ///
 /// Blocking: call off the UI thread.
 pub fn install(downloaded: Downloaded) -> Result<InstallOutcome, UpdateError> {
-    let Downloaded { kind, asset, path } = downloaded;
+    let Downloaded {
+        kind,
+        asset,
+        path,
+        sha256,
+    } = downloaded;
     match kind {
         InstallKind::Standalone { exe } | InstallKind::Portable { exe } => {
             let format = ArchiveFormat::from_name(&asset.name)
@@ -61,6 +66,10 @@ pub fn install(downloaded: Downloaded) -> Result<InstallOutcome, UpdateError> {
             // The installer must outlive this process: keep the file. The next start's
             // `cleanup_after_update` deletes it.
             let setup = path.keep().map_err(|e| UpdateError::Io(e.error))?;
+            // The installer sits in a user-writable temp folder and may be run
+            // elevated (`/ALLUSERS` shows a UAC prompt). Lock it against changes and
+            // check the exact bytes again before starting it: see `lock_verified`.
+            let lock = lock_verified(&setup, &sha256)?;
             Command::new(&setup)
                 .args(installer_args(per_user))
                 .arg(format!(
@@ -72,12 +81,71 @@ pub fn install(downloaded: Downloaded) -> Result<InstallOutcome, UpdateError> {
                         .display()
                 ))
                 .spawn()?;
+            // Keep the lock until this process exits (it quits right away for the
+            // installer), so the file cannot be swapped while the installer starts
+            // and asks for elevation. Leaking a file handle is safe; the OS closes
+            // it on exit.
+            std::mem::forget(lock);
             Ok(InstallOutcome::QuitForInstaller)
         }
         other => Err(UpdateError::Unsupported(format!(
             "{other:?} is updated by the platform"
         ))),
     }
+}
+
+/// Open `path` so that nobody can change, rename or delete it while the returned
+/// handle is open, then check that its contents still hash to `sha256`.
+///
+/// Why: the verified installer waits in `%TEMP%`, which any process of the user can
+/// write. Between verification and launch (and while the UAC prompt is shown for a
+/// per-machine install) another process could swap the file and have its own code
+/// run elevated. On Windows the file is opened with share mode `FILE_SHARE_READ`
+/// only: other openers may read (and execute) it, but every attempt to open it for
+/// writing or deletion (which renaming needs) fails while the handle is held, and
+/// opening fails outright if someone already holds it open for writing. The hash is
+/// computed through that same handle, so it covers exactly the bytes that will run.
+/// This needs no `unsafe` and no ACL changes; copying into an ACL-restricted folder
+/// would need Win32 security APIs.
+///
+/// On other platforms the file is only re-hashed (no Inno Setup there).
+pub(crate) fn lock_verified(path: &Path, sha256: &str) -> Result<fs::File, UpdateError> {
+    let mut file = open_locked(path)?;
+    let mut sha = <sha2::Sha256 as sha2::Digest>::new();
+    let mut buf = vec![0u8; 64 * 1024];
+    loop {
+        let n = match file.read(&mut buf) {
+            Ok(0) => break,
+            Ok(n) => n,
+            Err(e) if e.kind() == io::ErrorKind::Interrupted => continue,
+            Err(e) => return Err(e.into()),
+        };
+        sha2::Digest::update(&mut sha, &buf[..n]);
+    }
+    let actual = crate::download::hex(&sha2::Digest::finalize(sha));
+    if !actual.eq_ignore_ascii_case(sha256) {
+        return Err(UpdateError::Checksum(format!(
+            "the installer changed after it was verified (expected {sha256}, got {actual})"
+        )));
+    }
+    Ok(file)
+}
+
+#[cfg(windows)]
+fn open_locked(path: &Path) -> io::Result<fs::File> {
+    use std::os::windows::fs::OpenOptionsExt as _;
+    /// `FILE_SHARE_READ` from the Win32 API: share reading only, deny writing and
+    /// deleting to everyone else.
+    const FILE_SHARE_READ: u32 = 0x0000_0001;
+    fs::OpenOptions::new()
+        .read(true)
+        .share_mode(FILE_SHARE_READ)
+        .open(path)
+}
+
+#[cfg(not(windows))]
+fn open_locked(path: &Path) -> io::Result<fs::File> {
+    fs::File::open(path)
 }
 
 /// Command line for a silent Inno Setup update. `/RELAUNCH` is Cardfile's own switch:
@@ -562,6 +630,61 @@ mod tests {
         assert!(!finished);
         assert_eq!(read(&dir, "a.txt").unwrap(), b"old a");
         assert_eq!(read(&dir, "b.txt").unwrap(), b"old b");
+    }
+
+    #[test]
+    fn installer_is_rechecked_before_it_runs() {
+        use sha2::Digest as _;
+        let dir = tempfile::tempdir().unwrap();
+        let setup = dir.path().join("setup.exe");
+        fs::write(&setup, b"genuine installer").unwrap();
+        let good = crate::download::hex(&sha2::Sha256::digest(b"genuine installer"));
+        let lock = lock_verified(&setup, &good).unwrap();
+        drop(lock);
+        // Swapped after the download was verified: refused.
+        fs::write(&setup, b"evil installer").unwrap();
+        assert!(matches!(
+            lock_verified(&setup, &good),
+            Err(UpdateError::Checksum(_))
+        ));
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn locked_installer_cannot_be_changed() {
+        use sha2::Digest as _;
+        let dir = tempfile::tempdir().unwrap();
+        let setup = dir.path().join("setup.exe");
+        fs::write(&setup, b"genuine installer").unwrap();
+        let good = crate::download::hex(&sha2::Sha256::digest(b"genuine installer"));
+        let lock = lock_verified(&setup, &good).unwrap();
+        // Reading (and so executing) still works...
+        assert_eq!(fs::read(&setup).unwrap(), b"genuine installer");
+        // ...but writing, deleting and renaming are refused while the lock is held.
+        assert!(fs::write(&setup, b"evil").is_err());
+        assert!(fs::remove_file(&setup).is_err());
+        assert!(fs::rename(&setup, dir.path().join("moved.exe")).is_err());
+        drop(lock);
+        fs::write(&setup, b"evil").unwrap();
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn locked_installer_can_still_be_started() {
+        use sha2::Digest as _;
+        let system = std::env::var_os("SystemRoot").unwrap();
+        let cmd = Path::new(&system).join("System32").join("cmd.exe");
+        let dir = tempfile::tempdir().unwrap();
+        let setup = dir.path().join("setup.exe");
+        fs::copy(&cmd, &setup).unwrap();
+        let sha = crate::download::hex(&sha2::Sha256::digest(fs::read(&setup).unwrap()));
+        let lock = lock_verified(&setup, &sha).unwrap();
+        let status = Command::new(&setup)
+            .args(["/c", "exit 0"])
+            .status()
+            .unwrap();
+        assert!(status.success());
+        drop(lock);
     }
 
     #[test]

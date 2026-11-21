@@ -608,6 +608,20 @@ chat:
     restore_card: "Đã khôi phục thẻ"
 
   step_limit: "Trợ lý dừng sau quá nhiều bước mà chưa hoàn tất. Hãy yêu cầu tiếp tục nếu cần."
+  error:
+    start: "Không thể khởi động trợ lý."
+    generic: "Trợ lý không thể trả lời."
+    network: "Không thể kết nối tới dịch vụ AI. Hãy kiểm tra kết nối internet."
+    timeout: "Dịch vụ AI phản hồi quá lâu. Hãy thử lại."
+    auth: "Dịch vụ AI đã từ chối khóa API. Hãy kiểm tra trong Cài đặt → AI."
+    insecure_url: "Dịch vụ AI này dùng http:// trên một máy tính khác, nên khóa và thẻ của bạn sẽ được gửi đi mà không mã hóa. Hãy dùng https:// (http:// chỉ được phép cho localhost)."
+  approval:
+    title: "Cho phép trợ lý làm việc này?"
+    approve: "Cho phép"
+    approve_all: "Cho phép tất cả trong cuộc trò chuyện này"
+    reject: "Từ chối"
+    declined: "Không được cho phép"
+    more: "và %{count} mục khác"
 attachment:
   no_app: "Không có ứng dụng nào trên máy tính này có thể mở “%{name}”. Hãy cài đặt một chương trình cho loại tệp này (với video, hãy dùng trình phát đa phương tiện như VLC) rồi thử lại."
   not_found: "Không tìm thấy tệp đính kèm."

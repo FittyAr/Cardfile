@@ -127,6 +127,17 @@ fn host_of(url: &str) -> &str {
     authority.split(':').next().unwrap_or_default()
 }
 
+/// Whether `url` points at this computer only (`localhost`, `*.localhost`,
+/// `127.0.0.0/8` or `::1`), so plain HTTP never leaves the machine.
+pub(crate) fn is_loopback_url(url: &str) -> bool {
+    let host = host_of(url.trim()).to_ascii_lowercase();
+    if host == "localhost" || host.ends_with(".localhost") {
+        return true;
+    }
+    host.parse::<std::net::IpAddr>()
+        .is_ok_and(|ip| ip.is_loopback())
+}
+
 fn is_local_url(url: &str) -> bool {
     let host = host_of(url.trim()).to_ascii_lowercase();
     if host.is_empty() {
