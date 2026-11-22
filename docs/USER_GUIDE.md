@@ -190,8 +190,8 @@ disabled in the copy. Re-enter AI keys stored in the original computer's credent
 Store and system-package distributions instead direct you to the portable download.
 
 Administrators can choose a backup folder in **Settings → Data**, create a backup now,
-and optionally enable daily backups. The default is manual only, in `backups/`, with
-10 automatic copies retained after enabling the schedule. Checks run hourly while signed
+and turn daily backups on or off. New installations make a daily copy in `backups/` by
+default and keep the 10 newest automatic copies (portable copies start with it off). Checks run hourly while signed
 in; a missed daily copy runs after sign-in. An unavailable folder reports an error and
 is retried. Manual and safety copies are never removed by automatic retention.
 
@@ -204,7 +204,8 @@ Passwords and external credential-store secrets cannot be recovered from a backu
 
 Close Cardfile before removing a USB drive or changing computers. With OneDrive, wait
 until synchronization finishes before opening the folder on another computer; simultaneous
-use is unsupported. The local process lock does not coordinate different computers.
+use is unsupported. Cardfile shows a warning at sign-in when its data is in a folder synced
+by OneDrive, Dropbox, Google Drive or a similar service. The local process lock does not coordinate different computers.
 The app remembers normal window size and maximized state in `local-config.json`.
 
 

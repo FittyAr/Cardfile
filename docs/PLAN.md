@@ -595,3 +595,19 @@ ni registrar el compilador en el equipo del mantenedor.
   del mantenedor, además de las claves de desarrollo en inglés.
 - La corrección se entrega como `2.0.0-beta.4` prerelease; la promoción a Latest
   sigue siendo una decisión del mantenedor después de probarla.
+
+### Auditoría previa a 2.0.0 (2026-11-22)
+
+- Cerrar la ventana (X, Alt+F4 o el botón de cierre que dibuja gpui-component en Linux) pasa por
+  el mismo camino que *Salir*: se guarda la tarjeta abierta antes de cerrar. Si el guardado
+  falla, se pregunta antes de salir en vez de perder los cambios en silencio.
+- Al guardar contenido, la versión escrita por otro autor (IA, cliente MCP u otro usuario) se
+  conserva siempre en el historial, aunque no haya pasado el intervalo entre instantáneas.
+- Volver a pegar una imagen huérfana renueva su período de gracia frente a la recolección.
+- Los respaldos diarios automáticos vienen activados por defecto en instalaciones nuevas.
+- Aviso al iniciar si los datos están en una carpeta sincronizada (OneDrive, Dropbox, Google
+  Drive, iCloud, Nextcloud, pCloud, MEGA).
+- MSIX: se desactiva la virtualización de escritura de AppData (`unvirtualizedResources`), con
+  Windows 10 1903 como mínimo; el manifiesto declara los 21 idiomas.
+- Store: política de privacidad en `docs/PRIVACY.md` y botón *Reportar* en el asistente
+  (política 11.16 de contenido generado por IA).

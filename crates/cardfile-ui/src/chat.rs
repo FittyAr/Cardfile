@@ -46,6 +46,10 @@ const DECLINED: &str = "The user did not allow this action. Do not retry it unle
 /// user to allow or deny a tool call.
 const APPROVAL_POLL: Duration = Duration::from_millis(100);
 
+/// Where users report an inappropriate or harmful assistant answer. Opens a blank
+/// issue form: nothing from the conversation is sent automatically.
+const REPORT_URL: &str = "https://github.com/FittyAr/Cardfile/issues/new?labels=ai-content&title=Assistant%20response%20report";
+
 pub enum ChatEvent {
     /// About to run: unsaved edits should be written first.
     BeforeRun,
@@ -647,6 +651,15 @@ impl Render for ChatPanel {
             .child(
                 h_flex()
                     .gap(px(2.))
+                    .child(
+                        // Store policy 11.16: users can report generated content.
+                        Button::new("chat-report")
+                            .xsmall()
+                            .ghost()
+                            .label(t("chat.report"))
+                            .tooltip(t("chat.report_tooltip"))
+                            .on_click(|_, _, cx| cx.open_url(REPORT_URL)),
+                    )
                     .child(
                         Button::new("chat-clear")
                             .xsmall()

@@ -1,6 +1,11 @@
 _version: 1
 
 app:
+  synced_folder: "Le tue note si trovano in una cartella sincronizzata da %{service}. Sincronizzare un database aperto può danneggiarlo o creare copie in conflitto: chiudi Cardfile prima di usarlo su un altro computer, oppure tieni i dati fuori dalla cartella sincronizzata."
+  unsaved_quit:
+    title: "Le ultime modifiche non sono state salvate"
+    body: "Impossibile salvare la scheda aperta: %{error}. Se esci ora, le modifiche dall’ultimo salvataggio andranno perse."
+    quit: "Esci senza salvare"
   name: Cardfile
   db_error_body: "Impossibile aprire il database %{path}: %{error}"
   open_keymap_failed: "Impossibile aprire il file delle scorciatoie: %{error}"
@@ -572,6 +577,8 @@ ai:
     no_keyring: "Il gestore delle credenziali del sistema non è disponibile, quindi le chiavi API vengono salvate nel database di Cardfile."
 
 chat:
+  report: "Segnala"
+  report_tooltip: "Segnala una risposta inappropriata o dannosa"
   title: "Assistente"
   toggle: "Assistente"
   placeholder: "Chiedi all'assistente…"

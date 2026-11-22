@@ -1,6 +1,11 @@
 _version: 1
 
 app:
+  synced_folder: "Catatan Anda berada di folder yang disinkronkan oleh %{service}. Menyinkronkan basis data yang sedang terbuka dapat merusaknya atau membuat salinan yang bentrok: tutup Cardfile sebelum memakainya di komputer lain, atau simpan data di luar folder yang disinkronkan."
+  unsaved_quit:
+    title: "Perubahan terakhir Anda belum disimpan"
+    body: "Kartu yang terbuka tidak dapat disimpan: %{error}. Jika Anda keluar sekarang, perubahan sejak penyimpanan terakhir akan hilang."
+    quit: "Keluar tanpa menyimpan"
   name: Cardfile
   db_error_body: "Basis data %{path} tidak dapat dibuka: %{error}"
   open_keymap_failed: "Tidak dapat membuka berkas pintasan: %{error}"
@@ -572,6 +577,8 @@ ai:
     no_keyring: "Pengelola kredensial sistem Anda tidak tersedia, jadi kunci API disimpan di basis data Cardfile."
 
 chat:
+  report: "Laporkan"
+  report_tooltip: "Laporkan jawaban yang tidak pantas atau berbahaya"
   title: "Asisten"
   toggle: "Asisten"
   placeholder: "Tanyakan kepada asisten…"

@@ -9,9 +9,10 @@
 //!   in use when it cannot be moved.
 //! - Portable mode: a `data` folder next to the executable, enabled by a
 //!   `portable.flag` file there, the `--portable` flag, or a `data/cardfile.db`
-//!   already next to the executable (a copied or synced folder, e.g. in OneDrive,
-//!   keeps working without the flag). Choosing the standard location in the
-//!   first-run wizard removes the flag, so that choice sticks.
+//!   already next to the executable (a copied folder keeps working without the
+//!   flag). Choosing the standard location in the first-run wizard removes the
+//!   flag, so that choice sticks. A folder kept in sync by OneDrive, Dropbox and
+//!   the like works but is risky (see [`DataPaths::sync_service`]); the app warns.
 //!
 //! Collection settings live in `cardfile.db` (installation settings in
 //! `app_settings`, preferences on each user row). Window and backup preferences
@@ -126,6 +127,39 @@ impl DataPaths {
         let _ = std::fs::remove_file(&probe);
         ok
     }
+
+    /// The file-sync service whose folder holds the data, if any. The sync client
+    /// may upload the database between writes (the main file without its WAL) or
+    /// make conflict copies when two computers use it, so the user is warned.
+    pub fn sync_service(&self) -> Option<&'static str> {
+        sync_service_of(&self.root, |name| std::env::var_os(name).map(PathBuf::from))
+    }
+}
+
+/// [`DataPaths::sync_service`] with the environment lookup passed in (for tests).
+fn sync_service_of(root: &Path, env: impl Fn(&str) -> Option<PathBuf>) -> Option<&'static str> {
+    // OneDrive publishes its folders; a folder may also be named after the account.
+    let onedrive = ["OneDrive", "OneDriveConsumer", "OneDriveCommercial"]
+        .into_iter()
+        .filter_map(&env)
+        .any(|dir| !dir.as_os_str().is_empty() && root.starts_with(&dir));
+    if onedrive {
+        return Some("OneDrive");
+    }
+    root.components().find_map(|part| {
+        let name = part.as_os_str().to_string_lossy().to_lowercase();
+        match name.as_str() {
+            "onedrive" => Some("OneDrive"),
+            n if n.starts_with("onedrive - ") => Some("OneDrive"),
+            "dropbox" => Some("Dropbox"),
+            "google drive" | "my drive" | "mi unidad" => Some("Google Drive"),
+            "iclouddrive" | "icloud drive" => Some("iCloud Drive"),
+            "nextcloud" => Some("Nextcloud"),
+            "pcloud drive" => Some("pCloud"),
+            "megasync" | "mega" => Some("MEGA"),
+            _ => None,
+        }
+    })
 }
 
 /// The standard data folder of this platform (see the module docs).
@@ -213,6 +247,32 @@ fn exe_dir() -> Option<PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn synced_folders_are_recognised() {
+        let env =
+            |name: &str| (name == "OneDrive").then(|| PathBuf::from("C:/Users/me/Personal Cloud"));
+        let of = |p: &str| sync_service_of(Path::new(p), env);
+        assert_eq!(
+            of("C:/Users/me/Personal Cloud/Cardfile/data"),
+            Some("OneDrive")
+        );
+        assert_eq!(
+            of("C:/Users/me/OneDrive - Acme/Cardfile/data"),
+            Some("OneDrive")
+        );
+        assert_eq!(of("/home/me/Dropbox/Cardfile/data"), Some("Dropbox"));
+        assert_eq!(of("G:/My Drive/Cardfile/data"), Some("Google Drive"));
+        assert_eq!(
+            of("C:/Users/me/AppData/Roaming/FittyAr/Cardfile/data"),
+            None
+        );
+        // An empty variable must not match every path.
+        assert_eq!(
+            sync_service_of(Path::new("/data"), |_| Some(PathBuf::new())),
+            None
+        );
+    }
 
     #[test]
     fn override_wins() {

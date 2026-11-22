@@ -1,6 +1,11 @@
 _version: 1
 
 app:
+  synced_folder: "ノートは %{service} で同期されているフォルダーにあります。開いているデータベースを同期すると、破損したり競合コピーが作られたりすることがあります。別のパソコンで使う前に Cardfile を閉じるか、データを同期フォルダーの外に置いてください。"
+  unsaved_quit:
+    title: "最後の変更が保存されていません"
+    body: "開いているカードを保存できませんでした: %{error}。今終了すると、最後に保存してからの変更は失われます。"
+    quit: "保存せずに終了"
   name: Cardfile
   db_error_body: "データベース %{path} を開けませんでした：%{error}"
   open_keymap_failed: "キーマップファイルを開けませんでした: %{error}"
@@ -572,6 +577,8 @@ ai:
     no_keyring: "システムの資格情報マネージャーを利用できないため、API キーは Cardfile のデータベースに保存されます。"
 
 chat:
+  report: "報告"
+  report_tooltip: "不適切または有害な回答を報告"
   title: "アシスタント"
   toggle: "アシスタント"
   placeholder: "アシスタントに質問…"

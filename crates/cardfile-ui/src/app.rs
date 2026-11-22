@@ -5,6 +5,7 @@ use std::rc::Rc;
 use std::time::{Duration, Instant};
 
 use cardfile_core::{AuthMode, User};
+use cardfile_i18n::{t, t_args};
 use gpui_kit::component::notification::Notification;
 use gpui_kit::component::{ActiveTheme as _, WindowExt as _};
 use gpui_kit::{
@@ -34,11 +35,22 @@ pub struct CardfileApp {
     _idle_task: Option<Task<()>>,
     _subs: Vec<Subscription>,
     _screen_sub: Option<Subscription>,
+    /// A quit is waiting for the open card to be written.
+    quitting: bool,
+    /// The synced-folder warning was shown this session.
+    sync_warned: bool,
 }
 
 impl CardfileApp {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        window.on_window_should_close(cx, |_, _| !crate::data_operations::busy());
+        // Closing the window (X, Alt+F4, the taskbar) goes through `request_quit`: once
+        // the window is gone this view, its pending autosave and the quit hook below
+        // are dropped, so the open card must be written before the window closes.
+        let this = cx.entity().downgrade();
+        window.on_window_should_close(cx, move |window, cx| {
+            this.update(cx, |this, cx| this.request_quit(window, cx))
+                .is_err()
+        });
         // Any keystroke counts as activity for the auto-lock timer.
         let subs = vec![
             cx.observe_window_bounds(window, |_, window, cx| {
@@ -85,6 +97,8 @@ impl CardfileApp {
             _idle_task: None,
             _subs: subs,
             _screen_sub: None,
+            quitting: false,
+            sync_warned: false,
         };
         app.route(window, cx);
         app.start_idle_timer(cx);
@@ -197,6 +211,15 @@ impl CardfileApp {
         Workspace::set_current(Some(&ws), cx);
         self.screen = Screen::Workspace(ws);
         crate::data_operations::start_scheduler(window, cx);
+        if !self.sync_warned
+            && let Some(service) = AppState::get(cx).paths.sync_service()
+        {
+            self.sync_warned = true;
+            window.push_notification(
+                Notification::warning(t_args("app.synced_folder", &[("service", service)])),
+                cx,
+            );
+        }
         self.last_activity.set(Instant::now());
         // `sign_in` also runs after every auto-lock unlock; check once per process.
         static UPDATE_CHECKED: std::sync::atomic::AtomicBool =
@@ -246,12 +269,44 @@ impl CardfileApp {
         }
     }
 
-    fn quit(&mut self, _: &Quit, _: &mut Window, cx: &mut Context<Self>) {
-        if crate::data_operations::busy() {
+    fn quit(&mut self, _: &Quit, window: &mut Window, cx: &mut Context<Self>) {
+        self.request_quit(window, cx);
+    }
+
+    /// Write the open card, then quit. If the write fails, ask before quitting so
+    /// edits are never dropped silently. Every user-initiated quit and window close
+    /// comes here; the `on_app_quit` hook stays as a last resort for other paths.
+    fn request_quit(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if crate::data_operations::busy() || self.quitting {
             return;
         }
-        // The open card is saved by the `on_app_quit` hook.
-        cx.quit();
+        let Screen::Workspace(ws) = &self.screen else {
+            cx.quit();
+            return;
+        };
+        self.quitting = true;
+        let saved = ws.update(cx, |ws, cx| ws.flush_checked(cx));
+        cx.spawn_in(window, async move |this, cx| {
+            let result = saved.await;
+            let _ = this.update_in(cx, |this, window, cx| {
+                this.quitting = false;
+                match result {
+                    Ok(()) => cx.quit(),
+                    Err(e) => {
+                        tracing::error!("save before quitting: {e:#}");
+                        crate::dialogs::confirm(
+                            t("app.unsaved_quit.title"),
+                            t_args("app.unsaved_quit.body", &[("error", &format!("{e:#}"))]),
+                            t("app.unsaved_quit.quit"),
+                            window,
+                            cx,
+                            |_, cx| cx.quit(),
+                        );
+                    }
+                }
+            });
+        })
+        .detach();
     }
 
     fn command_palette(&mut self, _: &CommandPalette, window: &mut Window, cx: &mut Context<Self>) {
@@ -465,17 +520,24 @@ impl CardfileApp {
                 menu.separator()
                     .menu(cardfile_i18n::t("menu.quit"), Box::new(Quit))
             });
-        gpui_kit::component::TitleBar::new().child(
-            h_flex()
-                .gap(px(6.))
-                .child(menu)
-                .child(gpui_kit::img("cardfile/icon.png").size(px(16.)))
-                .child(
-                    div()
-                        .text_size(px(13.))
-                        .text_color(cx.theme().muted_foreground)
-                        .child(title),
-                ),
-        )
+        // The toolkit's own close button (drawn on Linux) removes the window without
+        // asking `on_window_should_close`, which would skip the final save.
+        let this = cx.entity().downgrade();
+        gpui_kit::component::TitleBar::new()
+            .on_close_window(move |_, window, cx| {
+                let _ = this.update(cx, |this, cx| this.request_quit(window, cx));
+            })
+            .child(
+                h_flex()
+                    .gap(px(6.))
+                    .child(menu)
+                    .child(gpui_kit::img("cardfile/icon.png").size(px(16.)))
+                    .child(
+                        div()
+                            .text_size(px(13.))
+                            .text_color(cx.theme().muted_foreground)
+                            .child(title),
+                    ),
+            )
     }
 }

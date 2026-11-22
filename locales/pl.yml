@@ -1,6 +1,11 @@
 _version: 1
 
 app:
+  synced_folder: "Twoje notatki są w folderze synchronizowanym przez %{service}. Synchronizowanie otwartej bazy danych może ją uszkodzić lub utworzyć kopie powodujące konflikt: zamknij Cardfile przed użyciem go na innym komputerze albo trzymaj dane poza synchronizowanym folderem."
+  unsaved_quit:
+    title: "Ostatnie zmiany nie zostały zapisane"
+    body: "Nie udało się zapisać otwartej karty: %{error}. Jeśli zakończysz teraz, zmiany od ostatniego zapisu zostaną utracone."
+    quit: "Zakończ bez zapisywania"
   name: Cardfile
   db_error_body: "Nie można otworzyć bazy danych %{path}: %{error}"
   open_keymap_failed: "Nie można otworzyć pliku skrótów: %{error}"
@@ -572,6 +577,8 @@ ai:
     no_keyring: "Menedżer poświadczeń Twojego systemu jest niedostępny, więc klucze API są przechowywane w bazie danych Cardfile."
 
 chat:
+  report: "Zgłoś"
+  report_tooltip: "Zgłoś nieodpowiednią lub szkodliwą odpowiedź"
   title: "Asystent"
   toggle: "Asystent"
   placeholder: "Zapytaj asystenta…"

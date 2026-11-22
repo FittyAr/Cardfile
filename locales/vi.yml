@@ -1,6 +1,11 @@
 _version: 1
 
 app:
+  synced_folder: "Ghi chú của bạn nằm trong thư mục được %{service} đồng bộ. Đồng bộ một cơ sở dữ liệu đang mở có thể làm hỏng nó hoặc tạo bản sao xung đột: hãy đóng Cardfile trước khi dùng trên máy khác, hoặc để dữ liệu bên ngoài thư mục đồng bộ."
+  unsaved_quit:
+    title: "Các thay đổi gần đây chưa được lưu"
+    body: "Không thể lưu thẻ đang mở: %{error}. Nếu thoát bây giờ, các thay đổi kể từ lần lưu cuối sẽ bị mất."
+    quit: "Thoát không lưu"
   name: Cardfile
   db_error_body: "Không thể mở cơ sở dữ liệu %{path}: %{error}"
   open_keymap_failed: "Không thể mở tệp phím tắt: %{error}"
@@ -572,6 +577,8 @@ ai:
     no_keyring: "Trình quản lý thông tin xác thực của hệ thống không khả dụng, nên khóa API được lưu trong cơ sở dữ liệu Cardfile."
 
 chat:
+  report: "Báo cáo"
+  report_tooltip: "Báo cáo câu trả lời không phù hợp hoặc có hại"
   title: "Trợ lý"
   toggle: "Trợ lý"
   placeholder: "Hỏi trợ lý…"

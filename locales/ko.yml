@@ -1,6 +1,11 @@
 _version: 1
 
 app:
+  synced_folder: "메모가 %{service}에서 동기화하는 폴더에 있습니다. 열려 있는 데이터베이스를 동기화하면 손상되거나 충돌 사본이 생길 수 있습니다. 다른 컴퓨터에서 사용하기 전에 Cardfile을 닫거나, 데이터를 동기화 폴더 밖에 두세요."
+  unsaved_quit:
+    title: "마지막 변경 사항이 저장되지 않았습니다"
+    body: "열린 카드를 저장할 수 없습니다: %{error}. 지금 종료하면 마지막 저장 이후의 변경 사항이 사라집니다."
+    quit: "저장하지 않고 종료"
   name: Cardfile
   db_error_body: "데이터베이스 %{path}을(를) 열 수 없습니다: %{error}"
   open_keymap_failed: "키맵 파일을 열 수 없습니다: %{error}"
@@ -572,6 +577,8 @@ ai:
     no_keyring: "시스템의 자격 증명 관리자를 사용할 수 없어 API 키가 Cardfile 데이터베이스에 저장됩니다."
 
 chat:
+  report: "신고"
+  report_tooltip: "부적절하거나 유해한 답변 신고"
   title: "어시스턴트"
   toggle: "어시스턴트"
   placeholder: "어시스턴트에게 질문하기…"
