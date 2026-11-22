@@ -1,5 +1,5 @@
 // Changelog page: reads CHANGELOG.md (git-cliff format) from the main branch.
-const CHANGELOG_URL = 'https://raw.githubusercontent.com/FittyAr/Cardfile/main/CHANGELOG.md';
+const CHANGELOG_URL = 'https://raw.githubusercontent.com/FittyAr/NoteChest/main/CHANGELOG.md';
 const VISIBLE_RELEASES = 3;
 let showOlder = false;
 let releases = [];

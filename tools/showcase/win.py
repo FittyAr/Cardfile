@@ -1,4 +1,4 @@
-"""Drive the Cardfile window for screenshots: start / shot / click / key / move / close."""
+"""Drive the NoteChest window for screenshots: start / shot / click / key / move / close."""
 
 import ctypes
 import ctypes.wintypes as wt
@@ -11,13 +11,13 @@ from PIL import ImageGrab
 
 u = ctypes.windll.user32
 u.SetProcessDPIAware()
-EXE = os.environ.get("CARDFILE_EXE", r"target\release\cardfile.exe")
+EXE = os.environ.get("NOTECHEST_EXE", r"target\release\notechest.exe")
 
 
 def find():
     found = []
     pids = set()
-    out = subprocess.run(["tasklist", "/FI", "IMAGENAME eq cardfile.exe", "/FO", "CSV", "/NH"], capture_output=True, text=True).stdout
+    out = subprocess.run(["tasklist", "/FI", "IMAGENAME eq notechest.exe", "/FO", "CSV", "/NH"], capture_output=True, text=True).stdout
     for line in out.splitlines():
         parts = line.split('","')
         if len(parts) > 1:
@@ -47,13 +47,14 @@ def rect(h):
 
 
 def focus(h):
-    u.ShowWindow(h, 9)
+    if u.IsIconic(h):
+        u.ShowWindow(h, 9)
     u.SetForegroundWindow(h)
     time.sleep(0.3)
 
 
 def close():
-    subprocess.run(["taskkill", "/F", "/IM", "cardfile.exe"], capture_output=True)
+    subprocess.run(["taskkill", "/F", "/IM", "notechest.exe"], capture_output=True)
 
 
 VK = {"ctrl": 0x11, "shift": 0x10, "alt": 0x12, "enter": 0x0D, "esc": 0x1B, "tab": 0x09, "down": 0x28, "up": 0x26,

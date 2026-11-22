@@ -1,6 +1,6 @@
 """Spread card and revision timestamps of a freshly seeded database so the app looks lived-in.
 
-Usage: python dates.py <data-dir>/cardfile.db
+Usage: python dates.py <data-dir>/notechest.db
 """
 
 import sqlite3, sys, time

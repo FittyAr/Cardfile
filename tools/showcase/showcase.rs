@@ -1,9 +1,9 @@
 //! Seed a demo database with fictional cards for the website screenshots:
-//! `cargo run -p cardfile-db --example showcase -- <data-dir> <images-dir>`.
+//! `cargo run -p notechest-db --example showcase -- <data-dir> <images-dir>`.
 
-use cardfile_core::{Actor, AppSettings, AuthMode, LockMode, NewCard, TagId, UserSettings};
-use cardfile_db::{ContentUpdate, Database};
-use cardfile_doc::{Block, BlockKind, Document, Image};
+use notechest_core::{Actor, AppSettings, AuthMode, LockMode, NewCard, TagId, UserSettings};
+use notechest_db::{ContentUpdate, Database};
+use notechest_doc::{Block, BlockKind, Document, Image};
 
 type Res<T> = Result<T, Box<dyn std::error::Error>>;
 
@@ -26,7 +26,7 @@ impl Seed<'_> {
                 continue;
             };
             if !buf.trim().is_empty() {
-                blocks.extend(cardfile_doc::from_markdown(&buf).blocks);
+                blocks.extend(notechest_doc::from_markdown(&buf).blocks);
             }
             buf.clear();
             if !line.is_empty() {
@@ -52,7 +52,7 @@ impl Seed<'_> {
         Ok((doc, blobs))
     }
 
-    fn card(&self, title: &str, md: &str, tags: &[TagId], lock: LockMode) -> Res<cardfile_core::CardId> {
+    fn card(&self, title: &str, md: &str, tags: &[TagId], lock: LockMode) -> Res<notechest_core::CardId> {
         let card = self.db.create_card(
             &self.actor,
             NewCard {
@@ -72,7 +72,7 @@ impl Seed<'_> {
                 card.id,
                 lock,
                 &c.content,
-                &cardfile_doc::to_plain_text(&doc),
+                &notechest_doc::to_plain_text(&doc),
                 None,
                 &[],
                 &blobs,
@@ -81,7 +81,7 @@ impl Seed<'_> {
         Ok(card.id)
     }
 
-    fn edit(&self, id: cardfile_core::CardId, title: &str, md: &str, keep: u32) -> Res<()> {
+    fn edit(&self, id: notechest_core::CardId, title: &str, md: &str, keep: u32) -> Res<()> {
         let (doc, blob_ids) = self.doc(md)?;
         self.db.update_card_content(
             &self.actor,
@@ -89,7 +89,7 @@ impl Seed<'_> {
             ContentUpdate {
                 title: title.into(),
                 content: doc.to_json(),
-                plain_text: cardfile_doc::to_plain_text(&doc),
+                plain_text: notechest_doc::to_plain_text(&doc),
                 encrypted: None,
                 blob_ids,
             },
@@ -104,7 +104,7 @@ fn main() -> Res<()> {
     let mut args = std::env::args().skip(1);
     let dir = args.next().ok_or("usage: showcase <data-dir> <images-dir>")?;
     let images = args.next().ok_or("usage: showcase <data-dir> <images-dir>")?;
-    let path = std::path::Path::new(&dir).join("cardfile.db");
+    let path = std::path::Path::new(&dir).join("notechest.db");
     if path.exists() {
         return Err(format!("{} already exists", path.display()).into());
     }
@@ -159,7 +159,7 @@ fn main() -> Res<()> {
     )?;
     s.card(
         "Languages · 语言 · 言語 · שפות · لغات",
-        "Cardfile handles every script, including right-to-left text.\n\n中文：今天的会议改到下午三点。\n\n日本語：明日は雨が降るそうです。\n\n한국어: 회의는 오후 3시입니다.\n\nעברית: הפגישה נדחתה ליום רביעי.\n\nالعربية: الاجتماع يوم الأربعاء الساعة 3.\n\nEspañol: la reunión pasó al miércoles.",
+        "NoteChest handles every script, including right-to-left text.\n\n中文：今天的会议改到下午三点。\n\n日本語：明日は雨が降るそうです。\n\n한국어: 회의는 오후 3시입니다.\n\nעברית: הפגישה נדחתה ליום רביעי.\n\nالعربية: الاجتماع يوم الأربعاء الساعة 3.\n\nEspañol: la reunión pasó al miércoles.",
         &[ideas],
         LockMode::None,
     )?;

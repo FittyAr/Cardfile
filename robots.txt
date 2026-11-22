@@ -1,4 +1,4 @@
-# robots.txt for Cardfile
+# robots.txt for NoteChest
 User-agent: *
 Allow: /
 Disallow: /tools/

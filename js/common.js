@@ -61,11 +61,11 @@ function preferredLanguage() {
   return lang;
 }
 
-// /releases/latest skips pre-releases, and Cardfile 2 is still in alpha, so take the newest of the list.
+// /releases/latest skips pre-releases, and NoteChest 2 is still in alpha, so take the newest of the list.
 async function fetchLatestRelease() {
   if (!document.getElementById('release-badge')) return;
   try {
-    const response = await fetch('https://api.github.com/repos/FittyAr/Cardfile/releases?per_page=5');
+    const response = await fetch('https://api.github.com/repos/FittyAr/NoteChest/releases?per_page=5');
     if (!response.ok) throw new Error('API request failed');
     const releases = (await response.json()).filter(r => !r.draft);
     if (releases.length === 0) throw new Error('No releases');
@@ -76,7 +76,7 @@ async function fetchLatestRelease() {
     console.error('Error fetching release data:', error);
     latestRelease = {
       tag: 'v2.0.0-alpha.3', // Newest known release, used when the API is unavailable.
-      url: 'https://github.com/FittyAr/Cardfile/releases',
+      url: 'https://github.com/FittyAr/NoteChest/releases',
       isNew: false,
       pre: true
     };

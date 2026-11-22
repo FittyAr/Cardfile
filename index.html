@@ -4,26 +4,26 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title data-i18n="title">Cardfile | Tus notas en tarjetas, nativo y privado</title>
+  <title data-i18n="title">NoteChest | Tus notas en tarjetas, nativo y privado</title>
   <meta name="description"
     content="Un fichero digital moderno para tus notas. Nativo, rápido y privado: escrito en Rust con GPUI. Windows y Linux." />
-  <meta name="keywords" content="Cardfile, notas, tarjetas, fichero, notes app, note taking, Rust, GPUI, cardfile, WYSIWYG, Markdown, privacy, MCP, offline" />
+  <meta name="keywords" content="NoteChest, notas, tarjetas, fichero, notes app, note taking, Rust, GPUI, notechest, WYSIWYG, Markdown, privacy, MCP, offline" />
   <link rel="canonical" href="https://cardfile.fitty.ar/" />
   <meta name="theme-color" content="#0a0a0d" />
 
-  <link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
+  <link rel="icon" href="assets/favicon.ico" sizes="any" />
   <link rel="icon" type="image/png" href="assets/icon.png" />
 
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://cardfile.fitty.ar/" />
-  <meta property="og:title" content="Cardfile | Tus notas en tarjetas, nativo y privado" />
+  <meta property="og:title" content="NoteChest | Tus notas en tarjetas, nativo y privado" />
   <meta property="og:description" content="Un fichero digital moderno para tus notas. Nativo, rápido y privado." />
   <meta property="og:image" content="https://cardfile.fitty.ar/assets/social.png" />
-  <meta property="og:site_name" content="Cardfile" />
+  <meta property="og:site_name" content="NoteChest" />
 
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:url" content="https://cardfile.fitty.ar/" />
-  <meta name="twitter:title" content="Cardfile | Tus notas en tarjetas, nativo y privado" />
+  <meta name="twitter:title" content="NoteChest | Tus notas en tarjetas, nativo y privado" />
   <meta name="twitter:description" content="Un fichero digital moderno para tus notas. Nativo, rápido y privado." />
   <meta name="twitter:image" content="https://cardfile.fitty.ar/assets/social.png" />
 
@@ -36,13 +36,13 @@
   {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    "name": "Cardfile",
+    "name": "NoteChest",
     "applicationCategory": "ProductivityApplication",
     "operatingSystem": "Windows, Linux",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
     "url": "https://cardfile.fitty.ar/",
-    "downloadUrl": "https://github.com/FittyAr/Cardfile/releases",
-    "license": "https://github.com/FittyAr/Cardfile/blob/main/LICENSE-MIT",
+    "downloadUrl": "https://github.com/FittyAr/NoteChest/releases",
+    "license": "https://github.com/FittyAr/NoteChest/blob/main/LICENSE-MIT",
     "author": { "@type": "Person", "name": "FittyAr", "url": "https://fitty.ar/" }
   }
   </script>
@@ -52,8 +52,8 @@
   <header class="header">
     <div class="container nav">
       <a class="logo" href="index.html">
-        <img src="assets/icon.svg" alt="" width="32" height="32" />
-        <span>Card<b>file</b></span>
+        <img src="assets/icon.png" alt="" width="32" height="32" />
+        <span>Note<b>Chest</b></span>
       </a>
       <nav class="nav-links">
         <a href="#features" data-i18n="nav_features">Características</a>
@@ -69,7 +69,7 @@
           <span class="lang-separator">|</span>
           <button class="lang-btn" data-lang="en" onclick="switchLanguage('en')">EN</button>
         </div>
-        <a class="nav-btn" href="https://github.com/FittyAr/Cardfile" target="_blank" rel="noopener">GitHub</a>
+        <a class="nav-btn" href="https://github.com/FittyAr/NoteChest" target="_blank" rel="noopener">GitHub</a>
       </div>
     </div>
   </header>
@@ -78,7 +78,7 @@
     <!-- Hero -->
     <section class="hero">
       <div class="container">
-        <a href="https://github.com/FittyAr/Cardfile/releases" target="_blank" rel="noopener" class="release-link">
+        <a href="https://github.com/FittyAr/NoteChest/releases" target="_blank" rel="noopener" class="release-link">
           <span class="badge" id="release-badge">
             <span aria-hidden="true">◆</span> <span id="release-text" data-i18n="release_loading">Cargando versión...</span>
           </span>
@@ -90,14 +90,14 @@
         </p>
         <div class="hero-ctas">
           <a class="btn-primary" href="#install" data-i18n="btn_download">Descargar gratis</a>
-          <a class="btn-secondary" href="https://github.com/FittyAr/Cardfile" target="_blank" rel="noopener" data-i18n="btn_source">Ver código fuente</a>
+          <a class="btn-secondary" href="https://github.com/FittyAr/NoteChest" target="_blank" rel="noopener" data-i18n="btn_source">Ver código fuente</a>
         </div>
         <p class="hero-note" data-i18n="hero_note">Windows y Linux · Código abierto (MIT / Apache-2.0) · Sin telemetría</p>
 
         <div class="hero-shot">
           <div class="window-frame">
             <img src="assets/screens/01-editor.webp" width="1586" height="993" data-i18n-alt="alt_hero"
-              alt="Cardfile mostrando una tarjeta con lista de tareas, tabla e imagen" fetchpriority="high" />
+              alt="NoteChest mostrando una tarjeta con lista de tareas, tabla e imagen" fetchpriority="high" />
           </div>
         </div>
 
@@ -224,7 +224,7 @@
             <p data-i18n="s4_desc">El asistente aparece solo si lo configuras, con el proveedor que elijas o con un modelo local. Y el servidor MCP integrado deja que Claude, Cursor o VS Code trabajen con tus tarjetas, solo en 127.0.0.1.</p>
             <ul class="check-list">
               <li data-i18n="s4_li1">API keys por cliente, de solo lectura si quieres</li>
-              <li data-i18n="s4_li2">Cada cambio de la IA queda firmado como «Cardfile AI»</li>
+              <li data-i18n="s4_li2">Cada cambio de la IA queda firmado como «NoteChest AI»</li>
               <li data-i18n="s4_li3">Las claves de los servicios se guardan en el gestor de credenciales del sistema</li>
             </ul>
           </div>
@@ -299,16 +299,16 @@
             <div id="code-windows">
               <div class="terminal-line">
                 <span class="terminal-prompt">PS&gt;</span>
-                <span class="terminal-code" id="cmd-windows">irm https://raw.githubusercontent.com/FittyAr/Cardfile/main/install.ps1 | iex</span>
+                <span class="terminal-code" id="cmd-windows">irm https://raw.githubusercontent.com/FittyAr/NoteChest/main/install.ps1 | iex</span>
               </div>
-              <div class="terminal-comment" data-i18n="install_win_note"># Se instala en %LOCALAPPDATA%\Programs\FittyAr\Cardfile</div>
+              <div class="terminal-comment" data-i18n="install_win_note"># Se instala en %LOCALAPPDATA%\Programs\FittyAr\NoteChest</div>
             </div>
             <div id="code-linux" style="display: none;">
               <div class="terminal-line">
                 <span class="terminal-prompt">$</span>
-                <span class="terminal-code" id="cmd-linux">curl -fsSL https://raw.githubusercontent.com/FittyAr/Cardfile/main/install.sh | sh</span>
+                <span class="terminal-code" id="cmd-linux">curl -fsSL https://raw.githubusercontent.com/FittyAr/NoteChest/main/install.sh | sh</span>
               </div>
-              <div class="terminal-comment" data-i18n="install_linux_note"># Se instala en ~/.local/lib/FittyAr/Cardfile</div>
+              <div class="terminal-comment" data-i18n="install_linux_note"># Se instala en ~/.local/lib/FittyAr/NoteChest</div>
             </div>
             <div class="copy-container">
               <button class="btn-copy" id="btn-copy" onclick="copyCommand()" data-i18n="btn_copy">📋 Copiar comando</button>
@@ -320,7 +320,7 @@
           <div class="install-extra">
             <strong data-i18n="extra1_title">Paquetes</strong>
             <span data-i18n="extra1_desc">Instalador para Windows, .deb, .rpm y AppImage en cada</span>
-            <a href="https://github.com/FittyAr/Cardfile/releases" target="_blank" rel="noopener" data-i18n="extra1_link">release</a>.
+            <a href="https://github.com/FittyAr/NoteChest/releases" target="_blank" rel="noopener" data-i18n="extra1_link">release</a>.
           </div>
           <div class="install-extra">
             <strong data-i18n="extra2_title">Se actualiza solo</strong>
@@ -329,7 +329,7 @@
           <div class="install-extra">
             <strong data-i18n="extra3_title">Firmado con minisign</strong>
             <span data-i18n="extra3_desc">Puedes verificar cada archivo con la clave pública publicada en</span>
-            <a href="https://github.com/FittyAr/Cardfile/blob/main/docs/SIGNING.md" target="_blank" rel="noopener">SIGNING.md</a>.
+            <a href="https://github.com/FittyAr/NoteChest/blob/main/docs/SIGNING.md" target="_blank" rel="noopener">SIGNING.md</a>.
           </div>
         </div>
       </div>
@@ -340,20 +340,20 @@
       <div class="container">
         <div class="story">
           <div>
-            <span class="badge" data-i18n="story_badge">Cardfile 2</span>
+            <span class="badge" data-i18n="story_badge">NoteChest 2</span>
             <h3 data-i18n="story_title">El fichero de tarjetas, reinventado</h3>
             <p data-i18n="story_p1">
-              Un fichero de tarjetas: un título arriba, tus notas abajo y nada más. Cardfile 2
+              Un fichero de tarjetas: un título arriba, tus notas abajo y nada más. NoteChest 2
               mantiene esa simpleza y le suma lo que hoy esperamos de una app de notas.
             </p>
             <p data-i18n="story_p2">
               Es una reescritura completa en Rust con GPUI: arranca al instante, funciona sin conexión, guarda todo en una
               base SQLite local y no envía ningún dato. Está en beta: pruébala y cuéntanos qué te falta.
             </p>
-            <a class="btn-primary" href="https://github.com/FittyAr/Cardfile/issues" target="_blank" rel="noopener" data-i18n="story_btn">Enviar sugerencias ↗</a>
+            <a class="btn-primary" href="https://github.com/FittyAr/NoteChest/issues" target="_blank" rel="noopener" data-i18n="story_btn">Enviar sugerencias ↗</a>
           </div>
           <div class="story-art">
-            <img src="assets/icon.svg" alt="" width="260" height="260" />
+            <img src="assets/icon.png" alt="" width="260" height="260" />
           </div>
         </div>
       </div>
@@ -365,19 +365,19 @@
       <div class="footer-grid">
         <div>
           <div class="logo" style="margin-bottom: 8px; font-size: 1rem;">
-            <img src="assets/icon.svg" alt="" style="width: 24px; height: 24px;" />
-            <span>Card<b>file</b></span>
+            <img src="assets/icon.png" alt="" style="width: 24px; height: 24px;" />
+            <span>Note<b>Chest</b></span>
           </div>
           <p style="margin: 0; font-size: 0.85rem;" data-i18n="footer_text">
-            Hecho en Rust. Cardfile se distribuye bajo MIT o Apache-2.0; este sitio, bajo MIT.
+            Hecho en Rust. NoteChest se distribuye bajo MIT o Apache-2.0; este sitio, bajo MIT.
           </p>
         </div>
         <div class="footer-links">
           <a href="https://fitty.ar/">fitty.ar</a>
           <a href="https://fitty.ar/es/pages/projects.html" data-i18n="footer_projects">Proyectos</a>
           <a href="changelog.html" data-i18n="nav_changelog">Cambios</a>
-          <a href="https://github.com/FittyAr/Cardfile/blob/main/docs/USER_GUIDE.md" target="_blank" rel="noopener" data-i18n="footer_guide">Guía de uso</a>
-          <a href="https://github.com/FittyAr/Cardfile" target="_blank" rel="noopener">GitHub</a>
+          <a href="https://github.com/FittyAr/NoteChest/blob/main/docs/USER_GUIDE.md" target="_blank" rel="noopener" data-i18n="footer_guide">Guía de uso</a>
+          <a href="https://github.com/FittyAr/NoteChest" target="_blank" rel="noopener">GitHub</a>
         </div>
       </div>
       <p class="footer-note" data-i18n="footer_disclaimer">
