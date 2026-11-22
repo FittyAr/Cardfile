@@ -4,8 +4,8 @@
 NoteChest 2 is a full rewrite (currently in beta) of the NoteChest notes app. Notes live on cards edited in a WYSIWYG editor (users never see Markdown), stored in a local SQLite database. No telemetry.
 
 ## Key Resources
-- [Website](https://cardfile.fitty.ar): Landing page and screenshots.
-- [Changelog](https://cardfile.fitty.ar/changelog.html): Release history.
+- [Website](https://notechest.fitty.ar): Landing page and screenshots.
+- [Changelog](https://notechest.fitty.ar/changelog.html): Release history.
 - [GitHub Repository](https://github.com/FittyAr/NoteChest): Source code.
 - [Releases](https://github.com/FittyAr/NoteChest/releases): Installers and signed binaries.
 - [User guide](https://github.com/FittyAr/NoteChest/blob/main/docs/USER_GUIDE.md)

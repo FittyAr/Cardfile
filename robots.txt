@@ -21,4 +21,4 @@ Allow: /
 User-agent: Applebot-Extended
 Allow: /
 
-Sitemap: https://cardfile.fitty.ar/sitemap.xml
+Sitemap: https://notechest.fitty.ar/sitemap.xml

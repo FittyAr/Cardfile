@@ -3,7 +3,7 @@
 This orphan branch (`gh-pages`) holds the static source of the **NoteChest** website, a modern digital
 card file for your notes written in Rust with GPUI.
 
-Live at [cardfile.fitty.ar](https://cardfile.fitty.ar).
+Live at [notechest.fitty.ar](https://notechest.fitty.ar).
 
 ## Contents
 
