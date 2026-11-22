@@ -69,6 +69,15 @@ Archivos en `screenshots/es-ES/`, PNG de 1600 x 900. Leyendas (200 caracteres co
 4. `04-muchos-idiomas.png` — Chino, japonés, coreano, hindi, hebreo y árabe, con soporte de derecha a izquierda.
 5. `05-ajustes.png` — Ajustes: tema, idioma, tamaño del editor y servicios de IA opcionales.
 
+## Logos e imágenes de la tienda
+
+Son los mismos archivos que en inglés (no llevan texto traducible, salvo el nombre NoteChest), en `logos/`:
+
+- Ícono de mosaico 1:1, 300 x 300: `app-tile-icon-300.png`
+- Arte de caja 1:1, 1080 x 1080: `box-art-1080x1080.png` (también hay uno de 2160 x 2160)
+- Arte de póster 2:3, 720 x 1080: `poster-art-720x1080.png` (también hay uno de 1440 x 2160)
+- Súper arte principal 16:9, 1920 x 1080, sin texto: `hero-art-1920x1080.png`
+
 ## Notas para la certificación
 
 Las mismas que en inglés (la certificación se revisa en inglés).

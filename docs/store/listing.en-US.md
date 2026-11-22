@@ -74,6 +74,9 @@ Files in `screenshots/en-US/`, 1600 x 900 PNG. Captions (200 characters at most)
 ## Store logos
 
 - 1:1 app tile icon, 300 x 300: `logos/app-tile-icon-300.png`
+- 1:1 box art, 1080 x 1080: `logos/box-art-1080x1080.png` (a 2160 x 2160 version is also there)
+- 2:3 poster art, 720 x 1080: `logos/poster-art-720x1080.png` (a 1440 x 2160 version is also there)
+- 16:9 super hero art (Trailers and additional assets), 1920 x 1080, no text: `logos/hero-art-1920x1080.png`
 
 ## Product properties and submission options
 
