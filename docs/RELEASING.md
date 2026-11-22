@@ -123,8 +123,27 @@ minisign -G -W -p minisign.pub -s minisign.key
    - `PARTNER_CENTER_CLIENT_ID`
    - `PARTNER_CENTER_CLIENT_SECRET`
    - `PARTNER_CENTER_SELLER_ID`
-3. The first submission (store listing, screenshots, age rating) is done in Partner Center by hand. Upload the `.msix` from a release.
+3. The first submission (store listing, screenshots, age rating) is done in Partner Center by hand. Upload the `.msix` from a release. The submission needs:
+   - **Privacy policy URL**: `https://github.com/FittyAr/Cardfile/blob/main/docs/PRIVACY.md`
+     (required because the app uses the network). Keep the policy in sync with what the app sends.
+   - **Live generative AI** (Store policy 11.16): tick it in the submission and mention the
+     assistant in the description. Users report answers with **Report** in the assistant panel,
+     which opens a GitHub issue labelled `ai-content` (create that label once).
+   - **Restricted capabilities**: the manifest declares `runFullTrust` and
+     `unvirtualizedResources`. Justification for the second one: *"Cardfile stores the user's
+     notes in a SQLite database under %APPDATA%\FittyAr\Cardfile. With AppData write
+     virtualization, the database's WAL, lock file and backups would be redirected to a
+     per-package folder that Windows deletes on uninstall, losing notes, and a copy installed
+     outside the Store would open the same database with a different WAL and lock, which can
+     corrupt it. Disabling write virtualization keeps the notes in one real location that
+     survives uninstalling or reinstalling the app."*
 4. Later versions: run the **Microsoft Store** workflow manually with the release tag.
+
+Before the first submission, install the release `.msix` on a machine that already has beta data
+(sideload with Developer Mode on, `Add-AppxPackage`) and check that the notes appear and that
+new files (`cardfile.db-wal`, `backups\`) are created in the real `%APPDATA%\FittyAr\Cardfile`,
+not under `%LOCALAPPDATA%\Packages\…`. An unsigned package must first be signed with a test
+certificate for sideloading.
 
 The MSIX build detects that it runs from `WindowsApps` and turns off Cardfile's own updater; the Store handles updates.
 

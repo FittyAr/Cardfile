@@ -193,8 +193,9 @@ del sistema se ingresan nuevamente en el otro equipo. Las versiones de tienda o 
 del sistema indican cómo obtener la distribución portable.
 
 En **Configuración → Datos**, los administradores pueden elegir la carpeta de respaldos,
-crear copias manuales y activar copias diarias. Por defecto son manuales en `backups/`;
-al activar la programación se conservan 10 copias automáticas. Se comprueba cada hora
+crear copias manuales y activar o desactivar las copias diarias. Las instalaciones nuevas
+hacen una copia diaria en `backups/` por defecto y conservan las 10 copias automáticas más
+recientes (las copias portables empiezan con esto desactivado). Se comprueba cada hora
 mientras haya sesión abierta y se recupera una copia diaria pendiente al iniciar sesión.
 Si falta el destino, se informa y se reintenta. La retención nunca borra copias manuales,
 de otra colección o de seguridad anteriores a restauraciones y migraciones.
@@ -208,6 +209,8 @@ No recuperan contraseñas olvidadas ni secretos externos del almacén del sistem
 
 Cerrá Cardfile antes de extraer el pendrive o cambiar de equipo. En OneDrive esperá a que
 termine de sincronizar antes de abrir en otro equipo; no se admite uso simultáneo.
+Cardfile muestra un aviso al iniciar sesión si sus datos están en una carpeta sincronizada
+por OneDrive, Dropbox, Google Drive o un servicio similar.
 El bloqueo local no coordina equipos diferentes. El tamaño normal de ventana y el estado
 maximizado se recuerdan en `local-config.json`.
 
