@@ -10,7 +10,7 @@ rust-version = "1.99"
 license = "MIT OR Apache-2.0"
 authors = ["FittyAr"]
 repository = "https://github.com/FittyAr/NoteChest"
-homepage = "https://cardfile.fitty.ar/"
+homepage = "https://notechest.fitty.ar/"
 publish = false
 
 [workspace.dependencies]

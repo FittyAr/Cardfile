@@ -25,7 +25,7 @@
     </ul>
   </description>
   <launchable type="desktop-id">ar.fittyar.NoteChest.desktop</launchable>
-  <url type="homepage">https://cardfile.fitty.ar/</url>
+  <url type="homepage">https://github.com/FittyAr/NoteChest</url>
   <url type="vcs-browser">https://github.com/FittyAr/NoteChest</url>
   <url type="bugtracker">https://github.com/FittyAr/NoteChest/issues</url>
   <content_rating type="oars-1.1" />

@@ -23,8 +23,9 @@ and their data came from that name, so some old names are kept **on purpose**:
   (`notechest-db/src/recovery.rs`), the `Cardfile` credential-store service
   (`notechest-ui/src/secrets.rs`), the `cardfile-ai` reserved username, the `.cardfile` shell
   profile lines that old installers wrote (`shell_profiles.rs`, `install.sh`, `install.ps1`).
-- The Cardscape board is still named "Cardfile 2", and the website still lives at
-  `cardfile.fitty.ar` until `notechest.fitty.ar` exists.
+- The Cardscape board is still named "Cardfile 2". The website moved to `notechest.fitty.ar`;
+  the old `cardfile.fitty.ar` no longer resolves. The AppStream metainfo points at the GitHub
+  repository, not the website, because the AppImage build downloads every URL it lists.
 
 ## Workspace layout
 

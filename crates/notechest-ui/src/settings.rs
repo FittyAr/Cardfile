@@ -122,7 +122,7 @@ fn about(cx: &App) -> AnyElement {
                 .child(link(
                     "about-site",
                     t("about.website"),
-                    "https://cardfile.fitty.ar/",
+                    "https://notechest.fitty.ar/",
                 ))
                 .child(link(
                     "about-guide",

@@ -43,7 +43,7 @@ pub(crate) fn headers(cfg: &ProviderConfig) -> Vec<(String, String)> {
                 out.push(("X-Title".to_owned(), "NoteChest".to_owned()));
                 out.push((
                     "HTTP-Referer".to_owned(),
-                    "https://cardfile.fitty.ar/".to_owned(),
+                    "https://notechest.fitty.ar/".to_owned(),
                 ));
             }
         }

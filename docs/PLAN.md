@@ -645,6 +645,7 @@ ni registrar el compilador en el equipo del mantenedor.
 - Los instaladores (Inno, `install.ps1`, `install.sh`) reemplazan una instalación previa de
   Cardfile y quitan sus archivos y accesos directos. Las actualizaciones desde la app no cruzan el
   cambio de nombre (las betas buscan los nombres viejos): se instala NoteChest una vez.
-- Marca nueva (monograma NC en papel plegado). Pendiente de tu parte: DNS de
-  `notechest.fitty.ar` para el sitio (hoy sigue en `cardfile.fitty.ar`) y renombrar la carpeta
+- Marca nueva (monograma NC en papel plegado). El sitio pasó a
+  `notechest.fitty.ar` (el dominio viejo ya no resuelve; el metainfo de Linux apunta al repo en
+  GitHub porque la validación de AppStream descarga las URL). Pendiente: renombrar la carpeta
   local del repositorio.
