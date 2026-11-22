@@ -1,19 +1,19 @@
-# Cardfile installer for Windows (x64 and ARM64).
+# NoteChest installer for Windows (x64 and ARM64).
 #
-#   irm https://raw.githubusercontent.com/FittyAr/Cardfile/main/install.ps1 | iex
-#   & ([scriptblock]::Create((irm https://raw.githubusercontent.com/FittyAr/Cardfile/main/install.ps1))) [-Version v2.0.0] [-Stable] [-NoDesktopShortcut] [-Uninstall] [-VerifyOnly] [-InsecureSkipSignature]
+#   irm https://raw.githubusercontent.com/FittyAr/NoteChest/main/install.ps1 | iex
+#   & ([scriptblock]::Create((irm https://raw.githubusercontent.com/FittyAr/NoteChest/main/install.ps1))) [-Version v2.0.0] [-Stable] [-NoDesktopShortcut] [-Uninstall] [-VerifyOnly] [-InsecureSkipSignature]
 #
 # Always installs the newest published release (not a fixed version): the
 # newest stable one, or the newest pre-release while no stable release is newer.
 # -Stable ignores pre-releases; -Version installs that exact tag.
 #
 # Delegates to the verified Inno Setup .exe (no separate ZIP installation).
-# -Portable -Destination E:\Cardfile prepares an unregistered portable folder.
-# Installs to %LOCALAPPDATA%\Programs\FittyAr\Cardfile (all FittyAr apps share the
-# FittyAr folder; the cards live in %APPDATA%\FittyAr\Cardfile), adds Start menu and desktop
-# shortcuts and registers Cardfile in
+# -Portable -Destination E:\NoteChest prepares an unregistered portable folder.
+# Installs to %LOCALAPPDATA%\Programs\FittyAr\NoteChest (all FittyAr apps share the
+# FittyAr folder; the cards live in %APPDATA%\FittyAr\NoteChest), adds Start menu and desktop
+# shortcuts and registers NoteChest in
 # "Installed apps" using the Inno uninstaller. No admin
-# rights are needed. Cardfile updates itself afterwards (Settings -> General).
+# rights are needed. NoteChest updates itself afterwards (Settings -> General).
 #
 # The download is checked against the signed SHA256SUMS and its own minisign
 # signature. minisign itself is downloaded from its official release
@@ -40,33 +40,39 @@ if ($args -contains "stable") { $Stable = $true }
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 
-$repo = "FittyAr/Cardfile"
+$repo = "FittyAr/NoteChest"
 $scriptUrl = "https://raw.githubusercontent.com/$repo/main/install.ps1"
-# Cardfile release signing key (minisign). Must match PUBLIC_KEY in
-# crates/cardfile-updater/src/lib.rs and install.sh.
+# NoteChest release signing key (minisign). Must match PUBLIC_KEY in
+# crates/notechest-updater/src/lib.rs and install.sh.
 $minisignPubKey = "RWSEWpMd7tkiGAaQwVFXiSYyfV6ODYRttbEFQ/WBOTzrbMB1diAfrG+w"
 # minisign for Windows: https://github.com/jedisct1/minisign/releases
 $minisignVersion = "0.12"
 $minisignZipSha256 = "37b600344e20c19314b2e82813db2bfdcc408b77b876f7727889dbd46d539479"
 
 $vendorDir = Join-Path $env:LOCALAPPDATA "Programs\FittyAr"
-$installDir = Join-Path $vendorDir "Cardfile"
-$exePath = Join-Path $installDir "cardfile.exe"
+$installDir = Join-Path $vendorDir "NoteChest"
+$exePath = Join-Path $installDir "notechest.exe"
 # Shell folders, with the usual locations as a fallback (GetFolderPath can be empty).
 function Get-ShellFolder([string]$name, [string]$fallback) {
     $path = [Environment]::GetFolderPath($name)
     if ([string]::IsNullOrWhiteSpace($path)) { $path = $fallback }
     return $path
 }
-$startMenuLink = Join-Path (Get-ShellFolder "Programs" (Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs")) "Cardfile.lnk"
-$desktopLink = Join-Path (Get-ShellFolder "Desktop" (Join-Path $env:USERPROFILE "Desktop")) "Cardfile.lnk"
+$startMenuLink = Join-Path (Get-ShellFolder "Programs" (Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs")) "NoteChest.lnk"
+$desktopLink = Join-Path (Get-ShellFolder "Desktop" (Join-Path $env:USERPROFILE "Desktop")) "NoteChest.lnk"
+# Registration made by the bootstrap of the 2.0.0 betas, which still said Cardfile.
 $uninstallKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Cardfile"
-# Where Cardfile keeps the cards (asked before deleting on uninstall).
-$dataDir = Join-Path $env:APPDATA "FittyAr\Cardfile"
+# Where NoteChest keeps the cards (asked before deleting on uninstall).
+$dataDir = Join-Path $env:APPDATA "FittyAr\NoteChest"
 # Installed by the cargo-dist installer of 2.0.0-alpha.1 to 2.0.0-alpha.3.
 $legacyDir = Join-Path $env:USERPROFILE ".cardfile\bin"
 # Used by this script before installs moved under the FittyAr folder.
 $previousDir = Join-Path $env:LOCALAPPDATA "Programs\Cardfile"
+# Where the program was installed before the rename (Cardfile, 2.0.0 betas) and the
+# shortcuts that pointed to it.
+$renamedDir = Join-Path $vendorDir "Cardfile"
+$renamedStartMenuLink = Join-Path (Get-ShellFolder "Programs" (Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs")) "Cardfile.lnk"
+$renamedDesktopLink = Join-Path (Get-ShellFolder "Desktop" (Join-Path $env:USERPROFILE "Desktop")) "Cardfile.lnk"
 
 # Whether this machine runs ARM64 Windows (also when this PowerShell itself
 # runs emulated as x64).
@@ -110,8 +116,8 @@ function Set-UserPathEntries([string[]]$entries) {
     }
     # Setting a user variable through .NET broadcasts WM_SETTINGCHANGE, so
     # terminals opened from now on see the new PATH.
-    [Environment]::SetEnvironmentVariable("CARDFILE_PATH_REFRESH", "1", "User")
-    [Environment]::SetEnvironmentVariable("CARDFILE_PATH_REFRESH", $null, "User")
+    [Environment]::SetEnvironmentVariable("NOTECHEST_PATH_REFRESH", "1", "User")
+    [Environment]::SetEnvironmentVariable("NOTECHEST_PATH_REFRESH", $null, "User")
 }
 
 function Test-IsDir([string]$entry, [string]$dir) {
@@ -216,7 +222,7 @@ function Test-Download([string]$file, [string]$name, [string]$base, [string]$tag
         Invoke-WebRequest -Uri "$base/$published.minisig" -OutFile $sig -UseBasicParsing
         $out = & $minisign -V -P $minisignPubKey -m $target -x $sig 2>&1 | Out-String
         $flat = ($out -replace "\s+", " ")
-        if ($LASTEXITCODE -ne 0 -or -not $flat.Contains("Cardfile $tag release file: $published")) {
+        if ($LASTEXITCODE -ne 0 -or -not $flat.Contains("NoteChest $tag release file: $published")) {
             throw "minisign signature verification failed for $published."
         }
     }
@@ -228,7 +234,7 @@ function Get-Package([string]$tempDir) {
     $script:tag = $release.tag_name
     if ($script:tag -notmatch '^v\d+\.\d+\.\d+[A-Za-z0-9.-]*$') { throw "Unexpected release tag." }
     $arch = if (Test-Arm64) { "arm64" } else { "x64" }
-    $name = "Cardfile-$($script:tag.TrimStart('v'))-setup-$arch.exe"
+    $name = "NoteChest-$($script:tag.TrimStart('v'))-setup-$arch.exe"
     if (-not (@($release.assets | ForEach-Object { $_.name }) -contains $name)) {
         throw "Release $($script:tag) has no $name. Choose a release containing the Windows installer."
     }
@@ -242,7 +248,7 @@ function Get-Package([string]$tempDir) {
 # Retire the script's registration only after Inno reports success. These exact
 # keys/files belong to the old bootstrap; never recursively remove its folders.
 function Remove-LegacyRegistration {
-    foreach ($dir in @($installDir, $previousDir, $legacyDir)) {
+    foreach ($dir in @($renamedDir, $previousDir, $legacyDir)) {
         Remove-FromUserPath $dir
         $legacyUninstaller = Join-Path $dir 'uninstall.ps1'
         if (Test-Path -LiteralPath $legacyUninstaller) {
@@ -254,13 +260,29 @@ function Remove-LegacyRegistration {
     }
 }
 
+# The setup that just ran replaced the registration of the program that was called
+# Cardfile (same application id) and installed NoteChest in its own folder. Remove
+# the old program files from the old folder: known files only, and only where the
+# old executable proves it is that program. Your cards are kept.
+function Remove-RenamedProgram {
+    if (-not (Test-Path -LiteralPath (Join-Path $renamedDir 'cardfile.exe'))) { return }
+    foreach ($name in @('cardfile.exe', 'THIRD_PARTY_LICENSES.html', 'LICENSE-MIT', 'LICENSE-APACHE', 'installed.flag', 'unins000.exe', 'unins000.dat')) {
+        Remove-Item -LiteralPath (Join-Path $renamedDir $name) -Force -ErrorAction SilentlyContinue
+    }
+    Remove-Item -LiteralPath (Join-Path $renamedDir 'dictionaries') -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $renamedDir -Force -ErrorAction SilentlyContinue
+    foreach ($link in @($renamedStartMenuLink, $renamedDesktopLink)) {
+        Remove-Item -LiteralPath $link -Force -ErrorAction SilentlyContinue
+    }
+}
+
 function Invoke-Install {
     if ($Portable -and -not $VerifyOnly -and [string]::IsNullOrWhiteSpace($Destination)) {
-        throw '-Portable requires -Destination, for example E:\Cardfile.'
+        throw '-Portable requires -Destination, for example E:\NoteChest.'
     }
     $targetDir = if ($Destination) { [IO.Path]::GetFullPath($Destination) } else { $installDir }
     if ($targetDir.Contains('"')) { throw 'The destination cannot contain quotation marks.' }
-    $tempDir = Join-Path ([IO.Path]::GetTempPath()) ("cardfile-setup-" + [guid]::NewGuid().ToString('N'))
+    $tempDir = Join-Path ([IO.Path]::GetTempPath()) ("notechest-setup-" + [guid]::NewGuid().ToString('N'))
     New-Item -ItemType Directory -Path $tempDir | Out-Null
     try {
         $package = Get-Package $tempDir
@@ -271,9 +293,9 @@ function Invoke-Install {
         else { $parameters += '/TASKS=' }
         $process = Start-Process -FilePath $package -ArgumentList $parameters -WindowStyle Hidden -Wait -PassThru
         if ($process.ExitCode -ne 0) { throw "Installer failed with exit code $($process.ExitCode). Existing data was retained." }
-        if (-not $Portable) { Remove-LegacyRegistration }
-        Write-Host "Cardfile $tag ready in $targetDir" -ForegroundColor Green
-        Write-Host "Open $(Join-Path $targetDir 'cardfile.exe')."
+        if (-not $Portable) { Remove-LegacyRegistration; Remove-RenamedProgram }
+        Write-Host "NoteChest $tag ready in $targetDir" -ForegroundColor Green
+        Write-Host "Open $(Join-Path $targetDir 'notechest.exe')."
     } finally {
         # This path was created above, is absolute and stays under the OS temp root.
         $resolvedTemp = [IO.Path]::GetFullPath($tempDir)
@@ -284,24 +306,24 @@ function Invoke-Install {
 }
 
 function Invoke-Uninstall {
-    if ($Portable) { throw 'Portable copies have no uninstaller. Close Cardfile and remove the chosen folder when no longer needed.' }
+    if ($Portable) { throw 'Portable copies have no uninstaller. Close NoteChest and remove the chosen folder when no longer needed.' }
     $targetDir = if ($Destination) { [IO.Path]::GetFullPath($Destination) } else { $installDir }
     $uninstaller = Join-Path $targetDir 'unins000.exe'
     if (Test-Path -LiteralPath $uninstaller) {
         $parameters = if ($Yes) { @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART') } else { @('/NORESTART') }
         $process = Start-Process -FilePath $uninstaller -ArgumentList $parameters -WindowStyle Hidden -Wait -PassThru
         if ($process.ExitCode -ne 0) { throw "Uninstall failed with exit code $($process.ExitCode)." }
-        Write-Host 'Cardfile removed. Your cards and settings were kept.'
+        Write-Host 'NoteChest removed. Your cards and settings were kept.'
     } elseif (Test-Path -LiteralPath $uninstallKey) {
         if (-not (Read-YesNo 'Remove the legacy Cardfile program? All data folders will be kept.')) { return }
         # Remove only known program files, never an arbitrary installation tree.
         foreach ($name in @('cardfile.exe', 'THIRD_PARTY_LICENSES.html', 'LICENSE-MIT', 'LICENSE-APACHE')) {
-            $file = Join-Path $installDir $name
+            $file = Join-Path $renamedDir $name
             Remove-Item -LiteralPath $file -Force -ErrorAction SilentlyContinue
         }
         Remove-LegacyRegistration
         Write-Host 'Legacy program removed. Data folders were kept.'
-    } else { Write-Host "No Cardfile uninstaller found in $targetDir." }
+    } else { Write-Host "No NoteChest uninstaller found in $targetDir." }
 }
 
 if ($Uninstall) { Invoke-Uninstall } else { Invoke-Install }

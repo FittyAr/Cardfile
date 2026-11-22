@@ -36,11 +36,11 @@ jobs:
         shell: pwsh
         run: |
           $target = if ('${{ matrix.arch }}' -eq 'arm64') { 'aarch64-pc-windows-msvc' } else { 'x86_64-pc-windows-msvc' }
-          $zip = Get-ChildItem dist -Filter "cardfile-$target.zip" | Select-Object -First 1
+          $zip = Get-ChildItem dist -Filter "notechest-$target.zip" | Select-Object -First 1
           if (-not $zip) { throw "archive for $target not found" }
           Expand-Archive $zip.FullName -DestinationPath unpacked
           # dist archives may contain a top-level folder.
-          $exe = Get-ChildItem unpacked -Recurse -Filter cardfile.exe | Select-Object -First 1
+          $exe = Get-ChildItem unpacked -Recurse -Filter notechest.exe | Select-Object -First 1
           "SRC=$($exe.DirectoryName)" >> $env:GITHUB_ENV
       - name: Version
         shell: bash
@@ -53,7 +53,7 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force packaging\out | Out-Null
-          ./packaging/windows/msix/build-msix.ps1 -SourceDir $env:SRC -Version $env:VERSION -Arch ${{ matrix.arch }} -Out "packaging\out\Cardfile-$env:VERSION-${{ matrix.arch }}.msix"
+          ./packaging/windows/msix/build-msix.ps1 -SourceDir $env:SRC -Version $env:VERSION -Arch ${{ matrix.arch }} -Out "packaging\out\NoteChest-$env:VERSION-${{ matrix.arch }}.msix"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: artifacts-package-windows-${{ matrix.arch }}
@@ -91,10 +91,10 @@ jobs:
       - name: Unpack into target/release
         run: |
           mkdir -p unpacked target/release packaging/out
-          tar -xf "dist/cardfile-${{ matrix.target }}.tar.xz" -C unpacked
-          BIN="$(find unpacked -type f -name cardfile | head -1)"
+          tar -xf "dist/notechest-${{ matrix.target }}.tar.xz" -C unpacked
+          BIN="$(find unpacked -type f -name notechest | head -1)"
           DIR="$(dirname "$BIN")"
-          cp "$BIN" target/release/cardfile
+          cp "$BIN" target/release/notechest
           mkdir -p packaging/dictionaries
           cp -r "$DIR"/dictionaries/* packaging/dictionaries/ 2>/dev/null || ./scripts/fetch-dictionaries.sh
           cp "$DIR/THIRD_PARTY_LICENSES.html" packaging/out/ 2>/dev/null || echo "<p>See docs/CREDITS.md</p>" > packaging/out/THIRD_PARTY_LICENSES.html
@@ -106,19 +106,19 @@ jobs:
           sudo apt-get update
           ALSA=libasound2; apt-cache show libasound2t64 >/dev/null 2>&1 && ALSA=libasound2t64
           sudo apt-get install -y --no-install-recommends libxkbcommon0 libxkbcommon-x11-0 "$ALSA"
-          cargo deb -p cardfile --no-build --no-strip -o packaging/out/
+          cargo deb -p notechest --no-build --no-strip -o packaging/out/
       - name: RPM package
         # RPM versions cannot contain '-'; '~' sorts a pre-release before the final release.
-        run: cargo generate-rpm -p crates/cardfile -o packaging/out/ -s "version = \"${VERSION//-/\~}\""
+        run: cargo generate-rpm -p crates/notechest -o packaging/out/ -s "version = \"${VERSION//-/\~}\""
       - name: AppImage
         run: |
           sudo apt-get update && sudo apt-get install -y --no-install-recommends file libfuse2 || true
           APP=AppDir
-          install -Dm755 target/release/cardfile "$APP/usr/bin/cardfile"
-          install -Dm644 packaging/linux/ar.fittyar.Cardfile.desktop "$APP/usr/share/applications/ar.fittyar.Cardfile.desktop"
-          install -Dm644 packaging/linux/ar.fittyar.Cardfile.metainfo.xml "$APP/usr/share/metainfo/ar.fittyar.Cardfile.appdata.xml"
-          install -Dm644 packaging/linux/icons/256x256/ar.fittyar.Cardfile.png "$APP/usr/share/icons/hicolor/256x256/apps/ar.fittyar.Cardfile.png"
-          mkdir -p "$APP/usr/share/cardfile/dictionaries" && cp packaging/dictionaries/* "$APP/usr/share/cardfile/dictionaries/"
+          install -Dm755 target/release/notechest "$APP/usr/bin/notechest"
+          install -Dm644 packaging/linux/ar.fittyar.NoteChest.desktop "$APP/usr/share/applications/ar.fittyar.NoteChest.desktop"
+          install -Dm644 packaging/linux/ar.fittyar.NoteChest.metainfo.xml "$APP/usr/share/metainfo/ar.fittyar.NoteChest.appdata.xml"
+          install -Dm644 packaging/linux/icons/256x256/ar.fittyar.NoteChest.png "$APP/usr/share/icons/hicolor/256x256/apps/ar.fittyar.NoteChest.png"
+          mkdir -p "$APP/usr/share/notechest/dictionaries" && cp packaging/dictionaries/* "$APP/usr/share/notechest/dictionaries/"
           ARCH=${{ matrix.appimage_arch }}
           # A fixed linuxdeploy release, checked against its SHA-256 before it runs. To
           # update: pick a new release tag and record the hashes of both AppImages.
@@ -131,9 +131,9 @@ jobs:
           curl -fsSL --retry 3 -o linuxdeploy "https://github.com/linuxdeploy/linuxdeploy/releases/download/$LINUXDEPLOY_TAG/linuxdeploy-$ARCH.AppImage"
           echo "$LINUXDEPLOY_SHA256  linuxdeploy" | sha256sum -c -
           chmod +x linuxdeploy
-          export APPIMAGE_EXTRACT_AND_RUN=1 LDAI_OUTPUT="packaging/out/Cardfile-$VERSION-$ARCH.AppImage"
-          ./linuxdeploy --appdir "$APP" --desktop-file "$APP/usr/share/applications/ar.fittyar.Cardfile.desktop" \
-            --icon-file "$APP/usr/share/icons/hicolor/256x256/apps/ar.fittyar.Cardfile.png" --output appimage
+          export APPIMAGE_EXTRACT_AND_RUN=1 LDAI_OUTPUT="packaging/out/NoteChest-$VERSION-$ARCH.AppImage"
+          ./linuxdeploy --appdir "$APP" --desktop-file "$APP/usr/share/applications/ar.fittyar.NoteChest.desktop" \
+            --icon-file "$APP/usr/share/icons/hicolor/256x256/apps/ar.fittyar.NoteChest.png" --output appimage
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: artifacts-package-linux-${{ matrix.target }}

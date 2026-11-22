@@ -1,4 +1,4 @@
-# Build with a verified portable compiler. Never install or launch Cardfile.
+# Build with a verified portable compiler. Never install or launch NoteChest.
 param(
     [Parameter(Mandatory)][string]$SourceDir,
     [Parameter(Mandatory)][string]$AppVersion,

@@ -3,6 +3,44 @@
 All notable changes to this project are documented here. Generated with
 [git-cliff](https://git-cliff.org) from Conventional Commits (`cliff.toml`).
 
+## [2.0.0] - 2026-11-22
+
+First stable release. **Cardfile is now NoteChest**: the name was already taken in the
+Microsoft Store, and the app, the project and its packages all carry the new name.
+
+### Coming from Cardfile
+
+- Your data is adopted automatically: the `FittyAr/Cardfile` data folder moves to
+  `FittyAr/NoteChest`, `cardfile.db` becomes `notechest.db`, and the API keys of AI services in
+  the system credential store are carried over. Nothing is re-encrypted, so encrypted and shared
+  cards keep working. Old folders are never deleted or merged.
+- Installing NoteChest over Cardfile replaces it (same application id); the one-line installers
+  also remove the old program files and shortcuts.
+- In-app updates do not cross the rename: install NoteChest once with the installer or the
+  one-line command, and it updates itself from then on.
+- Automatic backups written before keep their `cardfile-…` names and still count towards the
+  number of copies kept.
+- The MCP server is called `notechest` in the client configurations NoteChest writes.
+- The repository moved to `FittyAr/NoteChest`; the old links redirect.
+
+### Features
+
+- New identity: an NC monogram folded from coral and peach paper, with icons for Windows, Linux
+  and the Microsoft Store.
+- The first-run wizard starts in your system language and has a language menu on its first
+  screen.
+- The window remembers its size and position and reopens on the same monitor.
+- **Settings → Data → Move…** moves the database, backups and settings to another folder.
+- Daily automatic backups are on by default for new installations.
+- A warning when the data folder is kept in sync by OneDrive, Dropbox or a similar service.
+- A **Report** button in the assistant panel for inappropriate answers.
+- Microsoft Store package: the notes, their journal and the backups stay in the real
+  `%APPDATA%\FittyAr\NoteChest`, so uninstalling or reinstalling never removes them.
+
+### Documentation
+
+- Privacy policy (`docs/PRIVACY.md`) and a "Coming from Cardfile" section in the README.
+
 ## [2.0.0-beta.7] - 2026-11-22
 
 Setup in your language, window placement and moving the data folder. Testing release.

@@ -1,12 +1,18 @@
-<p align="center"><img src="assets/logo_trasparente.png" alt="Cardfile" width="160"></p>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/brand/notechest/notechest-stacked-light.png">
+    <img src="assets/brand/notechest/notechest-stacked.png" alt="NoteChest" width="200">
+  </picture>
+</p>
 
-# Cardfile
+# NoteChest
 
 A modern digital card file for your notes.
 Native, fast and private: written in Rust with [GPUI](https://gpui.rs), the UI framework behind
 the [Zed](https://zed.dev) editor.
 
-> **Status:** Cardfile 2 is a full rewrite and is in **beta**. Español: [README.es.md](README.es.md)
+> **Formerly Cardfile.** The project was renamed NoteChest in 2.0.0; see
+> [Coming from Cardfile](#coming-from-cardfile). Español: [README.es.md](README.es.md)
 
 ## Features
 
@@ -33,26 +39,26 @@ the [Zed](https://zed.dev) editor.
 
 > **About translations:** every translation other than English was made with AI. We apologize
 > for any mistakes and we are grateful for reports so we can fix them: please
-> [open an issue](https://github.com/FittyAr/Cardfile/issues).
+> [open an issue](https://github.com/FittyAr/NoteChest/issues).
 
 ## Install
 
 **Windows (PowerShell)**
 
 ```powershell
-irm https://raw.githubusercontent.com/FittyAr/Cardfile/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/FittyAr/NoteChest/main/install.ps1 | iex
 ```
 
 **Linux**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/FittyAr/Cardfile/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/FittyAr/NoteChest/main/install.sh | sh
 ```
 
 The one-line installers always install the **newest** release (stable, or the newest pre-release
-while there is no newer stable one), verify its SHA-256 and minisign signature, and add Cardfile to
-the Start menu / application menu and the desktop. Everything goes under a `FittyAr` folder (`%LOCALAPPDATA%\Programs\FittyAr\Cardfile`, `~/.local/lib/FittyAr/Cardfile`), and so do your cards (`%APPDATA%\FittyAr\Cardfile`, `~/.local/share/FittyAr/Cardfile`). No administrator rights are needed, and
-Cardfile then updates itself from inside the app. Options:
+while there is no newer stable one), verify its SHA-256 and minisign signature, and add NoteChest to
+the Start menu / application menu and the desktop. Everything goes under a `FittyAr` folder (`%LOCALAPPDATA%\Programs\FittyAr\NoteChest`, `~/.local/lib/FittyAr/NoteChest`), and so do your cards (`%APPDATA%\FittyAr\NoteChest`, `~/.local/share/FittyAr/NoteChest`). No administrator rights are needed, and
+NoteChest then updates itself from inside the app. Options:
 
 | | Windows | Linux |
 |---|---|---|
@@ -62,7 +68,7 @@ Cardfile then updates itself from inside the app. Options:
 | Uninstall | `-Uninstall` (or *Settings → Apps*) | `--uninstall` |
 
 On Windows pass options with
-`& ([scriptblock]::Create((irm https://raw.githubusercontent.com/FittyAr/Cardfile/main/install.ps1))) -Stable`;
+`& ([scriptblock]::Create((irm https://raw.githubusercontent.com/FittyAr/NoteChest/main/install.ps1))) -Stable`;
 on Linux with `curl … | sh -s -- --stable`.
 
 
@@ -70,21 +76,21 @@ On Windows, PowerShell delegates to the same verified `.exe` setup. The graphica
 also offers a portable folder for a USB drive or OneDrive. To prepare one from PowerShell:
 
 ```powershell
-& ([scriptblock]::Create((irm https://raw.githubusercontent.com/FittyAr/Cardfile/main/install.ps1))) -Portable -Destination "E:\Cardfile"
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/FittyAr/NoteChest/main/install.ps1))) -Portable -Destination "E:\NoteChest"
 ```
 
 To include your existing collection, use Settings → Data → Create portable copy as an
-administrator. The ZIP download remains available. Close Cardfile and finish OneDrive
+administrator. The ZIP download remains available. Close NoteChest and finish OneDrive
 synchronization before opening the portable folder on another computer.
 
 **Windows (winget)**
 
 ```powershell
-winget install FittyAr.Cardfile
+winget install FittyAr.NoteChest
 ```
 
 `.deb`, `.rpm`, AppImage and the Inno Setup installer are attached to every
-[release](https://github.com/FittyAr/Cardfile/releases). Microsoft Store and Linux repositories
+[release](https://github.com/FittyAr/NoteChest/releases). Microsoft Store and Linux repositories
 are coming.
 
 ### Verifying downloads
@@ -98,6 +104,27 @@ minisign -Vm <file> -P <public key from docs/SIGNING.md>
 The Windows executables are not Authenticode-signed (only the Microsoft Store package is), so
 SmartScreen may warn on first run.
 
+## Coming from Cardfile
+
+NoteChest is the new name of Cardfile 2 (the old name was already taken in the Microsoft
+Store). Your cards come with you:
+
+- **Your data is adopted automatically** the first time NoteChest starts: the `FittyAr/Cardfile`
+  data folder becomes `FittyAr/NoteChest`, `cardfile.db` becomes `notechest.db`, and the API keys of
+  AI services in the system credential store are carried over. Nothing is re-encrypted, so
+  encrypted and shared cards keep working. Old folders are never deleted or merged.
+- **Installing NoteChest over Cardfile replaces it**: one entry in Apps, one shortcut. The one-line
+  installers do the same and remove the old program files.
+- **In-app updates do not cross the rename.** Cardfile 2.0.0 betas look for releases under the old
+  names, so install NoteChest once with the installer or the one-line command; after that it
+  updates itself.
+- Backups made before keep their `cardfile-…` names, still count towards retention and can be
+  restored.
+- The MCP server is now called `notechest` in the client configurations NoteChest writes. If you
+  added `cardfile` to Claude Desktop, VS Code or similar, add NoteChest again and remove the old
+  entry.
+- The project lives at <https://github.com/FittyAr/NoteChest>; the old links redirect.
+
 ## Documentation
 
 - [User guide](docs/USER_GUIDE.md)
@@ -108,8 +135,8 @@ SmartScreen may warn on first run.
 Requires the latest stable [Rust](https://rustup.rs).
 
 ```bash
-git clone https://github.com/FittyAr/Cardfile
-cd Cardfile
+git clone https://github.com/FittyAr/NoteChest
+cd NoteChest
 cargo run --release
 ```
 

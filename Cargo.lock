@@ -928,207 +928,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cardfile"
-version = "2.0.0-beta.7"
-dependencies = [
- "cardfile-ui",
- "tracing",
- "tracing-appender",
- "tracing-subscriber",
- "winresource",
-]
-
-[[package]]
-name = "cardfile-agent"
-version = "2.0.0-beta.7"
-dependencies = [
- "cardfile-core",
- "cardfile-db",
- "cardfile-doc",
- "pretty_assertions",
- "serde_json",
- "tracing",
-]
-
-[[package]]
-name = "cardfile-ai"
-version = "2.0.0-beta.7"
-dependencies = [
- "serde",
- "serde_json",
- "thiserror 2.0.21",
- "ureq",
- "uuid",
-]
-
-[[package]]
-name = "cardfile-core"
-version = "2.0.0-beta.7"
-dependencies = [
- "jiff",
- "serde",
- "serde_json",
- "thiserror 2.0.21",
- "uuid",
-]
-
-[[package]]
-name = "cardfile-crypto"
-version = "2.0.0-beta.7"
-dependencies = [
- "argon2",
- "base64 0.23.1",
- "blake3",
- "cardfile-core",
- "chacha20poly1305",
- "getrandom 0.4.3",
- "serde_json",
- "thiserror 2.0.21",
- "x25519-dalek",
- "zeroize",
-]
-
-[[package]]
-name = "cardfile-db"
-version = "2.0.0-beta.7"
-dependencies = [
- "blake3",
- "cardfile-core",
- "cardfile-crypto",
- "cardfile-doc",
- "diesel",
- "diesel_migrations",
- "libsqlite3-sys",
- "parking_lot 0.13.0",
- "pretty_assertions",
- "serde_json",
- "tempfile",
- "thiserror 2.0.21",
- "tracing",
- "uuid",
-]
-
-[[package]]
-name = "cardfile-doc"
-version = "2.0.0-beta.7"
-dependencies = [
- "base64 0.23.1",
- "cardfile-core",
- "harfrust 0.16.1",
- "krilla",
- "pretty_assertions",
- "pulldown-cmark",
- "serde",
- "serde_json",
- "thiserror 2.0.21",
- "unicode-bidi",
-]
-
-[[package]]
-name = "cardfile-editor"
-version = "2.0.0-beta.7"
-dependencies = [
- "cardfile-doc",
- "cardfile-i18n",
- "cardfile-media",
- "gpui-kit",
- "gpui-pre",
- "image",
- "pretty_assertions",
- "tracing",
- "unicode-bidi",
- "unicode-segmentation",
-]
-
-[[package]]
-name = "cardfile-i18n"
-version = "2.0.0-beta.7"
-dependencies = [
- "ar-reshaper",
- "rust-i18n",
- "sys-locale",
- "unicode-bidi",
-]
-
-[[package]]
-name = "cardfile-mcp"
-version = "2.0.0-beta.7"
-dependencies = [
- "base64 0.23.1",
- "getrandom 0.4.3",
- "serde_json",
- "thiserror 2.0.21",
- "tiny_http",
- "tracing",
- "ureq",
-]
-
-[[package]]
-name = "cardfile-media"
-version = "2.0.0-beta.7"
-dependencies = [
- "hound",
- "parking_lot 0.13.0",
- "rodio",
- "symphonia",
- "thiserror 2.0.21",
- "tracing",
-]
-
-[[package]]
-name = "cardfile-ui"
-version = "2.0.0-beta.7"
-dependencies = [
- "anyhow",
- "cardfile-agent",
- "cardfile-ai",
- "cardfile-core",
- "cardfile-crypto",
- "cardfile-db",
- "cardfile-doc",
- "cardfile-editor",
- "cardfile-i18n",
- "cardfile-mcp",
- "cardfile-media",
- "cardfile-updater",
- "directories",
- "gpui-kit",
- "image",
- "jiff",
- "keyring",
- "open",
- "parking_lot 0.13.0",
- "semver",
- "serde",
- "serde_json",
- "sha2 0.11.1",
- "spellbook",
- "tempfile",
- "tracing",
- "ureq",
- "uuid",
- "zeroize",
-]
-
-[[package]]
-name = "cardfile-updater"
-version = "2.0.0-beta.7"
-dependencies = [
- "cardfile-core",
- "lzma-rust2",
- "minisign-verify",
- "semver",
- "serde",
- "serde_json",
- "sha2 0.11.1",
- "tar",
- "tempfile",
- "thiserror 2.0.21",
- "ureq",
- "zip",
-]
-
-[[package]]
 name = "cast"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5000,6 +4799,207 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b11ce00d2594068e8a27c9146fdc5cf9f3ac38eb42c7cd34d05fea618873ac9f"
 dependencies = [
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "notechest"
+version = "2.0.0"
+dependencies = [
+ "notechest-ui",
+ "tracing",
+ "tracing-appender",
+ "tracing-subscriber",
+ "winresource",
+]
+
+[[package]]
+name = "notechest-agent"
+version = "2.0.0"
+dependencies = [
+ "notechest-core",
+ "notechest-db",
+ "notechest-doc",
+ "pretty_assertions",
+ "serde_json",
+ "tracing",
+]
+
+[[package]]
+name = "notechest-ai"
+version = "2.0.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+ "ureq",
+ "uuid",
+]
+
+[[package]]
+name = "notechest-core"
+version = "2.0.0"
+dependencies = [
+ "jiff",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+ "uuid",
+]
+
+[[package]]
+name = "notechest-crypto"
+version = "2.0.0"
+dependencies = [
+ "argon2",
+ "base64 0.23.1",
+ "blake3",
+ "chacha20poly1305",
+ "getrandom 0.4.3",
+ "notechest-core",
+ "serde_json",
+ "thiserror 2.0.21",
+ "x25519-dalek",
+ "zeroize",
+]
+
+[[package]]
+name = "notechest-db"
+version = "2.0.0"
+dependencies = [
+ "blake3",
+ "diesel",
+ "diesel_migrations",
+ "libsqlite3-sys",
+ "notechest-core",
+ "notechest-crypto",
+ "notechest-doc",
+ "parking_lot 0.13.0",
+ "pretty_assertions",
+ "serde_json",
+ "tempfile",
+ "thiserror 2.0.21",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "notechest-doc"
+version = "2.0.0"
+dependencies = [
+ "base64 0.23.1",
+ "harfrust 0.16.1",
+ "krilla",
+ "notechest-core",
+ "pretty_assertions",
+ "pulldown-cmark",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+ "unicode-bidi",
+]
+
+[[package]]
+name = "notechest-editor"
+version = "2.0.0"
+dependencies = [
+ "gpui-kit",
+ "gpui-pre",
+ "image",
+ "notechest-doc",
+ "notechest-i18n",
+ "notechest-media",
+ "pretty_assertions",
+ "tracing",
+ "unicode-bidi",
+ "unicode-segmentation",
+]
+
+[[package]]
+name = "notechest-i18n"
+version = "2.0.0"
+dependencies = [
+ "ar-reshaper",
+ "rust-i18n",
+ "sys-locale",
+ "unicode-bidi",
+]
+
+[[package]]
+name = "notechest-mcp"
+version = "2.0.0"
+dependencies = [
+ "base64 0.23.1",
+ "getrandom 0.4.3",
+ "serde_json",
+ "thiserror 2.0.21",
+ "tiny_http",
+ "tracing",
+ "ureq",
+]
+
+[[package]]
+name = "notechest-media"
+version = "2.0.0"
+dependencies = [
+ "hound",
+ "parking_lot 0.13.0",
+ "rodio",
+ "symphonia",
+ "thiserror 2.0.21",
+ "tracing",
+]
+
+[[package]]
+name = "notechest-ui"
+version = "2.0.0"
+dependencies = [
+ "anyhow",
+ "directories",
+ "gpui-kit",
+ "image",
+ "jiff",
+ "keyring",
+ "notechest-agent",
+ "notechest-ai",
+ "notechest-core",
+ "notechest-crypto",
+ "notechest-db",
+ "notechest-doc",
+ "notechest-editor",
+ "notechest-i18n",
+ "notechest-mcp",
+ "notechest-media",
+ "notechest-updater",
+ "open",
+ "parking_lot 0.13.0",
+ "semver",
+ "serde",
+ "serde_json",
+ "sha2 0.11.1",
+ "spellbook",
+ "tempfile",
+ "tracing",
+ "ureq",
+ "uuid",
+ "zeroize",
+]
+
+[[package]]
+name = "notechest-updater"
+version = "2.0.0"
+dependencies = [
+ "lzma-rust2",
+ "minisign-verify",
+ "notechest-core",
+ "semver",
+ "serde",
+ "serde_json",
+ "sha2 0.11.1",
+ "tar",
+ "tempfile",
+ "thiserror 2.0.21",
+ "ureq",
+ "zip",
 ]
 
 [[package]]

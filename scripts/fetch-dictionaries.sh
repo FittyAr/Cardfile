@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Download the Hunspell dictionaries shipped with Cardfile into packaging/dictionaries.
+# Download the Hunspell dictionaries shipped with NoteChest into packaging/dictionaries.
 # Source: https://github.com/wooorm/dictionaries: dictionary-en (en_US, SCOWL-based) and
 # dictionary-es (es_ES, used under MPL-1.1 of its GPL-3.0/LGPL-3.0/MPL-1.1 choice); see their
-# license files. The other languages are downloaded by the app on request (crates/cardfile-ui/src/dictionaries.rs).
+# license files. The other languages are downloaded by the app on request (crates/notechest-ui/src/dictionaries.rs).
 #
 # The files are pinned to one commit of that repository and checked against their SHA-256,
 # so a change upstream can never slip into a release. To update: pick a new commit, run

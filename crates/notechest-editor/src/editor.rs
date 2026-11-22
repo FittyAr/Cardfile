@@ -1,0 +1,2325 @@
+//! The [`RichEditor`] GPUI entity: input handling on top of [`Model`].
+
+use std::collections::{HashMap, HashSet};
+use std::ops::Range;
+use std::sync::Arc;
+use std::time::Duration;
+
+use gpui_kit::{
+    Action, App, AppContext as _, Bounds, ClipboardEntry, ClipboardItem, Context,
+    EntityInputHandler, EventEmitter, FocusHandle, Focusable, Global, KeyBinding, MouseButton,
+    MouseDownEvent, MouseMoveEvent, MouseUpEvent, PathPromptOptions, Pixels, Point, ScrollHandle,
+    Task, UTF16Selection, Window, actions, point, px,
+};
+use notechest_doc::{Align, Attachment, Block, BlockKind, Document, Image, Mark, TextSize};
+
+use crate::history::{EditKind, History};
+use crate::layout::SlotLayout;
+use crate::model::Model;
+use crate::pos::{
+    Pos, Selection, Slot, Slots, next_word, prev_word, utf8_to_utf16, utf16_to_utf8, word_range,
+};
+
+/// Key context for editor bindings.
+pub const KEY_CONTEXT: &str = "RichEditor";
+
+actions!(
+    rich_editor,
+    [
+        /// Move the caret one character left.
+        MoveLeft,
+        /// Move the caret one character right.
+        MoveRight,
+        /// Move the caret one visual line up.
+        MoveUp,
+        /// Move the caret one visual line down.
+        MoveDown,
+        /// Move the caret to the previous word start.
+        MoveWordLeft,
+        /// Move the caret to the next word end.
+        MoveWordRight,
+        /// Move the caret to the start of the visual line.
+        MoveLineStart,
+        /// Move the caret to the end of the visual line.
+        MoveLineEnd,
+        /// Move the caret to the start of the document.
+        MoveDocStart,
+        /// Move the caret to the end of the document.
+        MoveDocEnd,
+        /// Move the caret one screen up.
+        MovePageUp,
+        /// Move the caret one screen down.
+        MovePageDown,
+        /// Extend the selection one character left.
+        SelectLeft,
+        /// Extend the selection one character right.
+        SelectRight,
+        /// Extend the selection one visual line up.
+        SelectUp,
+        /// Extend the selection one visual line down.
+        SelectDown,
+        /// Extend the selection to the previous word start.
+        SelectWordLeft,
+        /// Extend the selection to the next word end.
+        SelectWordRight,
+        /// Extend the selection to the start of the visual line.
+        SelectLineStart,
+        /// Extend the selection to the end of the visual line.
+        SelectLineEnd,
+        /// Extend the selection to the start of the document.
+        SelectDocStart,
+        /// Extend the selection to the end of the document.
+        SelectDocEnd,
+        /// Select the whole document.
+        SelectAll,
+        /// Delete the selection or the character before the caret.
+        Backspace,
+        /// Delete the selection or the character after the caret.
+        Delete,
+        /// Delete back to the previous word start.
+        DeleteWordLeft,
+        /// Delete forward to the next word end.
+        DeleteWordRight,
+        /// Split the block at the caret (submits a single-line editor).
+        Enter,
+        /// Insert a line break inside the current block (submits a single-line editor).
+        SoftBreak,
+        /// Next table cell, indent a list item, or insert spaces.
+        Tab,
+        /// Previous table cell, or outdent the block.
+        ShiftTab,
+        /// Undo the last edit.
+        Undo,
+        /// Redo the last undone edit.
+        Redo,
+        /// Copy the selection.
+        Copy,
+        /// Cut the selection.
+        Cut,
+        /// Paste with formatting, images and files.
+        Paste,
+        /// Paste as plain text.
+        PastePlain,
+        /// Toggle bold on the selection.
+        Bold,
+        /// Toggle italic on the selection.
+        Italic,
+        /// Toggle underline on the selection.
+        Underline,
+        /// Toggle strikethrough on the selection.
+        Strikethrough,
+        /// Toggle inline code on the selection.
+        InlineCode,
+        /// Remove inline formatting from the selection.
+        ClearFormatting,
+        /// Turn the selected blocks into paragraphs.
+        Paragraph,
+        /// Toggle level 1 headings on the selected blocks.
+        Heading1,
+        /// Toggle level 2 headings on the selected blocks.
+        Heading2,
+        /// Toggle level 3 headings on the selected blocks.
+        Heading3,
+        /// Toggle a bulleted list on the selected blocks.
+        BulletList,
+        /// Toggle a numbered list on the selected blocks.
+        NumberedList,
+        /// Toggle a check list on the selected blocks.
+        CheckList,
+        /// Toggle a block quote on the selected blocks.
+        Quote,
+        /// Toggle a code block on the selected blocks.
+        CodeBlock,
+        /// Align the block to the start edge.
+        AlignLeft,
+        /// Centre the block.
+        AlignCenter,
+        /// Align the block to the end edge.
+        AlignRight,
+        /// Justify the block.
+        AlignJustify,
+        /// Add or edit a link on the selection.
+        InsertLink,
+        /// Remove the link at the caret or selection.
+        RemoveLink,
+        /// Insert a horizontal rule.
+        InsertDivider,
+        /// Insert a table.
+        InsertTable,
+        /// Pick an image file and insert it.
+        InsertImage,
+        /// Pick a file and attach it.
+        InsertAttachment,
+        /// Insert a table row above the caret.
+        TableInsertRowAbove,
+        /// Insert a table row below the caret.
+        TableInsertRowBelow,
+        /// Insert a table column left of the caret.
+        TableInsertColumnLeft,
+        /// Insert a table column right of the caret.
+        TableInsertColumnRight,
+        /// Delete the caret's table row.
+        TableDeleteRow,
+        /// Delete the caret's table column.
+        TableDeleteColumn,
+        /// Delete the whole table.
+        TableDelete,
+        /// Turn the table's header row on or off.
+        TableToggleHeader,
+        /// Increase the block's indent level.
+        Indent,
+        /// Decrease the block's indent level.
+        Outdent,
+        /// Tick or untick the check list item at the caret.
+        ToggleCheck,
+        /// Set the block's text size to small.
+        TextSmall,
+        /// Set the block's text size to normal.
+        TextNormal,
+        /// Set the block's text size to large.
+        TextLarge,
+        /// Set the block's text size to huge.
+        TextHuge,
+        /// Shrink the image at the caret by 20 %.
+        ImageSmaller,
+        /// Grow the image at the caret by 25 %.
+        ImageLarger,
+        /// Reset the image at the caret to fit the editor width.
+        ImageFit,
+        /// Drop a stretched height so the image keeps its aspect ratio.
+        ImageKeepRatio,
+        /// Open the link under the caret.
+        OpenLinkAtCaret,
+        /// Add the misspelled word at the caret to the personal dictionary.
+        AddWordToDictionary,
+        /// Open the find bar.
+        Find,
+        /// Open the find bar with replace.
+        FindReplace,
+        /// Go to the next match.
+        FindNext,
+        /// Go to the previous match.
+        FindPrevious,
+        /// Close a menu or the find bar, or collapse the selection.
+        Cancel,
+    ]
+);
+
+/// Set the text color of the selection (`None` resets it).
+#[derive(Clone, Debug, PartialEq, gpui_kit::Action)]
+#[action(namespace = rich_editor, no_json)]
+pub struct SetColor(pub Option<String>);
+
+/// Set the highlight color of the selection (`None` removes it).
+#[derive(Clone, Debug, PartialEq, gpui_kit::Action)]
+#[action(namespace = rich_editor, no_json)]
+pub struct SetHighlight(pub Option<String>);
+
+/// Replace the word at the caret (spelling suggestion).
+#[derive(Clone, Debug, PartialEq, gpui_kit::Action)]
+#[action(namespace = rich_editor, no_json)]
+pub struct ReplaceWord(pub String);
+
+/// Storage for images and attachments. Implemented by the application on top of the DB.
+pub trait BlobStore: Send + Sync + 'static {
+    /// Store bytes, returning the blob id.
+    fn put(&self, data: &[u8], mime: &str, file_name: Option<&str>) -> Option<String>;
+    /// Load `(mime, bytes)`.
+    fn get(&self, id: &str) -> Option<(String, Vec<u8>)>;
+    /// Whether the reference carries a secret (e.g. the key of an encrypted card's
+    /// image) and so must not be put on the system clipboard.
+    fn is_private(&self, _id: &str) -> bool {
+        false
+    }
+}
+
+/// The last fragment copied in this process, with every blob reference intact. The
+/// system clipboard gets a copy without private blobs; pasting the same text back
+/// inside NoteChest uses this one.
+#[derive(Default)]
+struct InternalClipboard(Option<(String, Document)>);
+
+impl Global for InternalClipboard {}
+
+/// Spell checking backend.
+pub trait SpellChecker: Send + Sync + 'static {
+    /// Whether `word` is spelled correctly.
+    fn check(&self, word: &str) -> bool;
+    /// Replacement suggestions for a misspelled `word`, best first.
+    fn suggest(&self, word: &str) -> Vec<String>;
+    /// Accept `word` from now on (personal dictionary).
+    fn add_word(&self, word: &str);
+}
+
+/// Events the editor emits to its host.
+#[derive(Clone, Debug, PartialEq)]
+pub enum EditorEvent {
+    /// The document changed (debounce before saving).
+    Changed,
+    /// The caret or selection moved (refresh toolbars).
+    SelectionChanged,
+    /// The user tried to edit a read-only document.
+    EditBlocked,
+    /// Enter was pressed in a single-line editor.
+    Submit,
+    /// The user asked to open an attachment with the system's default app.
+    OpenAttachment {
+        /// Blob reference of the attachment.
+        blob: String,
+        /// Original file name, for a temporary copy with the right extension.
+        file_name: String,
+    },
+    /// The user asked to open a link; carries the URL.
+    OpenLink(String),
+}
+
+/// Default key bindings. The app may override them with a user keymap.
+pub fn default_key_bindings() -> Vec<KeyBinding> {
+    let c = Some(KEY_CONTEXT);
+    vec![
+        KeyBinding::new("left", MoveLeft, c),
+        KeyBinding::new("right", MoveRight, c),
+        KeyBinding::new("up", MoveUp, c),
+        KeyBinding::new("down", MoveDown, c),
+        KeyBinding::new("ctrl-left", MoveWordLeft, c),
+        KeyBinding::new("ctrl-right", MoveWordRight, c),
+        KeyBinding::new("home", MoveLineStart, c),
+        KeyBinding::new("end", MoveLineEnd, c),
+        KeyBinding::new("ctrl-home", MoveDocStart, c),
+        KeyBinding::new("ctrl-end", MoveDocEnd, c),
+        KeyBinding::new("pageup", MovePageUp, c),
+        KeyBinding::new("pagedown", MovePageDown, c),
+        KeyBinding::new("shift-left", SelectLeft, c),
+        KeyBinding::new("shift-right", SelectRight, c),
+        KeyBinding::new("shift-up", SelectUp, c),
+        KeyBinding::new("shift-down", SelectDown, c),
+        KeyBinding::new("ctrl-shift-left", SelectWordLeft, c),
+        KeyBinding::new("ctrl-shift-right", SelectWordRight, c),
+        KeyBinding::new("shift-home", SelectLineStart, c),
+        KeyBinding::new("shift-end", SelectLineEnd, c),
+        KeyBinding::new("ctrl-shift-home", SelectDocStart, c),
+        KeyBinding::new("ctrl-shift-end", SelectDocEnd, c),
+        KeyBinding::new("ctrl-a", SelectAll, c),
+        KeyBinding::new("backspace", Backspace, c),
+        KeyBinding::new("shift-backspace", Backspace, c),
+        KeyBinding::new("delete", Delete, c),
+        KeyBinding::new("ctrl-backspace", DeleteWordLeft, c),
+        KeyBinding::new("ctrl-delete", DeleteWordRight, c),
+        KeyBinding::new("enter", Enter, c),
+        KeyBinding::new("shift-enter", SoftBreak, c),
+        KeyBinding::new("tab", Tab, c),
+        KeyBinding::new("shift-tab", ShiftTab, c),
+        KeyBinding::new("ctrl-z", Undo, c),
+        KeyBinding::new("ctrl-y", Redo, c),
+        KeyBinding::new("ctrl-shift-z", Redo, c),
+        KeyBinding::new("ctrl-c", Copy, c),
+        KeyBinding::new("ctrl-insert", Copy, c),
+        KeyBinding::new("ctrl-x", Cut, c),
+        KeyBinding::new("shift-delete", Cut, c),
+        KeyBinding::new("ctrl-v", Paste, c),
+        KeyBinding::new("shift-insert", Paste, c),
+        KeyBinding::new("ctrl-shift-v", PastePlain, c),
+        KeyBinding::new("ctrl-b", Bold, c),
+        KeyBinding::new("ctrl-i", Italic, c),
+        KeyBinding::new("ctrl-u", Underline, c),
+        KeyBinding::new("ctrl-shift-x", Strikethrough, c),
+        KeyBinding::new("ctrl-`", InlineCode, c),
+        KeyBinding::new("ctrl-space", ClearFormatting, c),
+        KeyBinding::new("ctrl-alt-0", Paragraph, c),
+        KeyBinding::new("ctrl-alt-1", Heading1, c),
+        KeyBinding::new("ctrl-alt-2", Heading2, c),
+        KeyBinding::new("ctrl-alt-3", Heading3, c),
+        KeyBinding::new("ctrl-shift-8", BulletList, c),
+        KeyBinding::new("ctrl-shift-7", NumberedList, c),
+        KeyBinding::new("ctrl-shift-9", CheckList, c),
+        KeyBinding::new("ctrl-shift-.", Quote, c),
+        KeyBinding::new("ctrl-alt-c", CodeBlock, c),
+        KeyBinding::new("ctrl-l", AlignLeft, c),
+        KeyBinding::new("ctrl-e", AlignCenter, c),
+        KeyBinding::new("ctrl-r", AlignRight, c),
+        KeyBinding::new("ctrl-j", AlignJustify, c),
+        KeyBinding::new("ctrl-k", InsertLink, c),
+        KeyBinding::new("ctrl-]", Indent, c),
+        KeyBinding::new("ctrl-[", Outdent, c),
+        KeyBinding::new("ctrl-enter", ToggleCheck, c),
+        KeyBinding::new("alt-enter", OpenLinkAtCaret, c),
+        KeyBinding::new("ctrl-f", Find, c),
+        KeyBinding::new("ctrl-h", FindReplace, c),
+        KeyBinding::new("f3", FindNext, c),
+        KeyBinding::new("shift-f3", FindPrevious, c),
+        KeyBinding::new("escape", Cancel, c),
+    ]
+}
+
+/// Bind the default keys. Call once at startup (after the app's own bindings).
+pub fn init(cx: &mut App) {
+    cx.bind_keys(default_key_bindings());
+}
+
+/// The WYSIWYG editor view over one [`Document`].
+///
+/// The host loads documents with [`RichEditor::set_document`], listens for
+/// [`EditorEvent`]s and reads the result back with [`RichEditor::document`].
+pub struct RichEditor {
+    pub(crate) model: Model,
+    history: History,
+    pub(crate) focus_handle: FocusHandle,
+    read_only: bool,
+    pub(crate) layouts: HashMap<Slot, SlotLayout>,
+    /// IME composition range (bytes) in the caret slot.
+    marked: Option<Range<usize>>,
+    selecting: bool,
+    /// Preferred x when moving vertically.
+    goal_x: Option<Pixels>,
+    pub(crate) scroll: ScrollHandle,
+    autoscroll: bool,
+    blink_on: bool,
+    blink_epoch: usize,
+    _blink_task: Option<Task<()>>,
+    pub(crate) blobs: Option<Arc<dyn BlobStore>>,
+    pub(crate) image_cache: HashMap<String, Arc<gpui_kit::Image>>,
+    /// Images being read from the blob store on the background executor.
+    image_loading: HashSet<String>,
+    /// Images whose blob is missing or not a known image format (not retried until
+    /// another document or store is set).
+    image_unavailable: HashSet<String>,
+    pub(crate) spell: Option<Arc<dyn SpellChecker>>,
+    pub(crate) spelling: crate::spell::SpellState,
+    pub(crate) base_font_size: Pixels,
+    pub(crate) placeholder: Option<String>,
+    revision: u64,
+    /// Bumped by [`RichEditor::set_document`]; background work captures it so a
+    /// result that arrives after another document was loaded is dropped instead of
+    /// landing in the wrong card.
+    doc_generation: u64,
+    pub(crate) find: Option<crate::find::FindBar>,
+    pub(crate) slash: Option<crate::slash::SlashMenu>,
+    pub(crate) media: crate::media::MediaState,
+    /// An image being resized with its handles.
+    pub(crate) image_drag: Option<crate::image_resize::ImageDrag>,
+    /// Painted bounds of each image block, to start a resize from its real size.
+    pub(crate) image_bounds: std::rc::Rc<std::cell::RefCell<HashMap<usize, Bounds<Pixels>>>>,
+    /// One plain line of text (titles, chat input): Enter submits, no blocks.
+    pub(crate) single_line: bool,
+    /// Draw all text bold (titles).
+    pub(crate) strong: bool,
+}
+
+impl EventEmitter<EditorEvent> for RichEditor {}
+
+impl Focusable for RichEditor {
+    fn focus_handle(&self, _: &App) -> FocusHandle {
+        self.focus_handle.clone()
+    }
+}
+
+impl RichEditor {
+    /// An editable editor showing `doc`, with an empty undo history.
+    pub fn new(doc: Document, cx: &mut Context<Self>) -> Self {
+        Self {
+            model: Model::new(doc),
+            history: History::default(),
+            focus_handle: cx.focus_handle(),
+            read_only: false,
+            layouts: HashMap::new(),
+            marked: None,
+            selecting: false,
+            goal_x: None,
+            scroll: ScrollHandle::new(),
+            autoscroll: false,
+            blink_on: true,
+            blink_epoch: 0,
+            _blink_task: None,
+            blobs: None,
+            image_cache: HashMap::new(),
+            image_loading: HashSet::new(),
+            image_unavailable: HashSet::new(),
+            spell: None,
+            spelling: Default::default(),
+            base_font_size: px(15.),
+            placeholder: None,
+            revision: 0,
+            doc_generation: 0,
+            find: None,
+            slash: None,
+            media: Default::default(),
+            image_drag: None,
+            image_bounds: Default::default(),
+            single_line: false,
+            strong: false,
+        }
+    }
+
+    /// Make this a one-line text field: Enter emits [`EditorEvent::Submit`], pasted
+    /// line breaks become spaces, and Markdown shortcuts and the `/` menu are off.
+    /// Unlike the toolkit's inputs it lays out right-to-left text correctly.
+    pub fn set_single_line(&mut self, on: bool) {
+        self.single_line = on;
+        if on {
+            self.model.input_rules = false;
+        }
+    }
+
+    /// Draw all text bold.
+    pub fn set_strong(&mut self, on: bool, cx: &mut Context<Self>) {
+        self.strong = on;
+        cx.notify();
+    }
+
+    /// The text as one plain string.
+    pub fn text(&self) -> String {
+        notechest_doc::to_plain_text(&self.model.doc)
+            .trim_end_matches('\n')
+            .to_owned()
+    }
+
+    /// Replace everything with one paragraph of plain text, caret at the end.
+    pub fn set_text(&mut self, text: &str, cx: &mut Context<Self>) {
+        let text = if self.single_line {
+            text.replace(['\n', '\r'], " ")
+        } else {
+            text.to_owned()
+        };
+        let len = text.len();
+        self.set_document(
+            Document {
+                version: notechest_doc::DOC_VERSION,
+                blocks: vec![Block::paragraph(&text)],
+            },
+            cx,
+        );
+        self.model.set_caret(Pos::new(Slot::block(0), len));
+        self.revision += 1;
+    }
+
+    // ---------------------------------------------------------------------
+    // Public API
+    // ---------------------------------------------------------------------
+
+    /// The document as currently edited.
+    pub fn document(&self) -> &Document {
+        &self.model.doc
+    }
+
+    /// Replace the document (e.g. when another card is opened). Clears undo history.
+    pub fn set_document(&mut self, doc: Document, cx: &mut Context<Self>) {
+        self.model = Model {
+            input_rules: self.model.input_rules,
+            ..Model::new(doc)
+        };
+        self.doc_generation = self.doc_generation.wrapping_add(1);
+        self.history.clear();
+        self.layouts.clear();
+        self.image_unavailable.clear();
+        self.spelling.clear_slots();
+        self.marked = None;
+        self.slash = None;
+        self.media.clear();
+        self.scroll.set_offset(point(px(0.), px(0.)));
+        self.refresh_matches(false, cx);
+        cx.notify();
+    }
+
+    /// Bump on every content change; the host compares it to know what was saved.
+    pub fn revision(&self) -> u64 {
+        self.revision
+    }
+
+    /// Identifies the loaded document: it changes every time
+    /// [`RichEditor::set_document`] replaces it, but not on edits. Hosts compare it
+    /// to know whether the editor still shows the document they captured.
+    pub fn document_generation(&self) -> u64 {
+        self.doc_generation
+    }
+
+    /// Whether `generation` (from [`RichEditor::document_generation`]) still names
+    /// the loaded document; logs and returns `false` when it does not, so a late
+    /// background result is dropped.
+    pub(crate) fn same_document(&self, generation: u64, what: &str) -> bool {
+        if self.doc_generation == generation {
+            return true;
+        }
+        tracing::warn!("dropped a {what}: another document was loaded while it was prepared");
+        false
+    }
+
+    /// Allow or forbid edits. Edits attempted while read-only emit
+    /// [`EditorEvent::EditBlocked`]; the caret can still move and text can be copied.
+    pub fn set_read_only(&mut self, read_only: bool, cx: &mut Context<Self>) {
+        self.read_only = read_only;
+        cx.notify();
+    }
+
+    /// Whether edits are forbidden.
+    pub fn is_read_only(&self) -> bool {
+        self.read_only
+    }
+
+    /// Set where images and attachments are read from and stored. Clears the
+    /// image cache.
+    pub fn set_blob_store(&mut self, store: Arc<dyn BlobStore>) {
+        self.blobs = Some(store);
+        self.image_cache.clear();
+        self.image_loading.clear();
+        self.image_unavailable.clear();
+    }
+
+    /// Set or remove the spell checker. Clears cached results.
+    pub fn set_spell_checker(
+        &mut self,
+        spell: Option<Arc<dyn SpellChecker>>,
+        cx: &mut Context<Self>,
+    ) {
+        self.spell = spell;
+        self.spelling.clear();
+        cx.notify();
+    }
+
+    /// Enable or disable Markdown-style input rules (`# `, `**bold**`, …).
+    pub fn set_input_rules(&mut self, on: bool) {
+        self.model.input_rules = on;
+    }
+
+    /// Base font size of the text, in logical pixels.
+    pub fn set_font_size(&mut self, size: Pixels, cx: &mut Context<Self>) {
+        self.base_font_size = size;
+        cx.notify();
+    }
+
+    /// Text shown greyed out while the document is empty.
+    pub fn set_placeholder(&mut self, text: Option<String>) {
+        self.placeholder = text;
+    }
+
+    /// Whether there is an edit to undo.
+    pub fn can_undo(&self) -> bool {
+        self.history.can_undo()
+    }
+
+    /// Whether there is an undone edit to redo.
+    pub fn can_redo(&self) -> bool {
+        self.history.can_redo()
+    }
+
+    /// Whether `mark` applies to the whole selection (or to text typed at the caret).
+    pub fn has_mark(&self, mark: Mark) -> bool {
+        self.model.has_mark(mark)
+    }
+
+    /// Kind of the block at the caret; `None` inside a table cell.
+    pub fn current_block_kind(&self) -> Option<BlockKind> {
+        self.model.current_block_kind()
+    }
+
+    /// Alignment of the block at the caret.
+    pub fn current_align(&self) -> Align {
+        self.model
+            .doc
+            .blocks
+            .get(self.model.caret().slot.block)
+            .map_or(Align::Left, |b| b.align)
+    }
+
+    /// The selected text as plain text.
+    pub fn selected_text(&self) -> String {
+        self.model.selected_text()
+    }
+
+    /// Whether the caret is inside a table cell.
+    pub fn in_table(&self) -> bool {
+        self.model.in_table()
+    }
+
+    /// Whether the caret is on an image block.
+    pub fn selected_image(&self) -> bool {
+        let slot = self.model.caret().slot;
+        matches!(
+            self.model.doc.blocks.get(slot.block).map(|b| &b.kind),
+            Some(BlockKind::Image(_))
+        )
+    }
+
+    // ---------------------------------------------------------------------
+    // Paint-time helpers used by the elements
+    // ---------------------------------------------------------------------
+
+    pub(crate) fn store_layout(&mut self, slot: Slot, layout: SlotLayout) -> bool {
+        let mut refresh = false;
+        if self.autoscroll && slot == self.model.caret().slot {
+            self.autoscroll = false;
+            let caret = layout.position_for(self.model.caret().offset);
+            let viewport = self.scroll.bounds();
+            if viewport.size.height > px(0.) {
+                let top = caret.y;
+                let bottom = caret.y + layout.line_height;
+                let mut offset = self.scroll.offset();
+                let margin = layout.line_height;
+                if top < viewport.top() + margin {
+                    offset.y += viewport.top() + margin - top;
+                    refresh = true;
+                } else if bottom > viewport.bottom() - margin {
+                    offset.y -= bottom - (viewport.bottom() - margin);
+                    refresh = true;
+                }
+                if refresh {
+                    offset.y = offset.y.min(px(0.));
+                    self.scroll.set_offset(offset);
+                }
+            }
+        }
+        self.layouts.insert(slot, layout);
+        refresh
+    }
+
+    pub(crate) fn selected_range_in(&self, slot: Slot, len: usize) -> Option<Range<usize>> {
+        let sel = self.model.sel;
+        if sel.is_empty() {
+            return None;
+        }
+        let (s, e) = (sel.start(), sel.end());
+        if slot < s.slot || slot > e.slot {
+            return None;
+        }
+        let start = if slot == s.slot { s.offset } else { 0 };
+        let end = if slot == e.slot { e.offset } else { len };
+        // Mark a fully covered empty slot (or line break) as selected.
+        let end = if slot != e.slot {
+            end.max(start) + usize::from(len == 0)
+        } else {
+            end
+        };
+        Some(start..end)
+    }
+
+    pub(crate) fn is_atom_selected(&self, block: usize) -> bool {
+        let sel = self.model.sel;
+        let slot = Slot::block(block);
+        if sel.is_empty() {
+            return sel.head.slot == slot;
+        }
+        sel.start().slot <= slot && slot <= sel.end().slot
+    }
+
+    pub(crate) fn marked_range_in(&self, slot: Slot) -> Option<Range<usize>> {
+        (slot == self.model.caret().slot)
+            .then(|| self.marked.clone())
+            .flatten()
+    }
+
+    pub(crate) fn caret_visible(&self) -> bool {
+        self.blink_on
+    }
+
+    fn reset_blink(&mut self, cx: &mut Context<Self>) {
+        self.blink_on = true;
+        self.blink_epoch += 1;
+        let epoch = self.blink_epoch;
+        self._blink_task = Some(cx.spawn(async move |this, cx| {
+            loop {
+                cx.background_executor()
+                    .timer(Duration::from_millis(530))
+                    .await;
+                let alive = this
+                    .update(cx, |e, cx| {
+                        if e.blink_epoch != epoch {
+                            return false;
+                        }
+                        e.blink_on = !e.blink_on;
+                        cx.notify();
+                        true
+                    })
+                    .unwrap_or(false);
+                if !alive {
+                    break;
+                }
+            }
+        }));
+    }
+
+    // ---------------------------------------------------------------------
+    // Edit plumbing
+    // ---------------------------------------------------------------------
+
+    pub(crate) fn edit(
+        &mut self,
+        kind: EditKind,
+        cx: &mut Context<Self>,
+        f: impl FnOnce(&mut Model),
+    ) {
+        if self.read_only {
+            cx.emit(EditorEvent::EditBlocked);
+            return;
+        }
+        let before = self.model.doc.clone();
+        let sel = self.model.sel;
+        f(&mut self.model);
+        if self.model.doc != before {
+            self.invalidate_layouts(&before);
+            self.history.record(&before, sel, kind);
+            self.revision += 1;
+            cx.emit(EditorEvent::Changed);
+            if self.find.is_some() {
+                self.refresh_matches(false, cx);
+            }
+        }
+        self.validate_slash();
+        self.after_move(cx);
+    }
+
+    /// Drop the layouts of slots the document no longer has (deleted rows, columns,
+    /// tables or blocks, or a block whose kind changed), so hit-testing never lands
+    /// on stale geometry. Paint refills the layouts of the slots that remain.
+    pub(crate) fn prune_layouts(&mut self) {
+        let doc = &self.model.doc;
+        self.layouts.retain(|s, _| doc.has_text_slot(*s));
+    }
+
+    /// After the document changed from `before`: also drop layouts whose slot still
+    /// exists but now belongs to a different block (blocks were inserted or removed
+    /// above it) or to a block whose kind or table shape changed.
+    fn invalidate_layouts(&mut self, before: &Document) {
+        fn shape(b: &Block) -> (std::mem::Discriminant<BlockKind>, usize, usize) {
+            let (rows, cols) = match &b.kind {
+                BlockKind::Table(t) => (t.rows.len(), t.cols()),
+                _ => (0, 0),
+            };
+            (std::mem::discriminant(&b.kind), rows, cols)
+        }
+        let now = &self.model.doc.blocks;
+        let first_diff = before
+            .blocks
+            .iter()
+            .zip(now)
+            .position(|(a, b)| shape(a) != shape(b))
+            .unwrap_or(before.blocks.len().min(now.len()));
+        let shifted = before.blocks.len() != now.len();
+        self.layouts.retain(|s, _| {
+            if shifted {
+                s.block < first_diff
+            } else {
+                now.get(s.block)
+                    .zip(before.blocks.get(s.block))
+                    .is_some_and(|(a, b)| shape(a) == shape(b))
+            }
+        });
+        self.prune_layouts();
+    }
+
+    pub(crate) fn edit_with(&mut self, cx: &mut Context<Self>, f: impl FnOnce(&mut Model)) {
+        self.edit(EditKind::Other, cx, f);
+    }
+
+    pub(crate) fn request_autoscroll(&mut self) {
+        self.autoscroll = true;
+    }
+
+    pub(crate) fn pick_files_public(&mut self, images: bool, cx: &mut Context<Self>) {
+        self.pick_files(images, cx);
+    }
+
+    fn after_move(&mut self, cx: &mut Context<Self>) {
+        if self.spell.is_some() {
+            self.prefetch_suggestions(self.model.caret(), cx);
+        }
+        self.autoscroll = true;
+        self.reset_blink(cx);
+        cx.emit(EditorEvent::SelectionChanged);
+        cx.notify();
+    }
+
+    fn move_caret(&mut self, pos: Pos, extend: bool, cx: &mut Context<Self>) {
+        let pos = self.model.doc.clamp_pos(pos);
+        if extend {
+            self.model.select_to(pos);
+        } else {
+            self.model.set_caret(pos);
+        }
+        self.history.seal();
+        self.marked = None;
+        self.validate_slash();
+        self.after_move(cx);
+    }
+
+    // ---------------------------------------------------------------------
+    // Horizontal movement
+    // ---------------------------------------------------------------------
+
+    fn pos_left(&self, pos: Pos, word: bool) -> Pos {
+        let doc = &self.model.doc;
+        if pos.offset > 0 {
+            let text = doc.slot_text(pos.slot).map_or("", |t| t.text.as_str());
+            let off = if word {
+                prev_word(text, pos.offset)
+            } else {
+                crate::pos::prev_grapheme(text, pos.offset)
+            };
+            return Pos::new(pos.slot, off);
+        }
+        match doc.prev_slot(pos.slot) {
+            Some(prev) => Pos::new(prev, doc.slot_len(prev)),
+            None => pos,
+        }
+    }
+
+    fn pos_right(&self, pos: Pos, word: bool) -> Pos {
+        let doc = &self.model.doc;
+        let len = doc.slot_len(pos.slot);
+        if pos.offset < len {
+            let text = doc.slot_text(pos.slot).map_or("", |t| t.text.as_str());
+            let off = if word {
+                next_word(text, pos.offset)
+            } else {
+                crate::pos::next_grapheme(text, pos.offset)
+            };
+            return Pos::new(pos.slot, off);
+        }
+        match doc.next_slot(pos.slot) {
+            Some(next) => Pos::new(next, 0),
+            None => pos,
+        }
+    }
+
+    fn horizontal(&mut self, left: bool, word: bool, extend: bool, cx: &mut Context<Self>) {
+        self.goal_x = None;
+        let sel = self.model.sel;
+        let target = if !extend && !sel.is_empty() && !word {
+            if left { sel.start() } else { sel.end() }
+        } else if left {
+            self.pos_left(sel.head, word)
+        } else {
+            self.pos_right(sel.head, word)
+        };
+        self.move_caret(target, extend, cx);
+    }
+
+    // ---------------------------------------------------------------------
+    // Vertical movement (layout based)
+    // ---------------------------------------------------------------------
+
+    fn caret_point(&self) -> Option<Point<Pixels>> {
+        let pos = self.model.caret();
+        self.layouts
+            .get(&pos.slot)
+            .map(|l| l.position_for(pos.offset))
+    }
+
+    /// The text position closest to a window-space point.
+    pub(crate) fn pos_for_point(&self, p: Point<Pixels>) -> Option<Pos> {
+        let mut best: Option<(Slot, f32)> = None;
+        for (slot, layout) in &self.layouts {
+            if !self.model.doc.has_text_slot(*slot) {
+                continue;
+            }
+            let b = layout.bounds;
+            let height = layout.height();
+            let dy = if p.y < b.top() {
+                (b.top() - p.y).as_f32()
+            } else if p.y > b.top() + height {
+                (p.y - (b.top() + height)).as_f32()
+            } else {
+                0.
+            };
+            let dx = if p.x < b.left() {
+                (b.left() - p.x).as_f32()
+            } else if p.x > b.right() {
+                (p.x - b.right()).as_f32()
+            } else {
+                0.
+            };
+            // Vertical distance dominates; x disambiguates table cells on one row.
+            let score = dy * 1000. + dx;
+            if best.is_none_or(|(_, s)| score < s) {
+                best = Some((*slot, score));
+            }
+        }
+        let (slot, _) = best?;
+        let layout = &self.layouts[&slot];
+        Some(Pos::new(slot, layout.offset_for(p)))
+    }
+
+    fn vertical(&mut self, down: bool, pages: bool, extend: bool, cx: &mut Context<Self>) {
+        let Some(caret) = self.caret_point() else {
+            return;
+        };
+        let lh = self
+            .layouts
+            .get(&self.model.caret().slot)
+            .map_or(px(20.), |l| l.line_height);
+        let x = *self.goal_x.get_or_insert(caret.x);
+        let step = if pages {
+            self.scroll.bounds().size.height.max(lh * 3.) - lh
+        } else {
+            lh
+        };
+        let y = if down {
+            caret.y + step + lh / 2.
+        } else {
+            caret.y - step + lh / 2.
+        };
+        let target = self.pos_for_point(point(x, y));
+        let target = match target {
+            Some(t) if t != self.model.caret() => t,
+            // Already on the first/last line: jump to the document edge.
+            _ if down => self.model.doc.doc_end(),
+            _ => self.model.doc.doc_start(),
+        };
+        let goal = self.goal_x;
+        self.move_caret(target, extend, cx);
+        self.goal_x = goal;
+    }
+
+    fn line_edge(&mut self, end: bool, extend: bool, cx: &mut Context<Self>) {
+        self.goal_x = None;
+        let pos = self.model.caret();
+        let (s, e) = self
+            .layouts
+            .get(&pos.slot)
+            .map_or((0, self.model.doc.slot_len(pos.slot)), |l| {
+                l.row_bounds(pos.offset)
+            });
+        // A soft wrap row ends just before the next row's first char; trim a trailing space.
+        let text = self
+            .model
+            .doc
+            .slot_text(pos.slot)
+            .map_or("", |t| t.text.as_str());
+        let e = if text
+            .get(..e)
+            .is_some_and(|t| e < text.len() && t.ends_with(' '))
+        {
+            e - 1
+        } else {
+            e
+        };
+        self.move_caret(Pos::new(pos.slot, if end { e } else { s }), extend, cx);
+    }
+
+    // ---------------------------------------------------------------------
+    // Action handlers
+    // ---------------------------------------------------------------------
+
+    fn move_left(&mut self, _: &MoveLeft, _: &mut Window, cx: &mut Context<Self>) {
+        self.horizontal(true, false, false, cx);
+    }
+    fn move_right(&mut self, _: &MoveRight, _: &mut Window, cx: &mut Context<Self>) {
+        self.horizontal(false, false, false, cx);
+    }
+    fn move_up(&mut self, _: &MoveUp, _: &mut Window, cx: &mut Context<Self>) {
+        if self.slash_key(crate::slash::SlashKey::Up, cx) {
+            return;
+        }
+        self.vertical(false, false, false, cx);
+    }
+    fn move_down(&mut self, _: &MoveDown, _: &mut Window, cx: &mut Context<Self>) {
+        if self.slash_key(crate::slash::SlashKey::Down, cx) {
+            return;
+        }
+        self.vertical(true, false, false, cx);
+    }
+    fn move_word_left(&mut self, _: &MoveWordLeft, _: &mut Window, cx: &mut Context<Self>) {
+        self.horizontal(true, true, false, cx);
+    }
+    fn move_word_right(&mut self, _: &MoveWordRight, _: &mut Window, cx: &mut Context<Self>) {
+        self.horizontal(false, true, false, cx);
+    }
+    fn move_line_start(&mut self, _: &MoveLineStart, _: &mut Window, cx: &mut Context<Self>) {
+        self.line_edge(false, false, cx);
+    }
+    fn move_line_end(&mut self, _: &MoveLineEnd, _: &mut Window, cx: &mut Context<Self>) {
+        self.line_edge(true, false, cx);
+    }
+    fn move_doc_start(&mut self, _: &MoveDocStart, _: &mut Window, cx: &mut Context<Self>) {
+        let p = self.model.doc.doc_start();
+        self.move_caret(p, false, cx);
+    }
+    fn move_doc_end(&mut self, _: &MoveDocEnd, _: &mut Window, cx: &mut Context<Self>) {
+        let p = self.model.doc.doc_end();
+        self.move_caret(p, false, cx);
+    }
+    fn move_page_up(&mut self, _: &MovePageUp, _: &mut Window, cx: &mut Context<Self>) {
+        self.vertical(false, true, false, cx);
+    }
+    fn move_page_down(&mut self, _: &MovePageDown, _: &mut Window, cx: &mut Context<Self>) {
+        self.vertical(true, true, false, cx);
+    }
+    fn select_left(&mut self, _: &SelectLeft, _: &mut Window, cx: &mut Context<Self>) {
+        self.horizontal(true, false, true, cx);
+    }
+    fn select_right(&mut self, _: &SelectRight, _: &mut Window, cx: &mut Context<Self>) {
+        self.horizontal(false, false, true, cx);
+    }
+    fn select_up(&mut self, _: &SelectUp, _: &mut Window, cx: &mut Context<Self>) {
+        self.vertical(false, false, true, cx);
+    }
+    fn select_down(&mut self, _: &SelectDown, _: &mut Window, cx: &mut Context<Self>) {
+        self.vertical(true, false, true, cx);
+    }
+    fn select_word_left(&mut self, _: &SelectWordLeft, _: &mut Window, cx: &mut Context<Self>) {
+        self.horizontal(true, true, true, cx);
+    }
+    fn select_word_right(&mut self, _: &SelectWordRight, _: &mut Window, cx: &mut Context<Self>) {
+        self.horizontal(false, true, true, cx);
+    }
+    fn select_line_start(&mut self, _: &SelectLineStart, _: &mut Window, cx: &mut Context<Self>) {
+        self.line_edge(false, true, cx);
+    }
+    fn select_line_end(&mut self, _: &SelectLineEnd, _: &mut Window, cx: &mut Context<Self>) {
+        self.line_edge(true, true, cx);
+    }
+    fn select_doc_start(&mut self, _: &SelectDocStart, _: &mut Window, cx: &mut Context<Self>) {
+        let p = self.model.doc.doc_start();
+        self.move_caret(p, true, cx);
+    }
+    fn select_doc_end(&mut self, _: &SelectDocEnd, _: &mut Window, cx: &mut Context<Self>) {
+        let p = self.model.doc.doc_end();
+        self.move_caret(p, true, cx);
+    }
+    fn select_all(&mut self, _: &SelectAll, _: &mut Window, cx: &mut Context<Self>) {
+        self.model.select_all();
+        self.after_move(cx);
+    }
+
+    fn backspace(&mut self, _: &Backspace, _: &mut Window, cx: &mut Context<Self>) {
+        self.edit(EditKind::Deleting, cx, Model::backspace);
+    }
+    fn delete(&mut self, _: &Delete, _: &mut Window, cx: &mut Context<Self>) {
+        self.edit(EditKind::Deleting, cx, Model::delete_forward);
+    }
+    fn delete_word_left(&mut self, _: &DeleteWordLeft, _: &mut Window, cx: &mut Context<Self>) {
+        if self.model.sel.is_empty() {
+            let to = self.pos_left(self.model.caret(), true);
+            self.model.select_to(to);
+        }
+        self.edit(EditKind::Other, cx, Model::backspace);
+    }
+    fn delete_word_right(&mut self, _: &DeleteWordRight, _: &mut Window, cx: &mut Context<Self>) {
+        if self.model.sel.is_empty() {
+            let to = self.pos_right(self.model.caret(), true);
+            self.model.select_to(to);
+        }
+        self.edit(EditKind::Other, cx, Model::delete_forward);
+    }
+    fn enter(&mut self, _: &Enter, _: &mut Window, cx: &mut Context<Self>) {
+        if self.single_line {
+            cx.emit(EditorEvent::Submit);
+            return;
+        }
+        if self.slash_key(crate::slash::SlashKey::Enter, cx) {
+            return;
+        }
+        self.marked = None;
+        self.edit(EditKind::Other, cx, Model::enter);
+    }
+    fn soft_break(&mut self, _: &SoftBreak, _: &mut Window, cx: &mut Context<Self>) {
+        if self.single_line {
+            cx.emit(EditorEvent::Submit);
+            return;
+        }
+        self.edit(EditKind::Other, cx, Model::soft_break);
+    }
+    fn tab(&mut self, _: &Tab, window: &mut Window, cx: &mut Context<Self>) {
+        if self.single_line {
+            window.focus_next(cx);
+            return;
+        }
+        if self.slash_key(crate::slash::SlashKey::Enter, cx) {
+            return;
+        }
+        if self.model.in_table() {
+            if self.read_only {
+                // Read-only cards can move between cells but never grow a row.
+                if self.model.has_next_cell() {
+                    self.model.table_next_cell(false);
+                    self.after_move(cx);
+                }
+                return;
+            }
+            // Adding a row at the end of a table is an edit; `edit` records it only then.
+            self.edit(EditKind::Other, cx, |m| {
+                m.table_next_cell(false);
+            });
+            return;
+        }
+        let kind = self.model.current_block_kind();
+        match kind {
+            Some(k) if k.is_list() => self.edit(EditKind::Other, cx, |m| m.indent(1)),
+            _ => self.edit(EditKind::Typing, cx, |m| m.insert_text("    ")),
+        }
+    }
+    fn shift_tab(&mut self, _: &ShiftTab, _: &mut Window, cx: &mut Context<Self>) {
+        if self.model.in_table() {
+            self.model.table_next_cell(true);
+            self.after_move(cx);
+            return;
+        }
+        self.edit(EditKind::Other, cx, |m| m.indent(-1));
+    }
+    fn undo(&mut self, _: &Undo, _: &mut Window, cx: &mut Context<Self>) {
+        if self.read_only {
+            return;
+        }
+        if let Some((doc, sel)) = self.history.undo(&self.model.doc, self.model.sel) {
+            self.restore_snapshot(doc, sel, cx);
+        }
+    }
+    fn redo(&mut self, _: &Redo, _: &mut Window, cx: &mut Context<Self>) {
+        if self.read_only {
+            return;
+        }
+        if let Some((doc, sel)) = self.history.redo(&self.model.doc, self.model.sel) {
+            self.restore_snapshot(doc, sel, cx);
+        }
+    }
+
+    /// Swap in a document from history; offsets cached against the old one are stale.
+    fn restore_snapshot(&mut self, doc: Document, sel: Selection, cx: &mut Context<Self>) {
+        let before = std::mem::replace(&mut self.model.doc, doc);
+        self.model.set_selection(sel);
+        self.invalidate_layouts(&before);
+        self.marked = None;
+        self.revision += 1;
+        cx.emit(EditorEvent::Changed);
+        self.refresh_matches(false, cx);
+        self.validate_slash();
+        self.after_move(cx);
+    }
+
+    fn copy(&mut self, _: &Copy, _: &mut Window, cx: &mut Context<Self>) {
+        if let Some(frag) = self.model.selected_fragment() {
+            let text = notechest_doc::to_plain_text(&frag);
+            let mut public = frag.clone();
+            if let Some(store) = &self.blobs {
+                public.blocks.retain(|b| match &b.kind {
+                    BlockKind::Image(img) => !store.is_private(&img.blob),
+                    BlockKind::Attachment(att) => !store.is_private(&att.blob),
+                    _ => true,
+                });
+                public.normalize();
+            }
+            cx.set_global(InternalClipboard(Some((text.clone(), frag))));
+            cx.write_to_clipboard(ClipboardItem::new_string_with_json_metadata(text, public));
+        }
+    }
+
+    /// Store a pasted fragment's images and attachments again through this editor's
+    /// store, so they follow the target card's protection (sealed in an encrypted
+    /// card, plain elsewhere) instead of keeping the source card's references.
+    ///
+    /// The blob copies run on the background executor; the fragment is inserted at
+    /// the caret when they are done. Fragments without blobs are inserted at once.
+    fn paste_fragment(&mut self, mut frag: Document, cx: &mut Context<Self>) {
+        let has_blobs = frag
+            .blocks
+            .iter()
+            .any(|b| matches!(b.kind, BlockKind::Image(_) | BlockKind::Attachment(_)));
+        let Some(store) = self.blobs.clone().filter(|_| has_blobs) else {
+            self.edit(EditKind::Other, cx, |m| m.insert_fragment(&frag));
+            return;
+        };
+        let generation = self.doc_generation;
+        let task = cx.background_spawn(async move {
+            adopt_fragment_blobs(store.as_ref(), &mut frag);
+            frag
+        });
+        cx.spawn(async move |this, cx| {
+            let frag = task.await;
+            let _ = this.update(cx, |e, cx| {
+                if !e.same_document(generation, "paste") {
+                    return;
+                }
+                e.edit(EditKind::Other, cx, |m| m.insert_fragment(&frag));
+            });
+        })
+        .detach();
+    }
+    fn cut(&mut self, a: &Cut, window: &mut Window, cx: &mut Context<Self>) {
+        if self.read_only {
+            self.copy(&Copy, window, cx);
+            return;
+        }
+        let _ = a;
+        self.copy(&Copy, window, cx);
+        self.edit(EditKind::Other, cx, |m| {
+            m.delete_selection();
+        });
+    }
+    fn paste(&mut self, _: &Paste, _: &mut Window, cx: &mut Context<Self>) {
+        self.paste_impl(false, cx);
+    }
+    fn paste_plain(&mut self, _: &PastePlain, _: &mut Window, cx: &mut Context<Self>) {
+        self.paste_impl(true, cx);
+    }
+
+    fn paste_impl(&mut self, plain: bool, cx: &mut Context<Self>) {
+        // Check first: pasting images or files would otherwise store blobs before
+        // the edit itself is refused.
+        if self.read_only {
+            cx.emit(EditorEvent::EditBlocked);
+            return;
+        }
+        let Some(item) = cx.read_from_clipboard() else {
+            return;
+        };
+        if self.single_line {
+            let text = item
+                .text()
+                .unwrap_or_default()
+                .replace("\r\n", " ")
+                .replace(['\n', '\r'], " ");
+            self.edit(EditKind::Other, cx, |m| m.insert_text(&text));
+            return;
+        }
+        if let Some(entry) = item.entries().first() {
+            match entry {
+                ClipboardEntry::String(s) => {
+                    if !plain && let Some(mut frag) = s.metadata_json::<Document>() {
+                        if let Some((text, internal)) = cx
+                            .try_global::<InternalClipboard>()
+                            .and_then(|c| c.0.clone())
+                            && text == *s.text()
+                        {
+                            frag = internal;
+                        }
+                        // Clipboard JSON comes from outside; restore the model's invariants.
+                        frag.normalize();
+                        self.paste_fragment(frag, cx);
+                        return;
+                    }
+                    let text = s.text().to_owned();
+                    // Code blocks and table cells take the text verbatim: converting
+                    // Markdown there would strip its syntax.
+                    if !plain
+                        && notechest_doc::looks_like_markdown(&text)
+                        && !self.model.in_table()
+                        && !self.model.in_code_block()
+                    {
+                        let frag = notechest_doc::from_markdown(&text);
+                        self.edit(EditKind::Other, cx, |m| m.insert_fragment(&frag));
+                    } else {
+                        self.edit(EditKind::Other, cx, |m| m.insert_text(&text));
+                    }
+                }
+                ClipboardEntry::Image(img) => {
+                    let mime = img.format.mime_type().to_owned();
+                    self.insert_image_bytes(&img.bytes, &mime, None, cx);
+                }
+                ClipboardEntry::ExternalPaths(paths) => {
+                    let paths: Vec<_> = paths.paths().to_vec();
+                    self.insert_files(paths, cx);
+                }
+            }
+        }
+    }
+
+    /// Insert dropped or pasted files: images inline, anything else as attachments.
+    pub fn insert_files(&mut self, paths: Vec<std::path::PathBuf>, cx: &mut Context<Self>) {
+        // Read the files only when they can be stored and inserted.
+        if self.read_only {
+            cx.emit(EditorEvent::EditBlocked);
+            return;
+        }
+        let Some(store) = self.blobs.clone() else {
+            return;
+        };
+        let task = cx.background_spawn(async move {
+            paths
+                .iter()
+                .filter_map(|path| NewFile::read(path))
+                .filter_map(|file| {
+                    let as_image = file.mime.starts_with("image/");
+                    file.store(store.as_ref(), as_image)
+                })
+                .collect::<Vec<_>>()
+        });
+        self.insert_stored_blocks(task, cx);
+    }
+
+    /// Insert blocks built on the background executor once they are ready, one undo
+    /// step each, at the caret as it is then.
+    fn insert_stored_blocks(&mut self, task: Task<Vec<Block>>, cx: &mut Context<Self>) {
+        let generation = self.doc_generation;
+        cx.spawn(async move |this, cx| {
+            let blocks = task.await;
+            let _ = this.update(cx, |e, cx| {
+                if !e.same_document(generation, "file insertion") {
+                    return;
+                }
+                for block in blocks {
+                    e.edit(EditKind::Other, cx, |m| m.insert_block(block));
+                }
+            });
+        })
+        .detach();
+    }
+
+    /// Store `bytes` as an image and insert it at the caret. The blob is written on
+    /// the background executor.
+    pub fn insert_image_bytes(
+        &mut self,
+        bytes: &[u8],
+        mime: &str,
+        name: Option<&str>,
+        cx: &mut Context<Self>,
+    ) {
+        self.insert_bytes(bytes, mime, name, true, cx);
+    }
+
+    /// Store `bytes` as an attachment named `name` and insert it at the caret. The
+    /// blob is written on the background executor.
+    pub fn insert_attachment_bytes(
+        &mut self,
+        bytes: &[u8],
+        mime: &str,
+        name: &str,
+        cx: &mut Context<Self>,
+    ) {
+        self.insert_bytes(bytes, mime, Some(name), false, cx);
+    }
+
+    fn insert_bytes(
+        &mut self,
+        bytes: &[u8],
+        mime: &str,
+        name: Option<&str>,
+        as_image: bool,
+        cx: &mut Context<Self>,
+    ) {
+        // Refuse before anything is written to the store.
+        if self.read_only {
+            cx.emit(EditorEvent::EditBlocked);
+            return;
+        }
+        let Some(store) = self.blobs.clone() else {
+            return;
+        };
+        let file = NewFile {
+            bytes: bytes.to_vec(),
+            mime: mime.to_owned(),
+            name: name.map(str::to_owned),
+        };
+        let task = cx.background_spawn(async move {
+            file.store(store.as_ref(), as_image).into_iter().collect()
+        });
+        self.insert_stored_blocks(task, cx);
+    }
+
+    fn mark(&mut self, mark: Mark, cx: &mut Context<Self>) {
+        self.edit(EditKind::Other, cx, |m| m.toggle_mark(mark));
+        // Toggling with an empty selection only changes the pending style.
+        cx.emit(EditorEvent::SelectionChanged);
+        cx.notify();
+    }
+    fn bold(&mut self, _: &Bold, _: &mut Window, cx: &mut Context<Self>) {
+        self.mark(Mark::Bold, cx);
+    }
+    fn italic(&mut self, _: &Italic, _: &mut Window, cx: &mut Context<Self>) {
+        self.mark(Mark::Italic, cx);
+    }
+    fn underline(&mut self, _: &Underline, _: &mut Window, cx: &mut Context<Self>) {
+        self.mark(Mark::Underline, cx);
+    }
+    fn strikethrough(&mut self, _: &Strikethrough, _: &mut Window, cx: &mut Context<Self>) {
+        self.mark(Mark::Strike, cx);
+    }
+    fn inline_code(&mut self, _: &InlineCode, _: &mut Window, cx: &mut Context<Self>) {
+        self.mark(Mark::Code, cx);
+    }
+    fn clear_formatting(&mut self, _: &ClearFormatting, _: &mut Window, cx: &mut Context<Self>) {
+        self.edit(EditKind::Other, cx, Model::clear_formatting);
+    }
+    fn set_color(&mut self, a: &SetColor, _: &mut Window, cx: &mut Context<Self>) {
+        let c = a.0.clone();
+        self.edit(EditKind::Other, cx, |m| m.set_color(c));
+    }
+    fn set_highlight(&mut self, a: &SetHighlight, _: &mut Window, cx: &mut Context<Self>) {
+        let c = a.0.clone();
+        self.edit(EditKind::Other, cx, |m| m.set_highlight(c));
+    }
+
+    fn block_kind(&mut self, kind: BlockKind, cx: &mut Context<Self>) {
+        self.edit(EditKind::Other, cx, |m| m.set_block_kind(kind));
+    }
+    fn paragraph(&mut self, _: &Paragraph, _: &mut Window, cx: &mut Context<Self>) {
+        self.edit(EditKind::Other, cx, |m| {
+            for b in m.selected_blocks() {
+                if let Some(block) = m.doc.blocks.get_mut(b)
+                    && block.kind.is_textual()
+                {
+                    block.kind = BlockKind::Paragraph;
+                }
+            }
+        });
+    }
+    fn heading1(&mut self, _: &Heading1, _: &mut Window, cx: &mut Context<Self>) {
+        self.block_kind(BlockKind::Heading(1), cx);
+    }
+    fn heading2(&mut self, _: &Heading2, _: &mut Window, cx: &mut Context<Self>) {
+        self.block_kind(BlockKind::Heading(2), cx);
+    }
+    fn heading3(&mut self, _: &Heading3, _: &mut Window, cx: &mut Context<Self>) {
+        self.block_kind(BlockKind::Heading(3), cx);
+    }
+    fn bullet_list(&mut self, _: &BulletList, _: &mut Window, cx: &mut Context<Self>) {
+        self.block_kind(BlockKind::BulletList, cx);
+    }
+    fn numbered_list(&mut self, _: &NumberedList, _: &mut Window, cx: &mut Context<Self>) {
+        self.block_kind(BlockKind::NumberedList, cx);
+    }
+    fn check_list(&mut self, _: &CheckList, _: &mut Window, cx: &mut Context<Self>) {
+        self.block_kind(BlockKind::CheckList { checked: false }, cx);
+    }
+    fn quote(&mut self, _: &Quote, _: &mut Window, cx: &mut Context<Self>) {
+        self.block_kind(BlockKind::Quote, cx);
+    }
+    fn code_block(&mut self, _: &CodeBlock, _: &mut Window, cx: &mut Context<Self>) {
+        self.block_kind(
+            BlockKind::Code {
+                language: String::new(),
+            },
+            cx,
+        );
+    }
+    fn align(&mut self, a: Align, cx: &mut Context<Self>) {
+        self.edit(EditKind::Other, cx, |m| m.set_align(a));
+    }
+    fn align_left(&mut self, _: &AlignLeft, _: &mut Window, cx: &mut Context<Self>) {
+        self.align(Align::Left, cx);
+    }
+    fn align_center(&mut self, _: &AlignCenter, _: &mut Window, cx: &mut Context<Self>) {
+        self.align(Align::Center, cx);
+    }
+    fn align_right(&mut self, _: &AlignRight, _: &mut Window, cx: &mut Context<Self>) {
+        self.align(Align::Right, cx);
+    }
+    fn align_justify(&mut self, _: &AlignJustify, _: &mut Window, cx: &mut Context<Self>) {
+        self.align(Align::Justify, cx);
+    }
+    fn size(&mut self, s: TextSize, cx: &mut Context<Self>) {
+        self.edit(EditKind::Other, cx, |m| m.set_size(s));
+    }
+    fn text_small(&mut self, _: &TextSmall, _: &mut Window, cx: &mut Context<Self>) {
+        self.size(TextSize::Small, cx);
+    }
+    fn text_normal(&mut self, _: &TextNormal, _: &mut Window, cx: &mut Context<Self>) {
+        self.size(TextSize::Normal, cx);
+    }
+    fn text_large(&mut self, _: &TextLarge, _: &mut Window, cx: &mut Context<Self>) {
+        self.size(TextSize::Large, cx);
+    }
+    fn text_huge(&mut self, _: &TextHuge, _: &mut Window, cx: &mut Context<Self>) {
+        self.size(TextSize::Huge, cx);
+    }
+    fn indent(&mut self, _: &Indent, _: &mut Window, cx: &mut Context<Self>) {
+        self.edit(EditKind::Other, cx, |m| m.indent(1));
+    }
+    fn outdent(&mut self, _: &Outdent, _: &mut Window, cx: &mut Context<Self>) {
+        self.edit(EditKind::Other, cx, |m| m.indent(-1));
+    }
+    fn toggle_check_action(&mut self, _: &ToggleCheck, _: &mut Window, cx: &mut Context<Self>) {
+        let block = self.model.caret().slot.block;
+        self.toggle_check(block, cx);
+    }
+    pub(crate) fn toggle_check(&mut self, block: usize, cx: &mut Context<Self>) {
+        self.edit(EditKind::Other, cx, |m| m.toggle_check(block));
+    }
+
+    fn insert_divider(&mut self, _: &InsertDivider, _: &mut Window, cx: &mut Context<Self>) {
+        self.edit(EditKind::Other, cx, |m| {
+            m.insert_block(Block::new(BlockKind::Divider, ""))
+        });
+    }
+    fn insert_table(&mut self, _: &InsertTable, _: &mut Window, cx: &mut Context<Self>) {
+        self.edit(EditKind::Other, cx, |m| m.insert_table(3, 3));
+    }
+    fn table_op(&mut self, cx: &mut Context<Self>, f: impl FnOnce(&mut Model)) {
+        self.edit(EditKind::Other, cx, f);
+    }
+    fn table_row_above(&mut self, _: &TableInsertRowAbove, _: &mut Window, cx: &mut Context<Self>) {
+        self.table_op(cx, |m| m.table_insert_row(false));
+    }
+    fn table_row_below(&mut self, _: &TableInsertRowBelow, _: &mut Window, cx: &mut Context<Self>) {
+        self.table_op(cx, |m| m.table_insert_row(true));
+    }
+    fn table_col_left(
+        &mut self,
+        _: &TableInsertColumnLeft,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.table_op(cx, |m| m.table_insert_col(false));
+    }
+    fn table_col_right(
+        &mut self,
+        _: &TableInsertColumnRight,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.table_op(cx, |m| m.table_insert_col(true));
+    }
+    fn table_delete_row(&mut self, _: &TableDeleteRow, _: &mut Window, cx: &mut Context<Self>) {
+        self.table_op(cx, Model::table_delete_row);
+    }
+    fn table_delete_col(&mut self, _: &TableDeleteColumn, _: &mut Window, cx: &mut Context<Self>) {
+        self.table_op(cx, Model::table_delete_col);
+    }
+    fn table_delete(&mut self, _: &TableDelete, _: &mut Window, cx: &mut Context<Self>) {
+        self.table_op(cx, Model::table_delete);
+    }
+    fn table_toggle_header(
+        &mut self,
+        _: &TableToggleHeader,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.table_op(cx, Model::table_toggle_header);
+    }
+
+    fn resize_image(&mut self, f: impl Fn(Option<f32>) -> Option<f32>, cx: &mut Context<Self>) {
+        let block = self.model.caret().slot.block;
+        self.edit(EditKind::Other, cx, |m| {
+            if let Some(Block {
+                kind: BlockKind::Image(img),
+                ..
+            }) = m.doc.blocks.get_mut(block)
+            {
+                img.width = f(img.width);
+            }
+        });
+    }
+    fn image_smaller(&mut self, _: &ImageSmaller, _: &mut Window, cx: &mut Context<Self>) {
+        self.resize_image(|w| Some((w.unwrap_or(640.) * 0.8).max(48.)), cx);
+    }
+    fn image_larger(&mut self, _: &ImageLarger, _: &mut Window, cx: &mut Context<Self>) {
+        self.resize_image(|w| Some((w.unwrap_or(400.) * 1.25).min(4000.)), cx);
+    }
+    fn image_fit(&mut self, _: &ImageFit, _: &mut Window, cx: &mut Context<Self>) {
+        self.resize_image(|_| None, cx);
+        self.set_image_height(None, cx);
+    }
+    fn image_keep_ratio(&mut self, _: &ImageKeepRatio, _: &mut Window, cx: &mut Context<Self>) {
+        self.set_image_height(None, cx);
+    }
+    fn set_image_height(&mut self, height: Option<f32>, cx: &mut Context<Self>) {
+        let block = self.model.caret().slot.block;
+        self.edit(EditKind::Other, cx, |m| {
+            if let Some(Block {
+                kind: BlockKind::Image(img),
+                ..
+            }) = m.doc.blocks.get_mut(block)
+            {
+                img.height = height;
+            }
+        });
+    }
+
+    fn insert_image(&mut self, _: &InsertImage, _: &mut Window, cx: &mut Context<Self>) {
+        self.pick_files(true, cx);
+    }
+    fn insert_attachment(&mut self, _: &InsertAttachment, _: &mut Window, cx: &mut Context<Self>) {
+        self.pick_files(false, cx);
+    }
+
+    fn pick_files(&mut self, images: bool, cx: &mut Context<Self>) {
+        if self.read_only {
+            cx.emit(EditorEvent::EditBlocked);
+            return;
+        }
+        let rx = cx.prompt_for_paths(PathPromptOptions {
+            files: true,
+            directories: false,
+            multiple: true,
+            prompt: None,
+        });
+        cx.spawn(async move |this, cx| {
+            let Ok(Ok(Some(paths))) = rx.await else {
+                return;
+            };
+            let paths: Vec<_> = if images {
+                paths
+                    .into_iter()
+                    .filter(|p| crate::util::mime_for_path(p).starts_with("image/"))
+                    .collect()
+            } else {
+                paths
+            };
+            let _ = this.update(cx, |e, cx| e.insert_files(paths, cx));
+        })
+        .detach();
+    }
+
+    fn insert_link(&mut self, _: &InsertLink, window: &mut Window, cx: &mut Context<Self>) {
+        if self.read_only {
+            cx.emit(EditorEvent::EditBlocked);
+            return;
+        }
+        let current = self.link_at_caret();
+        let needs_text = self.selection_is_empty() && current.is_none();
+        crate::dialogs::open_link_dialog(
+            cx.entity(),
+            current.unwrap_or_default(),
+            needs_text,
+            window,
+            cx,
+        );
+    }
+    fn remove_link(&mut self, _: &RemoveLink, _: &mut Window, cx: &mut Context<Self>) {
+        self.edit(EditKind::Other, cx, |m| m.set_link(None, None));
+    }
+    pub(crate) fn apply_link(&mut self, url: String, text: Option<String>, cx: &mut Context<Self>) {
+        let url = normalize_url(&url);
+        let display = text
+            .filter(|t| !t.trim().is_empty())
+            .unwrap_or_else(|| url_preview(&url));
+        self.edit(EditKind::Other, cx, |m| {
+            if url.is_empty() {
+                m.set_link(None, None);
+            } else {
+                m.set_link(Some(url.clone()), Some(&display));
+            }
+        });
+    }
+    pub(crate) fn link_at_caret(&self) -> Option<String> {
+        self.model.link_at_caret()
+    }
+    pub(crate) fn selection_is_empty(&self) -> bool {
+        self.model.sel.is_empty()
+    }
+    fn open_link_at_caret(&mut self, _: &OpenLinkAtCaret, _: &mut Window, cx: &mut Context<Self>) {
+        if let Some(url) = self
+            .model
+            .link_at_caret()
+            .filter(|u| notechest_doc::is_safe_link(u))
+        {
+            cx.emit(EditorEvent::OpenLink(url));
+        }
+    }
+
+    fn replace_word(&mut self, a: &ReplaceWord, _: &mut Window, cx: &mut Context<Self>) {
+        let pos = self.model.caret();
+        let Some(text) = self.model.doc.slot_text(pos.slot) else {
+            return;
+        };
+        let range = word_range(&text.text, pos.offset);
+        let word = a.0.clone();
+        self.model.set_selection(Selection {
+            anchor: Pos::new(pos.slot, range.start),
+            head: Pos::new(pos.slot, range.end),
+        });
+        self.edit(EditKind::Other, cx, |m| m.insert_text(&word));
+    }
+    fn add_word_to_dictionary(
+        &mut self,
+        _: &AddWordToDictionary,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if let (Some(spell), Some(word)) = (self.spell.clone(), self.word_at_caret()) {
+            spell.add_word(&word);
+            self.spelling.clear();
+            cx.notify();
+        }
+    }
+
+    pub(crate) fn word_at_caret(&self) -> Option<String> {
+        let pos = self.model.caret();
+        let text = self.model.doc.slot_text(pos.slot)?;
+        let r = word_range(&text.text, pos.offset);
+        let w = text.text.get(r)?.trim();
+        (!w.is_empty() && w.chars().any(char::is_alphabetic)).then(|| w.to_owned())
+    }
+
+    // ---------------------------------------------------------------------
+    // Mouse
+    // ---------------------------------------------------------------------
+
+    pub(crate) fn on_mouse_down(
+        &mut self,
+        ev: &MouseDownEvent,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.focus_handle.focus(window, cx);
+        let Some(pos) = self.pos_for_point(ev.position) else {
+            return;
+        };
+        self.goal_x = None;
+        self.marked = None;
+        if ev.button == MouseButton::Right {
+            // Keep a selection the user right-clicked into; otherwise move the caret.
+            let sel = self.model.sel;
+            if sel.is_empty() || pos < sel.start() || pos > sel.end() {
+                self.move_caret(pos, false, cx);
+            }
+            return;
+        }
+        if ev.modifiers.control
+            && let Some(url) = self.link_at(pos)
+            && notechest_doc::is_safe_link(&url)
+        {
+            cx.emit(EditorEvent::OpenLink(url));
+            return;
+        }
+        match ev.click_count {
+            2 => {
+                let text = self
+                    .model
+                    .doc
+                    .slot_text(pos.slot)
+                    .map_or("", |t| t.text.as_str());
+                let r = word_range(text, pos.offset);
+                self.model.set_selection(Selection {
+                    anchor: Pos::new(pos.slot, r.start),
+                    head: Pos::new(pos.slot, r.end),
+                });
+                self.after_move(cx);
+            }
+            n if n >= 3 => {
+                let len = self.model.doc.slot_len(pos.slot);
+                self.model.set_selection(Selection {
+                    anchor: Pos::new(pos.slot, 0),
+                    head: Pos::new(pos.slot, len),
+                });
+                self.after_move(cx);
+            }
+            _ => {
+                self.selecting = true;
+                self.move_caret(pos, ev.modifiers.shift, cx);
+            }
+        }
+    }
+
+    pub(crate) fn on_mouse_move(
+        &mut self,
+        ev: &MouseMoveEvent,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if self.image_drag.is_some() {
+            self.update_image_drag(ev, cx);
+            return;
+        }
+        if !self.selecting || ev.pressed_button != Some(MouseButton::Left) {
+            // Hovering a misspelled word: get its suggestions ready for a right-click.
+            if self.spell.is_some()
+                && ev.pressed_button.is_none()
+                && let Some(pos) = self.pos_for_point(ev.position)
+            {
+                self.prefetch_suggestions(pos, cx);
+            }
+            return;
+        }
+        if let Some(pos) = self.pos_for_point(ev.position)
+            && pos != self.model.sel.head
+        {
+            self.model.select_to(pos);
+            self.after_move(cx);
+        }
+    }
+
+    pub(crate) fn on_mouse_up(&mut self, _: &MouseUpEvent, _: &mut Window, cx: &mut Context<Self>) {
+        self.selecting = false;
+        self.finish_image_drag(cx);
+    }
+
+    fn link_at(&self, pos: Pos) -> Option<String> {
+        let t = self.model.doc.slot_text(pos.slot)?;
+        t.spans()
+            .find(|(r, s)| s.link.is_some() && r.start <= pos.offset && pos.offset < r.end)
+            .and_then(|(_, s)| s.link.clone())
+    }
+
+    /// Clicking an atom (divider, image, attachment) selects it.
+    pub(crate) fn select_atom(
+        &mut self,
+        block: usize,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.focus_handle.focus(window, cx);
+        self.move_caret(Pos::new(Slot::block(block), 0), false, cx);
+    }
+
+    pub(crate) fn open_attachment(&mut self, block: usize, cx: &mut Context<Self>) {
+        if let Some(Block {
+            kind: BlockKind::Attachment(a),
+            ..
+        }) = self.model.doc.blocks.get(block)
+        {
+            cx.emit(EditorEvent::OpenAttachment {
+                blob: a.blob.clone(),
+                file_name: a.file_name.clone(),
+            });
+        }
+    }
+
+    /// The image data for an image block, or `None` while it loads (the caller shows
+    /// a placeholder). The blob is read on the background executor and the editor
+    /// repaints when it arrives.
+    pub(crate) fn image_for(
+        &mut self,
+        img: &Image,
+        cx: &mut Context<Self>,
+    ) -> Option<Arc<gpui_kit::Image>> {
+        if let Some(i) = self.image_cache.get(&img.blob) {
+            return Some(i.clone());
+        }
+        if self.image_unavailable.contains(&img.blob) {
+            return None;
+        }
+        let store = self.blobs.clone()?;
+        if !self.image_loading.insert(img.blob.clone()) {
+            return None;
+        }
+        let blob = img.blob.clone();
+        let fallback_mime = img.mime.clone();
+        let task = cx.background_spawn(async move {
+            let (mime, bytes) = store.get(&blob)?;
+            let format = gpui_kit::ImageFormat::from_mime_type(&mime)
+                .or_else(|| gpui_kit::ImageFormat::from_mime_type(&fallback_mime))?;
+            Some(Arc::new(gpui_kit::Image::from_bytes(format, bytes)))
+        });
+        let blob = img.blob.clone();
+        cx.spawn(async move |this, cx| {
+            let image = task.await;
+            let _ = this.update(cx, |this, cx| {
+                if !this.image_loading.remove(&blob) {
+                    // The store changed meanwhile; this result is stale.
+                    return;
+                }
+                match image {
+                    Some(image) => {
+                        this.image_cache.insert(blob, image);
+                    }
+                    None => {
+                        this.image_unavailable.insert(blob);
+                    }
+                }
+                cx.notify();
+            });
+        })
+        .detach();
+        None
+    }
+
+    fn find_action(&mut self, _: &Find, window: &mut Window, cx: &mut Context<Self>) {
+        self.open_find(false, window, cx);
+    }
+    fn find_replace(&mut self, _: &FindReplace, window: &mut Window, cx: &mut Context<Self>) {
+        let replace = !self.read_only;
+        self.open_find(replace, window, cx);
+    }
+    fn find_next(&mut self, _: &FindNext, window: &mut Window, cx: &mut Context<Self>) {
+        if self.find.is_none() {
+            self.open_find(false, window, cx);
+        }
+        self.find_step(true, window, cx);
+    }
+    fn find_previous(&mut self, _: &FindPrevious, window: &mut Window, cx: &mut Context<Self>) {
+        if self.find.is_none() {
+            self.open_find(false, window, cx);
+        }
+        self.find_step(false, window, cx);
+    }
+    fn cancel(&mut self, _: &Cancel, window: &mut Window, cx: &mut Context<Self>) {
+        if self.slash_key(crate::slash::SlashKey::Escape, cx) {
+            return;
+        }
+        if self.find.is_some() {
+            self.close_find(window, cx);
+        } else if !self.model.sel.is_empty() {
+            let head = self.model.sel.head;
+            self.move_caret(head, false, cx);
+        }
+    }
+
+    /// Register action handlers on the editor root element.
+    pub(crate) fn bind_actions(
+        div: gpui_kit::Stateful<gpui_kit::Div>,
+        cx: &mut Context<Self>,
+    ) -> gpui_kit::Stateful<gpui_kit::Div> {
+        use gpui_kit::InteractiveElement as _;
+        div.on_action(cx.listener(Self::move_left))
+            .on_action(cx.listener(Self::move_right))
+            .on_action(cx.listener(Self::move_up))
+            .on_action(cx.listener(Self::move_down))
+            .on_action(cx.listener(Self::move_word_left))
+            .on_action(cx.listener(Self::move_word_right))
+            .on_action(cx.listener(Self::move_line_start))
+            .on_action(cx.listener(Self::move_line_end))
+            .on_action(cx.listener(Self::move_doc_start))
+            .on_action(cx.listener(Self::move_doc_end))
+            .on_action(cx.listener(Self::move_page_up))
+            .on_action(cx.listener(Self::move_page_down))
+            .on_action(cx.listener(Self::select_left))
+            .on_action(cx.listener(Self::select_right))
+            .on_action(cx.listener(Self::select_up))
+            .on_action(cx.listener(Self::select_down))
+            .on_action(cx.listener(Self::select_word_left))
+            .on_action(cx.listener(Self::select_word_right))
+            .on_action(cx.listener(Self::select_line_start))
+            .on_action(cx.listener(Self::select_line_end))
+            .on_action(cx.listener(Self::select_doc_start))
+            .on_action(cx.listener(Self::select_doc_end))
+            .on_action(cx.listener(Self::select_all))
+            .on_action(cx.listener(Self::backspace))
+            .on_action(cx.listener(Self::delete))
+            .on_action(cx.listener(Self::delete_word_left))
+            .on_action(cx.listener(Self::delete_word_right))
+            .on_action(cx.listener(Self::enter))
+            .on_action(cx.listener(Self::soft_break))
+            .on_action(cx.listener(Self::tab))
+            .on_action(cx.listener(Self::shift_tab))
+            .on_action(cx.listener(Self::undo))
+            .on_action(cx.listener(Self::redo))
+            .on_action(cx.listener(Self::copy))
+            .on_action(cx.listener(Self::cut))
+            .on_action(cx.listener(Self::paste))
+            .on_action(cx.listener(Self::paste_plain))
+            .on_action(cx.listener(Self::bold))
+            .on_action(cx.listener(Self::italic))
+            .on_action(cx.listener(Self::underline))
+            .on_action(cx.listener(Self::strikethrough))
+            .on_action(cx.listener(Self::inline_code))
+            .on_action(cx.listener(Self::clear_formatting))
+            .on_action(cx.listener(Self::set_color))
+            .on_action(cx.listener(Self::set_highlight))
+            .on_action(cx.listener(Self::paragraph))
+            .on_action(cx.listener(Self::heading1))
+            .on_action(cx.listener(Self::heading2))
+            .on_action(cx.listener(Self::heading3))
+            .on_action(cx.listener(Self::bullet_list))
+            .on_action(cx.listener(Self::numbered_list))
+            .on_action(cx.listener(Self::check_list))
+            .on_action(cx.listener(Self::quote))
+            .on_action(cx.listener(Self::code_block))
+            .on_action(cx.listener(Self::align_left))
+            .on_action(cx.listener(Self::align_center))
+            .on_action(cx.listener(Self::align_right))
+            .on_action(cx.listener(Self::align_justify))
+            .on_action(cx.listener(Self::text_small))
+            .on_action(cx.listener(Self::text_normal))
+            .on_action(cx.listener(Self::text_large))
+            .on_action(cx.listener(Self::text_huge))
+            .on_action(cx.listener(Self::indent))
+            .on_action(cx.listener(Self::outdent))
+            .on_action(cx.listener(Self::toggle_check_action))
+            .on_action(cx.listener(Self::insert_divider))
+            .on_action(cx.listener(Self::insert_table))
+            .on_action(cx.listener(Self::insert_image))
+            .on_action(cx.listener(Self::insert_attachment))
+            .on_action(cx.listener(Self::insert_link))
+            .on_action(cx.listener(Self::remove_link))
+            .on_action(cx.listener(Self::open_link_at_caret))
+            .on_action(cx.listener(Self::table_row_above))
+            .on_action(cx.listener(Self::table_row_below))
+            .on_action(cx.listener(Self::table_col_left))
+            .on_action(cx.listener(Self::table_col_right))
+            .on_action(cx.listener(Self::table_delete_row))
+            .on_action(cx.listener(Self::table_delete_col))
+            .on_action(cx.listener(Self::table_delete))
+            .on_action(cx.listener(Self::table_toggle_header))
+            .on_action(cx.listener(Self::image_smaller))
+            .on_action(cx.listener(Self::image_larger))
+            .on_action(cx.listener(Self::image_fit))
+            .on_action(cx.listener(Self::image_keep_ratio))
+            .on_action(cx.listener(Self::replace_word))
+            .on_action(cx.listener(Self::add_word_to_dictionary))
+            .on_action(cx.listener(Self::find_action))
+            .on_action(cx.listener(Self::find_replace))
+            .on_action(cx.listener(Self::find_next))
+            .on_action(cx.listener(Self::find_previous))
+            .on_action(cx.listener(Self::cancel))
+    }
+}
+
+fn normalize_url(url: &str) -> String {
+    let url = url.trim();
+    if url.is_empty() {
+        return String::new();
+    }
+    let lower = url.to_ascii_lowercase();
+    if lower.starts_with("http://") || lower.starts_with("https://") || lower.starts_with("mailto:")
+    {
+        url.to_owned()
+    } else if url.contains('@') && !url.contains('/') {
+        format!("mailto:{url}")
+    } else {
+        format!("https://{url}")
+    }
+}
+
+fn url_preview(url: &str) -> String {
+    url.trim_start_matches("https://")
+        .trim_start_matches("http://")
+        .trim_start_matches("mailto:")
+        .to_owned()
+}
+
+// -------------------------------------------------------------------------
+// IME / text input
+// -------------------------------------------------------------------------
+
+impl EntityInputHandler for RichEditor {
+    fn text_for_range(
+        &mut self,
+        range16: Range<usize>,
+        adjusted: &mut Option<Range<usize>>,
+        _: &mut Window,
+        _: &mut Context<Self>,
+    ) -> Option<String> {
+        let pos = self.model.caret();
+        let text = &self.model.doc.slot_text(pos.slot)?.text;
+        let s = utf16_to_utf8(text, range16.start);
+        let e = utf16_to_utf8(text, range16.end);
+        adjusted.replace(utf8_to_utf16(text, s)..utf8_to_utf16(text, e));
+        text.get(s..e).map(str::to_owned)
+    }
+
+    fn selected_text_range(
+        &mut self,
+        _: bool,
+        _: &mut Window,
+        _: &mut Context<Self>,
+    ) -> Option<UTF16Selection> {
+        let sel = self.model.sel;
+        let slot = sel.head.slot;
+        let text = self
+            .model
+            .doc
+            .slot_text(slot)
+            .map_or("", |t| t.text.as_str());
+        let range = if sel.is_single_slot() {
+            let (s, e) = (sel.start().offset, sel.end().offset);
+            utf8_to_utf16(text, s)..utf8_to_utf16(text, e)
+        } else {
+            let c = utf8_to_utf16(text, sel.head.offset);
+            c..c
+        };
+        Some(UTF16Selection {
+            range,
+            reversed: sel.is_reversed(),
+        })
+    }
+
+    fn marked_text_range(&self, _: &mut Window, _: &mut Context<Self>) -> Option<Range<usize>> {
+        let r = self.marked.clone()?;
+        let text = self.model.doc.slot_text(self.model.caret().slot)?;
+        Some(utf8_to_utf16(&text.text, r.start)..utf8_to_utf16(&text.text, r.end))
+    }
+
+    fn unmark_text(&mut self, _: &mut Window, _: &mut Context<Self>) {
+        self.marked = None;
+    }
+
+    fn replace_text_in_range(
+        &mut self,
+        range16: Option<Range<usize>>,
+        text: &str,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if self.read_only {
+            cx.emit(EditorEvent::EditBlocked);
+            return;
+        }
+        let slot = self.model.caret().slot;
+        let replace = range16
+            .map(|r| {
+                let t = self
+                    .model
+                    .doc
+                    .slot_text(slot)
+                    .map_or("", |t| t.text.as_str());
+                utf16_to_utf8(t, r.start)..utf16_to_utf8(t, r.end)
+            })
+            .or_else(|| self.marked.clone());
+        if let Some(r) = replace {
+            self.model.select_for_replace(Selection {
+                anchor: Pos::new(slot, r.start),
+                head: Pos::new(slot, r.end),
+            });
+        }
+        let had_marked = self.marked.take().is_some();
+        if text == "\n" || text == "\r" {
+            self.edit(EditKind::Other, cx, Model::enter);
+            return;
+        }
+        let pending = self.model.pending_style.clone();
+        let kind = if had_marked {
+            EditKind::Other
+        } else {
+            EditKind::Typing
+        };
+        self.edit(kind, cx, |m| {
+            m.pending_style = pending;
+            m.insert_text(text);
+        });
+        self.maybe_open_slash(text);
+    }
+
+    fn replace_and_mark_text_in_range(
+        &mut self,
+        range16: Option<Range<usize>>,
+        new_text: &str,
+        new_selected16: Option<Range<usize>>,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if self.read_only {
+            return;
+        }
+        let slot = self.model.caret().slot;
+        let replace = range16
+            .map(|r| {
+                let t = self
+                    .model
+                    .doc
+                    .slot_text(slot)
+                    .map_or("", |t| t.text.as_str());
+                utf16_to_utf8(t, r.start)..utf16_to_utf8(t, r.end)
+            })
+            .or_else(|| self.marked.clone());
+        if let Some(r) = replace {
+            self.model.select_for_replace(Selection {
+                anchor: Pos::new(slot, r.start),
+                head: Pos::new(slot, r.end),
+            });
+        }
+        let rules = self.model.input_rules;
+        self.model.input_rules = false;
+        self.edit(EditKind::Typing, cx, |m| {
+            if new_text.is_empty() {
+                m.delete_selection();
+            } else {
+                m.insert_text(new_text);
+            }
+        });
+        self.model.input_rules = rules;
+        let caret = self.model.caret();
+        let start = caret.offset - new_text.len().min(caret.offset);
+        self.marked = (!new_text.is_empty()).then_some(start..caret.offset);
+        if let Some(sel16) = new_selected16 {
+            let t = self
+                .model
+                .doc
+                .slot_text(caret.slot)
+                .map_or("", |t| t.text.as_str());
+            let base16 = utf8_to_utf16(t, start);
+            let s = utf16_to_utf8(t, base16 + sel16.start);
+            let e = utf16_to_utf8(t, base16 + sel16.end);
+            self.model.sel = Selection {
+                anchor: Pos::new(caret.slot, s),
+                head: Pos::new(caret.slot, e),
+            };
+        }
+        cx.notify();
+    }
+
+    fn bounds_for_range(
+        &mut self,
+        range16: Range<usize>,
+        _element_bounds: Bounds<Pixels>,
+        _: &mut Window,
+        _: &mut Context<Self>,
+    ) -> Option<Bounds<Pixels>> {
+        let slot = self.model.caret().slot;
+        let layout = self.layouts.get(&slot)?;
+        let text = self.model.doc.slot_text(slot)?;
+        let s = layout.position_for(utf16_to_utf8(&text.text, range16.start));
+        let e = layout.position_for(utf16_to_utf8(&text.text, range16.end));
+        Some(Bounds::from_corners(
+            s,
+            point(e.x.max(s.x + px(1.)), s.y + layout.line_height),
+        ))
+    }
+
+    fn character_index_for_point(
+        &mut self,
+        p: Point<Pixels>,
+        _: &mut Window,
+        _: &mut Context<Self>,
+    ) -> Option<usize> {
+        let pos = self.pos_for_point(p)?;
+        (pos.slot == self.model.caret().slot).then(|| {
+            let text = self
+                .model
+                .doc
+                .slot_text(pos.slot)
+                .map_or("", |t| t.text.as_str());
+            utf8_to_utf16(text, pos.offset)
+        })
+    }
+}
+
+/// Copy a fragment's images and attachments through `store` (blocking: call it on
+/// the background executor).
+pub(crate) fn adopt_fragment_blobs(store: &dyn BlobStore, frag: &mut Document) {
+    for block in &mut frag.blocks {
+        let (blob, mime, file_name) = match &mut block.kind {
+            BlockKind::Image(img) => (&mut img.blob, img.mime.clone(), None),
+            BlockKind::Attachment(att) => {
+                (&mut att.blob, att.mime.clone(), Some(att.file_name.clone()))
+            }
+            _ => continue,
+        };
+        if let Some((_, data)) = store.get(blob)
+            && let Some(new) = store.put(&data, &mime, file_name.as_deref())
+        {
+            *blob = new;
+        }
+    }
+}
+
+/// A file to add to the card as an image or attachment block.
+struct NewFile {
+    bytes: Vec<u8>,
+    mime: String,
+    name: Option<String>,
+}
+
+impl NewFile {
+    /// Read a dropped or picked file (blocking: call it on the background executor).
+    fn read(path: &std::path::Path) -> Option<Self> {
+        let bytes = std::fs::read(path).ok()?;
+        Some(Self {
+            bytes,
+            mime: crate::util::mime_for_path(path),
+            name: path.file_name().map(|n| n.to_string_lossy().into_owned()),
+        })
+    }
+
+    /// Store the bytes and build the block: an inline image for image types, an
+    /// attachment otherwise (blocking: call it on the background executor).
+    fn store(self, store: &dyn BlobStore, as_image: bool) -> Option<Block> {
+        if as_image {
+            let id = store.put(&self.bytes, &self.mime, self.name.as_deref())?;
+            Some(Block::new(
+                BlockKind::Image(Image {
+                    blob: id,
+                    mime: self.mime,
+                    width: None,
+                    height: None,
+                    alt: self.name.unwrap_or_default(),
+                }),
+                "",
+            ))
+        } else {
+            let name = self.name.unwrap_or_else(|| "file".to_owned());
+            let id = store.put(&self.bytes, &self.mime, Some(&name))?;
+            Some(Block::new(
+                BlockKind::Attachment(Attachment {
+                    blob: id,
+                    file_name: name,
+                    mime: self.mime,
+                    size: self.bytes.len() as u64,
+                }),
+                "",
+            ))
+        }
+    }
+}
+
+/// Name of an editor action for keymap files, e.g. `rich_editor::Bold`.
+pub fn action_name(action: &dyn Action) -> &'static str {
+    action.name()
+}

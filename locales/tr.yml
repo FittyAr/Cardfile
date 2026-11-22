@@ -1,16 +1,16 @@
 _version: 1
 
 app:
-  data_missing: "%{path} veri klasörü bulunamadı. Klasörün bulunduğu sürücüyü bağlayın ve Cardfile’ı yeniden başlatın. Bunun yerine varsayılan klasöre dönmek için %{pointer} dosyasını silin."
-  synced_folder: "Notlarınız %{service} tarafından eşitlenen bir klasörde. Açık bir veritabanını eşitlemek onu bozabilir veya çakışan kopyalar oluşturabilir: Cardfile’ı başka bir bilgisayarda kullanmadan önce kapatın ya da verileri eşitlenen klasörün dışında tutun."
+  data_missing: "%{path} veri klasörü bulunamadı. Klasörün bulunduğu sürücüyü bağlayın ve NoteChest’ı yeniden başlatın. Bunun yerine varsayılan klasöre dönmek için %{pointer} dosyasını silin."
+  synced_folder: "Notlarınız %{service} tarafından eşitlenen bir klasörde. Açık bir veritabanını eşitlemek onu bozabilir veya çakışan kopyalar oluşturabilir: NoteChest’ı başka bir bilgisayarda kullanmadan önce kapatın ya da verileri eşitlenen klasörün dışında tutun."
   unsaved_quit:
     title: "Son değişiklikleriniz kaydedilmedi"
     body: "Açık kart kaydedilemedi: %{error}. Şimdi çıkarsanız son kayıttan bu yana yapılan değişiklikler kaybolur."
     quit: "Kaydetmeden çık"
-  name: Cardfile
+  name: NoteChest
   db_error_body: "%{path} veritabanı açılamadı: %{error}"
   open_keymap_failed: "Kısayol dosyası açılamadı: %{error}"
-  db_error_title: "Cardfile veritabanını açamıyor"
+  db_error_title: "NoteChest veritabanını açamıyor"
 test:
   greeting: "Merhaba, %{name}!"
 
@@ -146,17 +146,17 @@ wizard:
     finish: Hazır
   welcome:
     language: "Dil"
-    title: Cardfile'a hoş geldiniz
+    title: NoteChest'a hoş geldiniz
     body: "Notlarınız, fikirleriniz ve saklamak istediğiniz her şey için dijital kart dosyanız. Birkaç adımda kuralım."
   storage:
     standard: Standart
     standard_desc: "Veriler kullanıcı profilinizde saklanır:"
     portable: Taşınabilir
-    portable_desc: Veriler, Cardfile'ın yanındaki bir “data” klasöründe saklanır; böylece USB belleğle taşıyabilirsiniz.
+    portable_desc: Veriler, NoteChest'ın yanındaki bir “data” klasöründe saklanır; böylece USB belleğle taşıyabilirsiniz.
     portable_unavailable: Program klasörü yazılabilir olmadığı için taşınabilir mod kullanılamıyor.
   security:
     none: Parola yok
-    none_desc: Cardfile doğrudan açılır. Kişisel bilgisayar için en uygunu.
+    none_desc: NoteChest doğrudan açılır. Kişisel bilgisayar için en uygunu.
     single: Parola
     single_desc: Parolayla korunan tek bir hesap.
     multi: Birden çok kullanıcı
@@ -177,7 +177,7 @@ wizard:
   finish:
     intro: "Her şey hazır:"
     later: Bunların hepsi daha sonra Ayarlar'dan değiştirilebilir.
-    start: Cardfile'ı kullanmaya başla
+    start: NoteChest'ı kullanmaya başla
   error:
     username: Bir kullanıcı adı girin.
     password_short: Parola en az 4 karakter olmalıdır.
@@ -187,7 +187,7 @@ wizard:
 login:
   title: Oturum aç
   register_title: Hesap oluştur
-  locked_title: "Cardfile kilitli, %{name}"
+  locked_title: "NoteChest kilitli, %{name}"
   username: Kullanıcı adı
   display_name: Görünen ad
   password: Parola
@@ -202,11 +202,11 @@ login:
     taken: Bu kullanıcı adı zaten alınmış.
 
 welcome:
-  title: Cardfile'a hoş geldiniz
+  title: NoteChest'a hoş geldiniz
   body: |
     ## Başlarken
 
-    Cardfile notlarınızı **kartlar** olarak saklar. **+** düğmesiyle veya **Ctrl+N** ile bir kart oluşturun.
+    NoteChest notlarınızı **kartlar** olarak saklar. **+** düğmesiyle veya **Ctrl+N** ile bir kart oluşturun.
 
     - Metni araç çubuğuyla veya kısayollarla biçimlendirin: **Ctrl+B** kalın, *Ctrl+I* italik, Ctrl+U altı çizili.
     - Başlık için `# `, liste için `- `, yapılacaklar listesi için `[] ` yazın.
@@ -333,7 +333,7 @@ menu:
   backup: Şimdi yedekle
   open_data_folder: Veri klasörünü aç
   check_updates: Güncellemeleri denetle
-  about: Cardfile hakkında
+  about: NoteChest hakkında
   lock: Kilitle
   sign_out: Oturumu kapat
   quit: Çık
@@ -343,19 +343,19 @@ palette:
 
 updates:
   title: Güncelleme mevcut
-  available: "Cardfile %{version} mevcut. İndirmek için tıklayın."
+  available: "NoteChest %{version} mevcut. İndirmek için tıklayın."
   latest: En son sürümü kullanıyorsunuz.
   failed: "Güncellemeler denetlenemedi: %{error}"
   managed: Bu kurulumun güncellemeleri uygulama mağazanız veya paket yöneticiniz tarafından yönetilir.
-  dialog_title: "Cardfile %{version} mevcut"
+  dialog_title: "NoteChest %{version} mevcut"
   current: "Sürüm %{version} kullanıyorsunuz."
   install: "Güncelle ve yeniden başlat"
   later: "Daha sonra"
   open_page: "Sürüm sayfası"
   downloading: "İndiriliyor… %{mb} MB"
   installing: "Kuruluyor…"
-  installed_restart: "Güncelleme kuruldu. Kullanmak için Cardfile'ı yeniden başlatın."
-  manual: "Cardfile'ın bu kopyası kendini güncelleyemez. Yeni sürümü sürüm sayfasından indirin."
+  installed_restart: "Güncelleme kuruldu. Kullanmak için NoteChest'ı yeniden başlatın."
+  manual: "NoteChest'ın bu kopyası kendini güncelleyemez. Yeni sürümü sürüm sayfasından indirin."
 
 about:
   description: Notlarınız için modern bir dijital kart dosyası.
@@ -433,10 +433,10 @@ settings:
     mask_hint: Başlığın geri kalanı listede gizlenir.
     lock_modes: Kullanılabilir koruma düzeyleri
     auth_mode: Oturum açma modu
-    auth_mode_hint: İnsanların bu bilgisayarda Cardfile'ı nasıl açtığı.
+    auth_mode_hint: İnsanların bu bilgisayarda NoteChest'ı nasıl açtığı.
     auth_one_user: Tek hesaplı bir moda geçmeden önce diğer kullanıcı hesaplarını kaldırın.
     auth_needs_password: Önce aşağıda bir parola belirleyin.
-    auth_changed: Oturum açma modu değişti. Cardfile'ın bir sonraki başlatılışında uygulanır.
+    auth_changed: Oturum açma modu değişti. NoteChest'ın bir sonraki başlatılışında uygulanır.
     change_password: Parolayı değiştir
     lock_password: Kilit parolası
     password_hint: Bu parola özel ve şifreli kartların kilidini açar. Değiştirdiğinizde şifreli kartlar yeniden şifrelenir.
@@ -459,11 +459,11 @@ settings:
     invalid: Bir kullanıcı adı ve en az 4 karakterlik bir parola girin.
   data:
     moved: "Özel klasör, varsayılan konumdan taşındı."
-    command_line: "Cardfile başlatılırken --data-dir ile belirlenen klasör."
+    command_line: "NoteChest başlatılırken --data-dir ile belirlenen klasör."
     location: Veri klasörü
     portable: Taşınabilir mod etkin.
     standard: Standart mod.
-    files: "Kartlarınız ve ayarlarınız cardfile.db içinde, kısayollarınız keymap.json içinde; ikisi de bu klasörde. Her şeyi korumak için klasörün tamamını kopyalayın veya eşitleyin."
+    files: "Kartlarınız ve ayarlarınız notechest.db içinde, kısayollarınız keymap.json içinde; ikisi de bu klasörde. Her şeyi korumak için klasörün tamamını kopyalayın veya eşitleyin."
     export: Dışa aktar
     export_hint: Özel veya şifreli olmayan tüm kartları dışa aktarır.
   group:
@@ -535,7 +535,7 @@ ai:
     encrypted_note: "Şifreli kartlar hiçbir yapay zekâya açık değildir."
   mcp:
     title: "Yapay zekâ istemcileri için MCP sunucusu"
-    hint: "Claude, Cursor veya VS Code gibi yapay zekâ uygulamalarının, Cardfile açıkken yalnızca bu bilgisayarda (127.0.0.1) onu kullanmasını sağlar. Her istemcinin bir API anahtarı olmalıdır; yaptığı değişiklikler sizin adınıza Cardfile AI tarafından yapılmış olarak kaydedilir."
+    hint: "Claude, Cursor veya VS Code gibi yapay zekâ uygulamalarının, NoteChest açıkken yalnızca bu bilgisayarda (127.0.0.1) onu kullanmasını sağlar. Her istemcinin bir API anahtarı olmalıdır; yaptığı değişiklikler sizin adınıza NoteChest AI tarafından yapılmış olarak kaydedilir."
     enable: "MCP sunucusunu çalıştır"
     port: "Bağlantı noktası"
     bad_port: "1024 ile 65535 arasında bir bağlantı noktası numarası kullanın."
@@ -544,7 +544,7 @@ ai:
     stopped: "Durduruldu"
   keys:
     title: "API anahtarları"
-    hint: "Bir anahtar, yapay zekâ istemcisinin sizin görebildiğiniz ve değiştirebildiğiniz şeyleri Cardfile AI olarak görmesini ve değiştirmesini sağlar. İstediğiniz zaman iptal edebilirsiniz."
+    hint: "Bir anahtar, yapay zekâ istemcisinin sizin görebildiğiniz ve değiştirebildiğiniz şeyleri NoteChest AI olarak görmesini ve değiştirmesini sağlar. İstediğiniz zaman iptal edebilirsiniz."
     name_placeholder: "Anahtar adı, ör. Claude Desktop"
     default_name: "Yapay zekâ istemcisi"
     create: "Anahtar oluştur"
@@ -569,7 +569,7 @@ ai:
     cloud_title: "Bulut hizmetleri"
     cloud_hint: "Sağlayıcı tarafından çalıştırılan güçlü modeller. Bir hesaba ve API anahtarına ihtiyacınız var."
     local_title: "Bu bilgisayarda"
-    local_hint: "Ücretsiz ve gizli: uygulamayı kurun, bir model indirin; Cardfile ona bağlanır."
+    local_hint: "Ücretsiz ve gizli: uygulamayı kurun, bir model indirin; NoteChest ona bağlanır."
     custom: "Diğer uyumlu hizmet"
     custom_hint: "OpenAI uyumlu herhangi bir URL"
     connect: "%{name} bağla"
@@ -578,7 +578,7 @@ ai:
     model_hint: "Önerilen model iyi bir başlangıçtır. “Bağlantıyı test et” ayrıca hesabınızın kullanabileceği modelleri de yükler."
     local_steps: "Uygulamanın çalıştığından ve en az bir modelin indirilmiş olduğundan emin olun. API anahtarı gerekmez."
     advanced: "Gelişmiş (sunucu URL'si ve API biçimi)"
-    no_keyring: "Sisteminizin kimlik bilgisi yöneticisi kullanılamıyor; bu nedenle API anahtarları Cardfile veritabanında saklanır."
+    no_keyring: "Sisteminizin kimlik bilgisi yöneticisi kullanılamıyor; bu nedenle API anahtarları NoteChest veritabanında saklanır."
 
 chat:
   report: "Bildir"
@@ -635,17 +635,17 @@ data_operations:
   move_tooltip: "Veritabanını, yedekleri ve ayarları başka bir klasöre kopyala ve bundan sonra onu kullan"
   move: "Veri klasörünü taşı"
   choose_move: "Veri klasörünün taşınacağı yeri seçin"
-  move_confirm: "Cardfile veritabanını, yedeklerini ve ayarlarınızı %{path} konumuna kopyalayacak, ardından o klasörle yeniden başlayacak. Mevcut klasör olduğu gibi kalır: her şeyin yenisinde olduğunu kontrol ettikten sonra onu kendiniz silin."
+  move_confirm: "NoteChest veritabanını, yedeklerini ve ayarlarınızı %{path} konumuna kopyalayacak, ardından o klasörle yeniden başlayacak. Mevcut klasör olduğu gibi kalır: her şeyin yenisinde olduğunu kontrol ettikten sonra onu kendiniz silin."
   move_unavailable: "Taşınabilir bir kopyanın veri klasörü veya --data-dir ile seçilen klasör buradan taşınamaz."
   admin_required: "Koleksiyonun tamamını yalnızca bir yönetici yedekleyebilir."
   backups: "Veritabanı yedekleri"
   busy: "Koleksiyonunuz hazırlanıyor. Lütfen bekleyin…"
   choose_backup: "Yedek klasörünü seç"
-  choose_portable: "Cardfile portable için üst klasörü seç"
-  choose_restore: "Bir Cardfile veritabanı yedeği seç"
+  choose_portable: "NoteChest portable için üst klasörü seç"
+  choose_restore: "Bir NoteChest veritabanı yedeği seç"
   contents: "Yedekler tüm kullanıcıları, ekleri ve şifrelenmiş kartları içerir. Mevcut şifreleme korunur ancak şifrelenmemiş içerik şifrelenmez. Sistemin kimlik bilgisi deposundaki yapay zekâ anahtarları dahil edilmez."
   daily: "Otomatik günlük yedekleme"
-  daily_hint: "Cardfile açıkken her 24 saatte bir yedek alınır. Kaçırılan yedekler girişte oluşturulur; kullanılamayan hedefler her saat yeniden denenir."
+  daily_hint: "NoteChest açıkken her 24 saatte bir yedek alınır. Kaçırılan yedekler girişte oluşturulur; kullanılamayan hedefler her saat yeniden denenir."
   default_backup: "Varsayılan klasörü kullan"
   destination_exists: "Hedef zaten var. Başka bir üst klasör seçin; mevcut verilerin üzerine yazılmaz."
   failed: "İşlem başarısız oldu: %{error}"
@@ -653,9 +653,9 @@ data_operations:
   nested_destination: "Etkin veri klasörünün ve program sözlüklerinin dışında bir hedef seçin."
   open_backup: "Yedek klasörünü aç"
   portable: "Taşınabilir kopya oluştur"
-  portable_confirm: "Tüm kullanıcılar, kartlar ve ekler yeni bir 'Cardfile portable' klasörüne kopyalansın mı? Kopyada MCP ve otomatik yedekleme kapatılır. Başka bir bilgisayarda sistem deposundaki yapay zekâ anahtarlarını yeniden girin. Bilgisayar değiştirmeden önce Cardfile’ı kapatın ve OneDrive eşitlemesinin tamamlanmasını bekleyin."
-  portable_unsupported: "Bu mağaza veya paket yöneticisi kurulumunu kopyalamak için https://github.com/FittyAr/Cardfile/releases adresinden taşınabilir arşivi indirin."
+  portable_confirm: "Tüm kullanıcılar, kartlar ve ekler yeni bir 'NoteChest portable' klasörüne kopyalansın mı? Kopyada MCP ve otomatik yedekleme kapatılır. Başka bir bilgisayarda sistem deposundaki yapay zekâ anahtarlarını yeniden girin. Bilgisayar değiştirmeden önce NoteChest’ı kapatın ve OneDrive eşitlemesinin tamamlanmasını bekleyin."
+  portable_unsupported: "Bu mağaza veya paket yöneticisi kurulumunu kopyalamak için https://github.com/FittyAr/NoteChest/releases adresinden taşınabilir arşivi indirin."
   protection_busy: "Kart koruması değişikliği tamamlanana kadar bekleyip yeniden deneyin."
   restore: "Yedeği geri yükle"
-  restore_confirm: "TÜM kullanıcılar, kartlar, ekler ve izinler bu yedekle değiştirilsin mi? Cardfile bir güvenlik kopyası oluşturup yeniden başlar. Geri yüklenen hesap ve parolalarla giriş yapın. Koleksiyonlar birleştirilmez."
+  restore_confirm: "TÜM kullanıcılar, kartlar, ekler ve izinler bu yedekle değiştirilsin mi? NoteChest bir güvenlik kopyası oluşturup yeniden başlar. Geri yüklenen hesap ve parolalarla giriş yapın. Koleksiyonlar birleştirilmez."
   retention: "Saklanacak otomatik kopya sayısı"

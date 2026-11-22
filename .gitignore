@@ -41,5 +41,3 @@ desktop.ini
 /packaging/dictionaries/
 .claude/worktrees/
 
-# Python venv for scripts/render_brand.py
-.venv-brand/

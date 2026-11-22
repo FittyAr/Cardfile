@@ -1,0 +1,23 @@
+[package]
+name = "notechest-agent"
+description = "Tools that let an AI assistant use NoteChest like a user (shared by the MCP server and the in-app chat)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+notechest-core.workspace = true
+notechest-db.workspace = true
+notechest-doc.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+pretty_assertions.workspace = true

@@ -1,5 +1,5 @@
 # Build an (unsigned) MSIX for Microsoft Store submission. The Store signs it.
-#   ./build-msix.ps1 -SourceDir <unzipped release> -Version 2.0.0 -Arch x64 -Out Cardfile.msix
+#   ./build-msix.ps1 -SourceDir <unzipped release> -Version 2.0.0 -Arch x64 -Out NoteChest.msix
 # Identity values (Partner Center > Product identity) come from environment variables:
 #   MSIX_IDENTITY_NAME, MSIX_PUBLISHER, MSIX_PUBLISHER_DISPLAY_NAME
 param(
@@ -10,7 +10,7 @@ param(
 )
 $ErrorActionPreference = "Stop"
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
-$identity = if ($env:MSIX_IDENTITY_NAME) { $env:MSIX_IDENTITY_NAME } else { "FittyAr.Cardfile" }
+$identity = if ($env:MSIX_IDENTITY_NAME) { $env:MSIX_IDENTITY_NAME } else { "FittyAr.NoteChest" }
 $publisher = if ($env:MSIX_PUBLISHER) { $env:MSIX_PUBLISHER } else { "CN=FittyAr" }
 $display = if ($env:MSIX_PUBLISHER_DISPLAY_NAME) { $env:MSIX_PUBLISHER_DISPLAY_NAME } else { "FittyAr" }
 
@@ -18,10 +18,10 @@ $display = if ($env:MSIX_PUBLISHER_DISPLAY_NAME) { $env:MSIX_PUBLISHER_DISPLAY_N
 $core = ($Version -split '[-+]')[0]
 $msixVersion = "$core.0"
 
-$stage = Join-Path ([IO.Path]::GetTempPath()) "cardfile-msix-$Arch"
+$stage = Join-Path ([IO.Path]::GetTempPath()) "notechest-msix-$Arch"
 if (Test-Path $stage) { Remove-Item -Recurse -Force $stage }
 New-Item -ItemType Directory -Force $stage | Out-Null
-Copy-Item (Join-Path $SourceDir "cardfile.exe") $stage
+Copy-Item (Join-Path $SourceDir "notechest.exe") $stage
 foreach ($extra in @("dictionaries", "THIRD_PARTY_LICENSES.html", "LICENSE-MIT", "LICENSE-APACHE")) {
   $p = Join-Path $SourceDir $extra
   if (Test-Path $p) { Copy-Item -Recurse $p $stage }

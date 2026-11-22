@@ -42,16 +42,16 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Test bootstrap without installing Cardfile
+      - name: Test bootstrap without installing NoteChest
         shell: pwsh
         run: ./scripts/test-install-bootstrap.ps1
       - name: Compile both installer architectures with a disposable payload
         shell: pwsh
         run: |
-          $payload = Join-Path $env:RUNNER_TEMP 'cardfile-test-payload'
-          $output = Join-Path $env:RUNNER_TEMP 'cardfile-test-installers'
+          $payload = Join-Path $env:RUNNER_TEMP 'notechest-test-payload'
+          $output = Join-Path $env:RUNNER_TEMP 'notechest-test-installers'
           New-Item -ItemType Directory -Force -Path $payload, $output | Out-Null
-          Set-Content -LiteralPath (Join-Path $payload 'cardfile.exe') -Value 'Test payload; never execute'
+          Set-Content -LiteralPath (Join-Path $payload 'notechest.exe') -Value 'Test payload; never execute'
           Copy-Item -LiteralPath LICENSE-MIT, LICENSE-APACHE -Destination $payload
           foreach ($arch in @('x64', 'arm64')) {
             ./scripts/compile-windows-installer.ps1 -SourceDir $payload -AppVersion 0.0.0-test -Arch $arch -OutputDirectory $output -ToolRoot (Join-Path $env:RUNNER_TEMP 'inno-7.1.1')

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=NoteChest
+GenericName=Card file
+Comment=A modern digital card file for your notes
+Exec=notechest
+Icon=ar.fittyar.NoteChest
+Terminal=false
+Categories=Office;
+Keywords=notes;cards;notebook;editor;
+StartupWMClass=ar.fittyar.NoteChest

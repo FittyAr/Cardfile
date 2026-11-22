@@ -36,7 +36,7 @@ exceptions = [
     { allow = ["MPL-2.0"], crate = "cbindgen" },    # build-time only (via GPUI)
     { allow = ["MPL-2.0"], crate = "dwrote" },      # DirectWrite bindings (via GPUI)
     { allow = ["MPL-2.0"], crate = "option-ext" },  # via `directories`
-    # Symphonia (cardfile-media): unmodified, audio decoding
+    # Symphonia (notechest-media): unmodified, audio decoding
     { allow = ["MPL-2.0"], crate = "symphonia" },
     { allow = ["MPL-2.0"], crate = "symphonia-bundle-flac" },
     { allow = ["MPL-2.0"], crate = "symphonia-bundle-mp3" },

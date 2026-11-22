@@ -1,4 +1,4 @@
-# Contributing to Cardfile
+# Contributing to NoteChest
 
 Thanks for your interest! Read [AGENTS.md](AGENTS.md) for the conventions; it applies to humans too.
 

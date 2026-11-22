@@ -66,12 +66,12 @@ jobs:
           trap 'rm -f -- "$KEY"' EXIT
           printf '%s\n' "$MINISIGN_SECRET_KEY" > "$KEY"
           for f in "${FILES[@]}" SHA256SUMS; do
-            # The app checks this exact comment (cardfile-updater `trusted_comment`).
-            minisign -S -s "$KEY" -m "$f" -x "../out/$f.minisig" -t "Cardfile $TAG release file: $f" </dev/null
+            # The app checks this exact comment (notechest-updater `trusted_comment`).
+            minisign -S -s "$KEY" -m "$f" -x "../out/$f.minisig" -t "NoteChest $TAG release file: $f" </dev/null
           done
           rm -f -- "$KEY"
 
-          # The app trusts only this public key (cardfile-updater PUBLIC_KEY).
+          # The app trusts only this public key (notechest-updater PUBLIC_KEY).
           for f in "${FILES[@]}" SHA256SUMS; do
             minisign -V -P "$MINISIGN_PUBLIC_KEY" -m "$f" -x "../out/$f.minisig" -q
           done

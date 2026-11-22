@@ -1,4 +1,4 @@
-# Releasing Cardfile
+# Releasing NoteChest
 
 Releases are built by GitHub Actions from a version tag. [`dist`](https://github.com/axodotdev/cargo-dist)
 generates `.github/workflows/release.yml`, which is then hardened by hand (see
@@ -9,21 +9,21 @@ regenerate; edit the file directly only for the hardening below.
 
 | File | Produced by | Notes |
 |------|-------------|-------|
-| `cardfile-<target>.zip` / `.tar.xz` | dist | Portable archives for Windows and Linux (x64, ARM64) |
-| `install.ps1` / `install.sh` (repo root, not a release asset) | maintainers | One-line installers served from `main`; they always pick the newest release, so they need no change per release. PowerShell uses `Cardfile-<version>-setup-<arch>.exe`; shell uses `cardfile-<target>.tar.xz`. They rely on `SHA256SUMS` and the minisign trusted comment `Cardfile <tag> release file: <name>` |
-| `Cardfile-<version>-setup-<arch>.exe` | `package.yml` | Inno Setup installer, also used by winget |
-| `Cardfile-<version>-<arch>.msix` | `package.yml` | For Microsoft Store submission (the Store signs it) |
+| `notechest-<target>.zip` / `.tar.xz` | dist | Portable archives for Windows and Linux (x64, ARM64) |
+| `install.ps1` / `install.sh` (repo root, not a release asset) | maintainers | One-line installers served from `main`; they always pick the newest release, so they need no change per release. PowerShell uses `NoteChest-<version>-setup-<arch>.exe`; shell uses `notechest-<target>.tar.xz`. They rely on `SHA256SUMS` and the minisign trusted comment `NoteChest <tag> release file: <name>` |
+| `NoteChest-<version>-setup-<arch>.exe` | `package.yml` | Inno Setup installer, also used by winget |
+| `NoteChest-<version>-<arch>.msix` | `package.yml` | For Microsoft Store submission (the Store signs it) |
 | `.deb`, `.rpm`, `.AppImage` | `package.yml` | Linux packages for x86_64 and aarch64 |
 | `SHA256SUMS`, `*.minisig` | `sign.yml` | Checksums and minisign signatures of every file above, attached together with them when the release is created |
 
 ### In-app updates depend on these files
 
-The self-updater (`crates/cardfile-updater`) picks the asset by name, so keep these names
-stable: `cardfile-<arch>-pc-windows-msvc.zip`, `cardfile-<arch>-unknown-linux-gnu.tar.xz`,
-`Cardfile-<version>-<x86_64|aarch64>.AppImage` and `Cardfile-<version>-setup-<x64|arm64>.exe`.
+The self-updater (`crates/notechest-updater`) picks the asset by name, so keep these names
+stable: `notechest-<arch>-pc-windows-msvc.zip`, `notechest-<arch>-unknown-linux-gnu.tar.xz`,
+`NoteChest-<version>-<x86_64|aarch64>.AppImage` and `NoteChest-<version>-setup-<x64|arm64>.exe`.
 It installs a file only if its SHA-256 is in the signed `SHA256SUMS` **and** its own
 `<file>.minisig` verifies with `PUBLIC_KEY` and carries the trusted comment
-`Cardfile <tag> release file: <file>` (written by `sign.yml`). A release without signatures is
+`NoteChest <tag> release file: <file>` (written by `sign.yml`). A release without signatures is
 never offered: the updater skips it and offers the newest *signed* release instead (or nothing).
 
 ### Order of the release jobs
@@ -94,7 +94,7 @@ minisign -G -W -p minisign.pub -s minisign.key
 - Add the **contents** of `minisign.key` as the repository secret `MINISIGN_SECRET_KEY`.
 - Add the public key (the second line of `minisign.pub`) as the repository **variable**
   `MINISIGN_PUBLIC_KEY` (CI checks every signature against it), in [SIGNING.md](SIGNING.md) and as
-  `PUBLIC_KEY` in `crates/cardfile-updater/src/lib.rs` (the app trusts only that key).
+  `PUBLIC_KEY` in `crates/notechest-updater/src/lib.rs` (the app trusts only that key).
 - Current key: `RWSEWpMd7tkiGAaQwVFXiSYyfV6ODYRttbEFQ/WBOTzrbMB1diAfrG+w` (ID `1822D9EE1D935A84`),
   kept outside the repository by the maintainer.
 - Keep `minisign.key` offline and never commit it (`*.key` is ignored by git).
@@ -106,9 +106,9 @@ minisign -G -W -p minisign.pub -s minisign.key
 3. The **first** version must be submitted manually:
    ```powershell
    winget install wingetcreate
-   wingetcreate new https://github.com/FittyAr/Cardfile/releases/download/v2.0.0/Cardfile-2.0.0-setup-x64.exe
+   wingetcreate new https://github.com/FittyAr/NoteChest/releases/download/v2.0.0/NoteChest-2.0.0-setup-x64.exe
    ```
-   Use the identifier `FittyAr.Cardfile`.
+   Use the identifier `FittyAr.NoteChest`.
 4. After that, `.github/workflows/winget.yml` (called by `release.yml` after the release is published) opens a pull request for every stable release. Pre-releases are skipped.
 
 ### 3. Microsoft Store
@@ -124,14 +124,14 @@ minisign -G -W -p minisign.pub -s minisign.key
    - `PARTNER_CENTER_CLIENT_SECRET`
    - `PARTNER_CENTER_SELLER_ID`
 3. The first submission (store listing, screenshots, age rating) is done in Partner Center by hand. Upload the `.msix` from a release. The submission needs:
-   - **Privacy policy URL**: `https://github.com/FittyAr/Cardfile/blob/main/docs/PRIVACY.md`
+   - **Privacy policy URL**: `https://github.com/FittyAr/NoteChest/blob/main/docs/PRIVACY.md`
      (required because the app uses the network). Keep the policy in sync with what the app sends.
    - **Live generative AI** (Store policy 11.16): tick it in the submission and mention the
      assistant in the description. Users report answers with **Report** in the assistant panel,
      which opens a GitHub issue labelled `ai-content` (create that label once).
    - **Restricted capabilities**: the manifest declares `runFullTrust` and
-     `unvirtualizedResources`. Justification for the second one: *"Cardfile stores the user's
-     notes in a SQLite database under %APPDATA%\FittyAr\Cardfile. With AppData write
+     `unvirtualizedResources`. Justification for the second one: *"NoteChest stores the user's
+     notes in a SQLite database under %APPDATA%\FittyAr\NoteChest. With AppData write
      virtualization, the database's WAL, lock file and backups would be redirected to a
      per-package folder that Windows deletes on uninstall, losing notes, and a copy installed
      outside the Store would open the same database with a different WAL and lock, which can
@@ -141,15 +141,15 @@ minisign -G -W -p minisign.pub -s minisign.key
 
 Before the first submission, install the release `.msix` on a machine that already has beta data
 (sideload with Developer Mode on, `Add-AppxPackage`) and check that the notes appear and that
-new files (`cardfile.db-wal`, `backups\`) are created in the real `%APPDATA%\FittyAr\Cardfile`,
+new files (`notechest.db-wal`, `backups\`) are created in the real `%APPDATA%\FittyAr\NoteChest`,
 not under `%LOCALAPPDATA%\Packages\…`. An unsigned package must first be signed with a test
 certificate for sideloading.
 
-The MSIX build detects that it runs from `WindowsApps` and turns off Cardfile's own updater; the Store handles updates.
+The MSIX build detects that it runs from `WindowsApps` and turns off NoteChest's own updater; the Store handles updates.
 
 ## Cutting a release
 
-1. Update `version` in the root `Cargo.toml` (`workspace.package.version`) and the `<release>` entry in `packaging/linux/ar.fittyar.Cardfile.metainfo.xml`.
+1. Update `version` in the root `Cargo.toml` (`workspace.package.version`) and the `<release>` entry in `packaging/linux/ar.fittyar.NoteChest.metainfo.xml`.
 2. Update `CHANGELOG.md`:
    ```bash
    git cliff --tag v2.0.0 -o CHANGELOG.md

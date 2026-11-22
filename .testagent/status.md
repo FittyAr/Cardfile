@@ -1,6 +1,6 @@
 # Acceptance evidence
 
-Database integration tests are in `crates/cardfile-db/tests/recovery.rs`.
+Database integration tests are in `crates/notechest-db/tests/recovery.rs`.
 
 - Consistent WAL snapshot with accounts, password hashes, admin flags, current
   card content, revision history, encrypted payloads and attachment bytes/name:
@@ -61,7 +61,7 @@ Additional evidence:
 - `dist plan --tag v2.0.0-beta.3` confirms announcement_is_prerelease=true.
 
 Safety boundary: all runtime tests use temporary directories. Do not launch
-Cardfile or run the real installer against this computer's existing collection.
+NoteChest or run the real installer against this computer's existing collection.
 
 Native GPUI sizing, installers, physical USB, DPI and cross-device OneDrive
 behavior remain manual acceptance items for the root implementation workflow.
@@ -103,8 +103,8 @@ because 0.34.0 produces invalid workflow references. No security-check waiver is
 Windows installer smoke compilation passed locally for both x64 and ARM64 with
 verified portable Inno Setup 7.1.1. `scripts/compile-windows-installer.ps1` now provides
 the same pinned compiler to CI and release packaging. Only the compiler bootstrap was
-executed in its documented portable mode; generated Cardfile installers and payloads
-were never executed. The current Cardfile installation was not accessed.
+executed in its documented portable mode; generated NoteChest installers and payloads
+were never executed. The current NoteChest installation was not accessed.
 
 ## beta.4 translation and settings correction
 
@@ -121,7 +121,7 @@ passed with a disposable payload; neither generated installer was executed.
 
 Native visual acceptance remains pending: the desktop automation tool's app-access
 approval timed out before it could capture the fixture window. The fixture used
-`--data-dir D:/GitHub/Cardfile/target/channel-visual-fixture` with seeded demo data
+`--data-dir D:/GitHub/NoteChest/target/channel-visual-fixture` with seeded demo data
 and a 760-pixel window. Only that explicitly identified process was closed afterward.
 The maintainer's collection was never opened or modified.
 

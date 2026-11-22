@@ -1,21 +1,21 @@
-# Guía de usuario de Cardfile
+# Guía de usuario de NoteChest
 
 English: [USER_GUIDE.md](USER_GUIDE.md)
 
-> La interfaz de Cardfile 2.0 está por ahora en inglés. Los nombres de menús aparecen en inglés
+> La interfaz de NoteChest 2.0 está por ahora en inglés. Los nombres de menús aparecen en inglés
 > entre paréntesis.
 
 ## Primer arranque
 
-La primera vez que abrís Cardfile, un asistente se abre en el idioma del sistema (en su
+La primera vez que abrís NoteChest, un asistente se abre en el idioma del sistema (en su
 primera pantalla podés elegir otro, que queda como idioma de tu cuenta) y te pregunta
 cuatro cosas:
 
 1. **Almacenamiento.**
    - *Estándar* guarda las tarjetas en tu perfil de usuario.
-   - *Portable* las guarda en una carpeta `data` junto a Cardfile, ideal para un pendrive.
+   - *Portable* las guarda en una carpeta `data` junto a NoteChest, ideal para un pendrive.
 2. **Inicio de sesión.**
-   - *Sin contraseña*: Cardfile abre directo.
+   - *Sin contraseña*: NoteChest abre directo.
    - *Contraseña*: una cuenta protegida con contraseña.
    - *Varios usuarios*: cada persona entra con su usuario y contraseña, y tiene sus propias tarjetas.
 3. **Protección de tarjetas.** Qué niveles de protección se pueden usar (ver [Proteger tarjetas](#proteger-tarjetas)).
@@ -74,11 +74,11 @@ Escribí `/` en una línea vacía para abrir un menú de bloques: títulos, list
   - Con clic derecho sobre la tabla podés agregar o quitar filas y columnas.
 - Hacé clic en una imagen para ver sus manijas: arrastrá la **esquina** para cambiar el tamaño manteniendo la proporción, o el borde **derecho** o **inferior** para estirarla. Con clic derecho podés achicarla, agrandarla, ajustarla al ancho o recuperar su proporción.
 - **Arrastrá una imagen o un adjunto** para moverlo dentro de la tarjeta. Soltalo sobre otra tarjeta de la lista para moverlo ahí; mantené `Ctrl` (o `Alt`) al soltar para copiarlo.
-- **El audio se reproduce en la tarjeta.** El audio MP3, WAV, OGG y FLAC tiene un reproductor con play/pausa, barra de avance y silencio. El video, el AAC/M4A y los demás formatos se abren con el reproductor del sistema; si ninguna aplicación de tu computadora puede abrirlos, Cardfile te avisa.
+- **El audio se reproduce en la tarjeta.** El audio MP3, WAV, OGG y FLAC tiene un reproductor con play/pausa, barra de avance y silencio. El video, el AAC/M4A y los demás formatos se abren con el reproductor del sistema; si ninguna aplicación de tu computadora puede abrirlos, NoteChest te avisa.
 
 ### Otros idiomas y escrituras
 
-El chino, el japonés y el coreano funcionan en todos lados, también al exportar a PDF (Cardfile usa una fuente CJK instalada en el sistema). El texto de derecha a izquierda (hebreo, árabe, persa) se muestra en el orden correcto y esos párrafos se alinean a la derecha. Límite conocido: los cuadros de texto de una línea (como el título de la tarjeta mientras lo editás) todavía muestran ese texto de izquierda a derecha.
+El chino, el japonés y el coreano funcionan en todos lados, también al exportar a PDF (NoteChest usa una fuente CJK instalada en el sistema). El texto de derecha a izquierda (hebreo, árabe, persa) se muestra en el orden correcto y esos párrafos se alinean a la derecha. Límite conocido: los cuadros de texto de una línea (como el título de la tarjeta mientras lo editás) todavía muestran ese texto de izquierda a derecha.
 
 ### Ortografía
 
@@ -107,35 +107,35 @@ En el modo *Sin contraseña*, configurá una **contraseña de bloqueo** en Confi
 
 **Cada usuario tiene su propia contraseña de bloqueo.** Por defecto es tu contraseña de inicio de sesión; en Configuración → Seguridad podés poner otra distinta (si escribís tu contraseña de inicio como nueva contraseña de bloqueo, volvés a usar una sola). Cambiarla no vuelve a cifrar tus tarjetas: cada tarjeta cifrada tiene su propia clave aleatoria, protegida por separado para cada persona que puede abrirla.
 
-Con contraseña o con varios usuarios, Cardfile también puede **bloquearse solo** después de un tiempo de inactividad. Para bloquearlo en el momento, usá `Ctrl+Shift+L`.
+Con contraseña o con varios usuarios, NoteChest también puede **bloquearse solo** después de un tiempo de inactividad. Para bloquearlo en el momento, usá `Ctrl+Shift+L`.
 
 ## Compartir tarjetas
 
 Con varios usuarios (modo multiusuario), abrí el menú **⋯** de una tarjeta → *Compartir…* (o el botón de personas) y elegí para cada usuario **Sin acceso**, **Puede ver** o **Puede editar**. Las tarjetas compartidas aparecen en **Compartidas conmigo** en la barra lateral. Solo el dueño puede borrar, proteger, etiquetar o compartir una tarjeta. Quienes pueden editar ven en la barra de estado y en el historial quién hizo el último cambio.
 
-Para compartir una tarjeta **cifrada**, desbloqueala primero. La otra persona la abre con *su propia* contraseña de bloqueo; necesita haber iniciado sesión (o desbloqueado una tarjeta protegida) al menos una vez para que Cardfile cree sus claves.
+Para compartir una tarjeta **cifrada**, desbloqueala primero. La otra persona la abre con *su propia* contraseña de bloqueo; necesita haber iniciado sesión (o desbloqueado una tarjeta protegida) al menos una vez para que NoteChest cree sus claves.
 
 ## Asistente de IA
 
-Cardfile puede trabajar con una IA en la nube o en tu computadora. No aparece nada relacionado con IA hasta que la configures.
+NoteChest puede trabajar con una IA en la nube o en tu computadora. No aparece nada relacionado con IA hasta que la configures.
 
 1. Abrí **Configuración → IA → Agregar servicio de IA** y elegí un preset: OpenAI, Anthropic (Claude), Google Gemini, Mistral, Groq, DeepSeek, xAI, OpenRouter, Together AI, Perplexity, Azure OpenAI, **Ollama** o **LM Studio** (locales), o *Personalizado* para cualquier servicio compatible.
 2. Ingresá tu API key (los servicios locales no la necesitan), elegí un modelo y tocá **Probar conexión**.
 3. El **botón del asistente** (ícono de robot arriba de la lista, o `Ctrl+Shift+A`) abre el panel de chat.
 
-Pedile cosas con tus palabras: buscar tarjetas, reescribir o dar formato a una tarjeta, convertir notas en una lista de tareas, poner etiquetas, marcar favoritas, reordenar, mandar tarjetas a la papelera… Cada cambio queda registrado como hecho por **Cardfile AI** en tu nombre, la versión anterior queda en el historial y lo borrado va a la papelera, así que siempre podés deshacer. El asistente nunca ve tarjetas cifradas; las privadas solo si lo permitís en Configuración → IA.
+Pedile cosas con tus palabras: buscar tarjetas, reescribir o dar formato a una tarjeta, convertir notas en una lista de tareas, poner etiquetas, marcar favoritas, reordenar, mandar tarjetas a la papelera… Cada cambio queda registrado como hecho por **NoteChest AI** en tu nombre, la versión anterior queda en el historial y lo borrado va a la papelera, así que siempre podés deshacer. El asistente nunca ve tarjetas cifradas; las privadas solo si lo permitís en Configuración → IA.
 
-## Usar Cardfile desde otras apps de IA (MCP)
+## Usar NoteChest desde otras apps de IA (MCP)
 
-Cardfile incluye un servidor MCP para que apps como Claude Desktop, Claude Code, Cursor o VS Code usen tus tarjetas mientras Cardfile está abierto.
+NoteChest incluye un servidor MCP para que apps como Claude Desktop, Claude Code, Cursor o VS Code usen tus tarjetas mientras NoteChest está abierto.
 
 1. En **Configuración → IA**, activá **Ejecutar el servidor MCP** (escucha solo en `127.0.0.1`; puerto por defecto 7337).
 2. En **API keys**, creá una clave. Elegí *Solo lectura* o *Permitir tarjetas privadas* si querés. Copiala: se muestra una sola vez, junto con la configuración lista para pegar en cada app.
-3. La app de IA ve exactamente lo que ves vos. Sus cambios quedan registrados como hechos por Cardfile AI a través de esa clave. **Revocá** una clave para cortar el acceso al instante. La lista muestra cuándo se usó cada clave por última vez y *Actividad reciente de la IA* muestra qué cambió.
+3. La app de IA ve exactamente lo que ves vos. Sus cambios quedan registrados como hechos por NoteChest AI a través de esa clave. **Revocá** una clave para cortar el acceso al instante. La lista muestra cuándo se usó cada clave por última vez y *Actividad reciente de la IA* muestra qué cambió.
 
 ## Actualizaciones
 
-Cardfile busca versiones nuevas al iniciar (Configuración → General). Cuando hay una, hacé clic en el aviso, mirá las novedades y elegí **Actualizar y reiniciar**: Cardfile la descarga, verifica su firma y la instala. Las copias instaladas desde Microsoft Store o un gestor de paquetes de Linux se actualizan por esa vía.
+NoteChest busca versiones nuevas al iniciar (Configuración → General). Cuando hay una, hacé clic en el aviso, mirá las novedades y elegí **Actualizar y reiniciar**: NoteChest la descarga, verifica su firma y la instala. Las copias instaladas desde Microsoft Store o un gestor de paquetes de Linux se actualizan por esa vía.
 
 ## Exportar y respaldar
 
@@ -148,21 +148,21 @@ Cardfile busca versiones nuevas al iniciar (Configuración → General). Cuando 
 ## Atajos de teclado y comandos
 
 - `Ctrl+Shift+P` abre la **paleta de comandos**, con todos los comandos.
-- Para cambiar cualquier atajo, abrí Configuración → General → *Keyboard shortcuts*. Se abre `keymap.json`, que lista todos los nombres de acciones. Reiniciá Cardfile para aplicar los cambios.
+- Para cambiar cualquier atajo, abrí Configuración → General → *Keyboard shortcuts*. Se abre `keymap.json`, que lista todos los nombres de acciones. Reiniciá NoteChest para aplicar los cambios.
 
 ## ¿Dónde están mis archivos?
 
 Abrí el menú de configuración y elegí **Open data folder**. Salvo que uses una de las opciones de abajo, es:
 
-- Windows: `%APPDATA%\FittyAr\Cardfile\data`
-- Linux: `~/.local/share/FittyAr/Cardfile` (`$XDG_DATA_HOME/FittyAr/Cardfile` si está definida)
-- macOS: `~/Library/Application Support/FittyAr/Cardfile`
+- Windows: `%APPDATA%\FittyAr\NoteChest\data`
+- Linux: `~/.local/share/FittyAr/NoteChest` (`$XDG_DATA_HOME/FittyAr/NoteChest` si está definida)
+- macOS: `~/Library/Application Support/FittyAr/NoteChest`
 
-Las versiones anteriores usaban `~/.local/share/cardfile` en Linux y `~/Library/Application Support/ar.FittyAr.Cardfile` en macOS; Cardfile mueve esa carpeta al lugar nuevo la primera vez que arranca. Si no puede moverla, la sigue usando.
+Las versiones anteriores usaban `~/.local/share/notechest` en Linux y `~/Library/Application Support/ar.FittyAr.NoteChest` en macOS; NoteChest mueve esa carpeta al lugar nuevo la primera vez que arranca. Si no puede moverla, la sigue usando.
 
 La carpeta contiene:
 
-- `cardfile.db`: todas tus tarjetas
+- `notechest.db`: todas tus tarjetas
 - `backups/`: respaldos de la base de datos
 - `logs/`: registros, útiles para reportar errores
 - `themes/`: temas adicionales, en formato JSON de gpui-component
@@ -170,25 +170,25 @@ La carpeta contiene:
 
 Opciones de línea de comandos:
 
-- `cardfile --portable` guarda los datos junto al ejecutable.
-- `cardfile --data-dir <carpeta>` usa la carpeta que elijas.
+- `notechest --portable` guarda los datos junto al ejecutable.
+- `notechest --data-dir <carpeta>` usa la carpeta que elijas.
 
 
 ## Copias portables y recuperación
 
 El instalador Windows ofrece **Install on this computer**, **Create a portable copy** y
 una instalación explícita para todos los usuarios. Para portable, elegí una carpeta
-escribible en pendrive, OneDrive u otro disco y abrí su `cardfile.exe`. Mové siempre la
+escribible en pendrive, OneDrive u otro disco y abrí su `notechest.exe`. Mové siempre la
 carpeta completa, con `portable.flag` y `data/`. El ZIP sigue disponible.
 
 PowerShell descarga y verifica ese mismo instalador:
 
 ```powershell
-& ([scriptblock]::Create((irm https://raw.githubusercontent.com/FittyAr/Cardfile/main/install.ps1))) -Portable -Destination "E:\Cardfile"
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/FittyAr/NoteChest/main/install.ps1))) -Portable -Destination "E:\NoteChest"
 ```
 
 Para llevar los datos actuales, un administrador usa **Configuración → Datos → Create
-portable copy** y elige la carpeta contenedora. Se crea `Cardfile portable` sin sobrescribir
+portable copy** y elige la carpeta contenedora. Se crea `NoteChest portable` sin sobrescribir
 un destino existente. Incluye todos los usuarios, fichas, adjuntos, historial y cifrado.
 MCP y respaldos automáticos quedan desactivados en la copia. Las claves de IA del almacén
 del sistema se ingresan nuevamente en el otro equipo. Las versiones de tienda o paquetes
@@ -209,22 +209,22 @@ respaldo. Se conserva el archivo fuente y la configuración local de respaldos/v
 Los respaldos mantienen el cifrado existente, pero no cifran fichas que estaban sin cifrar.
 No recuperan contraseñas olvidadas ni secretos externos del almacén del sistema.
 
-Cerrá Cardfile antes de extraer el pendrive o cambiar de equipo. En OneDrive esperá a que
+Cerrá NoteChest antes de extraer el pendrive o cambiar de equipo. En OneDrive esperá a que
 termine de sincronizar antes de abrir en otro equipo; no se admite uso simultáneo.
-Cardfile muestra un aviso al iniciar sesión si sus datos están en una carpeta sincronizada
+NoteChest muestra un aviso al iniciar sesión si sus datos están en una carpeta sincronizada
 por OneDrive, Dropbox, Google Drive o un servicio similar.
 El bloqueo local no coordina equipos diferentes. La app recuerda el tamaño, la posición y el estado
 maximizado de la ventana en `local-config.json`, y vuelve a abrir en el mismo monitor
 mientras siga conectado.
 
 **Mover la carpeta de datos.** Los administradores pueden mover toda la colección con
-**Configuración → Datos → Mover…**. Cardfile copia la base (una instantánea consistente),
-los respaldos, temas, atajos, diccionarios y preferencias locales a una carpeta `Cardfile`
+**Configuración → Datos → Mover…**. NoteChest copia la base (una instantánea consistente),
+los respaldos, temas, atajos, diccionarios y preferencias locales a una carpeta `NoteChest`
 nueva dentro de la que elijas, y se reinicia usándola. La carpeta anterior queda intacta;
 bórrala cuando hayas comprobado la nueva. La ubicación se guarda en `data-location.txt`,
-en la carpeta de configuración del usuario (`%APPDATA%\FittyAr\Cardfile\config` en
-Windows, `~/.config/cardfile` en Linux). Si después esa carpeta no aparece (por
-ejemplo, un disco desconectado), Cardfile lo avisa al iniciar en vez de crear una colección
+en la carpeta de configuración del usuario (`%APPDATA%\FittyAr\NoteChest\config` en
+Windows, `~/.config/notechest` en Linux). Si después esa carpeta no aparece (por
+ejemplo, un disco desconectado), NoteChest lo avisa al iniciar en vez de crear una colección
 vacía; borra `data-location.txt` para volver a la carpeta predeterminada. Las copias
 portables y las carpetas indicadas con `--data-dir` no se mueven de esta forma.
 

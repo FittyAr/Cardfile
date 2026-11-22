@@ -37,7 +37,7 @@ jobs:
     steps:
       - uses: vedantmgoyal9/winget-releaser@b7370d4d152efdce803a26cc6ca9eee58cb2ad54 # v2
         with:
-          identifier: FittyAr.Cardfile
-          installers-regex: 'Cardfile-.*-setup-(x64|arm64)\.exe$'
+          identifier: FittyAr.NoteChest
+          installers-regex: 'NoteChest-.*-setup-(x64|arm64)\.exe$'
           release-tag: ${{ inputs.tag || fromJson(inputs.plan).announcement_tag }}
           token: ${{ secrets.WINGET_TOKEN }}

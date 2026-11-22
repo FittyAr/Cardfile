@@ -1,16 +1,16 @@
 _version: 1
 
 app:
-  data_missing: "Không tìm thấy thư mục dữ liệu %{path}. Hãy kết nối ổ chứa thư mục đó và khởi động lại Cardfile. Để quay về thư mục mặc định, hãy xóa %{pointer}."
-  synced_folder: "Ghi chú của bạn nằm trong thư mục được %{service} đồng bộ. Đồng bộ một cơ sở dữ liệu đang mở có thể làm hỏng nó hoặc tạo bản sao xung đột: hãy đóng Cardfile trước khi dùng trên máy khác, hoặc để dữ liệu bên ngoài thư mục đồng bộ."
+  data_missing: "Không tìm thấy thư mục dữ liệu %{path}. Hãy kết nối ổ chứa thư mục đó và khởi động lại NoteChest. Để quay về thư mục mặc định, hãy xóa %{pointer}."
+  synced_folder: "Ghi chú của bạn nằm trong thư mục được %{service} đồng bộ. Đồng bộ một cơ sở dữ liệu đang mở có thể làm hỏng nó hoặc tạo bản sao xung đột: hãy đóng NoteChest trước khi dùng trên máy khác, hoặc để dữ liệu bên ngoài thư mục đồng bộ."
   unsaved_quit:
     title: "Các thay đổi gần đây chưa được lưu"
     body: "Không thể lưu thẻ đang mở: %{error}. Nếu thoát bây giờ, các thay đổi kể từ lần lưu cuối sẽ bị mất."
     quit: "Thoát không lưu"
-  name: Cardfile
+  name: NoteChest
   db_error_body: "Không thể mở cơ sở dữ liệu %{path}: %{error}"
   open_keymap_failed: "Không thể mở tệp phím tắt: %{error}"
-  db_error_title: "Cardfile không thể mở cơ sở dữ liệu"
+  db_error_title: "NoteChest không thể mở cơ sở dữ liệu"
 test:
   greeting: "Xin chào, %{name}!"
 
@@ -146,17 +146,17 @@ wizard:
     finish: Sẵn sàng
   welcome:
     language: "Ngôn ngữ"
-    title: Chào mừng đến với Cardfile
+    title: Chào mừng đến với NoteChest
     body: "Hộp thẻ kỹ thuật số của bạn cho ghi chú, ý tưởng và mọi thứ bạn muốn lưu giữ. Hãy thiết lập chỉ trong vài bước."
   storage:
     standard: Tiêu chuẩn
     standard_desc: "Dữ liệu được lưu trong hồ sơ người dùng của bạn:"
     portable: Di động
-    portable_desc: Dữ liệu được lưu trong thư mục “data” cạnh Cardfile, để bạn mang theo trên USB.
+    portable_desc: Dữ liệu được lưu trong thư mục “data” cạnh NoteChest, để bạn mang theo trên USB.
     portable_unavailable: Chế độ di động không khả dụng vì thư mục chương trình không thể ghi.
   security:
     none: Không mật khẩu
-    none_desc: Cardfile mở trực tiếp. Phù hợp nhất với máy tính cá nhân.
+    none_desc: NoteChest mở trực tiếp. Phù hợp nhất với máy tính cá nhân.
     single: Mật khẩu
     single_desc: Một tài khoản được bảo vệ bằng mật khẩu.
     multi: Nhiều người dùng
@@ -177,7 +177,7 @@ wizard:
   finish:
     intro: "Mọi thứ đã sẵn sàng:"
     later: Tất cả những điều này có thể thay đổi sau trong Cài đặt.
-    start: Bắt đầu dùng Cardfile
+    start: Bắt đầu dùng NoteChest
   error:
     username: Hãy nhập tên người dùng.
     password_short: Mật khẩu phải có ít nhất 4 ký tự.
@@ -187,7 +187,7 @@ wizard:
 login:
   title: Đăng nhập
   register_title: Tạo tài khoản
-  locked_title: "Cardfile đã bị khóa, %{name}"
+  locked_title: "NoteChest đã bị khóa, %{name}"
   username: Tên người dùng
   display_name: Tên hiển thị
   password: Mật khẩu
@@ -202,11 +202,11 @@ login:
     taken: Tên người dùng này đã được sử dụng.
 
 welcome:
-  title: Chào mừng đến với Cardfile
+  title: Chào mừng đến với NoteChest
   body: |
     ## Bắt đầu
 
-    Cardfile lưu ghi chú của bạn dưới dạng **thẻ**. Tạo thẻ bằng nút **+** hoặc **Ctrl+N**.
+    NoteChest lưu ghi chú của bạn dưới dạng **thẻ**. Tạo thẻ bằng nút **+** hoặc **Ctrl+N**.
 
     - Định dạng văn bản bằng thanh công cụ hoặc phím tắt: **Ctrl+B** in đậm, *Ctrl+I* in nghiêng, Ctrl+U gạch chân.
     - Gõ `# ` để tạo tiêu đề, `- ` để tạo danh sách hoặc `[] ` để tạo danh sách kiểm.
@@ -333,7 +333,7 @@ menu:
   backup: Sao lưu ngay
   open_data_folder: Mở thư mục dữ liệu
   check_updates: Kiểm tra cập nhật
-  about: Giới thiệu về Cardfile
+  about: Giới thiệu về NoteChest
   lock: Khóa
   sign_out: Đăng xuất
   quit: Thoát
@@ -343,19 +343,19 @@ palette:
 
 updates:
   title: Có bản cập nhật
-  available: "Cardfile %{version} đã có. Nhấp để tải xuống."
+  available: "NoteChest %{version} đã có. Nhấp để tải xuống."
   latest: Bạn đang dùng phiên bản mới nhất.
   failed: "Không thể kiểm tra cập nhật: %{error}"
   managed: Cập nhật cho bản cài đặt này do cửa hàng ứng dụng hoặc trình quản lý gói của bạn xử lý.
-  dialog_title: "Đã có Cardfile %{version}"
+  dialog_title: "Đã có NoteChest %{version}"
   current: "Bạn đang dùng phiên bản %{version}."
   install: "Cập nhật và khởi động lại"
   later: "Để sau"
   open_page: "Trang phát hành"
   downloading: "Đang tải xuống… %{mb} MB"
   installing: "Đang cài đặt…"
-  installed_restart: "Bản cập nhật đã được cài đặt. Hãy khởi động lại Cardfile để sử dụng."
-  manual: "Bản Cardfile này không thể tự cập nhật. Hãy tải phiên bản mới từ trang phát hành."
+  installed_restart: "Bản cập nhật đã được cài đặt. Hãy khởi động lại NoteChest để sử dụng."
+  manual: "Bản NoteChest này không thể tự cập nhật. Hãy tải phiên bản mới từ trang phát hành."
 
 about:
   description: Hộp thẻ kỹ thuật số hiện đại cho ghi chú của bạn.
@@ -433,10 +433,10 @@ settings:
     mask_hint: Phần còn lại của tiêu đề bị che trong danh sách.
     lock_modes: Các mức bảo vệ khả dụng
     auth_mode: Chế độ đăng nhập
-    auth_mode_hint: Cách mọi người mở Cardfile trên máy tính này.
+    auth_mode_hint: Cách mọi người mở NoteChest trên máy tính này.
     auth_one_user: Hãy xóa các tài khoản người dùng khác trước khi chuyển sang chế độ một tài khoản.
     auth_needs_password: Hãy đặt mật khẩu bên dưới trước.
-    auth_changed: Đã đổi chế độ đăng nhập. Sẽ áp dụng vào lần khởi động Cardfile tiếp theo.
+    auth_changed: Đã đổi chế độ đăng nhập. Sẽ áp dụng vào lần khởi động NoteChest tiếp theo.
     change_password: Đổi mật khẩu
     lock_password: Mật khẩu khóa
     password_hint: Mật khẩu này mở khóa thẻ riêng tư và thẻ đã mã hóa. Thẻ đã mã hóa sẽ được mã hóa lại khi bạn đổi mật khẩu.
@@ -459,11 +459,11 @@ settings:
     invalid: Hãy nhập tên người dùng và mật khẩu có ít nhất 4 ký tự.
   data:
     moved: "Thư mục tùy chỉnh, đã chuyển khỏi vị trí mặc định."
-    command_line: "Thư mục được đặt bằng --data-dir khi khởi động Cardfile."
+    command_line: "Thư mục được đặt bằng --data-dir khi khởi động NoteChest."
     location: Thư mục dữ liệu
     portable: Chế độ di động đang bật.
     standard: Chế độ tiêu chuẩn.
-    files: "Thẻ và cài đặt của bạn nằm trong cardfile.db, phím tắt nằm trong keymap.json, cả hai đều ở thư mục này. Hãy sao chép hoặc đồng bộ toàn bộ thư mục để giữ lại mọi thứ."
+    files: "Thẻ và cài đặt của bạn nằm trong notechest.db, phím tắt nằm trong keymap.json, cả hai đều ở thư mục này. Hãy sao chép hoặc đồng bộ toàn bộ thư mục để giữ lại mọi thứ."
     export: Xuất
     export_hint: Xuất tất cả thẻ không phải thẻ riêng tư hoặc đã mã hóa.
   group:
@@ -535,7 +535,7 @@ ai:
     encrypted_note: "Thẻ đã mã hóa không bao giờ được cung cấp cho bất kỳ AI nào."
   mcp:
     title: "Máy chủ MCP cho ứng dụng AI"
-    hint: "Cho phép các ứng dụng AI như Claude, Cursor hoặc VS Code dùng Cardfile khi ứng dụng đang mở, chỉ trên máy tính này (127.0.0.1). Mỗi ứng dụng cần một khóa API; các thay đổi nó thực hiện được ghi lại là do Cardfile AI thực hiện thay bạn."
+    hint: "Cho phép các ứng dụng AI như Claude, Cursor hoặc VS Code dùng NoteChest khi ứng dụng đang mở, chỉ trên máy tính này (127.0.0.1). Mỗi ứng dụng cần một khóa API; các thay đổi nó thực hiện được ghi lại là do NoteChest AI thực hiện thay bạn."
     enable: "Chạy máy chủ MCP"
     port: "Cổng"
     bad_port: "Hãy dùng số cổng từ 1024 đến 65535."
@@ -544,7 +544,7 @@ ai:
     stopped: "Đã dừng"
   keys:
     title: "Khóa API"
-    hint: "Khóa cho phép ứng dụng AI xem và thay đổi những gì bạn có quyền, với danh nghĩa Cardfile AI. Có thể thu hồi bất cứ lúc nào."
+    hint: "Khóa cho phép ứng dụng AI xem và thay đổi những gì bạn có quyền, với danh nghĩa NoteChest AI. Có thể thu hồi bất cứ lúc nào."
     name_placeholder: "Tên khóa, ví dụ Claude Desktop"
     default_name: "Ứng dụng AI"
     create: "Tạo khóa"
@@ -569,7 +569,7 @@ ai:
     cloud_title: "Dịch vụ đám mây"
     cloud_hint: "Các mô hình mạnh do nhà cung cấp vận hành. Bạn cần một tài khoản và một khóa API."
     local_title: "Trên máy tính này"
-    local_hint: "Miễn phí và riêng tư: cài ứng dụng, tải xuống một mô hình, rồi Cardfile sẽ kết nối với nó."
+    local_hint: "Miễn phí và riêng tư: cài ứng dụng, tải xuống một mô hình, rồi NoteChest sẽ kết nối với nó."
     custom: "Dịch vụ tương thích khác"
     custom_hint: "Bất kỳ URL nào tương thích với OpenAI"
     connect: "Kết nối %{name}"
@@ -578,7 +578,7 @@ ai:
     model_hint: "Mô hình được gợi ý là điểm khởi đầu tốt. “Kiểm tra kết nối” cũng sẽ tải các mô hình mà tài khoản của bạn có thể dùng."
     local_steps: "Hãy đảm bảo ứng dụng đang chạy và đã tải xuống ít nhất một mô hình. Không cần khóa API."
     advanced: "Nâng cao (URL máy chủ và định dạng API)"
-    no_keyring: "Trình quản lý thông tin xác thực của hệ thống không khả dụng, nên khóa API được lưu trong cơ sở dữ liệu Cardfile."
+    no_keyring: "Trình quản lý thông tin xác thực của hệ thống không khả dụng, nên khóa API được lưu trong cơ sở dữ liệu NoteChest."
 
 chat:
   report: "Báo cáo"
@@ -635,17 +635,17 @@ data_operations:
   move_tooltip: "Sao chép cơ sở dữ liệu, bản sao lưu và cài đặt sang thư mục khác và dùng thư mục đó từ nay"
   move: "Di chuyển thư mục dữ liệu"
   choose_move: "Chọn nơi để di chuyển thư mục dữ liệu"
-  move_confirm: "Cardfile sẽ sao chép cơ sở dữ liệu, các bản sao lưu và cài đặt của bạn sang %{path}, rồi khởi động lại với thư mục đó. Thư mục hiện tại giữ nguyên: hãy tự xóa nó sau khi kiểm tra rằng mọi thứ đã có trong thư mục mới."
+  move_confirm: "NoteChest sẽ sao chép cơ sở dữ liệu, các bản sao lưu và cài đặt của bạn sang %{path}, rồi khởi động lại với thư mục đó. Thư mục hiện tại giữ nguyên: hãy tự xóa nó sau khi kiểm tra rằng mọi thứ đã có trong thư mục mới."
   move_unavailable: "Không thể di chuyển thư mục dữ liệu của bản di động, hoặc thư mục được chọn bằng --data-dir, từ đây."
   admin_required: "Chỉ quản trị viên mới có thể sao lưu toàn bộ bộ sưu tập."
   backups: "Bản sao lưu cơ sở dữ liệu"
   busy: "Đang chuẩn bị bộ sưu tập. Vui lòng đợi…"
   choose_backup: "Chọn thư mục sao lưu"
-  choose_portable: "Chọn thư mục chứa Cardfile portable"
-  choose_restore: "Chọn bản sao lưu cơ sở dữ liệu Cardfile"
+  choose_portable: "Chọn thư mục chứa NoteChest portable"
+  choose_restore: "Chọn bản sao lưu cơ sở dữ liệu NoteChest"
   contents: "Bản sao lưu gồm tất cả người dùng, tệp đính kèm và thẻ đã mã hóa. Mã hóa hiện có được giữ nguyên, nhưng nội dung chưa mã hóa sẽ không được mã hóa. Không bao gồm khóa AI trong kho thông tin xác thực của hệ thống."
   daily: "Tự động sao lưu hằng ngày"
-  daily_hint: "Khi Cardfile đang mở, bản sao lưu được tạo mỗi 24 giờ. Bản sao lưu bị lỡ được thực hiện khi đăng nhập; đích không khả dụng được thử lại mỗi giờ."
+  daily_hint: "Khi NoteChest đang mở, bản sao lưu được tạo mỗi 24 giờ. Bản sao lưu bị lỡ được thực hiện khi đăng nhập; đích không khả dụng được thử lại mỗi giờ."
   default_backup: "Dùng thư mục mặc định"
   destination_exists: "Đích đã tồn tại. Hãy chọn thư mục cha khác; dữ liệu hiện có sẽ không bị ghi đè."
   failed: "Thao tác thất bại: %{error}"
@@ -653,9 +653,9 @@ data_operations:
   nested_destination: "Chọn đích bên ngoài thư mục dữ liệu đang dùng và thư mục từ điển của chương trình."
   open_backup: "Mở thư mục sao lưu"
   portable: "Tạo bản sao di động"
-  portable_confirm: "Sao chép tất cả người dùng, thẻ và tệp đính kèm vào thư mục mới 'Cardfile portable'? MCP và sao lưu tự động sẽ bị tắt trong bản sao. Trên máy khác, nhập lại khóa AI từ kho lưu trữ của hệ thống. Đóng Cardfile và chờ OneDrive đồng bộ xong trước khi đổi máy."
-  portable_unsupported: "Tải gói di động từ https://github.com/FittyAr/Cardfile/releases để sao chép bản cài từ cửa hàng hoặc trình quản lý gói này."
+  portable_confirm: "Sao chép tất cả người dùng, thẻ và tệp đính kèm vào thư mục mới 'NoteChest portable'? MCP và sao lưu tự động sẽ bị tắt trong bản sao. Trên máy khác, nhập lại khóa AI từ kho lưu trữ của hệ thống. Đóng NoteChest và chờ OneDrive đồng bộ xong trước khi đổi máy."
+  portable_unsupported: "Tải gói di động từ https://github.com/FittyAr/NoteChest/releases để sao chép bản cài từ cửa hàng hoặc trình quản lý gói này."
   protection_busy: "Đợi thay đổi bảo vệ thẻ hoàn tất rồi thử lại."
   restore: "Khôi phục bản sao lưu"
-  restore_confirm: "Thay thế TẤT CẢ người dùng, thẻ, tệp đính kèm và quyền bằng bản sao lưu này? Cardfile sẽ tạo bản sao an toàn và khởi động lại. Đăng nhập bằng tài khoản và mật khẩu đã khôi phục. Các bộ sưu tập không được hợp nhất."
+  restore_confirm: "Thay thế TẤT CẢ người dùng, thẻ, tệp đính kèm và quyền bằng bản sao lưu này? NoteChest sẽ tạo bản sao an toàn và khởi động lại. Đăng nhập bằng tài khoản và mật khẩu đã khôi phục. Các bộ sưu tập không được hợp nhất."
   retention: "Số bản sao tự động cần giữ"

@@ -1,0 +1,27 @@
+[package]
+name = "notechest-editor"
+description = "WYSIWYG rich text editor for NoteChest, built on GPUI"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+notechest-doc.workspace = true
+unicode-segmentation.workspace = true
+unicode-bidi.workspace = true
+notechest-i18n.workspace = true
+gpui-kit.workspace = true
+notechest-media.workspace = true
+image.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+pretty_assertions.workspace = true
+gpui-pre = { workspace = true, features = ["test-support"] }

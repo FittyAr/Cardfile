@@ -1,16 +1,16 @@
 _version: 1
 
 app:
-  data_missing: "データフォルダー %{path} が見つかりません。そのフォルダーがあるドライブを接続して、Cardfile を再起動してください。既定のフォルダーに戻す場合は %{pointer} を削除してください。"
-  synced_folder: "ノートは %{service} で同期されているフォルダーにあります。開いているデータベースを同期すると、破損したり競合コピーが作られたりすることがあります。別のパソコンで使う前に Cardfile を閉じるか、データを同期フォルダーの外に置いてください。"
+  data_missing: "データフォルダー %{path} が見つかりません。そのフォルダーがあるドライブを接続して、NoteChest を再起動してください。既定のフォルダーに戻す場合は %{pointer} を削除してください。"
+  synced_folder: "ノートは %{service} で同期されているフォルダーにあります。開いているデータベースを同期すると、破損したり競合コピーが作られたりすることがあります。別のパソコンで使う前に NoteChest を閉じるか、データを同期フォルダーの外に置いてください。"
   unsaved_quit:
     title: "最後の変更が保存されていません"
     body: "開いているカードを保存できませんでした: %{error}。今終了すると、最後に保存してからの変更は失われます。"
     quit: "保存せずに終了"
-  name: Cardfile
+  name: NoteChest
   db_error_body: "データベース %{path} を開けませんでした：%{error}"
   open_keymap_failed: "キーマップファイルを開けませんでした: %{error}"
-  db_error_title: "Cardfile のデータベースを開けません"
+  db_error_title: "NoteChest のデータベースを開けません"
 test:
   greeting: "こんにちは、%{name}さん！"
 
@@ -146,17 +146,17 @@ wizard:
     finish: 完了
   welcome:
     language: "言語"
-    title: Cardfile へようこそ
+    title: NoteChest へようこそ
     body: "メモやアイデア、残しておきたいことをまとめるデジタルカードファイルです。数ステップで設定しましょう。"
   storage:
     standard: 標準
     standard_desc: "データはユーザープロファイルに保存されます:"
     portable: ポータブル
-    portable_desc: データは Cardfile の隣の「data」フォルダーに保存されるので、USB メモリーで持ち運べます。
+    portable_desc: データは NoteChest の隣の「data」フォルダーに保存されるので、USB メモリーで持ち運べます。
     portable_unavailable: プログラムのフォルダーに書き込めないため、ポータブルモードは利用できません。
   security:
     none: パスワードなし
-    none_desc: Cardfile がそのまま開きます。個人用のパソコンに最適です。
+    none_desc: NoteChest がそのまま開きます。個人用のパソコンに最適です。
     single: パスワード
     single_desc: パスワードで保護された 1 つのアカウント。
     multi: 複数ユーザー
@@ -177,7 +177,7 @@ wizard:
   finish:
     intro: "準備が整いました:"
     later: これらはすべて後から設定で変更できます。
-    start: Cardfile を使い始める
+    start: NoteChest を使い始める
   error:
     username: ユーザー名を入力してください。
     password_short: パスワードは 4 文字以上にしてください。
@@ -187,7 +187,7 @@ wizard:
 login:
   title: サインイン
   register_title: アカウントを作成
-  locked_title: "Cardfile はロックされています、%{name}さん"
+  locked_title: "NoteChest はロックされています、%{name}さん"
   username: ユーザー名
   display_name: 表示名
   password: パスワード
@@ -202,11 +202,11 @@ login:
     taken: そのユーザー名はすでに使われています。
 
 welcome:
-  title: Cardfile へようこそ
+  title: NoteChest へようこそ
   body: |
     ## はじめに
 
-    Cardfile はメモを**カード**として保存します。**+** ボタンまたは **Ctrl+N** で作成できます。
+    NoteChest はメモを**カード**として保存します。**+** ボタンまたは **Ctrl+N** で作成できます。
 
     - ツールバーやショートカットで書式を設定できます: **Ctrl+B** 太字、*Ctrl+I* 斜体、Ctrl+U 下線。
     - `# ` で見出し、`- ` で箇条書き、`[] ` でチェックリストになります。
@@ -333,7 +333,7 @@ menu:
   backup: 今すぐバックアップ
   open_data_folder: データフォルダーを開く
   check_updates: 更新を確認
-  about: Cardfile について
+  about: NoteChest について
   lock: ロック
   sign_out: サインアウト
   quit: 終了
@@ -343,19 +343,19 @@ palette:
 
 updates:
   title: 更新があります
-  available: "Cardfile %{version} が利用可能です。クリックしてダウンロードしてください。"
+  available: "NoteChest %{version} が利用可能です。クリックしてダウンロードしてください。"
   latest: 最新バージョンをお使いです。
   failed: "更新を確認できませんでした: %{error}"
   managed: このインストールの更新は、お使いのアプリストアまたはパッケージマネージャーが管理しています。
-  dialog_title: "Cardfile %{version} が利用可能です"
+  dialog_title: "NoteChest %{version} が利用可能です"
   current: "現在のバージョンは %{version} です。"
   install: "更新して再起動"
   later: "後で"
   open_page: "リリースページ"
   downloading: "ダウンロード中… %{mb} MB"
   installing: "インストール中…"
-  installed_restart: "更新がインストールされました。Cardfile を再起動すると使用できます。"
-  manual: "この Cardfile は自動で更新できません。リリースページから新しいバージョンをダウンロードしてください。"
+  installed_restart: "更新がインストールされました。NoteChest を再起動すると使用できます。"
+  manual: "この NoteChest は自動で更新できません。リリースページから新しいバージョンをダウンロードしてください。"
 
 about:
   description: メモのためのモダンなデジタルカードファイル。
@@ -433,10 +433,10 @@ settings:
     mask_hint: タイトルの残りの部分は一覧で伏せられます。
     lock_modes: 利用できる保護レベル
     auth_mode: サインインモード
-    auth_mode_hint: このコンピューターで Cardfile を開く方法です。
+    auth_mode_hint: このコンピューターで NoteChest を開く方法です。
     auth_one_user: 単一アカウントのモードに切り替える前に、ほかのユーザーアカウントを削除してください。
     auth_needs_password: 先に下でパスワードを設定してください。
-    auth_changed: サインインモードを変更しました。次回 Cardfile を起動したときに適用されます。
+    auth_changed: サインインモードを変更しました。次回 NoteChest を起動したときに適用されます。
     change_password: パスワードを変更
     lock_password: ロック用パスワード
     password_hint: このパスワードでプライベートカードと暗号化カードのロックを解除します。変更すると、暗号化カードは再暗号化されます。
@@ -459,11 +459,11 @@ settings:
     invalid: ユーザー名と 4 文字以上のパスワードを入力してください。
   data:
     moved: "既定の場所から移動したカスタムフォルダー。"
-    command_line: "Cardfile の起動時に --data-dir で指定されたフォルダー。"
+    command_line: "NoteChest の起動時に --data-dir で指定されたフォルダー。"
     location: データフォルダー
     portable: ポータブルモードが有効です。
     standard: 標準モードです。
-    files: "カードと設定は cardfile.db に、ショートカットは keymap.json に保存され、どちらもこのフォルダーにあります。すべてを残すにはフォルダーごとコピーまたは同期してください。"
+    files: "カードと設定は notechest.db に、ショートカットは keymap.json に保存され、どちらもこのフォルダーにあります。すべてを残すにはフォルダーごとコピーまたは同期してください。"
     export: エクスポート
     export_hint: プライベートまたは暗号化されていないすべてのカードをエクスポートします。
   group:
@@ -535,7 +535,7 @@ ai:
     encrypted_note: "暗号化カードはどの AI にも提供されません。"
   mcp:
     title: "AI クライアント用 MCP サーバー"
-    hint: "Claude、Cursor、VS Code などの AI アプリが、Cardfile を開いている間このコンピューター上でのみ（127.0.0.1）Cardfile を利用できるようにします。クライアントごとに API キーが必要です。行われた変更は、あなたに代わって Cardfile AI が行ったものとして記録されます。"
+    hint: "Claude、Cursor、VS Code などの AI アプリが、NoteChest を開いている間このコンピューター上でのみ（127.0.0.1）NoteChest を利用できるようにします。クライアントごとに API キーが必要です。行われた変更は、あなたに代わって NoteChest AI が行ったものとして記録されます。"
     enable: "MCP サーバーを実行"
     port: "ポート"
     bad_port: "1024 から 65535 までのポート番号を使用してください。"
@@ -544,7 +544,7 @@ ai:
     stopped: "停止中"
   keys:
     title: "API キー"
-    hint: "キーを使うと、AI クライアントが Cardfile AI として、あなたがアクセスできる内容を閲覧・変更できます。いつでも取り消せます。"
+    hint: "キーを使うと、AI クライアントが NoteChest AI として、あなたがアクセスできる内容を閲覧・変更できます。いつでも取り消せます。"
     name_placeholder: "キー名（例: Claude Desktop）"
     default_name: "AI クライアント"
     create: "キーを作成"
@@ -569,7 +569,7 @@ ai:
     cloud_title: "クラウドサービス"
     cloud_hint: "プロバイダーが運用する高性能なモデルです。アカウントと API キーが必要です。"
     local_title: "このコンピューター上"
-    local_hint: "無料でプライベート: アプリをインストールしてモデルをダウンロードすれば、Cardfile が接続します。"
+    local_hint: "無料でプライベート: アプリをインストールしてモデルをダウンロードすれば、NoteChest が接続します。"
     custom: "その他の互換サービス"
     custom_hint: "OpenAI 互換の任意の URL"
     connect: "%{name} に接続"
@@ -578,7 +578,7 @@ ai:
     model_hint: "提案されたモデルから始めるのがおすすめです。「接続をテスト」を押すと、お使いのアカウントで利用できるモデルも読み込まれます。"
     local_steps: "アプリが起動していて、少なくとも 1 つのモデルがダウンロード済みであることを確認してください。API キーは不要です。"
     advanced: "詳細設定（サーバー URL と API 形式）"
-    no_keyring: "システムの資格情報マネージャーを利用できないため、API キーは Cardfile のデータベースに保存されます。"
+    no_keyring: "システムの資格情報マネージャーを利用できないため、API キーは NoteChest のデータベースに保存されます。"
 
 chat:
   report: "報告"
@@ -635,17 +635,17 @@ data_operations:
   move_tooltip: "データベース、バックアップ、設定を別のフォルダーにコピーし、今後はそのフォルダーを使う"
   move: "データフォルダーを移動"
   choose_move: "データフォルダーの移動先を選択"
-  move_confirm: "Cardfile はデータベース、そのバックアップ、設定を %{path} にコピーし、そのフォルダーを使って再起動します。現在のフォルダーはそのまま残ります。新しいフォルダーにすべてあることを確認したら、ご自身で削除してください。"
+  move_confirm: "NoteChest はデータベース、そのバックアップ、設定を %{path} にコピーし、そのフォルダーを使って再起動します。現在のフォルダーはそのまま残ります。新しいフォルダーにすべてあることを確認したら、ご自身で削除してください。"
   move_unavailable: "ポータブル版のデータフォルダーや、--data-dir で指定したフォルダーはここから移動できません。"
   admin_required: "コレクション全体をバックアップできるのは管理者だけです。"
   backups: "データベースのバックアップ"
   busy: "コレクションを準備しています。お待ちください…"
   choose_backup: "バックアップ先フォルダーを選択"
-  choose_portable: "Cardfile portable を作成する親フォルダーを選択"
-  choose_restore: "Cardfile データベースのバックアップを選択"
+  choose_portable: "NoteChest portable を作成する親フォルダーを選択"
+  choose_restore: "NoteChest データベースのバックアップを選択"
   contents: "バックアップにはすべてのユーザー、添付ファイル、暗号化カードが含まれます。既存の暗号化は維持されますが、暗号化されていない内容は暗号化されません。システムの資格情報ストア内の AI キーは含まれません。"
   daily: "毎日の自動バックアップ"
-  daily_hint: "Cardfile を開いている間、24 時間ごとにバックアップします。未実行のバックアップはログイン後に行い、利用できない保存先は毎時間再試行します。"
+  daily_hint: "NoteChest を開いている間、24 時間ごとにバックアップします。未実行のバックアップはログイン後に行い、利用できない保存先は毎時間再試行します。"
   default_backup: "既定のフォルダーを使用"
   destination_exists: "保存先は既に存在します。別の親フォルダーを選択してください。既存のデータは上書きされません。"
   failed: "操作に失敗しました：%{error}"
@@ -653,9 +653,9 @@ data_operations:
   nested_destination: "使用中のデータフォルダーとプログラムの辞書フォルダー以外を選択してください。"
   open_backup: "バックアップフォルダーを開く"
   portable: "ポータブルコピーを作成"
-  portable_confirm: "すべてのユーザー、カード、添付ファイルを新しい 'Cardfile portable' フォルダーにコピーしますか？コピーでは MCP と自動バックアップが無効になります。別のパソコンではシステムストアに保存された AI キーを再入力してください。パソコンを切り替える前に Cardfile を閉じ、OneDrive の同期完了を待ってください。"
-  portable_unsupported: "ストアまたはパッケージ管理されたインストールをコピーするには、https://github.com/FittyAr/Cardfile/releases からポータブル版アーカイブをダウンロードしてください。"
+  portable_confirm: "すべてのユーザー、カード、添付ファイルを新しい 'NoteChest portable' フォルダーにコピーしますか？コピーでは MCP と自動バックアップが無効になります。別のパソコンではシステムストアに保存された AI キーを再入力してください。パソコンを切り替える前に NoteChest を閉じ、OneDrive の同期完了を待ってください。"
+  portable_unsupported: "ストアまたはパッケージ管理されたインストールをコピーするには、https://github.com/FittyAr/NoteChest/releases からポータブル版アーカイブをダウンロードしてください。"
   protection_busy: "カードの保護設定の変更が完了してから、もう一度お試しください。"
   restore: "バックアップを復元"
-  restore_confirm: "すべてのユーザー、カード、添付ファイル、権限をこのバックアップで置き換えますか？Cardfile は安全のためのコピーを作成し、再起動します。復元したアカウントとパスワードでログインしてください。コレクションは結合されません。"
+  restore_confirm: "すべてのユーザー、カード、添付ファイル、権限をこのバックアップで置き換えますか？NoteChest は安全のためのコピーを作成し、再起動します。復元したアカウントとパスワードでログインしてください。コレクションは結合されません。"
   retention: "保存する自動バックアップ数"

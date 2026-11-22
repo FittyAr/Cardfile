@@ -1,6 +1,6 @@
-# Verifying Cardfile downloads
+# Verifying NoteChest downloads
 
-Every file attached to a [release](https://github.com/FittyAr/Cardfile/releases) comes with a
+Every file attached to a [release](https://github.com/FittyAr/NoteChest/releases) comes with a
 [minisign](https://jedisct1.github.io/minisign/) signature (`<file>.minisig`) and is listed in `SHA256SUMS`.
 
 ## Public key
@@ -9,13 +9,13 @@ Every file attached to a [release](https://github.com/FittyAr/Cardfile/releases)
 RWSEWpMd7tkiGAaQwVFXiSYyfV6ODYRttbEFQ/WBOTzrbMB1diAfrG+w
 ```
 
-The same key is built into Cardfile (`cardfile-updater`): the app only announces a new version
+The same key is built into NoteChest (`notechest-updater`): the app only announces a new version
 when that release's `SHA256SUMS` is signed with it.
 
 ## Verify a file
 
 ```bash
-minisign -Vm Cardfile-2.0.0-setup-x64.exe -P RWSEWpMd7tkiGAaQwVFXiSYyfV6ODYRttbEFQ/WBOTzrbMB1diAfrG+w
+minisign -Vm NoteChest-2.0.0-setup-x64.exe -P RWSEWpMd7tkiGAaQwVFXiSYyfV6ODYRttbEFQ/WBOTzrbMB1diAfrG+w
 ```
 
 Or check the checksum:
@@ -25,7 +25,7 @@ sha256sum -c SHA256SUMS --ignore-missing
 ```
 
 ```powershell
-Get-FileHash Cardfile-2.0.0-setup-x64.exe -Algorithm SHA256
+Get-FileHash NoteChest-2.0.0-setup-x64.exe -Algorithm SHA256
 ```
 
 ## About code signing on Windows

@@ -1,8 +1,8 @@
-; Cardfile Windows installer (Inno Setup 7).
+; NoteChest Windows installer (Inno Setup 7).
 ; Built in CI by .github/workflows/package.yml:
 ;   iscc /DAppVersion=2.0.0-beta.1 /DFileVersion=2.0.0 /DSourceDir=path\to\unzipped /DArch=x64 packaging\windows\installer.iss
 
-#define AppName "Cardfile"
+#define AppName "NoteChest"
 #ifndef AppVersion
   #define AppVersion "0.0.0"
 #endif
@@ -18,11 +18,11 @@
   #define SourceDir "..\..\target\release"
 #endif
 #define AppPublisher "FittyAr"
-#define AppURL "https://github.com/FittyAr/Cardfile"
-#define AppExeName "cardfile.exe"
+#define AppURL "https://github.com/FittyAr/NoteChest"
+#define AppExeName "notechest.exe"
 
 [Setup]
-; Keep this AppId: it identifies Cardfile for upgrades and uninstall (also for 1.x installs).
+; Keep this AppId: it identifies NoteChest for upgrades and uninstall (also for 1.x installs).
 AppId={{9F7B2D1D-53C4-496F-B339-2274DB737CE8}
 AppName={#AppName}
 AppVersion={#AppVersion}
@@ -40,7 +40,7 @@ PrivilegesRequiredOverridesAllowed=commandline
 Uninstallable=IsInstalled
 CreateUninstallRegKey=IsInstalled
 OutputDir=..\out
-OutputBaseFilename=Cardfile-{#AppVersion}-setup-{#Arch}
+OutputBaseFilename=NoteChest-{#AppVersion}-setup-{#Arch}
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
@@ -51,10 +51,10 @@ ArchitecturesInstallIn64BitMode=arm64
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 #endif
-SetupIconFile=cardfile.ico
+SetupIconFile=notechest.ico
 UninstallDisplayIcon={app}\{#AppExeName}
-WizardImageFile=..\..\assets\logo_trasparente.png
-WizardSmallImageFile=..\..\assets\logo_trasparente_1.png
+WizardImageFile=wizard-large.png
+WizardSmallImageFile=wizard-small.png
 LicenseFile=..\..\LICENSE-MIT
 CloseApplications=yes
 
@@ -81,17 +81,24 @@ Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: deskto
 
 [Run]
 Filename: "{app}\{#AppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(AppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
-; Cardfile's self-updater runs this installer with /VERYSILENT /RELAUNCH after quitting:
+; NoteChest's self-updater runs this installer with /VERYSILENT /RELAUNCH after quitting:
 ; start the app again, as the user who launched the update (not elevated).
 Filename: "{app}\{#AppExeName}"; Flags: nowait runasoriginaluser skipifnotsilent; Check: ShouldRelaunch
 
+[InstallDelete]
+; Before 2.0.0 the program was called Cardfile. Installing over it (same AppId) replaces
+; the program: remove the old executable and the shortcuts that pointed to it.
+Type: files; Name: "{app}\cardfile.exe"
+Type: files; Name: "{autoprograms}\Cardfile.lnk"
+Type: files; Name: "{autodesktop}\Cardfile.lnk"
+
 [UninstallDelete]
-; User data lives in %APPDATA%\FittyAr\Cardfile and is intentionally kept.
+; User data lives in %APPDATA%\FittyAr\NoteChest and is intentionally kept.
 Type: filesandordirs; Name: "{app}\dictionaries"
 Type: files; Name: "{app}\installed.flag"
 
 [CustomMessages]
-ModeTitle=Choose how to use Cardfile
+ModeTitle=Choose how to use NoteChest
 ModeDescription=Install on this computer or prepare a portable folder.
 ModePrompt=A portable folder can be placed on a USB drive or in OneDrive. It keeps its data beside the program.
 InstalledMode=Install on this computer (current user)
@@ -100,7 +107,7 @@ AllUsersMode=Install for all users (administrator)
 ModeConflict=This folder belongs to another installation mode. Choose a different folder. Existing data will not be converted or overwritten.
 PortableAdmin=A portable copy must be created without administrator privileges. Restart this installer normally.
 InvalidMode=Invalid /MODE. Use installed or portable.
-spanish.ModeTitle=Elegí cómo usar Cardfile
+spanish.ModeTitle=Elegí cómo usar NoteChest
 spanish.ModeDescription=Instalá en este equipo o prepará una carpeta portable.
 spanish.ModePrompt=La carpeta portable puede estar en un pendrive o en OneDrive. Los datos se guardan junto al programa.
 spanish.InstalledMode=Instalar en este equipo (usuario actual)
@@ -109,7 +116,7 @@ spanish.AllUsersMode=Instalar para todos los usuarios (administrador)
 spanish.ModeConflict=Esta carpeta pertenece a otro modo de instalación. Elegí otra carpeta. Los datos existentes no se convertirán ni sobrescribirán.
 spanish.PortableAdmin=La copia portable debe crearse sin permisos de administrador. Volvé a iniciar este instalador normalmente.
 spanish.InvalidMode=El valor de /MODE no es válido. Usá installed o portable.
-brazilianportuguese.ModeTitle=Escolha como usar o Cardfile
+brazilianportuguese.ModeTitle=Escolha como usar o NoteChest
 brazilianportuguese.ModeDescription=Instale neste computador ou prepare uma pasta portátil.
 brazilianportuguese.ModePrompt=A pasta portátil pode ficar em um pendrive ou no OneDrive. Os dados são salvos junto ao programa.
 brazilianportuguese.InstalledMode=Instalar neste computador (usuário atual)
@@ -118,7 +125,7 @@ brazilianportuguese.AllUsersMode=Instalar para todos os usuários (administrador
 brazilianportuguese.ModeConflict=Esta pasta pertence a outro modo de instalação. Escolha outra pasta. Os dados existentes não serão convertidos nem substituídos.
 brazilianportuguese.PortableAdmin=A cópia portátil deve ser criada sem privilégios de administrador. Reinicie este instalador normalmente.
 brazilianportuguese.InvalidMode=Valor inválido de /MODE. Use installed ou portable.
-french.ModeTitle=Choisissez comment utiliser Cardfile
+french.ModeTitle=Choisissez comment utiliser NoteChest
 french.ModeDescription=Installez sur cet ordinateur ou préparez un dossier portable.
 french.ModePrompt=Le dossier portable peut se trouver sur une clé USB ou dans OneDrive. Les données sont enregistrées à côté du programme.
 french.InstalledMode=Installer sur cet ordinateur (utilisateur actuel)
@@ -127,7 +134,7 @@ french.AllUsersMode=Installer pour tous les utilisateurs (administrateur)
 french.ModeConflict=Ce dossier correspond à un autre mode d’installation. Choisissez un autre dossier. Les données existantes ne seront ni converties ni écrasées.
 french.PortableAdmin=La copie portable doit être créée sans droits d’administrateur. Relancez cet installateur normalement.
 french.InvalidMode=Valeur /MODE incorrecte. Utilisez installed ou portable.
-german.ModeTitle=Wählen Sie, wie Sie Cardfile verwenden möchten
+german.ModeTitle=Wählen Sie, wie Sie NoteChest verwenden möchten
 german.ModeDescription=Auf diesem Computer installieren oder einen portablen Ordner erstellen.
 german.ModePrompt=Der portable Ordner kann auf einem USB-Stick oder in OneDrive liegen. Die Daten werden neben dem Programm gespeichert.
 german.InstalledMode=Auf diesem Computer installieren (aktueller Benutzer)
@@ -151,9 +158,9 @@ end;
 
 function DefaultDirectory(Param: String): String;
 begin
-  if SelectedMode = 'portable' then Result := ExpandConstant('{userdocs}\Cardfile portable')
-  else if IsAdminInstallMode then Result := ExpandConstant('{autopf}\Cardfile')
-  else Result := ExpandConstant('{localappdata}\Programs\FittyAr\Cardfile');
+  if SelectedMode = 'portable' then Result := ExpandConstant('{userdocs}\NoteChest portable')
+  else if IsAdminInstallMode then Result := ExpandConstant('{autopf}\NoteChest')
+  else Result := ExpandConstant('{localappdata}\Programs\FittyAr\NoteChest');
 end;
 
 function InitializeSetup: Boolean;
@@ -194,11 +201,11 @@ begin
     else SelectedMode := 'installed';
     if (LastMode <> SelectedMode) and (ExpandConstant('{param:DIR|}') = '') then begin
       if SelectedMode = 'portable' then
-        WizardForm.DirEdit.Text := ExpandConstant('{userdocs}\Cardfile portable')
+        WizardForm.DirEdit.Text := ExpandConstant('{userdocs}\NoteChest portable')
       else if IsAdminInstallMode then
-        WizardForm.DirEdit.Text := ExpandConstant('{autopf}\Cardfile')
+        WizardForm.DirEdit.Text := ExpandConstant('{autopf}\NoteChest')
       else
-        WizardForm.DirEdit.Text := ExpandConstant('{localappdata}\Programs\FittyAr\Cardfile');
+        WizardForm.DirEdit.Text := ExpandConstant('{localappdata}\Programs\FittyAr\NoteChest');
     end;
     LastMode := SelectedMode;
   end;
@@ -229,7 +236,7 @@ var
 begin
   Result := '';
   Destination := ExpandConstant('{app}');
-  HasPortable := FileExists(Destination + '\portable.flag') or FileExists(Destination + '\data\cardfile.db');
+  HasPortable := FileExists(Destination + '\portable.flag') or FileExists(Destination + '\data\notechest.db');
   HasInstalled := FileExists(Destination + '\installed.flag') or FileExists(Destination + '\unins000.exe');
   if ((SelectedMode = 'portable') and HasInstalled) or
      ((SelectedMode = 'installed') and HasPortable) then
@@ -240,13 +247,13 @@ procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if CurStep = ssPostInstall then begin
     if SelectedMode = 'portable' then
-      SaveStringToFile(ExpandConstant('{app}\portable.flag'), 'Cardfile portable' + #13#10, False)
+      SaveStringToFile(ExpandConstant('{app}\portable.flag'), 'NoteChest portable' + #13#10, False)
     else
-      SaveStringToFile(ExpandConstant('{app}\installed.flag'), 'Cardfile installed' + #13#10, False);
+      SaveStringToFile(ExpandConstant('{app}\installed.flag'), 'NoteChest installed' + #13#10, False);
   end;
 end;
 
-// True when the command line has /RELAUNCH (added by cardfile-updater).
+// True when the command line has /RELAUNCH (added by notechest-updater).
 function ShouldRelaunch: Boolean;
 var
   I: Integer;

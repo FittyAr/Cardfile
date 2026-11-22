@@ -8,12 +8,12 @@
   IgnorableNamespaces="uap rescap desktop6">
   <Identity Name="@IDENTITY_NAME@" Publisher="@PUBLISHER@" Version="@VERSION@" ProcessorArchitecture="@ARCH@" />
   <Properties>
-    <DisplayName>Cardfile</DisplayName>
+    <DisplayName>NoteChest</DisplayName>
     <PublisherDisplayName>@PUBLISHER_DISPLAY_NAME@</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
     <Description>A modern digital card file for your notes.</Description>
     <!-- The notes database, its WAL, the lock file and the backups live in
-         %APPDATA%\FittyAr\Cardfile. With write virtualization on, files the packaged
+         %APPDATA%\FittyAr\NoteChest. With write virtualization on, files the packaged
          app creates there go to a private per-package folder that Windows deletes on
          uninstall, and a copy installed another way would use a different WAL and
          lock for the same database. Requires the unvirtualizedResources capability. -->
@@ -46,9 +46,9 @@
     <Resource Language="zh-cn" />
   </Resources>
   <Applications>
-    <Application Id="Cardfile" Executable="cardfile.exe" EntryPoint="Windows.FullTrustApplication">
+    <Application Id="NoteChest" Executable="notechest.exe" EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
-        DisplayName="Cardfile"
+        DisplayName="NoteChest"
         Description="A modern digital card file for your notes."
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"

@@ -1,4 +1,4 @@
-# Cardfile 2.0 — Plan de reescritura en Rust + GPUI
+# NoteChest 2.0 — Plan de reescritura en Rust + GPUI
 
 > Estado: **aprobado** · Fecha: 2026-10-14 · Versión objetivo inicial: `2.0.0-alpha.1`
 
@@ -17,7 +17,7 @@ alcance debe reflejarse aquí primero.
 | 4 | Funcionalidades | Todas: etiquetas/categorías, imágenes embebidas, adjuntos, exportación (Markdown, HTML, PDF, JSON), favoritos/fijadas, orden manual, historial de versiones. |
 | 5 | Búsqueda | Texto completo (título + contenido) con resaltado; alcance configurable (solo título / título + contenido / incluir etiquetas). |
 | 6 | Papelera | Se mantiene (borrado lógico, restaurar, vaciar). |
-| 7 | Importación | No se importa Flet, `.crd` ni backups JSON. Se admite restaurar una copia SQLite completa de Cardfile, validada y con respaldo previo obligatorio; no se combinan colecciones. |
+| 7 | Importación | No se importa Flet, `.crd` ni backups JSON. Se admite restaurar una copia SQLite completa de NoteChest, validada y con respaldo previo obligatorio; no se combinan colecciones. |
 | 8 | Temas | Se portan los 9 temas actuales, se crean nuevos y se soportan temas JSON externos. |
 | 9 | Idiomas | Se desarrolla **solo en inglés**, con infraestructura i18n completa desde el día 1 (ningún string de UI hardcodeado). La traducción se hará al final. |
 | 10 | Modo portable | Se mantiene. |
@@ -38,13 +38,13 @@ alcance debe reflejarse aquí primero.
 | 26 | Flujo Git | Conventional Commits, ramas + PR contra `main`. |
 | 27 | Archivos de agente | Solo `AGENTS.md`. |
 | 28 | Firma | Sin certificado pago. Microsoft Store firma el MSIX. Artefactos de release firmados con **minisign**. |
-| 29 | Store / winget | Cuenta de Partner Center existente. ID winget: `FittyAr.Cardfile`. |
+| 29 | Store / winget | Cuenta de Partner Center existente. ID winget: `FittyAr.NoteChest`. |
 | 30 | Linux | Primero `.deb`, `.rpm`, AppImage; luego Flathub y AUR. |
 | 31 | Actualizaciones | Aviso in-app de nueva versión (sin auto-instalar). Deshabilitado en builds de Store/winget/repos. |
 | 32 | Telemetría | Ninguna. |
 | 33 | Bloqueo por usuario | Cada usuario tiene su **contraseña de bloqueo** (por defecto, la de inicio de sesión; puede ser distinta) y un par de claves X25519. Cada tarjeta cifrada tiene una **clave aleatoria propia**, envuelta para cada usuario con acceso (formato v2). Cambiar la contraseña solo re-sella la clave secreta del usuario. Las tarjetas v1 se migran al desbloquearlas o al cambiar la contraseña. |
 | 34 | Compartir | El dueño comparte una tarjeta con otros usuarios como **ver** o **editar** (modo multiusuario). Sección "Compartidas conmigo". Solo el dueño borra, protege, etiqueta o vuelve a compartir. Las cifradas se comparten envolviendo su clave para el destinatario. |
-| 35 | Usuario IA y auditoría | Existe una cuenta `cardfile-ai` (tipo `ai`, sin login). Todo cambio guarda `updated_by`, el autor de cada revisión y una entrada en `activity` (actor, en nombre de quién, vía qué API key o "chat"). La IA ve exactamente lo que ve el usuario que le dio acceso. |
+| 35 | Usuario IA y auditoría | Existe una cuenta `notechest-ai` (tipo `ai`, sin login). Todo cambio guarda `updated_by`, el autor de cada revisión y una entrada en `activity` (actor, en nombre de quién, vía qué API key o "chat"). La IA ve exactamente lo que ve el usuario que le dio acceso. |
 | 36 | MCP | Servidor MCP **HTTP (Streamable HTTP) dentro de la app**, solo en `127.0.0.1`, activable en Settings → IA, puerto configurable (7337). Autenticación con **API keys** por usuario (hash BLAKE3), con opciones *solo lectura* y *permitir privadas*; nunca cifradas. |
 | 37 | Asistente IA | Presets para OpenAI, Anthropic, Gemini, Mistral, Groq, DeepSeek, xAI, OpenRouter, Together, Perplexity, Azure OpenAI, Ollama, LM Studio y personalizados. Panel de chat con herramientas (buscar, leer, crear, reescribir, editar texto, etiquetar, favoritos/fijadas, reordenar, papelera). Aplica cambios directo: revisión previa en el historial y borrados a la papelera. Toda la UI de IA se oculta hasta configurar un servicio. |
 | 38 | Multimedia | Reproducción inline solo de audio libre de patentes: MP3, WAV, OGG/Vorbis y FLAC. El video, el AAC/M4A y los demás formatos se abren con el reproductor del sistema; si ninguna aplicación puede abrirlos, la app se lo informa al usuario. Sin códecs con patentes (H.264, AAC). |
@@ -52,8 +52,8 @@ alcance debe reflejarse aquí primero.
 | 40 | Escrituras | CJK en UI y PDF (fuente de respaldo del sistema). RTL: el editor reordena los glifos según el algoritmo bidi Unicode y alinea a la derecha los párrafos RTL; etiquetas de UI en orden visual (con formas de presentación árabes); HTML con `dir="rtl"`. Límite: los inputs de una línea de gpui-component siguen mostrando RTL de izquierda a derecha. |
 | 41 | Traducciones | 21 idiomas, todos salvo el inglés hechos con IA; los README lo indican y piden reportes. |
 | 42 | Barra de título | Propia, al estilo de Zed: decoraciones del cliente (`TitleBar` de gpui-component), menú de la app, ícono y título; controles de ventana dibujados por la app en Windows y Linux. |
-| 43 | Tipografía | **Inter** (texto e interfaz) y **JetBrains Mono** (código), OFL 1.1, incrustadas en el binario (`cardfile-doc::fonts`) y usadas también en el PDF. CJK/árabe/hebreo usan fuentes del sistema como respaldo. |
-| 44 | Logo | Rediseño plano (fichas apiladas con pestaña, paleta coral) en SVG (`assets/brand/`); todos los PNG/ICO se generan con `scripts/render_brand.py`. |
+| 43 | Tipografía | **Inter** (texto e interfaz) y **JetBrains Mono** (código), OFL 1.1, incrustadas en el binario (`notechest-doc::fonts`) y usadas también en el PDF. CJK/árabe/hebreo usan fuentes del sistema como respaldo. |
+| 44 | Logo | Marca NoteChest (2026-11-22): monograma NC en papel plegado (coral/durazno), PNG con transparencia en `assets/brand/notechest/`; `python assets/brand/notechest/export.py` genera todos los tamaños (PNG, WebP, ICO) y copia a `packaging/` los iconos de Windows y Linux, las imágenes del MSIX y las del instalador. Sustituye al logo anterior (fichas apiladas), cuyos SVG y script se eliminaron. |
 | 45 | Claves de IA | Las API keys de los servicios de IA se guardan en el almacén de credenciales del sistema (`keyring`: Credential Manager / Secret Service); si no está disponible, en la base con aviso. |
 | 46 | Configuración | Diálogo amplio con barra lateral agrupada (App, Privacidad y seguridad, IA, Datos); la IA se divide en Servicios, Asistente y Apps de IA (MCP). Alta de servicios guiada: elegir proveedor (nube/local) → API key → modelo → nombre; opciones avanzadas plegadas. |
 | 47 | Imágenes | Redimensionables con manijas: esquina mantiene proporción; bordes derecho/inferior estiran libremente (`Image.height`). |
@@ -62,7 +62,7 @@ alcance debe reflejarse aquí primero.
 ### 1.1 ¿Por qué no un fork de Zed?
 
 - **Licencia**: GPUI es Apache-2.0, pero la mayoría de los crates de Zed (`editor`, `workspace`,
-  `project`, …) son **GPL-3.0 / AGPL-3.0**. Un fork obligaría a licenciar Cardfile como GPL.
+  `project`, …) son **GPL-3.0 / AGPL-3.0**. Un fork obligaría a licenciar NoteChest como GPL.
 - **Tamaño**: Zed tiene 200+ crates (LSP, colaboración, terminal, IA, extensiones). Recortarlo y
   mantenerlo sincronizado cuesta más que construir sobre GPUI.
 - **gpui-component** (Longbridge, Apache-2.0) ya aporta 60+ widgets, temas, dock, render de
@@ -108,11 +108,11 @@ registran en `Cargo.lock`. Valores verificados al 2026-10-14:
 | Licencias | `cargo-deny`, `cargo-about` | última | MIT OR Apache-2.0 |
 | Changelog | `git-cliff` | última | MIT OR Apache-2.0 |
 
-\* **MPL-2.0** es copyleft débil a nivel de archivo: compatible con distribuir Cardfile bajo
+\* **MPL-2.0** es copyleft débil a nivel de archivo: compatible con distribuir NoteChest bajo
 MIT/Apache siempre que no modifiquemos los archivos de `spellbook`. Se aprueba como excepción
 explícita en `deny.toml`; si se prefiere evitarlo, alternativa: implementación propia sobre
 listas de palabras (más pobre). Lo mismo aplica a los crates de `symphonia` (decodificación de
-audio en `cardfile-media`), usados sin modificar. El video, el AAC/M4A y cualquier otro formato
+audio en `notechest-media`), usados sin modificar. El video, el AAC/M4A y cualquier otro formato
 quedan fuera de alcance (se evitan los códecs con patentes): la UI los abre con el reproductor del
 sistema. Nunca ffmpeg, GStreamer ni libvlc.
 
@@ -122,7 +122,7 @@ sistema. Nunca ffmpeg, GStreamer ni libvlc.
   `BSD-3-Clause`, `ISC`, `Zlib`, `Unicode-3.0`, `CC0-1.0`, `MPL-2.0` (solo crates listados y sin modificar:
   `spellbook`; `symphonia`, `symphonia-core`, `symphonia-common`, `symphonia-metadata`,
   `symphonia-bundle-flac`, `symphonia-bundle-mp3`, `symphonia-codec-pcm`,
-  `symphonia-codec-vorbis`, `symphonia-format-ogg`, `symphonia-format-riff` [decodificación de audio, `cardfile-media`]; y transitivas `cbindgen`
+  `symphonia-codec-vorbis`, `symphonia-format-ogg`, `symphonia-format-riff` [decodificación de audio, `notechest-media`]; y transitivas `cbindgen`
   [build], `dwrote` [GPUI], `option-ext` [`directories`]).
   **GPL/AGPL/LGPL prohibidas.** `cargo deny check` corre en CI y bloquea el merge.
 - `cargo about generate` produce `THIRD_PARTY_LICENSES.html` en cada release y se incluye en los
@@ -137,23 +137,23 @@ sistema. Nunca ffmpeg, GStreamer ni libvlc.
 ### 3.1 Workspace
 
 ```
-Cardfile/
+NoteChest/
 ├─ Cargo.toml                 # [workspace], dependencias compartidas, perfiles
 ├─ rust-toolchain.toml        # channel = "stable"
 ├─ crates/
-│  ├─ cardfile/               # bin: entrypoint, wiring, CLI args (--portable, --data-dir)
-│  ├─ cardfile-core/          # dominio puro: entidades, servicios, errores, traits de repos
-│  ├─ cardfile-db/            # Diesel: schema.rs, migraciones, impl de repositorios
-│  ├─ cardfile-crypto/        # argon2, cifrado de tarjetas, manejo de claves en memoria
-│  ├─ cardfile-doc/           # modelo de documento + exportadores (md, html, pdf, json)
-│  ├─ cardfile-editor/        # widget GPUI del editor WYSIWYG
-│  ├─ cardfile-ui/            # vistas GPUI: shell, lista, wizard, settings, diálogos
-│  ├─ cardfile-i18n/          # carga de locales (en.yml) + macro t!()
-│  ├─ cardfile-media/         # reproducción inline de audio MP3/WAV/OGG/FLAC (sin GPUI)
-│  ├─ cardfile-ai/            # cliente LLM bloqueante: presets, formatos de API, tool calling
-│  ├─ cardfile-mcp/           # servidor MCP Streamable HTTP (tiny_http), herramientas vía trait
-│  ├─ cardfile-agent/         # herramientas de la IA sobre la DB (compartidas por MCP y chat)
-│  └─ cardfile-updater/       # chequeo de versión + verificación minisign
+│  ├─ notechest/               # bin: entrypoint, wiring, CLI args (--portable, --data-dir)
+│  ├─ notechest-core/          # dominio puro: entidades, servicios, errores, traits de repos
+│  ├─ notechest-db/            # Diesel: schema.rs, migraciones, impl de repositorios
+│  ├─ notechest-crypto/        # argon2, cifrado de tarjetas, manejo de claves en memoria
+│  ├─ notechest-doc/           # modelo de documento + exportadores (md, html, pdf, json)
+│  ├─ notechest-editor/        # widget GPUI del editor WYSIWYG
+│  ├─ notechest-ui/            # vistas GPUI: shell, lista, wizard, settings, diálogos
+│  ├─ notechest-i18n/          # carga de locales (en.yml) + macro t!()
+│  ├─ notechest-media/         # reproducción inline de audio MP3/WAV/OGG/FLAC (sin GPUI)
+│  ├─ notechest-ai/            # cliente LLM bloqueante: presets, formatos de API, tool calling
+│  ├─ notechest-mcp/           # servidor MCP Streamable HTTP (tiny_http), herramientas vía trait
+│  ├─ notechest-agent/         # herramientas de la IA sobre la DB (compartidas por MCP y chat)
+│  └─ notechest-updater/       # chequeo de versión + verificación minisign
 ├─ assets/                    # iconos, logos, temas JSON, keymaps, fuentes, diccionarios
 ├─ locales/en.yml
 ├─ packaging/
@@ -161,12 +161,12 @@ Cardfile/
 │  ├─ windows/msix/           # AppxManifest.xml + assets de Store
 │  └─ linux/                  # .desktop, metainfo AppStream, iconos, AppImage, flatpak
 ├─ docs/
-├─ scripts/                   # render_brand.py (iconos desde SVG), check_locales.py, …
+├─ scripts/                   # check_locales.py, gen-themes.py, …
 └─ .github/workflows/
 ```
 
 Dependencias permitidas entre crates (sin ciclos):
-`core` ← `db`, `crypto`, `doc` ← `editor` ← `ui` ← `cardfile` (bin). `core` no depende de GPUI ni de Diesel.
+`core` ← `db`, `crypto`, `doc` ← `editor` ← `ui` ← `notechest` (bin). `core` no depende de GPUI ni de Diesel.
 
 ### 3.2 Modelo de documento (lo que guarda el editor)
 
@@ -251,7 +251,7 @@ Preparada para sincronización futura: PK `UUIDv7` (texto/blob), `created_at`, `
     para re-cifrar), solo se borra su clave envuelta.
 - Settings permite habilitar/deshabilitar cada nivel y elegir el nivel por defecto.
 
-### 3.5 Editor WYSIWYG (`cardfile-editor`) — módulo de mayor riesgo
+### 3.5 Editor WYSIWYG (`notechest-editor`) — módulo de mayor riesgo
 
 Componente propio sobre primitivas de texto de GPUI (`TextLayout`, `ShapedLine`,
 `InputHandler` para IME), sin código GPL de Zed:
@@ -281,15 +281,15 @@ Se valida con un **spike temprano** (Fase 1) antes de construir el resto de la U
 
 ### 3.7 Datos y configuración en disco
 
-- Estándar: carpeta `FittyAr/Cardfile`, compartida por todas las apps FittyAr: Windows
-  `%APPDATA%\FittyAr\Cardfile\data` (`directories::ProjectDirs`), Linux
-  `$XDG_DATA_HOME/FittyAr/Cardfile` (`~/.local/share` si no está), macOS
-  `~/Library/Application Support/FittyAr/Cardfile`. La carpeta anterior (`$XDG_DATA_HOME/cardfile`,
-  `ar.FittyAr.Cardfile` en macOS) se renombra al arrancar: nunca se borra ni se mezcla, y si no se
+- Estándar: carpeta `FittyAr/NoteChest`, compartida por todas las apps FittyAr: Windows
+  `%APPDATA%\FittyAr\NoteChest\data` (`directories::ProjectDirs`), Linux
+  `$XDG_DATA_HOME/FittyAr/NoteChest` (`~/.local/share` si no está), macOS
+  `~/Library/Application Support/FittyAr/NoteChest`. La carpeta anterior (`$XDG_DATA_HOME/notechest`,
+  `ar.FittyAr.NoteChest` en macOS) se renombra al arrancar: nunca se borra ni se mezcla, y si no se
   puede mover se sigue usando.
 - Portable: si existe `portable.flag` (o `--portable`) junto al ejecutable, o ya hay un
-  `data/cardfile.db` junto a él (carpeta copiada o sincronizada, p. ej. en OneDrive), todo va en `./data`.
-- Archivos: `cardfile.db` (incluye toda la configuración: global en `app_settings`, preferencias en
+  `data/notechest.db` junto a él (carpeta copiada o sincronizada, p. ej. en OneDrive), todo va en `./data`.
+- Archivos: `notechest.db` (incluye toda la configuración: global en `app_settings`, preferencias en
   cada usuario), `keymap.json`, `themes/`, `logs/`, `backups/`. No hay `settings.toml`.
 
 ---
@@ -315,7 +315,7 @@ Se valida con un **spike temprano** (Fase 1) antes de construir el resto de la U
 |----------|-----------|------|
 | `ci.yml` | PR y push a `main` | fmt, clippy, test (matriz Windows/Linux), `cargo deny`, título de PR semántico |
 | `release.yml` | tag `v*` | generado/ampliado desde `dist`: build por target, archivos, instaladores shell/PowerShell, Inno Setup, MSIX, `.deb`, `.rpm`, AppImage, `SHA256SUMS`, firma minisign, licencias de terceros, GitHub Release con changelog `git-cliff` |
-| `winget.yml` | llamado por `release.yml` (post-announce job, con la release ya publicada) | `winget-releaser` → PR a `microsoft/winget-pkgs` para `FittyAr.Cardfile` (requiere PAT `WINGET_TOKEN`; la primera versión se envía a mano) |
+| `winget.yml` | llamado por `release.yml` (post-announce job, con la release ya publicada) | `winget-releaser` → PR a `microsoft/winget-pkgs` para `FittyAr.NoteChest` (requiere PAT `WINGET_TOKEN`; la primera versión se envía a mano) |
 | `store.yml` | manual / release estable | sube el MSIX a Partner Center (`msstore` CLI; secretos de Azure AD de Partner Center) |
 
 Targets: `x86_64-pc-windows-msvc`, `aarch64-pc-windows-msvc`, `x86_64-unknown-linux-gnu`,
@@ -324,13 +324,13 @@ Targets: `x86_64-pc-windows-msvc`, `aarch64-pc-windows-msvc`, `x86_64-unknown-li
 ### 5.2 Instalación con un comando
 
 ```powershell
-irm https://raw.githubusercontent.com/FittyAr/Cardfile/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/FittyAr/NoteChest/main/install.ps1 | iex
 ```
 ```bash
-curl -fsSL https://raw.githubusercontent.com/FittyAr/Cardfile/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/FittyAr/NoteChest/main/install.sh | sh
 ```
 ```powershell
-winget install FittyAr.Cardfile
+winget install FittyAr.NoteChest
 ```
 
 `install.ps1` e `install.sh` (raíz del repo, servidos desde `main`) no están atados a una versión:
@@ -339,13 +339,13 @@ no hay una estable posterior; `-Stable`/`--stable` y `-Version`/`--version` lo c
 el SHA-256 contra el `SHA256SUMS` firmado y las firmas minisign (minisign oficial descargado y
 fijado por SHA-256 si no está instalado), y crean los accesos directos:
 - **Windows**: `install.ps1` descarga y verifica el instalador Inno Setup `.exe` de la arquitectura.
-  Delega la instalación por usuario a `%LOCALAPPDATA%\Programs\FittyAr\Cardfile`, accesos y
+  Delega la instalación por usuario a `%LOCALAPPDATA%\Programs\FittyAr\NoteChest`, accesos y
   desinstalación en Inno. `-Portable -Destination <carpeta>` prepara una copia sin registro, PATH
   ni accesos. La migración retira registros anteriores solamente tras instalar correctamente;
   conserva carpetas y datos existentes.
-- **Linux**: `~/.local/lib/FittyAr/Cardfile` + enlace `~/.local/bin/cardfile`, `.desktop` en
+- **Linux**: `~/.local/lib/FittyAr/NoteChest` + enlace `~/.local/bin/notechest`, `.desktop` en
   `~/.local/share/applications`, íconos hicolor y acceso en el escritorio (`xdg-user-dir`).
-Migran la instalación anterior de cargo-dist (`~/.cardfile/bin`). Inspirado en el instalador de
+Migran la instalación anterior de cargo-dist (`~/.notechest/bin`). Inspirado en el instalador de
 Pairee (mismo autor).
 
 ### 5.3 Firma
@@ -362,7 +362,7 @@ Consulta las releases de GitHub al arrancar (configurable, desactivable), compar
 (canal por usuario: Latest sigue la designación de GitHub; Prerelease incluye versiones de prueba) y solo anuncia releases cuyo
 `SHA256SUMS` lleva una firma minisign válida de la clave embebida (`PUBLIC_KEY`).
 
-Actualización automática (`cardfile-updater`, sin GPUI, funciones bloqueantes en el executor de
+Actualización automática (`notechest-updater`, sin GPUI, funciones bloqueantes en el executor de
 fondo), al estilo de Zed (solo ideas; nada de su código GPL):
 
 1. **Tipo de instalación** (`InstallKind::detect`): Store/MSIX (`WindowsApps`), gestor de
@@ -378,14 +378,14 @@ fondo), al estilo de Zed (solo ideas; nada de su código GPL):
    firma `.minisig` propia del asset (comentario de confianza con tag y nombre de archivo).
    Cualquier diferencia cancela la instalación.
 4. **Instalación**: archivo → se desempaqueta junto al exe y cada archivo incluido reemplaza al
-   instalado (en Windows el exe en uso se renombra a `cardfile.exe.old`, borrado en el siguiente
+   instalado (en Windows el exe en uso se renombra a `notechest.exe.old`, borrado en el siguiente
    arranque por `cleanup_after_update`; en Linux, rename atómico). AppImage → se reemplaza el
    archivo (temporal + chmod + rename). Inno Setup → se ejecuta el instalador con
    `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RELAUNCH` y la app sale; el
    instalador la vuelve a abrir (`[Run]` con `/RELAUNCH`).
 5. **Reinicio**: `restart(exe)` lanza el nuevo ejecutable con los mismos argumentos y la app sale.
 
-Feature `update-check` en `cardfile-ui` para desactivarlo en builds de tienda/paquete.
+Feature `update-check` en `notechest-ui` para desactivarlo en builds de tienda/paquete.
 
 ---
 
@@ -405,18 +405,18 @@ Cada fase termina con PR(s) mergeados, CI verde y criterios de aceptación cumpl
    `rustfmt.toml`, `clippy.toml`, `deny.toml`, `about.toml`, `cliff.toml`, `LICENSE-MIT`,
    `LICENSE-APACHE` (FittyAr), `README.md` + `README.es.md`, `AGENTS.md`, `CONTRIBUTING.md`,
    `docs/CREDITS.md`, `.github/` (ci.yml, plantillas de PR/issue, dependabot para cargo y actions).
-5. Workspace con todos los crates vacíos; el bin abre una ventana GPUI "Hello Cardfile".
+5. Workspace con todos los crates vacíos; el bin abre una ventana GPUI "Hello NoteChest".
 - **Aceptación**: `cargo build` en Windows y Linux en CI, `cargo deny` verde.
 
 ### Fase 1 — Spike del editor (riesgo técnico)
-- Prototipo en `cardfile-editor`: párrafos + headings + bold/italic, cursor, selección con
+- Prototipo en `notechest-editor`: párrafos + headings + bold/italic, cursor, selección con
   mouse/teclado, IME, undo/redo, copy/paste de texto plano, varios miles de palabras sin lag.
 - **Aceptación**: demo funcional en `examples/` y documento corto con decisiones/límites.
   Si el enfoque no escala, se replantea aquí, no después.
 
 ### Fase 2 — Núcleo de datos
-- `cardfile-core` (entidades, servicios, traits), `cardfile-db` (schema, migraciones, repos, FTS5,
-  triggers, backups), `cardfile-doc` (modelo + serialización + `plain_text`).
+- `notechest-core` (entidades, servicios, traits), `notechest-db` (schema, migraciones, repos, FTS5,
+  triggers, backups), `notechest-doc` (modelo + serialización + `plain_text`).
 - **Aceptación**: tests de repos y de búsqueda; ida y vuelta JSON del documento.
 
 ### Fase 3 — Shell de la aplicación
@@ -449,7 +449,7 @@ Cada fase termina con PR(s) mergeados, CI verde y criterios de aceptación cumpl
 - en_US y es_ES vienen en todos los paquetes. Los demás idiomas de la interfaz con diccionario
   Hunspell (de, fa, fr, it, ko, nl, pl, pt-BR, ru, uk, vi) se descargan a pedido desde Ajustes, del
   mismo commit fijado de `wooorm/dictionaries` y verificados con SHA-256, a la carpeta de datos del
-  usuario. No forman parte de la distribución de Cardfile (algunos son GPL; los baja el usuario).
+  usuario. No forman parte de la distribución de NoteChest (algunos son GPL; los baja el usuario).
 - Al cambiar el idioma de la interfaz se elige el diccionario de ese idioma si está instalado; se
   puede elegir otro en Ajustes → Editor.
 
@@ -552,7 +552,7 @@ Pendiente (el seguimiento vivo está en el tablero Cardscape "Cardfile 2"; ver `
   ni extracción de credenciales del sistema. MCP y programación desactivados en la copia.
 - Todas las operaciones se serializan; un bloqueo del sistema operativo por DB impide dos
   procesos locales sobre la misma colección. No es un bloqueo entre equipos sincronizados.
-- OneDrive: cerrar Cardfile y esperar a que termine de sincronizar antes de usar otro equipo;
+- OneDrive: cerrar NoteChest y esperar a que termine de sincronizar antes de usar otro equipo;
   no se incorpora sincronización simultánea. Pendrive: cerrar antes de extraer.
 
 
@@ -581,7 +581,7 @@ se actualiza a 0.33.0 (0.34.0 genera rutas inválidas para los jobs personalizad
 
 El empaquetado Windows usa Inno Setup 7.1.1, descargado de la release oficial con SHA-256
 fijado y extraído en modo portable dentro de la carpeta de herramientas del build.
-El mismo script compila los instaladores de CI y release; no requiere instalar Cardfile
+El mismo script compila los instaladores de CI y release; no requiere instalar NoteChest
 ni registrar el compilador en el equipo del mantenedor.
 
 ### Corrección de traducciones y selección de canal (2026-11-04)
@@ -619,7 +619,7 @@ ni registrar el compilador en el equipo del mantenedor.
   no está, se centra en el principal.
 - *Configuración → Datos → Mover…* (administradores): copia una instantánea consistente de la
   base y el resto de la carpeta de datos (respaldos, temas, atajos, diccionarios, preferencias
-  locales) a `<elegida>/Cardfile`, vía carpeta temporal y `rename`, y reinicia. La carpeta
+  locales) a `<elegida>/NoteChest`, vía carpeta temporal y `rename`, y reinicia. La carpeta
   anterior no se toca. La nueva ruta se guarda en `data-location.txt` dentro de la carpeta de
   configuración del usuario; si falta la carpeta apuntada, se muestra un error al iniciar en
   vez de abrir el asistente. No disponible en modo portable ni con `--data-dir`.
@@ -628,3 +628,23 @@ ni registrar el compilador en el equipo del mantenedor.
   tiene un selector de idioma en la bienvenida. El idioma elegido queda en la cuenta, y el
   corrector usa ese idioma si su diccionario está instalado. Los nombres de idioma en árabe y
   persa se muestran en orden visual (también en Configuración).
+
+### Renombrado a NoteChest y 2.0.0 estable (2026-11-22)
+
+- El nombre «Cardfile» ya estaba tomado en la Microsoft Store: el proyecto, los crates
+  (`notechest-*`), el binario, el id de aplicación (`ar.fittyar.NoteChest`), los paquetes, los
+  textos de los 21 idiomas y el repositorio (`FittyAr/NoteChest`) pasan a llamarse **NoteChest**.
+  Producto reservado en Partner Center: `NoteChest`, Store ID `9P52V0PJCKFD`, identidad
+  `30176FittyDev.NoteChest` (variables del repo `MSIX_*` y `STORE_PRODUCT_ID`).
+- Lo que los usuarios ya tienen en disco se **adopta**, no se pierde: la carpeta de datos
+  `FittyAr/Cardfile` → `FittyAr/NoteChest` (también su puntero de «Mover…»), `cardfile.db` →
+  `notechest.db` (se pliega el WAL y se renombra un solo archivo, con el bloqueo antiguo tomado
+  para no pisar una versión vieja abierta), los respaldos `cardfile-…` siguen contando en la
+  retención, las claves de IA del almacén de credenciales se trasladan al servicio nuevo y el
+  usuario de IA conserva su cuenta. Las constantes criptográficas **no** cambian.
+- Los instaladores (Inno, `install.ps1`, `install.sh`) reemplazan una instalación previa de
+  Cardfile y quitan sus archivos y accesos directos. Las actualizaciones desde la app no cruzan el
+  cambio de nombre (las betas buscan los nombres viejos): se instala NoteChest una vez.
+- Marca nueva (monograma NC en papel plegado). Pendiente de tu parte: DNS de
+  `notechest.fitty.ar` para el sitio (hoy sigue en `cardfile.fitty.ar`) y renombrar la carpeta
+  local del repositorio.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate assets/themes/cardfile.json (gpui-component theme format).
+"""Generate assets/themes/notechest.json (gpui-component theme format).
 
 Each theme is described by a small base palette; every component color is derived
 from it so all themes stay consistent. Run: python scripts/gen-themes.py
@@ -19,7 +19,7 @@ THEMES = [
     ("Lavender", "light", "#7C3AED", "#FFFFFF", "#A78BFA", "#FAF5FF", "#F3E8FF", "#FFFFFF", "#3B0764", "#6D28D9"),
     ("Ocean", "dark", "#2E8BC0", "#FFFFFF", "#B1D4E0", "#001C2E", "#00111D", "#0A2A43", "#E8F1F8", "#8FB5CC"),
     ("Graphite", "dark", "#9CA3AF", "#111827", "#FBBF24", "#111827", "#0B1220", "#1F2937", "#F9FAFB", "#9CA3AF"),
-    # New in Cardfile 2
+    # New in NoteChest
     ("Paper", "light", "#8B5E34", "#FFFFFF", "#D4A373", "#FBF8F1", "#F3EDE0", "#FFFDF8", "#3D3426", "#7A6A55"),
     ("Solarized Light", "light", "#268BD2", "#FDF6E3", "#2AA198", "#FDF6E3", "#EEE8D5", "#FDF6E3", "#586E75", "#93A1A1"),
     ("Solarized Dark", "dark", "#268BD2", "#FDF6E3", "#2AA198", "#002B36", "#00212B", "#073642", "#EEE8D5", "#93A1A1"),
@@ -143,11 +143,11 @@ def theme(name, mode, primary, primary_fg, accent, bg, sidebar, surface, text, s
 
 def main():
     out = {
-        "name": "Cardfile",
+        "name": "NoteChest",
         "author": "FittyAr",
         "themes": [theme(*t) for t in THEMES],
     }
-    path = pathlib.Path(__file__).resolve().parent.parent / "assets" / "themes" / "cardfile.json"
+    path = pathlib.Path(__file__).resolve().parent.parent / "assets" / "themes" / "notechest.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(out, indent=2) + "\n", encoding="utf-8")
     print(f"wrote {len(THEMES)} themes to {path}")

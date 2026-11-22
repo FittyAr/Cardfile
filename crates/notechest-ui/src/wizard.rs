@@ -1,0 +1,813 @@
+//! First-run wizard: storage location, sign-in mode, card protection and theme.
+
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::checkbox::Checkbox;
+use gpui_kit::component::input::{Input, InputState};
+use gpui_kit::component::radio::{Radio, RadioGroup};
+use gpui_kit::component::{ActiveTheme as _, Disableable as _, h_flex, v_flex};
+use gpui_kit::prelude::FluentBuilder as _;
+use gpui_kit::{
+    AppContext as _, Context, Entity, EventEmitter, InteractiveElement as _, IntoElement,
+    ParentElement as _, Render, SharedString, StatefulInteractiveElement as _, Styled as _, Window,
+    div, img, px,
+};
+use notechest_core::{AppSettings, AuthMode, LockMode, NewCard, UserSettings};
+use notechest_db::Database;
+use notechest_i18n::t;
+
+use crate::lock_picker::{PROTECTIONS, lock_choices, lock_description, lock_label};
+use crate::paths::DataPaths;
+use crate::state::{AppState, Session};
+use crate::widgets::{error, field, hint};
+
+pub enum WizardEvent {
+    Finished(Box<Session>),
+    /// The chosen location already holds a set-up database (now in [`AppState`]):
+    /// sign in to it instead of creating another account.
+    UseExisting,
+}
+
+/// What the storage step shows; found on the background executor (it touches the
+/// file system) when the wizard opens.
+struct StorageInfo {
+    portable_available: bool,
+    standard_path: String,
+}
+
+/// Where the wizard puts the database, decided in the background in [`Wizard::finish`].
+enum Location {
+    Created(
+        DataPaths,
+        Database,
+        AppSettings,
+        Box<Session>,
+        crate::local_config::LocalConfig,
+    ),
+    Existing(
+        DataPaths,
+        Database,
+        AppSettings,
+        crate::local_config::LocalConfig,
+    ),
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+enum Step {
+    Welcome,
+    Storage,
+    Security,
+    Protection,
+    Appearance,
+    Finish,
+}
+
+pub struct Wizard {
+    steps: Vec<Step>,
+    step: usize,
+    portable: bool,
+    auth: AuthMode,
+    allow_registration: bool,
+    lock_modes: Vec<LockMode>,
+    default_lock: LockMode,
+    theme: SharedString,
+    /// Interface language, preselected from the system and changeable on the first
+    /// screen; saved as the new account's language.
+    language: String,
+    username: Entity<InputState>,
+    display_name: Entity<InputState>,
+    password: Entity<InputState>,
+    confirm: Entity<InputState>,
+    error: Option<SharedString>,
+    busy: bool,
+    storage: Option<StorageInfo>,
+    _storage_task: Option<gpui_kit::Task<()>>,
+}
+
+impl EventEmitter<WizardEvent> for Wizard {}
+
+impl Wizard {
+    fn switch_preferences(
+        paths: &DataPaths,
+        mut config: crate::local_config::LocalConfig,
+        cx: &mut Context<Self>,
+    ) {
+        use crate::local_config::LocalPreferences;
+        if cx.global::<LocalPreferences>().root == paths.root {
+            return;
+        }
+        config.window = LocalPreferences::snapshot(cx).window;
+        cx.set_global(LocalPreferences {
+            root: paths.root.clone(),
+            config: std::sync::Arc::new(parking_lot::Mutex::new(config)),
+            writer: Default::default(),
+            generation: Default::default(),
+        });
+        LocalPreferences::change(cx, |_| {});
+    }
+
+    /// `ask_storage` is false when a database already exists.
+    pub fn new(ask_storage: bool, window: &mut Window, cx: &mut Context<Self>) -> Self {
+        let ask_storage = ask_storage && !DataPaths::storage_preselected();
+        let mut steps = vec![Step::Welcome];
+        if ask_storage {
+            steps.push(Step::Storage);
+        }
+        steps.extend([
+            Step::Security,
+            Step::Protection,
+            Step::Appearance,
+            Step::Finish,
+        ]);
+        let input =
+            |placeholder: String, masked: bool, window: &mut Window, cx: &mut Context<Self>| {
+                cx.new(|cx| {
+                    InputState::new(window, cx)
+                        .placeholder(placeholder)
+                        .masked(masked)
+                })
+            };
+        let current_user = whoami_name();
+        let storage_task = ask_storage.then(|| {
+            let task = cx.background_spawn(async {
+                StorageInfo {
+                    portable_available: DataPaths::portable_available(),
+                    standard_path: DataPaths::standard().root.display().to_string(),
+                }
+            });
+            cx.spawn(async move |this, cx| {
+                let info = task.await;
+                let _ = this.update(cx, |this, cx| {
+                    this.storage = Some(info);
+                    cx.notify();
+                });
+            })
+        });
+        Self {
+            steps,
+            step: 0,
+            portable: AppState::get(cx).paths.portable,
+            auth: AuthMode::NoPassword,
+            allow_registration: false,
+            lock_modes: LockMode::ALL[1..].to_vec(),
+            default_lock: LockMode::None,
+            theme: crate::themes::DEFAULT_THEME.into(),
+            language: notechest_i18n::locale(),
+            username: {
+                let s = input(t("wizard.security.username"), false, window, cx);
+                s.update(cx, |s, cx| s.set_value(current_user.clone(), window, cx));
+                s
+            },
+            display_name: {
+                let s = input(t("wizard.security.display_name"), false, window, cx);
+                s.update(cx, |s, cx| s.set_value(current_user, window, cx));
+                s
+            },
+            password: input(t("wizard.security.password"), true, window, cx),
+            confirm: input(t("wizard.security.confirm"), true, window, cx),
+            error: None,
+            busy: false,
+            storage: None,
+            _storage_task: storage_task,
+        }
+    }
+
+    /// Switch the interface language while the wizard runs. Placeholders are set when
+    /// an input is created, so the inputs are rebuilt (keeping what was typed).
+    fn set_language(&mut self, code: String, window: &mut Window, cx: &mut Context<Self>) {
+        notechest_i18n::set_locale(&code);
+        self.language = code;
+        let rebuild = |old: &Entity<InputState>,
+                       key: &str,
+                       masked: bool,
+                       window: &mut Window,
+                       cx: &mut Context<Self>| {
+            let value = old.read(cx).value().to_string();
+            let input = cx.new(|cx| {
+                InputState::new(window, cx)
+                    .placeholder(t(key))
+                    .masked(masked)
+            });
+            input.update(cx, |s, cx| s.set_value(value, window, cx));
+            input
+        };
+        self.username = rebuild(
+            &self.username,
+            "wizard.security.username",
+            false,
+            window,
+            cx,
+        );
+        self.display_name = rebuild(
+            &self.display_name,
+            "wizard.security.display_name",
+            false,
+            window,
+            cx,
+        );
+        self.password = rebuild(&self.password, "wizard.security.password", true, window, cx);
+        self.confirm = rebuild(&self.confirm, "wizard.security.confirm", true, window, cx);
+        self.error = None;
+        cx.notify();
+        window.refresh();
+    }
+
+    fn current(&self) -> Step {
+        self.steps[self.step]
+    }
+
+    fn validate(&mut self, cx: &mut Context<Self>) -> bool {
+        self.error = None;
+        if self.current() == Step::Security {
+            let pw = self.password.read(cx).value().to_string();
+            let confirm = self.confirm.read(cx).value().to_string();
+            let user = self.username.read(cx).value().trim().to_string();
+            let needs_pw = self.auth != AuthMode::NoPassword;
+            if self.auth == AuthMode::MultiUser && user.is_empty() {
+                self.error = Some(t("wizard.error.username").into());
+            } else if needs_pw && pw.chars().count() < 4 {
+                self.error = Some(t("wizard.error.password_short").into());
+            } else if (needs_pw || !pw.is_empty()) && pw != confirm {
+                self.error = Some(t("wizard.error.password_mismatch").into());
+            } else if !pw.is_empty() && pw.chars().count() < 4 {
+                self.error = Some(t("wizard.error.password_short").into());
+            }
+        }
+        self.error.is_none()
+    }
+
+    fn next(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if !self.validate(cx) {
+            cx.notify();
+            return;
+        }
+        if self.step + 1 < self.steps.len() {
+            self.step += 1;
+        } else {
+            self.finish(window, cx);
+        }
+        cx.notify();
+    }
+
+    fn back(&mut self, cx: &mut Context<Self>) {
+        self.error = None;
+        self.step = self.step.saturating_sub(1);
+        cx.notify();
+    }
+
+    fn finish(&mut self, _window: &mut Window, cx: &mut Context<Self>) {
+        if self.busy {
+            return;
+        }
+        self.busy = true;
+        let current = AppState::get(cx).paths.clone();
+        let (want_portable, asked) = (self.portable, self.steps.contains(&Step::Storage));
+        let app = AppSettings {
+            initialized: true,
+            auth_mode: self.auth,
+            enabled_lock_modes: self.lock_modes.clone(),
+            allow_registration: self.allow_registration && self.auth == AuthMode::MultiUser,
+            ..AppSettings::default()
+        };
+        let password = self.password.read(cx).value().to_string();
+        let mut username = self.username.read(cx).value().trim().to_string();
+        let mut display = self.display_name.read(cx).value().trim().to_string();
+        if username.is_empty() {
+            username = whoami_name();
+        }
+        if display.is_empty() {
+            display = username.clone();
+        }
+        let auth = self.auth;
+        let mut settings = UserSettings {
+            theme: self.theme.to_string(),
+            default_lock_mode: self.default_lock,
+            language: self.language.clone(),
+            ..UserSettings::default()
+        };
+        let dictionary = crate::dictionaries::for_locale(&self.language);
+        let dictionary_dirs = crate::spell::search_dirs(cx);
+        let existing_db = AppState::get(cx).db.clone();
+        let task = cx.background_spawn(async move {
+            let (paths, db) = match existing_db {
+                Some(db) => (current, db),
+                None => {
+                    // The storage choice wins over how this run started (`--portable`,
+                    // a `portable.flag` next to the executable).
+                    let paths = if !asked || want_portable == current.portable {
+                        current
+                    } else if want_portable {
+                        DataPaths::make_portable()
+                            .map_err(|e| anyhow::anyhow!("{}: {e}", t("wizard.error.portable")))?
+                    } else {
+                        DataPaths::make_standard()
+                    };
+                    let existed = paths.has_database();
+                    let db = Database::open(&paths.db(), Some(&paths.backups()))?;
+                    if existed {
+                        // e.g. started portable, chose Standard, and NoteChest was
+                        // already set up there: use it, never add a second account.
+                        let app = db.app_settings()?;
+                        if app.initialized {
+                            let config = crate::local_config::LocalConfig::load(&paths.root);
+                            return anyhow::Ok(Location::Existing(paths, db, app, config));
+                        }
+                    }
+                    (paths, db)
+                }
+            };
+            // Spell-check in the chosen language when its dictionary is installed
+            // (English and Spanish ship with the app).
+            if let Some(code) = dictionary
+                && crate::spell::languages_in(&dictionary_dirs)
+                    .iter()
+                    .any(|l| l == code)
+            {
+                settings.spellcheck_language = code.to_owned();
+            }
+            let settings = settings;
+            let hash = if password.is_empty() {
+                None
+            } else {
+                Some(notechest_crypto::hash_password(&password)?)
+            };
+            let account_hash = if auth == AuthMode::NoPassword {
+                None
+            } else {
+                hash.clone()
+            };
+            let mut user = db.create_user(&username, &display, account_hash.as_deref(), true)?;
+            if auth == AuthMode::NoPassword && hash.is_some() {
+                db.set_lock_hash(user.id, hash.as_deref())?;
+                user = db.user(user.id)?;
+            }
+            // A key pair now, so cards can be shared with this user right away.
+            if !password.is_empty()
+                && let Some(updated) = crate::locks::ensure_keys(&db, &user, &password)?
+            {
+                user = updated;
+            }
+            db.save_user_settings(user.id, &settings)?;
+            db.save_app_settings(&app)?;
+            let welcome = crate::welcome::welcome_document();
+            db.create_card(
+                &notechest_core::Actor::user(user.id),
+                NewCard {
+                    title: notechest_i18n::t_raw("welcome.title"),
+                    plain_text: notechest_doc::to_plain_text(&welcome),
+                    content: welcome.to_json(),
+                    lock_mode: LockMode::None,
+                },
+            )?;
+            let config = crate::local_config::LocalConfig::load(&paths.root);
+            anyhow::Ok(Location::Created(
+                paths,
+                db,
+                app,
+                Box::new(Session { user, settings }),
+                config,
+            ))
+        });
+        cx.spawn(async move |this, cx| {
+            let result = task.await;
+            let _ = this.update(cx, |this, cx| {
+                this.busy = false;
+                match result {
+                    Ok(Location::Existing(paths, db, app, config)) => {
+                        Self::switch_preferences(&paths, config, cx);
+                        let state = AppState::get_mut(cx);
+                        state.paths = paths;
+                        state.db = Some(db);
+                        state.app = app;
+                        cx.emit(WizardEvent::UseExisting);
+                    }
+                    Ok(Location::Created(paths, db, app, session, config)) => {
+                        Self::switch_preferences(&paths, config, cx);
+                        let state = AppState::get_mut(cx);
+                        state.paths = paths;
+                        state.db = Some(db);
+                        state.app = app;
+                        cx.emit(WizardEvent::Finished(session));
+                    }
+                    Err(e) => {
+                        tracing::error!("wizard: {e:#}");
+                        this.error = Some(format!("{e}").into());
+                        cx.notify();
+                    }
+                }
+            });
+        })
+        .detach();
+    }
+
+    fn option_card(
+        id: &'static str,
+        title: String,
+        desc: String,
+        selected: bool,
+        cx: &Context<Self>,
+        on_click: impl Fn(&mut Self, &mut Context<Self>) + 'static,
+    ) -> impl IntoElement {
+        let th = cx.theme();
+        div()
+            .id(id)
+            .p(px(12.))
+            .rounded(px(8.))
+            .border_1()
+            .border_color(if selected { th.primary } else { th.border })
+            .when(selected, |d| d.bg(th.primary.opacity(0.08)))
+            .cursor_pointer()
+            .on_click(cx.listener(move |this, _, _, cx| {
+                on_click(this, cx);
+                cx.notify();
+            }))
+            .child(
+                div()
+                    .font_weight(gpui_kit::FontWeight::SEMIBOLD)
+                    .child(title),
+            )
+            .child(
+                div()
+                    .text_size(px(13.))
+                    .text_color(th.muted_foreground)
+                    .child(desc),
+            )
+    }
+
+    fn render_step(&mut self, window: &mut Window, cx: &mut Context<Self>) -> gpui_kit::AnyElement {
+        let _ = window;
+        match self.current() {
+            Step::Welcome => self.render_welcome(cx),
+            Step::Storage => self.render_storage(cx),
+            Step::Security => self.render_security(cx),
+            Step::Protection => self.render_protection(cx),
+            Step::Appearance => self.render_appearance(cx),
+            Step::Finish => self.render_finish(cx),
+        }
+    }
+
+    fn render_welcome(&self, cx: &Context<Self>) -> gpui_kit::AnyElement {
+        v_flex()
+            .gap(px(16.))
+            .items_center()
+            .child(img("notechest/logo.png").size(px(128.)))
+            .child(
+                div()
+                    .text_size(px(26.))
+                    .font_weight(gpui_kit::FontWeight::BOLD)
+                    .child(t("wizard.welcome.title")),
+            )
+            .child(
+                div()
+                    .text_center()
+                    .max_w(px(440.))
+                    .text_color(cx.theme().muted_foreground)
+                    .child(t("wizard.welcome.body")),
+            )
+            .child(self.render_language_picker(cx))
+            .into_any_element()
+    }
+
+    /// Language menu on the first screen, so the rest of the setup is in the user's
+    /// language. Names are shown in their own language.
+    fn render_language_picker(&self, cx: &Context<Self>) -> impl IntoElement {
+        use gpui_kit::component::menu::{DropdownMenu as _, PopupMenuItem};
+        let current = self.language.clone();
+        let view = cx.entity().downgrade();
+        h_flex()
+            .gap(px(8.))
+            .items_center()
+            .child(
+                div()
+                    .text_color(cx.theme().muted_foreground)
+                    .child(t("wizard.welcome.language")),
+            )
+            .child(
+                Button::new("wizard-language")
+                    .outline()
+                    .label(notechest_i18n::language_name(&current))
+                    .dropdown_caret(true)
+                    .dropdown_menu(move |mut menu, _, _| {
+                        for code in notechest_i18n::available_locales() {
+                            let view = view.clone();
+                            let name = notechest_i18n::language_name(&code);
+                            let checked = code == current;
+                            menu = menu.item(PopupMenuItem::new(name).checked(checked).on_click(
+                                move |_, window, cx| {
+                                    let code = code.clone();
+                                    let _ = view
+                                        .update(cx, |this, cx| this.set_language(code, window, cx));
+                                },
+                            ));
+                        }
+                        menu
+                    }),
+            )
+    }
+
+    fn render_storage(&self, cx: &Context<Self>) -> gpui_kit::AnyElement {
+        // Unknown for a moment while the wizard looks (in the background).
+        let loaded = self.storage.is_some();
+        let portable_ok = self.storage.as_ref().is_some_and(|s| s.portable_available);
+        let standard_path = self
+            .storage
+            .as_ref()
+            .map(|s| s.standard_path.clone())
+            .unwrap_or_default();
+        v_flex()
+            .gap(px(10.))
+            .child(Self::option_card(
+                "storage-standard",
+                t("wizard.storage.standard"),
+                format!("{} {}", t("wizard.storage.standard_desc"), standard_path),
+                !self.portable,
+                cx,
+                |this, _| this.portable = false,
+            ))
+            .when(portable_ok, |d| {
+                d.child(Self::option_card(
+                    "storage-portable",
+                    t("wizard.storage.portable"),
+                    t("wizard.storage.portable_desc"),
+                    self.portable,
+                    cx,
+                    |this, _| this.portable = true,
+                ))
+            })
+            .when(loaded && !portable_ok, |d| {
+                d.child(hint(t("wizard.storage.portable_unavailable"), cx))
+            })
+            .into_any_element()
+    }
+
+    fn render_security(&self, cx: &Context<Self>) -> gpui_kit::AnyElement {
+        let mut col = v_flex()
+            .gap(px(10.))
+            .child(Self::option_card(
+                "auth-none",
+                t("wizard.security.none"),
+                t("wizard.security.none_desc"),
+                self.auth == AuthMode::NoPassword,
+                cx,
+                |this, _| this.auth = AuthMode::NoPassword,
+            ))
+            .child(Self::option_card(
+                "auth-single",
+                t("wizard.security.single"),
+                t("wizard.security.single_desc"),
+                self.auth == AuthMode::SingleUser,
+                cx,
+                |this, _| this.auth = AuthMode::SingleUser,
+            ))
+            .child(Self::option_card(
+                "auth-multi",
+                t("wizard.security.multi"),
+                t("wizard.security.multi_desc"),
+                self.auth == AuthMode::MultiUser,
+                cx,
+                |this, _| this.auth = AuthMode::MultiUser,
+            ));
+        if self.auth == AuthMode::MultiUser {
+            col = col.child(
+                h_flex()
+                    .gap(px(8.))
+                    .child(div().flex_1().child(field(
+                        t("wizard.security.username"),
+                        Input::new(&self.username),
+                        cx,
+                    )))
+                    .child(div().flex_1().child(field(
+                        t("wizard.security.display_name"),
+                        Input::new(&self.display_name),
+                        cx,
+                    ))),
+            );
+        }
+        let pw_label = if self.auth == AuthMode::NoPassword {
+            t("wizard.security.lock_password")
+        } else {
+            t("wizard.security.password")
+        };
+        col = col.child(
+            h_flex()
+                .gap(px(8.))
+                .child(div().flex_1().child(field(
+                    pw_label,
+                    Input::new(&self.password).mask_toggle(),
+                    cx,
+                )))
+                .child(div().flex_1().child(field(
+                    t("wizard.security.confirm"),
+                    Input::new(&self.confirm).mask_toggle(),
+                    cx,
+                ))),
+        );
+        if self.auth == AuthMode::NoPassword {
+            col = col.child(hint(t("wizard.security.lock_password_hint"), cx));
+        }
+        if self.auth == AuthMode::MultiUser {
+            let allow = self.allow_registration;
+            col = col.child(
+                Checkbox::new("allow-registration")
+                    .label(t("wizard.security.allow_registration"))
+                    .checked(allow)
+                    .on_click(cx.listener(|this, checked: &bool, _, cx| {
+                        this.allow_registration = *checked;
+                        cx.notify();
+                    })),
+            );
+        }
+        col.into_any_element()
+    }
+
+    fn render_protection(&self, cx: &Context<Self>) -> gpui_kit::AnyElement {
+        let mut col = v_flex()
+            .gap(px(8.))
+            .child(hint(t("wizard.protection.intro"), cx));
+        for mode in PROTECTIONS {
+            let checked = self.lock_modes.contains(&mode);
+            col = col.child(
+                v_flex()
+                    .child(
+                        Checkbox::new(SharedString::from(format!("lock-{}", mode.as_str())))
+                            .label(lock_label(mode))
+                            .checked(checked)
+                            .on_click(cx.listener(move |this, on: &bool, _, cx| {
+                                if *on {
+                                    this.lock_modes.push(mode);
+                                } else {
+                                    this.lock_modes.retain(|m| *m != mode);
+                                    if this.default_lock == mode {
+                                        this.default_lock = LockMode::None;
+                                    }
+                                }
+                                cx.notify();
+                            })),
+                    )
+                    .child(div().pl(px(24.)).child(hint(lock_description(mode), cx))),
+            );
+        }
+        let options = lock_choices(&self.lock_modes, false);
+        let selected = options.iter().position(|m| *m == self.default_lock);
+        let mut group = RadioGroup::horizontal("default-lock").selected_index(selected);
+        for m in &options {
+            group = group.child(
+                Radio::new(SharedString::from(format!("default-{}", m.as_str())))
+                    .label(lock_label(*m)),
+            );
+        }
+        let opts = options.clone();
+        col = col.child(field(
+            t("wizard.protection.default"),
+            group.on_click(cx.listener(move |this, ix: &usize, _, cx| {
+                this.default_lock = opts.get(*ix).copied().unwrap_or_default();
+                cx.notify();
+            })),
+            cx,
+        ));
+        if self.lock_modes.iter().any(|m| m.hides_content())
+            && self.auth == AuthMode::NoPassword
+            && self.password.read(cx).value().is_empty()
+        {
+            col = col.child(hint(t("wizard.protection.needs_password"), cx));
+        }
+        col.into_any_element()
+    }
+
+    fn render_appearance(&self, cx: &Context<Self>) -> gpui_kit::AnyElement {
+        let mut grid = h_flex().flex_wrap().gap(px(8.));
+        for name in crate::themes::names(cx) {
+            let selected = name == self.theme;
+            let n = name.clone();
+            grid = grid.child(
+                Button::new(SharedString::from(format!("theme-{name}")))
+                    .label(name.clone())
+                    .when(selected, |b| b.primary())
+                    .when(!selected, |b| b.outline())
+                    .on_click(cx.listener(move |this, _, _, cx| {
+                        this.theme = n.clone();
+                        crate::themes::apply(&n, cx);
+                        cx.notify();
+                    })),
+            );
+        }
+        v_flex()
+            .gap(px(10.))
+            .child(hint(t("wizard.appearance.intro"), cx))
+            .child(grid)
+            .into_any_element()
+    }
+
+    fn render_finish(&self, cx: &Context<Self>) -> gpui_kit::AnyElement {
+        let auth = t(match self.auth {
+            AuthMode::NoPassword => "wizard.security.none",
+            AuthMode::SingleUser => "wizard.security.single",
+            AuthMode::MultiUser => "wizard.security.multi",
+        });
+        let storage = if self.portable {
+            t("wizard.storage.portable")
+        } else {
+            t("wizard.storage.standard")
+        };
+        v_flex()
+            .gap(px(6.))
+            .child(hint(t("wizard.finish.intro"), cx))
+            .child(format!("• {}: {storage}", t("wizard.step.storage")))
+            .child(format!("• {}: {auth}", t("wizard.step.security")))
+            .child(format!("• {}: {}", t("wizard.step.appearance"), self.theme))
+            .child(hint(t("wizard.finish.later"), cx))
+            .into_any_element()
+    }
+}
+
+fn step_title(step: Step) -> String {
+    t(match step {
+        Step::Welcome => "wizard.step.welcome",
+        Step::Storage => "wizard.step.storage",
+        Step::Security => "wizard.step.security",
+        Step::Protection => "wizard.step.protection",
+        Step::Appearance => "wizard.step.appearance",
+        Step::Finish => "wizard.step.finish",
+    })
+}
+
+/// The OS user name, used as the default account name.
+fn whoami_name() -> String {
+    std::env::var("USERNAME")
+        .or_else(|_| std::env::var("USER"))
+        .ok()
+        .filter(|s| !s.trim().is_empty())
+        .unwrap_or_else(|| "me".into())
+}
+
+impl Render for Wizard {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let step = self.current();
+        let last = self.step + 1 == self.steps.len();
+        let body = self.render_step(window, cx);
+        let th = cx.theme();
+        let mut dots = h_flex().gap(px(6.));
+        for (i, _) in self.steps.iter().enumerate() {
+            dots = dots.child(div().size(px(8.)).rounded_full().bg(if i <= self.step {
+                th.primary
+            } else {
+                th.border
+            }));
+        }
+        div()
+            .size_full()
+            .flex()
+            .items_center()
+            .justify_center()
+            .bg(th.background)
+            .text_color(th.foreground)
+            .child(
+                v_flex()
+                    .w(px(560.))
+                    .max_h_full()
+                    .gap(px(18.))
+                    .p(px(28.))
+                    .rounded(px(12.))
+                    .border_1()
+                    .border_color(th.border)
+                    .bg(th.popover)
+                    .child(
+                        h_flex()
+                            .justify_between()
+                            .items_center()
+                            .child(
+                                div()
+                                    .text_size(px(18.))
+                                    .font_weight(gpui_kit::FontWeight::SEMIBOLD)
+                                    .child(step_title(step)),
+                            )
+                            .child(dots),
+                    )
+                    .child(body)
+                    .child(error(self.error.as_ref(), cx))
+                    .child(
+                        h_flex()
+                            .justify_between()
+                            .child(
+                                Button::new("wizard-back")
+                                    .label(t("common.back"))
+                                    .ghost()
+                                    .disabled(self.step == 0 || self.busy)
+                                    .on_click(cx.listener(|this, _, _, cx| this.back(cx))),
+                            )
+                            .child(
+                                Button::new("wizard-next")
+                                    .label(if last {
+                                        t("wizard.finish.start")
+                                    } else {
+                                        t("common.next")
+                                    })
+                                    .primary()
+                                    .loading(self.busy)
+                                    .on_click(
+                                        cx.listener(|this, _, window, cx| this.next(window, cx)),
+                                    ),
+                            ),
+                    ),
+            )
+    }
+}

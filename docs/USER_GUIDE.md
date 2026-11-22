@@ -1,17 +1,17 @@
-# Cardfile user guide
+# NoteChest user guide
 
 Español: [GUIA_DE_USUARIO.md](GUIA_DE_USUARIO.md)
 
 ## First run
 
-The first time you start Cardfile, a short wizard opens in your system's language (you can
+The first time you start NoteChest, a short wizard opens in your system's language (you can
 pick another one on its first screen; it becomes your account's language) and asks four things:
 
 1. **Storage.**
    - *Standard* keeps your cards in your user profile.
-   - *Portable* keeps them in a `data` folder next to Cardfile, which is handy on a USB drive.
+   - *Portable* keeps them in a `data` folder next to NoteChest, which is handy on a USB drive.
 2. **Sign-in.**
-   - *No password*: Cardfile opens directly.
+   - *No password*: NoteChest opens directly.
    - *Password*: one account, protected by a password.
    - *Several users*: everyone signs in with their own name and password and has their own cards.
 3. **Card protection.** Choose which protection levels can be used (see [Protecting cards](#protecting-cards)).
@@ -70,11 +70,11 @@ Type `/` in an empty line to open a menu of blocks: headings, lists, table, imag
   - Right-click a table to add or remove rows and columns.
 - Click an image to show its handles: drag the **corner** to resize it keeping its proportions, or the **right** or **bottom** edge to stretch it. Right-click it to make it smaller, larger, fit the width or restore its proportions.
 - **Drag an image or attachment** to move it inside the card. Drop it on another card in the list to move it there; hold `Ctrl` (or `Alt`) while dropping to copy it instead.
-- **Audio plays inside the card.** MP3, WAV, OGG and FLAC audio get a player with play/pause, a seek bar and mute. Video, AAC/M4A and other formats open in your system player; if no application on your computer can open them, Cardfile tells you.
+- **Audio plays inside the card.** MP3, WAV, OGG and FLAC audio get a player with play/pause, a seek bar and mute. Video, AAC/M4A and other formats open in your system player; if no application on your computer can open them, NoteChest tells you.
 
 ### Other languages and scripts
 
-Chinese, Japanese and Korean text works everywhere, including PDF export (Cardfile uses a CJK font installed on your system). Right-to-left text (Hebrew, Arabic, Persian) is shown in the right order and right-to-left paragraphs are aligned to the right. Known limit: one-line text boxes (such as the card title while you edit it) still show right-to-left text left to right.
+Chinese, Japanese and Korean text works everywhere, including PDF export (NoteChest uses a CJK font installed on your system). Right-to-left text (Hebrew, Arabic, Persian) is shown in the right order and right-to-left paragraphs are aligned to the right. Known limit: one-line text boxes (such as the card title while you edit it) still show right-to-left text left to right.
 
 ### Spelling
 
@@ -103,35 +103,35 @@ In *No password* mode, set a **lock password** in Settings → Security before u
 
 **Every user has their own lock password.** By default it is your sign-in password; in Settings → Security you can set a different one (type your sign-in password as the new lock password to go back to one password). Changing it does not re-encrypt your cards: each encrypted card has its own random key, locked separately for every person who can open it.
 
-With a password or several users, Cardfile can also **lock itself** after a period of inactivity. Lock it now with `Ctrl+Shift+L`.
+With a password or several users, NoteChest can also **lock itself** after a period of inactivity. Lock it now with `Ctrl+Shift+L`.
 
 ## Sharing cards
 
 With several users (multi-user mode), open a card's **⋯** menu → *Share…* (or the people button) and choose, for each user, **No access**, **Can view** or **Can edit**. Shared cards appear under **Shared with me** in the sidebar. Only the owner can delete, protect, tag or share a card. People who can edit see who made the last change in the status bar and in the version history.
 
-To share an **encrypted** card, unlock it first. The other person opens it with *their own* lock password; they need to have signed in (or unlocked a protected card) once so that Cardfile created their keys.
+To share an **encrypted** card, unlock it first. The other person opens it with *their own* lock password; they need to have signed in (or unlocked a protected card) once so that NoteChest created their keys.
 
 ## AI assistant
 
-Cardfile can work with an AI, in the cloud or on your computer. Nothing AI-related appears until you set it up.
+NoteChest can work with an AI, in the cloud or on your computer. Nothing AI-related appears until you set it up.
 
 1. Open **Settings → AI → Add AI service** and pick a preset: OpenAI, Anthropic (Claude), Google Gemini, Mistral, Groq, DeepSeek, xAI, OpenRouter, Together AI, Perplexity, Azure OpenAI, **Ollama** or **LM Studio** (local), or *Custom* for any compatible service.
 2. Enter your API key (local services don't need one), choose a model and press **Test connection**.
 3. The **assistant button** (robot icon above the card list, or `Ctrl+Shift+A`) opens the chat panel.
 
-Ask in your own words: find cards, rewrite or format a card, turn notes into a checklist, add tags, mark favorites, reorder cards, move cards to the recycle bin… Every change is recorded as made by **Cardfile AI** on your behalf, the previous version is kept in the history, and deleted cards go to the recycle bin, so you can always undo. The assistant never sees encrypted cards; private cards only if you allow it in Settings → AI.
+Ask in your own words: find cards, rewrite or format a card, turn notes into a checklist, add tags, mark favorites, reorder cards, move cards to the recycle bin… Every change is recorded as made by **NoteChest AI** on your behalf, the previous version is kept in the history, and deleted cards go to the recycle bin, so you can always undo. The assistant never sees encrypted cards; private cards only if you allow it in Settings → AI.
 
-## Using Cardfile from other AI apps (MCP)
+## Using NoteChest from other AI apps (MCP)
 
-Cardfile includes an MCP server so AI apps such as Claude Desktop, Claude Code, Cursor or VS Code can use your cards while Cardfile is open.
+NoteChest includes an MCP server so AI apps such as Claude Desktop, Claude Code, Cursor or VS Code can use your cards while NoteChest is open.
 
 1. In **Settings → AI**, turn on **Run the MCP server** (it listens on `127.0.0.1` only; default port 7337).
 2. Under **API keys**, create a key. Choose *Read only* or *Allow private cards* if you want. Copy the key: it is shown only once, together with ready-to-paste settings for each AI app.
-3. The AI app sees exactly what you see. Its changes are recorded as made by Cardfile AI, through that key. **Revoke** a key to cut its access immediately. The list shows when each key was last used, and *Recent AI activity* shows what the AI changed.
+3. The AI app sees exactly what you see. Its changes are recorded as made by NoteChest AI, through that key. **Revoke** a key to cut its access immediately. The list shows when each key was last used, and *Recent AI activity* shows what the AI changed.
 
 ## Updates
 
-Cardfile checks for new versions at startup (Settings → General). When one is available, click the notice, read what's new and choose **Update and restart**: Cardfile downloads it, checks its signature and installs it. Copies installed from the Microsoft Store or a Linux package manager are updated by them instead.
+NoteChest checks for new versions at startup (Settings → General). When one is available, click the notice, read what's new and choose **Update and restart**: NoteChest downloads it, checks its signature and installs it. Copies installed from the Microsoft Store or a Linux package manager are updated by them instead.
 
 ## Export and backup
 
@@ -144,21 +144,21 @@ Cardfile checks for new versions at startup (Settings → General). When one is 
 ## Keyboard shortcuts and commands
 
 - `Ctrl+Shift+P` opens the **command palette**, which lists every command.
-- To change any shortcut, open Settings → General → *Keyboard shortcuts*. This opens `keymap.json`, which lists every action name. Restart Cardfile to apply your changes.
+- To change any shortcut, open Settings → General → *Keyboard shortcuts*. This opens `keymap.json`, which lists every action name. Restart NoteChest to apply your changes.
 
 ## Where are my files?
 
 Open the settings menu and choose **Open data folder**. Unless you use one of the options below, it is:
 
-- Windows: `%APPDATA%\FittyAr\Cardfile\data`
-- Linux: `~/.local/share/FittyAr/Cardfile` (`$XDG_DATA_HOME/FittyAr/Cardfile` when set)
-- macOS: `~/Library/Application Support/FittyAr/Cardfile`
+- Windows: `%APPDATA%\FittyAr\NoteChest\data`
+- Linux: `~/.local/share/FittyAr/NoteChest` (`$XDG_DATA_HOME/FittyAr/NoteChest` when set)
+- macOS: `~/Library/Application Support/FittyAr/NoteChest`
 
-Earlier versions used `~/.local/share/cardfile` on Linux and `~/Library/Application Support/ar.FittyAr.Cardfile` on macOS; Cardfile moves that folder to the new place the first time it starts. If it cannot be moved, Cardfile keeps using it.
+Earlier versions used `~/.local/share/notechest` on Linux and `~/Library/Application Support/ar.FittyAr.NoteChest` on macOS; NoteChest moves that folder to the new place the first time it starts. If it cannot be moved, NoteChest keeps using it.
 
 The folder contains:
 
-- `cardfile.db`: all your cards
+- `notechest.db`: all your cards
 - `backups/`: database backups
 - `logs/`: logs, which help with bug reports
 - `themes/`: extra themes, as gpui-component theme JSON files
@@ -166,25 +166,25 @@ The folder contains:
 
 Command line options:
 
-- `cardfile --portable` stores data next to the executable.
-- `cardfile --data-dir <folder>` uses any folder you choose.
+- `notechest --portable` stores data next to the executable.
+- `notechest --data-dir <folder>` uses any folder you choose.
 
 
 ## Portable folders and recovery
 
 The Windows setup offers **Install on this computer**, **Create a portable copy** and
 an explicit all-users installation. For portable use, choose a writable folder on a USB
- drive, OneDrive, or another local disk. Open `cardfile.exe` in that folder. Move the
+ drive, OneDrive, or another local disk. Open `notechest.exe` in that folder. Move the
 entire folder, including `portable.flag` and `data/`, together. ZIP downloads remain available.
 
 PowerShell uses the same verified setup executable:
 
 ```powershell
-& ([scriptblock]::Create((irm https://raw.githubusercontent.com/FittyAr/Cardfile/main/install.ps1))) -Portable -Destination "E:\Cardfile"
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/FittyAr/NoteChest/main/install.ps1))) -Portable -Destination "E:\NoteChest"
 ```
 
 To include an existing collection, an administrator can use **Settings → Data → Create
-portable copy**. Select the parent folder; Cardfile creates a new `Cardfile portable`
+portable copy**. Select the parent folder; NoteChest creates a new `NoteChest portable`
 subfolder and refuses to overwrite an existing destination. All accounts, cards,
 attachments, history and card encryption are retained. MCP and automatic backups are
 disabled in the copy. Re-enter AI keys stored in the original computer's credential store.
@@ -197,27 +197,27 @@ in; a missed daily copy runs after sign-in. An unavailable folder reports an err
 is retried. Manual and safety copies are never removed by automatic retention.
 
 **Restore backup** replaces the entire collection, including users and permissions;
-it does not merge cards. Cardfile validates the selected `.db`, saves current edits,
+it does not merge cards. NoteChest validates the selected `.db`, saves current edits,
 creates a local safety backup, prepares the replacement and restarts. Use the restored
 accounts/passwords. Local backup preferences and window dimensions stay unchanged.
 Backups preserve existing encryption but do not encrypt otherwise unencrypted cards.
 Passwords and external credential-store secrets cannot be recovered from a backup.
 
-Close Cardfile before removing a USB drive or changing computers. With OneDrive, wait
+Close NoteChest before removing a USB drive or changing computers. With OneDrive, wait
 until synchronization finishes before opening the folder on another computer; simultaneous
-use is unsupported. Cardfile shows a warning at sign-in when its data is in a folder synced
+use is unsupported. NoteChest shows a warning at sign-in when its data is in a folder synced
 by OneDrive, Dropbox, Google Drive or a similar service. The local process lock does not coordinate different computers.
 The app remembers the window's size, position and maximized state in `local-config.json`
 and reopens on the same monitor while it is connected.
 
 **Move the data folder.** Administrators can move the whole collection with **Settings →
-Data → Move…**. Cardfile copies the database (a consistent snapshot), backups, themes,
-shortcuts, dictionaries and local preferences to a new `Cardfile` folder inside the one
+Data → Move…**. NoteChest copies the database (a consistent snapshot), backups, themes,
+shortcuts, dictionaries and local preferences to a new `NoteChest` folder inside the one
 you choose, then restarts using it. The previous folder is left untouched; delete it
 once you have checked the new one. The new location is remembered in
-`data-location.txt` in the user configuration folder (`%APPDATA%\FittyAr\Cardfile\config`
-on Windows, `~/.config/cardfile` on Linux). If that folder later goes missing
-(for example, an unplugged drive), Cardfile says so at start instead of creating an empty
+`data-location.txt` in the user configuration folder (`%APPDATA%\FittyAr\NoteChest\config`
+on Windows, `~/.config/notechest` on Linux). If that folder later goes missing
+(for example, an unplugged drive), NoteChest says so at start instead of creating an empty
 collection; delete `data-location.txt` to go back to the default folder. Portable copies
 and folders set with `--data-dir` cannot be moved this way.
 

@@ -1,0 +1,50 @@
+[package]
+name = "notechest-ui"
+description = "GPUI views for NoteChest"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+update-check = []
+
+[dependencies]
+gpui-kit.workspace = true
+anyhow.workspace = true
+notechest-agent.workspace = true
+notechest-ai.workspace = true
+notechest-core.workspace = true
+notechest-crypto.workspace = true
+notechest-db.workspace = true
+notechest-doc.workspace = true
+notechest-editor.workspace = true
+notechest-i18n.workspace = true
+notechest-mcp.workspace = true
+notechest-media.workspace = true
+notechest-updater.workspace = true
+directories.workspace = true
+jiff.workspace = true
+parking_lot.workspace = true
+semver.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+spellbook.workspace = true
+tracing.workspace = true
+ureq.workspace = true
+zeroize.workspace = true
+open.workspace = true
+keyring.workspace = true
+image.workspace = true
+uuid.workspace = true
+tempfile.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

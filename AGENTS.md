@@ -1,36 +1,50 @@
 # AGENTS.md
 
-Guidance for AI coding agents (and humans) working on Cardfile.
+Guidance for AI coding agents (and humans) working on NoteChest.
 
 **Source of truth:** [`docs/PLAN.md`](docs/PLAN.md). Read it before changing scope, architecture
 or dependencies. If a change contradicts the plan, update the plan in the same PR.
 
 ## Project
 
-Cardfile 2 is a desktop card-file / notes app written in Rust with a GPUI UI
+NoteChest is a desktop card-file / notes app written in Rust with a GPUI UI
 ([`gpui-kit`](https://crates.io/crates/gpui-kit): GPUI + gpui-component). Targets: Windows and
 Linux. Data lives in SQLite through Diesel. Cards are edited in a WYSIWYG editor; users never
 see Markdown.
+
+The project was called **Cardfile** until 2.0.0 (the name was taken in the Microsoft Store). Users
+and their data came from that name, so some old names are kept **on purpose**:
+
+- The two crypto contexts in `notechest-crypto/src/keys.rs` (`Cardfile 2 card key wrap v1`,
+  `... id v1`). **Never rename them**: every existing encrypted or shared card would become
+  unreadable.
+- Adoption code that reads old locations: the `FittyAr/Cardfile` data folder and its pointer file
+  (`notechest-ui/src/paths.rs`), `cardfile.db` and its `cardfile-…` backups
+  (`notechest-db/src/recovery.rs`), the `Cardfile` credential-store service
+  (`notechest-ui/src/secrets.rs`), the `cardfile-ai` reserved username, the `.cardfile` shell
+  profile lines that old installers wrote (`shell_profiles.rs`, `install.sh`, `install.ps1`).
+- The Cardscape board is still named "Cardfile 2", and the website still lives at
+  `cardfile.fitty.ar` until `notechest.fitty.ar` exists.
 
 ## Workspace layout
 
 | Crate | Purpose | May depend on |
 |-------|---------|---------------|
-| `cardfile-core` | Domain types, services, repository traits, errors. No UI, no DB. | — |
-| `cardfile-doc` | Document model (block tree), plain-text extraction, exporters (Markdown, HTML, PDF, JSON). | core |
-| `cardfile-crypto` | Argon2id hashing, card encryption (XChaCha20-Poly1305), key handling. | core |
-| `cardfile-db` | Diesel schema, embedded migrations, repository implementations, FTS5. | core, doc |
-| `cardfile-i18n` | Locale loading and the `t!()` macro. | — |
-| `cardfile-editor` | GPUI WYSIWYG editor widget (incl. inline media player, bidi). | doc, i18n, media |
-| `cardfile-updater` | New-version check and minisign verification. | core |
-| `cardfile-media` | Inline audio playback engine (symphonia + rodio; patent-free MP3/WAV/OGG/FLAC only). No GPUI. | — |
-| `cardfile-ai` | Blocking LLM client (provider presets, tool calling, agent loop). No GPUI. | — |
-| `cardfile-agent` | AI tools over the database (used by the MCP server and the chat). | core, db, doc |
-| `cardfile-mcp` | Embedded MCP server (Streamable HTTP on 127.0.0.1); tools come from the app via a trait. | — |
-| `cardfile-ui` | GPUI application views. | everything above |
-| `cardfile` | Binary: CLI args, logging, data dir, wiring. | ui |
+| `notechest-core` | Domain types, services, repository traits, errors. No UI, no DB. | — |
+| `notechest-doc` | Document model (block tree), plain-text extraction, exporters (Markdown, HTML, PDF, JSON). | core |
+| `notechest-crypto` | Argon2id hashing, card encryption (XChaCha20-Poly1305), key handling. | core |
+| `notechest-db` | Diesel schema, embedded migrations, repository implementations, FTS5. | core, doc |
+| `notechest-i18n` | Locale loading and the `t!()` macro. | — |
+| `notechest-editor` | GPUI WYSIWYG editor widget (incl. inline media player, bidi). | doc, i18n, media |
+| `notechest-updater` | New-version check and minisign verification. | core |
+| `notechest-media` | Inline audio playback engine (symphonia + rodio; patent-free MP3/WAV/OGG/FLAC only). No GPUI. | — |
+| `notechest-ai` | Blocking LLM client (provider presets, tool calling, agent loop). No GPUI. | — |
+| `notechest-agent` | AI tools over the database (used by the MCP server and the chat). | core, db, doc |
+| `notechest-mcp` | Embedded MCP server (Streamable HTTP on 127.0.0.1); tools come from the app via a trait. | — |
+| `notechest-ui` | GPUI application views. | everything above |
+| `notechest` | Binary: CLI args, logging, data dir, wiring. | ui |
 
-Never create dependency cycles. `cardfile-core` must not depend on GPUI or Diesel.
+Never create dependency cycles. `notechest-core` must not depend on GPUI or Diesel.
 
 ## Commands
 
@@ -63,7 +77,10 @@ libvulkan-dev libfontconfig-dev libfreetype-dev libx11-xcb-dev libssl-dev libaso
 
 ### Code
 - Rust edition 2024, latest stable toolchain.
-- Libraries use typed errors (`thiserror`); `anyhow` only in the `cardfile` binary and at UI edges.
+- Anything stored on a user's disk (file names, folder names, credential-store names, protocol
+  or crypto strings) keeps working across renames: add an adoption path instead of just
+  renaming, and cover it with a test.
+- Libraries use typed errors (`thiserror`); `anyhow` only in the `notechest` binary and at UI edges.
 - No `unwrap()`/`expect()` outside tests unless the invariant is documented in a comment.
 - No `unsafe` (workspace lint `unsafe_code = "deny"`).
 - Never block the UI thread: DB, crypto, export and network work run on the background executor.

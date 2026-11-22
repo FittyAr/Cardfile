@@ -1,16 +1,16 @@
 _version: 1
 
 app:
-  data_missing: "A pasta de dados %{path} não foi encontrada. Conecte a unidade que a contém e inicie o Cardfile novamente. Para voltar à pasta padrão, exclua %{pointer}."
-  synced_folder: "Suas notas estão em uma pasta sincronizada pelo %{service}. Sincronizar um banco de dados aberto pode danificá-lo ou criar cópias em conflito: feche o Cardfile antes de usá-lo em outro computador ou mantenha os dados fora da pasta sincronizada."
+  data_missing: "A pasta de dados %{path} não foi encontrada. Conecte a unidade que a contém e inicie o NoteChest novamente. Para voltar à pasta padrão, exclua %{pointer}."
+  synced_folder: "Suas notas estão em uma pasta sincronizada pelo %{service}. Sincronizar um banco de dados aberto pode danificá-lo ou criar cópias em conflito: feche o NoteChest antes de usá-lo em outro computador ou mantenha os dados fora da pasta sincronizada."
   unsaved_quit:
     title: "Suas últimas alterações não foram salvas"
     body: "Não foi possível salvar a ficha aberta: %{error}. Se você sair agora, as alterações desde o último salvamento serão perdidas."
     quit: "Sair sem salvar"
-  name: Cardfile
+  name: NoteChest
   db_error_body: "Não foi possível abrir o banco de dados %{path}: %{error}"
   open_keymap_failed: "Não foi possível abrir o arquivo de atalhos: %{error}"
-  db_error_title: "O Cardfile não consegue abrir seu banco de dados"
+  db_error_title: "O NoteChest não consegue abrir seu banco de dados"
 test:
   greeting: "Olá, %{name}!"
 
@@ -146,17 +146,17 @@ wizard:
     finish: Pronto
   welcome:
     language: "Idioma"
-    title: Boas-vindas ao Cardfile
+    title: Boas-vindas ao NoteChest
     body: "Seu fichário digital para notas, ideias e tudo o que você quiser guardar. Vamos configurá-lo em poucos passos."
   storage:
     standard: Padrão
     standard_desc: "Os dados são armazenados no seu perfil de usuário:"
     portable: Portátil
-    portable_desc: Os dados são armazenados em uma pasta «data» ao lado do Cardfile, para que você possa levá-los em um pen drive.
+    portable_desc: Os dados são armazenados em uma pasta «data» ao lado do NoteChest, para que você possa levá-los em um pen drive.
     portable_unavailable: O modo portátil não está disponível porque a pasta do programa não permite gravação.
   security:
     none: Sem senha
-    none_desc: O Cardfile abre diretamente. Ideal para um computador pessoal.
+    none_desc: O NoteChest abre diretamente. Ideal para um computador pessoal.
     single: Senha
     single_desc: Uma conta protegida por senha.
     multi: Vários usuários
@@ -177,7 +177,7 @@ wizard:
   finish:
     intro: "Tudo pronto:"
     later: Tudo isso pode ser alterado depois em Configurações.
-    start: Começar a usar o Cardfile
+    start: Começar a usar o NoteChest
   error:
     username: Informe um nome de usuário.
     password_short: A senha deve ter pelo menos 4 caracteres.
@@ -187,7 +187,7 @@ wizard:
 login:
   title: Entrar
   register_title: Criar conta
-  locked_title: "O Cardfile está bloqueado, %{name}"
+  locked_title: "O NoteChest está bloqueado, %{name}"
   username: Nome de usuário
   display_name: Nome de exibição
   password: Senha
@@ -202,11 +202,11 @@ login:
     taken: Esse nome de usuário já está em uso.
 
 welcome:
-  title: Boas-vindas ao Cardfile
+  title: Boas-vindas ao NoteChest
   body: |
     ## Primeiros passos
 
-    O Cardfile guarda suas notas como **cartões**. Crie um com o botão **+** ou **Ctrl+N**.
+    O NoteChest guarda suas notas como **cartões**. Crie um com o botão **+** ou **Ctrl+N**.
 
     - Formate o texto com a barra de ferramentas ou atalhos: **Ctrl+B** negrito, *Ctrl+I* itálico, Ctrl+U sublinhado.
     - Digite `# ` para um título, `- ` para uma lista ou `[] ` para uma lista de tarefas.
@@ -333,7 +333,7 @@ menu:
   backup: Fazer backup agora
   open_data_folder: Abrir pasta de dados
   check_updates: Verificar atualizações
-  about: Sobre o Cardfile
+  about: Sobre o NoteChest
   lock: Bloquear
   sign_out: Sair
   quit: Fechar
@@ -343,19 +343,19 @@ palette:
 
 updates:
   title: Atualização disponível
-  available: "O Cardfile %{version} está disponível. Clique para baixar."
+  available: "O NoteChest %{version} está disponível. Clique para baixar."
   latest: Você tem a versão mais recente.
   failed: "Não foi possível verificar atualizações: %{error}"
   managed: As atualizações desta instalação são gerenciadas pela sua loja de aplicativos ou gerenciador de pacotes.
-  dialog_title: "O Cardfile %{version} está disponível"
+  dialog_title: "O NoteChest %{version} está disponível"
   current: "Você tem a versão %{version}."
   install: "Atualizar e reiniciar"
   later: "Mais tarde"
   open_page: "Página da versão"
   downloading: "Baixando… %{mb} MB"
   installing: "Instalando…"
-  installed_restart: "A atualização foi instalada. Reinicie o Cardfile para usá-la."
-  manual: "Esta cópia do Cardfile não consegue se atualizar sozinha. Baixe a nova versão na página da versão."
+  installed_restart: "A atualização foi instalada. Reinicie o NoteChest para usá-la."
+  manual: "Esta cópia do NoteChest não consegue se atualizar sozinha. Baixe a nova versão na página da versão."
 
 about:
   description: Um fichário digital moderno para suas notas.
@@ -433,10 +433,10 @@ settings:
     mask_hint: O restante do título é mascarado na lista.
     lock_modes: Níveis de proteção disponíveis
     auth_mode: Modo de login
-    auth_mode_hint: Como as pessoas abrem o Cardfile neste computador.
+    auth_mode_hint: Como as pessoas abrem o NoteChest neste computador.
     auth_one_user: Remova as outras contas de usuário antes de mudar para um modo de conta única.
     auth_needs_password: Defina primeiro uma senha abaixo.
-    auth_changed: Modo de login alterado. Será aplicado na próxima vez que o Cardfile iniciar.
+    auth_changed: Modo de login alterado. Será aplicado na próxima vez que o NoteChest iniciar.
     change_password: Alterar senha
     lock_password: Senha de bloqueio
     password_hint: Esta senha desbloqueia cartões privados e criptografados. Os cartões criptografados são recriptografados quando você a altera.
@@ -459,11 +459,11 @@ settings:
     invalid: Informe um nome de usuário e uma senha com pelo menos 4 caracteres.
   data:
     moved: "Pasta personalizada, movida do local padrão."
-    command_line: "Pasta definida com --data-dir ao iniciar o Cardfile."
+    command_line: "Pasta definida com --data-dir ao iniciar o NoteChest."
     location: Pasta de dados
     portable: O modo portátil está ativo.
     standard: Modo padrão.
-    files: "Suas fichas e configurações ficam em cardfile.db e seus atalhos em keymap.json, ambos nesta pasta. Copie ou sincronize a pasta inteira para manter tudo."
+    files: "Suas fichas e configurações ficam em notechest.db e seus atalhos em keymap.json, ambos nesta pasta. Copie ou sincronize a pasta inteira para manter tudo."
     export: Exportar
     export_hint: Exporta todos os cartões que não são privados nem criptografados.
   group:
@@ -535,7 +535,7 @@ ai:
     encrypted_note: "Cartões criptografados nunca ficam disponíveis para nenhuma IA."
   mcp:
     title: "Servidor MCP para clientes de IA"
-    hint: "Permite que apps de IA como Claude, Cursor ou VS Code usem o Cardfile enquanto ele está aberto, somente neste computador (127.0.0.1). Cada cliente precisa de uma chave de API; as alterações feitas por ele são registradas como feitas pelo Cardfile AI em seu nome."
+    hint: "Permite que apps de IA como Claude, Cursor ou VS Code usem o NoteChest enquanto ele está aberto, somente neste computador (127.0.0.1). Cada cliente precisa de uma chave de API; as alterações feitas por ele são registradas como feitas pelo NoteChest AI em seu nome."
     enable: "Executar o servidor MCP"
     port: "Porta"
     bad_port: "Use um número de porta entre 1024 e 65535."
@@ -544,7 +544,7 @@ ai:
     stopped: "Parado"
   keys:
     title: "Chaves de API"
-    hint: "Uma chave permite que um cliente de IA veja e altere o mesmo que você, como Cardfile AI. Revogue-a a qualquer momento."
+    hint: "Uma chave permite que um cliente de IA veja e altere o mesmo que você, como NoteChest AI. Revogue-a a qualquer momento."
     name_placeholder: "Nome da chave, ex.: Claude Desktop"
     default_name: "Cliente de IA"
     create: "Criar chave"
@@ -569,7 +569,7 @@ ai:
     cloud_title: "Serviços na nuvem"
     cloud_hint: "Modelos poderosos executados pelo provedor. Você precisa de uma conta e de uma chave de API."
     local_title: "Neste computador"
-    local_hint: "Gratuito e privado: instale o aplicativo, baixe um modelo e o Cardfile se conecta a ele."
+    local_hint: "Gratuito e privado: instale o aplicativo, baixe um modelo e o NoteChest se conecta a ele."
     custom: "Outro serviço compatível"
     custom_hint: "Qualquer URL compatível com OpenAI"
     connect: "Conectar %{name}"
@@ -578,7 +578,7 @@ ai:
     model_hint: "O modelo sugerido é um bom começo. «Testar conexão» também carrega os modelos que sua conta pode usar."
     local_steps: "Verifique se o aplicativo está em execução e tem pelo menos um modelo baixado. Não é necessária chave de API."
     advanced: "Avançado (URL do servidor e formato da API)"
-    no_keyring: "O gerenciador de credenciais do sistema não está disponível, então as chaves de API são armazenadas no banco de dados do Cardfile."
+    no_keyring: "O gerenciador de credenciais do sistema não está disponível, então as chaves de API são armazenadas no banco de dados do NoteChest."
 
 chat:
   report: "Denunciar"
@@ -635,17 +635,17 @@ data_operations:
   move_tooltip: "Copiar o banco de dados, os backups e as configurações para outra pasta e usá-la daqui em diante"
   move: "Mover a pasta de dados"
   choose_move: "Escolha para onde mover a pasta de dados"
-  move_confirm: "O Cardfile copiará o banco de dados, seus backups e suas configurações para %{path} e reiniciará usando essa pasta. A pasta atual fica inalterada: exclua-a você mesmo depois de conferir que tudo está na nova."
+  move_confirm: "O NoteChest copiará o banco de dados, seus backups e suas configurações para %{path} e reiniciará usando essa pasta. A pasta atual fica inalterada: exclua-a você mesmo depois de conferir que tudo está na nova."
   move_unavailable: "A pasta de dados de uma cópia portátil, ou uma escolhida com --data-dir, não pode ser movida por aqui."
   admin_required: "Somente um administrador pode fazer backup de toda a coleção."
   backups: "Backups do banco de dados"
   busy: "Preparando sua coleção. Aguarde…"
   choose_backup: "Escolher pasta de backups"
-  choose_portable: "Escolher a pasta que conterá Cardfile portable"
-  choose_restore: "Escolher um backup do banco de dados do Cardfile"
+  choose_portable: "Escolher a pasta que conterá NoteChest portable"
+  choose_restore: "Escolher um backup do banco de dados do NoteChest"
   contents: "Os backups incluem todos os usuários, anexos e cartões criptografados. Preservam a criptografia existente, mas não criptografam conteúdo sem criptografia. Não incluem chaves de IA guardadas no cofre de credenciais do sistema."
   daily: "Backup diário automático"
-  daily_hint: "Com o Cardfile aberto, faz um backup a cada 24 horas. Backups pendentes são feitos ao entrar; destinos indisponíveis são verificados a cada hora."
+  daily_hint: "Com o NoteChest aberto, faz um backup a cada 24 horas. Backups pendentes são feitos ao entrar; destinos indisponíveis são verificados a cada hora."
   default_backup: "Usar pasta padrão"
   destination_exists: "O destino já existe. Escolha outra pasta; os dados existentes não serão sobrescritos."
   failed: "A operação falhou: %{error}"
@@ -653,9 +653,9 @@ data_operations:
   nested_destination: "Escolha um destino fora da pasta de dados ativa e dos dicionários do programa."
   open_backup: "Abrir pasta de backups"
   portable: "Criar cópia portátil"
-  portable_confirm: "Criar uma cópia de todos os usuários, cartões e anexos em uma nova pasta 'Cardfile portable'? O MCP e os backups automáticos serão desativados na cópia. Em outro computador, insira novamente as chaves de IA guardadas no cofre do sistema. Feche o Cardfile e aguarde a sincronização do OneDrive antes de trocar de computador."
-  portable_unsupported: "Baixe o arquivo portátil em https://github.com/FittyAr/Cardfile/releases para copiar esta instalação de loja ou gerenciador de pacotes."
+  portable_confirm: "Criar uma cópia de todos os usuários, cartões e anexos em uma nova pasta 'NoteChest portable'? O MCP e os backups automáticos serão desativados na cópia. Em outro computador, insira novamente as chaves de IA guardadas no cofre do sistema. Feche o NoteChest e aguarde a sincronização do OneDrive antes de trocar de computador."
+  portable_unsupported: "Baixe o arquivo portátil em https://github.com/FittyAr/NoteChest/releases para copiar esta instalação de loja ou gerenciador de pacotes."
   protection_busy: "Aguarde o término da alteração de proteção do cartão e tente novamente."
   restore: "Restaurar backup"
-  restore_confirm: "Substituir TODOS os usuários, cartões, anexos e permissões por este backup? O Cardfile criará uma cópia de segurança e reiniciará. Entre com as contas e senhas restauradas. As coleções não serão mescladas."
+  restore_confirm: "Substituir TODOS os usuários, cartões, anexos e permissões por este backup? O NoteChest criará uma cópia de segurança e reiniciará. Entre com as contas e senhas restauradas. As coleções não serão mescladas."
   retention: "Cópias automáticas a manter"

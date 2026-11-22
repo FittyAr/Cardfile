@@ -1,16 +1,16 @@
 _version: 1
 
 app:
-  data_missing: "Folder data %{path} tidak ditemukan. Sambungkan drive yang menyimpannya lalu jalankan Cardfile lagi. Untuk kembali ke folder bawaan, hapus %{pointer}."
-  synced_folder: "Catatan Anda berada di folder yang disinkronkan oleh %{service}. Menyinkronkan basis data yang sedang terbuka dapat merusaknya atau membuat salinan yang bentrok: tutup Cardfile sebelum memakainya di komputer lain, atau simpan data di luar folder yang disinkronkan."
+  data_missing: "Folder data %{path} tidak ditemukan. Sambungkan drive yang menyimpannya lalu jalankan NoteChest lagi. Untuk kembali ke folder bawaan, hapus %{pointer}."
+  synced_folder: "Catatan Anda berada di folder yang disinkronkan oleh %{service}. Menyinkronkan basis data yang sedang terbuka dapat merusaknya atau membuat salinan yang bentrok: tutup NoteChest sebelum memakainya di komputer lain, atau simpan data di luar folder yang disinkronkan."
   unsaved_quit:
     title: "Perubahan terakhir Anda belum disimpan"
     body: "Kartu yang terbuka tidak dapat disimpan: %{error}. Jika Anda keluar sekarang, perubahan sejak penyimpanan terakhir akan hilang."
     quit: "Keluar tanpa menyimpan"
-  name: Cardfile
+  name: NoteChest
   db_error_body: "Basis data %{path} tidak dapat dibuka: %{error}"
   open_keymap_failed: "Tidak dapat membuka berkas pintasan: %{error}"
-  db_error_title: "Cardfile tidak dapat membuka basis datanya"
+  db_error_title: "NoteChest tidak dapat membuka basis datanya"
 test:
   greeting: "Halo, %{name}!"
 
@@ -146,17 +146,17 @@ wizard:
     finish: Siap
   welcome:
     language: "Bahasa"
-    title: Selamat datang di Cardfile
+    title: Selamat datang di NoteChest
     body: "Kotak kartu digital Anda untuk catatan, ide, dan apa pun yang ingin Anda simpan. Mari atur dalam beberapa langkah."
   storage:
     standard: Standar
     standard_desc: "Data disimpan di profil pengguna Anda:"
     portable: Portabel
-    portable_desc: Data disimpan di folder “data” di samping Cardfile, sehingga bisa dibawa dengan flash drive USB.
+    portable_desc: Data disimpan di folder “data” di samping NoteChest, sehingga bisa dibawa dengan flash drive USB.
     portable_unavailable: Mode portabel tidak tersedia karena folder program tidak dapat ditulisi.
   security:
     none: Tanpa kata sandi
-    none_desc: Cardfile langsung terbuka. Paling cocok untuk komputer pribadi.
+    none_desc: NoteChest langsung terbuka. Paling cocok untuk komputer pribadi.
     single: Kata sandi
     single_desc: Satu akun yang dilindungi kata sandi.
     multi: Banyak pengguna
@@ -177,7 +177,7 @@ wizard:
   finish:
     intro: "Semuanya siap:"
     later: Semua ini dapat diubah nanti di Pengaturan.
-    start: Mulai menggunakan Cardfile
+    start: Mulai menggunakan NoteChest
   error:
     username: Masukkan nama pengguna.
     password_short: Kata sandi harus memiliki setidaknya 4 karakter.
@@ -187,7 +187,7 @@ wizard:
 login:
   title: Masuk
   register_title: Buat akun
-  locked_title: "Cardfile terkunci, %{name}"
+  locked_title: "NoteChest terkunci, %{name}"
   username: Nama pengguna
   display_name: Nama tampilan
   password: Kata sandi
@@ -202,11 +202,11 @@ login:
     taken: Nama pengguna itu sudah dipakai.
 
 welcome:
-  title: Selamat datang di Cardfile
+  title: Selamat datang di NoteChest
   body: |
     ## Memulai
 
-    Cardfile menyimpan catatan Anda sebagai **kartu**. Buat kartu dengan tombol **+** atau **Ctrl+N**.
+    NoteChest menyimpan catatan Anda sebagai **kartu**. Buat kartu dengan tombol **+** atau **Ctrl+N**.
 
     - Format teks dengan bilah alat atau pintasan: **Ctrl+B** tebal, *Ctrl+I* miring, Ctrl+U garis bawah.
     - Ketik `# ` untuk judul, `- ` untuk daftar, atau `[] ` untuk daftar periksa.
@@ -333,7 +333,7 @@ menu:
   backup: Cadangkan sekarang
   open_data_folder: Buka folder data
   check_updates: Periksa pembaruan
-  about: Tentang Cardfile
+  about: Tentang NoteChest
   lock: Kunci
   sign_out: Keluar
   quit: Tutup
@@ -343,19 +343,19 @@ palette:
 
 updates:
   title: Pembaruan tersedia
-  available: "Cardfile %{version} tersedia. Klik untuk mengunduh."
+  available: "NoteChest %{version} tersedia. Klik untuk mengunduh."
   latest: Anda menggunakan versi terbaru.
   failed: "Tidak dapat memeriksa pembaruan: %{error}"
   managed: Pembaruan untuk instalasi ini dikelola oleh toko aplikasi atau manajer paket Anda.
-  dialog_title: "Cardfile %{version} tersedia"
+  dialog_title: "NoteChest %{version} tersedia"
   current: "Anda menggunakan versi %{version}."
   install: "Perbarui dan mulai ulang"
   later: "Nanti"
   open_page: "Halaman rilis"
   downloading: "Mengunduh… %{mb} MB"
   installing: "Memasang…"
-  installed_restart: "Pembaruan sudah terpasang. Mulai ulang Cardfile untuk menggunakannya."
-  manual: "Salinan Cardfile ini tidak dapat memperbarui dirinya sendiri. Unduh versi baru dari halaman rilis."
+  installed_restart: "Pembaruan sudah terpasang. Mulai ulang NoteChest untuk menggunakannya."
+  manual: "Salinan NoteChest ini tidak dapat memperbarui dirinya sendiri. Unduh versi baru dari halaman rilis."
 
 about:
   description: Kotak kartu digital modern untuk catatan Anda.
@@ -433,10 +433,10 @@ settings:
     mask_hint: Sisa judul disamarkan dalam daftar.
     lock_modes: Tingkat perlindungan yang tersedia
     auth_mode: Mode masuk
-    auth_mode_hint: Cara orang membuka Cardfile di komputer ini.
+    auth_mode_hint: Cara orang membuka NoteChest di komputer ini.
     auth_one_user: Hapus akun pengguna lain sebelum beralih ke mode satu akun.
     auth_needs_password: Atur kata sandi di bawah terlebih dahulu.
-    auth_changed: Mode masuk diubah. Berlaku saat Cardfile dimulai berikutnya.
+    auth_changed: Mode masuk diubah. Berlaku saat NoteChest dimulai berikutnya.
     change_password: Ubah kata sandi
     lock_password: Kata sandi kunci
     password_hint: Kata sandi ini membuka kunci kartu pribadi dan terenkripsi. Kartu terenkripsi dienkripsi ulang saat Anda mengubahnya.
@@ -459,11 +459,11 @@ settings:
     invalid: Masukkan nama pengguna dan kata sandi minimal 4 karakter.
   data:
     moved: "Folder khusus, dipindahkan dari lokasi bawaan."
-    command_line: "Folder yang ditetapkan dengan --data-dir saat Cardfile dijalankan."
+    command_line: "Folder yang ditetapkan dengan --data-dir saat NoteChest dijalankan."
     location: Folder data
     portable: Mode portabel aktif.
     standard: Mode standar.
-    files: "Kartu dan pengaturan Anda ada di cardfile.db dan pintasan Anda di keymap.json, keduanya di folder ini. Salin atau sinkronkan seluruh folder untuk menyimpan semuanya."
+    files: "Kartu dan pengaturan Anda ada di notechest.db dan pintasan Anda di keymap.json, keduanya di folder ini. Salin atau sinkronkan seluruh folder untuk menyimpan semuanya."
     export: Ekspor
     export_hint: Mengekspor semua kartu yang tidak pribadi atau terenkripsi.
   group:
@@ -535,7 +535,7 @@ ai:
     encrypted_note: "Kartu terenkripsi tidak pernah tersedia untuk AI mana pun."
   mcp:
     title: "Server MCP untuk klien AI"
-    hint: "Memungkinkan aplikasi AI seperti Claude, Cursor, atau VS Code memakai Cardfile selama terbuka, hanya di komputer ini (127.0.0.1). Setiap klien memerlukan kunci API; perubahan yang dibuatnya dicatat sebagai dibuat oleh Cardfile AI atas nama Anda."
+    hint: "Memungkinkan aplikasi AI seperti Claude, Cursor, atau VS Code memakai NoteChest selama terbuka, hanya di komputer ini (127.0.0.1). Setiap klien memerlukan kunci API; perubahan yang dibuatnya dicatat sebagai dibuat oleh NoteChest AI atas nama Anda."
     enable: "Jalankan server MCP"
     port: "Port"
     bad_port: "Gunakan nomor port antara 1024 dan 65535."
@@ -544,7 +544,7 @@ ai:
     stopped: "Berhenti"
   keys:
     title: "Kunci API"
-    hint: "Kunci memungkinkan klien AI melihat dan mengubah apa yang bisa Anda lihat dan ubah, sebagai Cardfile AI. Cabut kapan saja."
+    hint: "Kunci memungkinkan klien AI melihat dan mengubah apa yang bisa Anda lihat dan ubah, sebagai NoteChest AI. Cabut kapan saja."
     name_placeholder: "Nama kunci, mis. Claude Desktop"
     default_name: "Klien AI"
     create: "Buat kunci"
@@ -569,7 +569,7 @@ ai:
     cloud_title: "Layanan cloud"
     cloud_hint: "Model andal yang dijalankan oleh penyedia. Anda memerlukan akun dan kunci API."
     local_title: "Di komputer ini"
-    local_hint: "Gratis dan privat: instal aplikasinya, unduh model, dan Cardfile akan terhubung ke sana."
+    local_hint: "Gratis dan privat: instal aplikasinya, unduh model, dan NoteChest akan terhubung ke sana."
     custom: "Layanan kompatibel lainnya"
     custom_hint: "URL apa pun yang kompatibel dengan OpenAI"
     connect: "Hubungkan %{name}"
@@ -578,7 +578,7 @@ ai:
     model_hint: "Model yang disarankan adalah awal yang baik. “Uji koneksi” juga memuat model yang dapat dipakai akun Anda."
     local_steps: "Pastikan aplikasinya sedang berjalan dan sudah mengunduh setidaknya satu model. Kunci API tidak diperlukan."
     advanced: "Lanjutan (URL server dan format API)"
-    no_keyring: "Pengelola kredensial sistem Anda tidak tersedia, jadi kunci API disimpan di basis data Cardfile."
+    no_keyring: "Pengelola kredensial sistem Anda tidak tersedia, jadi kunci API disimpan di basis data NoteChest."
 
 chat:
   report: "Laporkan"
@@ -635,17 +635,17 @@ data_operations:
   move_tooltip: "Salin basis data, cadangan, dan pengaturan ke folder lain lalu gunakan folder itu mulai sekarang"
   move: "Pindahkan folder data"
   choose_move: "Pilih tempat untuk memindahkan folder data"
-  move_confirm: "Cardfile akan menyalin basis data, cadangannya, dan pengaturan Anda ke %{path}, lalu memulai ulang dengan folder tersebut. Folder saat ini tidak diubah: hapus sendiri setelah Anda memastikan semuanya ada di folder baru."
+  move_confirm: "NoteChest akan menyalin basis data, cadangannya, dan pengaturan Anda ke %{path}, lalu memulai ulang dengan folder tersebut. Folder saat ini tidak diubah: hapus sendiri setelah Anda memastikan semuanya ada di folder baru."
   move_unavailable: "Folder data salinan portabel, atau folder yang dipilih dengan --data-dir, tidak dapat dipindahkan dari sini."
   admin_required: "Hanya administrator yang dapat mencadangkan seluruh koleksi."
   backups: "Cadangan basis data"
   busy: "Menyiapkan koleksi Anda. Harap tunggu…"
   choose_backup: "Pilih folder cadangan"
-  choose_portable: "Pilih folder induk untuk Cardfile portable"
-  choose_restore: "Pilih cadangan basis data Cardfile"
+  choose_portable: "Pilih folder induk untuk NoteChest portable"
+  choose_restore: "Pilih cadangan basis data NoteChest"
   contents: "Cadangan mencakup semua pengguna, lampiran, dan kartu terenkripsi. Enkripsi yang ada tetap dipertahankan, tetapi konten tanpa enkripsi tidak dienkripsi. Kunci AI dalam penyimpanan kredensial sistem tidak disertakan."
   daily: "Cadangan harian otomatis"
-  daily_hint: "Saat Cardfile terbuka, cadangan dibuat setiap 24 jam. Cadangan yang terlewat dibuat setelah masuk; tujuan yang tidak tersedia dicoba lagi setiap jam."
+  daily_hint: "Saat NoteChest terbuka, cadangan dibuat setiap 24 jam. Cadangan yang terlewat dibuat setelah masuk; tujuan yang tidak tersedia dicoba lagi setiap jam."
   default_backup: "Gunakan folder bawaan"
   destination_exists: "Tujuan sudah ada. Pilih folder induk lain; data yang ada tidak akan ditimpa."
   failed: "Operasi gagal: %{error}"
@@ -653,9 +653,9 @@ data_operations:
   nested_destination: "Pilih tujuan di luar folder data aktif dan kamus program."
   open_backup: "Buka folder cadangan"
   portable: "Buat salinan portabel"
-  portable_confirm: "Salin semua pengguna, kartu, dan lampiran ke folder baru 'Cardfile portable'? MCP dan pencadangan otomatis akan dinonaktifkan pada salinan. Di komputer lain, masukkan kembali kunci AI dari penyimpanan sistem. Tutup Cardfile dan tunggu sinkronisasi OneDrive selesai sebelum berganti komputer."
-  portable_unsupported: "Unduh arsip portabel dari https://github.com/FittyAr/Cardfile/releases untuk menyalin instalasi dari toko atau pengelola paket ini."
+  portable_confirm: "Salin semua pengguna, kartu, dan lampiran ke folder baru 'NoteChest portable'? MCP dan pencadangan otomatis akan dinonaktifkan pada salinan. Di komputer lain, masukkan kembali kunci AI dari penyimpanan sistem. Tutup NoteChest dan tunggu sinkronisasi OneDrive selesai sebelum berganti komputer."
+  portable_unsupported: "Unduh arsip portabel dari https://github.com/FittyAr/NoteChest/releases untuk menyalin instalasi dari toko atau pengelola paket ini."
   protection_busy: "Tunggu perubahan perlindungan kartu selesai, lalu coba lagi."
   restore: "Pulihkan cadangan"
-  restore_confirm: "Ganti SEMUA pengguna, kartu, lampiran, dan izin dengan cadangan ini? Cardfile akan membuat salinan pengaman dan dimulai ulang. Masuk dengan akun dan kata sandi yang dipulihkan. Koleksi tidak digabungkan."
+  restore_confirm: "Ganti SEMUA pengguna, kartu, lampiran, dan izin dengan cadangan ini? NoteChest akan membuat salinan pengaman dan dimulai ulang. Masuk dengan akun dan kata sandi yang dipulihkan. Koleksi tidak digabungkan."
   retention: "Jumlah salinan otomatis yang disimpan"

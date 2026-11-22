@@ -1,16 +1,16 @@
 _version: 1
 
 app:
-  data_missing: "데이터 폴더 %{path}을(를) 찾을 수 없습니다. 이 폴더가 있는 드라이브를 연결하고 Cardfile을 다시 시작하세요. 대신 기본 폴더로 돌아가려면 %{pointer}을(를) 삭제하세요."
-  synced_folder: "메모가 %{service}에서 동기화하는 폴더에 있습니다. 열려 있는 데이터베이스를 동기화하면 손상되거나 충돌 사본이 생길 수 있습니다. 다른 컴퓨터에서 사용하기 전에 Cardfile을 닫거나, 데이터를 동기화 폴더 밖에 두세요."
+  data_missing: "데이터 폴더 %{path}을(를) 찾을 수 없습니다. 이 폴더가 있는 드라이브를 연결하고 NoteChest을 다시 시작하세요. 대신 기본 폴더로 돌아가려면 %{pointer}을(를) 삭제하세요."
+  synced_folder: "메모가 %{service}에서 동기화하는 폴더에 있습니다. 열려 있는 데이터베이스를 동기화하면 손상되거나 충돌 사본이 생길 수 있습니다. 다른 컴퓨터에서 사용하기 전에 NoteChest을 닫거나, 데이터를 동기화 폴더 밖에 두세요."
   unsaved_quit:
     title: "마지막 변경 사항이 저장되지 않았습니다"
     body: "열린 카드를 저장할 수 없습니다: %{error}. 지금 종료하면 마지막 저장 이후의 변경 사항이 사라집니다."
     quit: "저장하지 않고 종료"
-  name: Cardfile
+  name: NoteChest
   db_error_body: "데이터베이스 %{path}을(를) 열 수 없습니다: %{error}"
   open_keymap_failed: "키맵 파일을 열 수 없습니다: %{error}"
-  db_error_title: "Cardfile에서 데이터베이스를 열 수 없습니다"
+  db_error_title: "NoteChest에서 데이터베이스를 열 수 없습니다"
 test:
   greeting: "안녕하세요, %{name}님!"
 
@@ -146,17 +146,17 @@ wizard:
     finish: 완료
   welcome:
     language: "언어"
-    title: Cardfile에 오신 것을 환영합니다
+    title: NoteChest에 오신 것을 환영합니다
     body: "메모, 아이디어, 간직하고 싶은 모든 것을 위한 디지털 카드 파일입니다. 몇 단계만 거쳐 설정해 보겠습니다."
   storage:
     standard: 표준
     standard_desc: "데이터가 사용자 프로필에 저장됩니다:"
     portable: 휴대용
-    portable_desc: 데이터가 Cardfile 옆의 “data” 폴더에 저장되므로 USB 드라이브에 담아 다닐 수 있습니다.
+    portable_desc: 데이터가 NoteChest 옆의 “data” 폴더에 저장되므로 USB 드라이브에 담아 다닐 수 있습니다.
     portable_unavailable: 프로그램 폴더에 쓸 수 없어 휴대용 모드를 사용할 수 없습니다.
   security:
     none: 비밀번호 없음
-    none_desc: Cardfile이 바로 열립니다. 개인용 컴퓨터에 가장 적합합니다.
+    none_desc: NoteChest이 바로 열립니다. 개인용 컴퓨터에 가장 적합합니다.
     single: 비밀번호
     single_desc: 비밀번호로 보호되는 계정 하나.
     multi: 여러 사용자
@@ -177,7 +177,7 @@ wizard:
   finish:
     intro: "모든 준비가 끝났습니다:"
     later: 이 모든 항목은 나중에 설정에서 변경할 수 있습니다.
-    start: Cardfile 사용 시작
+    start: NoteChest 사용 시작
   error:
     username: 사용자 이름을 입력하세요.
     password_short: 비밀번호는 4자 이상이어야 합니다.
@@ -187,7 +187,7 @@ wizard:
 login:
   title: 로그인
   register_title: 계정 만들기
-  locked_title: "Cardfile이 잠겨 있습니다, %{name}님"
+  locked_title: "NoteChest이 잠겨 있습니다, %{name}님"
   username: 사용자 이름
   display_name: 표시 이름
   password: 비밀번호
@@ -202,11 +202,11 @@ login:
     taken: 이미 사용 중인 사용자 이름입니다.
 
 welcome:
-  title: Cardfile에 오신 것을 환영합니다
+  title: NoteChest에 오신 것을 환영합니다
   body: |
     ## 시작하기
 
-    Cardfile은 메모를 **카드**로 보관합니다. **+** 버튼이나 **Ctrl+N**으로 카드를 만드세요.
+    NoteChest은 메모를 **카드**로 보관합니다. **+** 버튼이나 **Ctrl+N**으로 카드를 만드세요.
 
     - 도구 모음이나 단축키로 서식을 지정하세요: **Ctrl+B** 굵게, *Ctrl+I* 기울임꼴, Ctrl+U 밑줄.
     - `# `를 입력하면 제목, `- `는 목록, `[] `는 체크리스트가 됩니다.
@@ -333,7 +333,7 @@ menu:
   backup: 지금 백업
   open_data_folder: 데이터 폴더 열기
   check_updates: 업데이트 확인
-  about: Cardfile 정보
+  about: NoteChest 정보
   lock: 잠금
   sign_out: 로그아웃
   quit: 종료
@@ -343,19 +343,19 @@ palette:
 
 updates:
   title: 업데이트 사용 가능
-  available: "Cardfile %{version}을(를) 사용할 수 있습니다. 클릭하여 다운로드하세요."
+  available: "NoteChest %{version}을(를) 사용할 수 있습니다. 클릭하여 다운로드하세요."
   latest: 최신 버전을 사용 중입니다.
   failed: "업데이트를 확인할 수 없습니다: %{error}"
   managed: 이 설치본의 업데이트는 앱 스토어 또는 패키지 관리자에서 처리합니다.
-  dialog_title: "Cardfile %{version}을(를) 사용할 수 있습니다"
+  dialog_title: "NoteChest %{version}을(를) 사용할 수 있습니다"
   current: "현재 버전은 %{version}입니다."
   install: "업데이트 후 다시 시작"
   later: "나중에"
   open_page: "릴리스 페이지"
   downloading: "다운로드 중… %{mb} MB"
   installing: "설치 중…"
-  installed_restart: "업데이트가 설치되었습니다. 사용하려면 Cardfile을 다시 시작하세요."
-  manual: "이 Cardfile 사본은 자동으로 업데이트할 수 없습니다. 릴리스 페이지에서 새 버전을 다운로드하세요."
+  installed_restart: "업데이트가 설치되었습니다. 사용하려면 NoteChest을 다시 시작하세요."
+  manual: "이 NoteChest 사본은 자동으로 업데이트할 수 없습니다. 릴리스 페이지에서 새 버전을 다운로드하세요."
 
 about:
   description: 메모를 위한 현대적인 디지털 카드 파일.
@@ -433,10 +433,10 @@ settings:
     mask_hint: 목록에서 제목의 나머지 부분은 가려집니다.
     lock_modes: 사용 가능한 보호 수준
     auth_mode: 로그인 모드
-    auth_mode_hint: 이 컴퓨터에서 Cardfile을 여는 방식입니다.
+    auth_mode_hint: 이 컴퓨터에서 NoteChest을 여는 방식입니다.
     auth_one_user: 단일 계정 모드로 전환하기 전에 다른 사용자 계정을 삭제하세요.
     auth_needs_password: 먼저 아래에서 비밀번호를 지정하세요.
-    auth_changed: 로그인 모드가 변경되었습니다. 다음에 Cardfile을 시작할 때 적용됩니다.
+    auth_changed: 로그인 모드가 변경되었습니다. 다음에 NoteChest을 시작할 때 적용됩니다.
     change_password: 비밀번호 변경
     lock_password: 잠금 비밀번호
     password_hint: 이 비밀번호로 비공개 및 암호화된 카드의 잠금을 해제합니다. 변경하면 암호화된 카드가 다시 암호화됩니다.
@@ -459,11 +459,11 @@ settings:
     invalid: 사용자 이름과 4자 이상의 비밀번호를 입력하세요.
   data:
     moved: "기본 위치에서 옮긴 사용자 지정 폴더입니다."
-    command_line: "Cardfile을 시작할 때 --data-dir로 지정한 폴더입니다."
+    command_line: "NoteChest을 시작할 때 --data-dir로 지정한 폴더입니다."
     location: 데이터 폴더
     portable: 휴대용 모드가 켜져 있습니다.
     standard: 표준 모드입니다.
-    files: "카드와 설정은 cardfile.db에, 단축키는 keymap.json에 있으며 둘 다 이 폴더에 있습니다. 모든 것을 유지하려면 폴더 전체를 복사하거나 동기화하세요."
+    files: "카드와 설정은 notechest.db에, 단축키는 keymap.json에 있으며 둘 다 이 폴더에 있습니다. 모든 것을 유지하려면 폴더 전체를 복사하거나 동기화하세요."
     export: 내보내기
     export_hint: 비공개 또는 암호화되지 않은 모든 카드를 내보냅니다.
   group:
@@ -535,7 +535,7 @@ ai:
     encrypted_note: "암호화된 카드는 어떤 AI에도 제공되지 않습니다."
   mcp:
     title: "AI 클라이언트용 MCP 서버"
-    hint: "Claude, Cursor, VS Code 같은 AI 앱이 Cardfile이 열려 있는 동안 이 컴퓨터에서만(127.0.0.1) Cardfile을 사용할 수 있게 합니다. 클라이언트마다 API 키가 필요하며, 클라이언트가 만든 변경 사항은 Cardfile AI가 사용자를 대신해 수행한 것으로 기록됩니다."
+    hint: "Claude, Cursor, VS Code 같은 AI 앱이 NoteChest이 열려 있는 동안 이 컴퓨터에서만(127.0.0.1) NoteChest을 사용할 수 있게 합니다. 클라이언트마다 API 키가 필요하며, 클라이언트가 만든 변경 사항은 NoteChest AI가 사용자를 대신해 수행한 것으로 기록됩니다."
     enable: "MCP 서버 실행"
     port: "포트"
     bad_port: "1024에서 65535 사이의 포트 번호를 사용하세요."
@@ -544,7 +544,7 @@ ai:
     stopped: "중지됨"
   keys:
     title: "API 키"
-    hint: "키를 사용하면 AI 클라이언트가 Cardfile AI로서 내가 접근할 수 있는 내용을 보고 변경할 수 있습니다. 언제든지 취소할 수 있습니다."
+    hint: "키를 사용하면 AI 클라이언트가 NoteChest AI로서 내가 접근할 수 있는 내용을 보고 변경할 수 있습니다. 언제든지 취소할 수 있습니다."
     name_placeholder: "키 이름 (예: Claude Desktop)"
     default_name: "AI 클라이언트"
     create: "키 만들기"
@@ -569,7 +569,7 @@ ai:
     cloud_title: "클라우드 서비스"
     cloud_hint: "제공업체가 운영하는 강력한 모델입니다. 계정과 API 키가 필요합니다."
     local_title: "이 컴퓨터에서"
-    local_hint: "무료이며 비공개: 앱을 설치하고 모델을 다운로드하면 Cardfile이 연결합니다."
+    local_hint: "무료이며 비공개: 앱을 설치하고 모델을 다운로드하면 NoteChest이 연결합니다."
     custom: "기타 호환 서비스"
     custom_hint: "OpenAI 호환 URL이면 무엇이든 가능"
     connect: "%{name} 연결"
@@ -578,7 +578,7 @@ ai:
     model_hint: "추천 모델로 시작하면 좋습니다. “연결 테스트”를 누르면 계정에서 사용할 수 있는 모델도 불러옵니다."
     local_steps: "앱이 실행 중이고 모델이 하나 이상 다운로드되어 있는지 확인하세요. API 키는 필요하지 않습니다."
     advanced: "고급(서버 URL 및 API 형식)"
-    no_keyring: "시스템의 자격 증명 관리자를 사용할 수 없어 API 키가 Cardfile 데이터베이스에 저장됩니다."
+    no_keyring: "시스템의 자격 증명 관리자를 사용할 수 없어 API 키가 NoteChest 데이터베이스에 저장됩니다."
 
 chat:
   report: "신고"
@@ -635,17 +635,17 @@ data_operations:
   move_tooltip: "데이터베이스, 백업, 설정을 다른 폴더로 복사하고 앞으로 그 폴더를 사용"
   move: "데이터 폴더 이동"
   choose_move: "데이터 폴더를 옮길 위치를 선택하세요"
-  move_confirm: "Cardfile이 데이터베이스, 백업, 설정을 %{path}(으)로 복사한 다음 해당 폴더를 사용해 다시 시작합니다. 현재 폴더는 그대로 남습니다. 새 폴더에 모든 것이 있는지 확인한 후 직접 삭제하세요."
+  move_confirm: "NoteChest이 데이터베이스, 백업, 설정을 %{path}(으)로 복사한 다음 해당 폴더를 사용해 다시 시작합니다. 현재 폴더는 그대로 남습니다. 새 폴더에 모든 것이 있는지 확인한 후 직접 삭제하세요."
   move_unavailable: "휴대용 사본의 데이터 폴더나 --data-dir로 선택한 폴더는 여기에서 옮길 수 없습니다."
   admin_required: "관리자만 전체 모음을 백업할 수 있습니다."
   backups: "데이터베이스 백업"
   busy: "모음을 준비하고 있습니다. 잠시 기다려 주세요…"
   choose_backup: "백업 폴더 선택"
-  choose_portable: "Cardfile portable을 만들 상위 폴더 선택"
-  choose_restore: "Cardfile 데이터베이스 백업 선택"
+  choose_portable: "NoteChest portable을 만들 상위 폴더 선택"
+  choose_restore: "NoteChest 데이터베이스 백업 선택"
   contents: "백업에는 모든 사용자, 첨부 파일, 암호화된 카드가 포함됩니다. 기존 암호화는 유지되지만 암호화되지 않은 내용은 암호화하지 않습니다. 시스템 자격 증명 저장소의 AI 키는 포함되지 않습니다."
   daily: "매일 자동 백업"
-  daily_hint: "Cardfile이 열려 있을 때 24시간마다 백업합니다. 누락된 백업은 로그인 후 실행하며, 사용할 수 없는 대상은 한 시간마다 다시 시도합니다."
+  daily_hint: "NoteChest이 열려 있을 때 24시간마다 백업합니다. 누락된 백업은 로그인 후 실행하며, 사용할 수 없는 대상은 한 시간마다 다시 시도합니다."
   default_backup: "기본 폴더 사용"
   destination_exists: "대상이 이미 있습니다. 다른 상위 폴더를 선택하세요. 기존 데이터를 덮어쓰지 않습니다."
   failed: "작업 실패: %{error}"
@@ -653,9 +653,9 @@ data_operations:
   nested_destination: "사용 중인 데이터 폴더와 프로그램 사전 폴더 밖의 대상을 선택하세요."
   open_backup: "백업 폴더 열기"
   portable: "포터블 복사본 만들기"
-  portable_confirm: "모든 사용자, 카드, 첨부 파일을 새 'Cardfile portable' 폴더에 복사할까요? 복사본에서는 MCP와 자동 백업이 꺼집니다. 다른 컴퓨터에서는 시스템 저장소의 AI 키를 다시 입력해야 합니다. 컴퓨터를 바꾸기 전에 Cardfile을 닫고 OneDrive 동기화가 끝날 때까지 기다리세요."
-  portable_unsupported: "스토어 또는 패키지 관리자로 설치한 이 버전을 복사하려면 https://github.com/FittyAr/Cardfile/releases에서 포터블 압축 파일을 받으세요."
+  portable_confirm: "모든 사용자, 카드, 첨부 파일을 새 'NoteChest portable' 폴더에 복사할까요? 복사본에서는 MCP와 자동 백업이 꺼집니다. 다른 컴퓨터에서는 시스템 저장소의 AI 키를 다시 입력해야 합니다. 컴퓨터를 바꾸기 전에 NoteChest을 닫고 OneDrive 동기화가 끝날 때까지 기다리세요."
+  portable_unsupported: "스토어 또는 패키지 관리자로 설치한 이 버전을 복사하려면 https://github.com/FittyAr/NoteChest/releases에서 포터블 압축 파일을 받으세요."
   protection_busy: "카드 보호 변경이 완료된 후 다시 시도하세요."
   restore: "백업 복원"
-  restore_confirm: "이 백업으로 모든 사용자, 카드, 첨부 파일, 권한을 바꿀까요? Cardfile이 안전 복사본을 만든 후 다시 시작합니다. 복원된 계정과 비밀번호로 로그인하세요. 모음은 병합되지 않습니다."
+  restore_confirm: "이 백업으로 모든 사용자, 카드, 첨부 파일, 권한을 바꿀까요? NoteChest이 안전 복사본을 만든 후 다시 시작합니다. 복원된 계정과 비밀번호로 로그인하세요. 모음은 병합되지 않습니다."
   retention: "보관할 자동 백업 수"

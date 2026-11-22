@@ -1,18 +1,18 @@
 #!/bin/sh
-# Cardfile installer for Linux (x86_64 and aarch64).
+# NoteChest installer for Linux (x86_64 and aarch64).
 #
-#   curl -fsSL https://raw.githubusercontent.com/FittyAr/Cardfile/main/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/FittyAr/NoteChest/main/install.sh | sh
 #   ... | sh -s -- [--version v2.0.0] [--stable] [--no-desktop-shortcut] [--uninstall] [--verify-only] [--insecure-skip-signature] [--yes]
 #
 # Always installs the newest published release (not a fixed version): the
 # newest stable one, or the newest pre-release while no stable release is
 # newer. --stable ignores pre-releases; --version installs that exact tag.
 #
-# Installs the program to ~/.local/lib/FittyAr/Cardfile (all FittyAr apps share the
-# FittyAr folder) with a `cardfile` command in
+# Installs the program to ~/.local/lib/FittyAr/NoteChest (all FittyAr apps share the
+# FittyAr folder) with a `notechest` command in
 # ~/.local/bin, an application-menu entry (.desktop file + icons) and a
 # desktop shortcut. No root needed. The cards live in
-# ${XDG_DATA_HOME:-~/.local/share}/FittyAr/Cardfile. Cardfile updates itself afterwards
+# ${XDG_DATA_HOME:-~/.local/share}/FittyAr/NoteChest. NoteChest updates itself afterwards
 # (Settings -> General).
 #
 # The download is checked against the signed SHA256SUMS and its own minisign
@@ -24,10 +24,10 @@
 # executes nothing.
 set -eu
 
-REPO="FittyAr/Cardfile"
-APP_ID="ar.fittyar.Cardfile"
-# Cardfile release signing key (minisign). Must match PUBLIC_KEY in
-# crates/cardfile-updater/src/lib.rs and install.ps1.
+REPO="FittyAr/NoteChest"
+APP_ID="ar.fittyar.NoteChest"
+# NoteChest release signing key (minisign). Must match PUBLIC_KEY in
+# crates/notechest-updater/src/lib.rs and install.ps1.
 MINISIGN_PUBKEY="RWSEWpMd7tkiGAaQwVFXiSYyfV6ODYRttbEFQ/WBOTzrbMB1diAfrG+w"
 # https://github.com/jedisct1/minisign/releases (same version as install.ps1)
 MINISIGN_VERSION="0.12"
@@ -35,19 +35,24 @@ MINISIGN_TARBALL_SHA256="9a599b48ba6eb7b1e80f12f36b94ceca7c00b7a5173c95c3efc88d9
 
 DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
 VENDOR_DIR="$HOME/.local/lib/FittyAr"
-LIB_DIR="$VENDOR_DIR/Cardfile"
+LIB_DIR="$VENDOR_DIR/NoteChest"
 # Used by this script before installs moved under the FittyAr folder.
 PREVIOUS_DIR="$HOME/.local/lib/cardfile"
+# Where this script installed the program before the rename (Cardfile, 2.0.0 betas).
+RENAMED_DIR="$VENDOR_DIR/Cardfile"
+RENAMED_APP_ID="ar.fittyar.Cardfile"
 BIN_DIR="$HOME/.local/bin"
 APPS_DIR="$DATA_HOME/applications"
 ICONS_DIR="$DATA_HOME/icons/hicolor"
 DESKTOP_FILE="$APPS_DIR/$APP_ID.desktop"
-# Where Cardfile keeps the cards (asked before deleting on uninstall), in the
-# shared FittyAr folder. Cardfile moves the folder of the earlier layout there
+# Where NoteChest keeps the cards (asked before deleting on uninstall), in the
+# shared FittyAr folder. NoteChest moves the folder of the earlier layout there
 # on its next start.
 CARDS_VENDOR_DIR="$DATA_HOME/FittyAr"
-CARDS_DIR="$CARDS_VENDOR_DIR/Cardfile"
+CARDS_DIR="$CARDS_VENDOR_DIR/NoteChest"
 PREVIOUS_CARDS_DIR="$DATA_HOME/cardfile"
+# Cards folder from before the rename; NoteChest moves it into place on its first start.
+RENAMED_CARDS_DIR="$CARDS_VENDOR_DIR/Cardfile"
 # Installed by the cargo-dist installer of 2.0.0-alpha.1 to 2.0.0-alpha.3.
 LEGACY_DIR="$HOME/.cardfile/bin"
 # That installer appended `. "$HOME/.cardfile/bin/env"` to the shell profiles
@@ -165,29 +170,29 @@ desktop_dir() {
 # ─── Uninstall ───────────────────────────────────────────────────────────────
 
 uninstall() {
-    echo "${BLUE}Cardfile uninstaller${NC}"
+    echo "${BLUE}NoteChest uninstaller${NC}"
     echo "=============================="
     if [ ! -d "$LIB_DIR" ] && [ ! -f "$DESKTOP_FILE" ]; then
-        echo "Cardfile is not installed in $LIB_DIR."
-    elif ask "Uninstall Cardfile from $LIB_DIR?"; then
+        echo "NoteChest is not installed in $LIB_DIR."
+    elif ask "Uninstall NoteChest from $LIB_DIR?"; then
         rm -rf "$LIB_DIR"
         # Leave the shared FittyAr folder only while other apps use it.
         rmdir "$VENDOR_DIR" 2> /dev/null || true
-        # Only our own link: never a cardfile installed some other way.
-        if [ -L "$BIN_DIR/cardfile" ]; then
-            rm -f "$BIN_DIR/cardfile"
+        # Only our own link: never a notechest installed some other way.
+        if [ -L "$BIN_DIR/notechest" ]; then
+            rm -f "$BIN_DIR/notechest"
         fi
         rm -f "$DESKTOP_FILE" "$(desktop_dir)/$APP_ID.desktop"
         for size in $ICON_SIZES; do
             rm -f "$ICONS_DIR/${size}x${size}/apps/$APP_ID.png"
         done
         refresh_menus
-        echo "${GREEN}Cardfile was removed.${NC}"
+        echo "${GREEN}NoteChest was removed.${NC}"
     else
         echo "Uninstall cancelled."
         return 0
     fi
-    for cards in "$CARDS_DIR" "$PREVIOUS_CARDS_DIR"; do
+    for cards in "$CARDS_DIR" "$RENAMED_CARDS_DIR" "$PREVIOUS_CARDS_DIR"; do
         [ -d "$cards" ] && [ "$ASSUME_YES" != "true" ] || continue
         if ask "Also delete your cards and settings in $cards? This cannot be undone."; then
             rm -rf "$cards"
@@ -257,7 +262,7 @@ find_minisign() {
 # Sets VERSION (the tag) and RELEASE_JSON. GitHub lists releases newest first;
 # without --stable the first non-draft one wins, pre-releases included.
 pick_release() {
-    echo "Looking for the newest Cardfile release..."
+    echo "Looking for the newest NoteChest release..."
     if [ -n "$VERSION" ]; then
         case "$VERSION" in v*) ;; *) VERSION="v$VERSION" ;; esac
         RELEASE_JSON=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/tags/${VERSION}") \
@@ -320,15 +325,15 @@ verify() {
         NAME=${pair#*|}
         if ! curl -fsSL "${BASE}/${NAME}.minisig" -o "${FILE}.minisig" \
             || ! SIG_OUT=$("$MINISIGN" -V -P "$MINISIGN_PUBKEY" -m "$FILE" -x "${FILE}.minisig") \
-            || ! printf '%s\n' "$SIG_OUT" | tr -s ' \t' '  ' | grep -qF "Cardfile ${VERSION} release file: ${NAME}"; then
+            || ! printf '%s\n' "$SIG_OUT" | tr -s ' \t' '  ' | grep -qF "NoteChest ${VERSION} release file: ${NAME}"; then
             die "minisign signature verification failed for ${NAME}. Aborting."
         fi
     done
 }
 
-# Sets PKG_DIR (the extracted folder holding `cardfile`).
+# Sets PKG_DIR (the extracted folder holding `notechest`).
 download_release() {
-    TARBALL="cardfile-${TARGET}.tar.xz"
+    TARBALL="notechest-${TARGET}.tar.xz"
     printf '%s\n' "$RELEASE_JSON" | grep -qE "\"name\": *\"${TARBALL}\"" \
         || die "Release ${VERSION} has no ${TARBALL}."
     BASE="https://github.com/${REPO}/releases/download/${VERSION}"
@@ -339,8 +344,8 @@ download_release() {
     echo "Extracting..."
     mkdir "${TEMP_DIR}/extract"
     tar -xJf "${TEMP_DIR}/${TARBALL}" -C "${TEMP_DIR}/extract"
-    BIN_SRC=$(find "${TEMP_DIR}/extract" -type f -name cardfile | head -n 1)
-    [ -n "$BIN_SRC" ] || die "cardfile not found in ${TARBALL}."
+    BIN_SRC=$(find "${TEMP_DIR}/extract" -type f -name notechest | head -n 1)
+    [ -n "$BIN_SRC" ] || die "notechest not found in ${TARBALL}."
     PKG_DIR=$(dirname "$BIN_SRC")
 }
 
@@ -373,11 +378,11 @@ install_desktop_integration() {
     cat > "$DESKTOP_FILE" << EOF
 [Desktop Entry]
 Type=Application
-Name=Cardfile
+Name=NoteChest
 GenericName=Card file
 Comment=A modern digital card file for your notes
-Exec=$(desktop_exec_arg "$LIB_DIR/cardfile")
-TryExec=$(desktop_string "$LIB_DIR/cardfile")
+Exec=$(desktop_exec_arg "$LIB_DIR/notechest")
+TryExec=$(desktop_string "$LIB_DIR/notechest")
 Icon=$APP_ID
 Terminal=false
 Categories=Office;
@@ -404,17 +409,17 @@ EOF
 install_files() {
     echo "Installing to $LIB_DIR..."
     mkdir -p "$LIB_DIR" "$BIN_DIR"
-    # Copy next to the target and rename over it: a running Cardfile keeps its
+    # Copy next to the target and rename over it: a running NoteChest keeps its
     # old file (no "Text file busy"), and a failed copy changes nothing.
-    STAGE="$LIB_DIR/.cardfile.new.$$"
+    STAGE="$LIB_DIR/.notechest.new.$$"
     cp "$BIN_SRC" "$STAGE"
     chmod 755 "$STAGE"
     for item in "$PKG_DIR"/* ; do
         [ "$item" = "$BIN_SRC" ] && continue
         cp -R "$item" "$LIB_DIR/"
     done
-    mv -f "$STAGE" "$LIB_DIR/cardfile"
-    ln -sf "$LIB_DIR/cardfile" "$BIN_DIR/cardfile"
+    mv -f "$STAGE" "$LIB_DIR/notechest"
+    ln -sf "$LIB_DIR/notechest" "$BIN_DIR/notechest"
 }
 
 # repair_shell_profiles: while the legacy env file exists its lines are only
@@ -461,6 +466,19 @@ remove_legacy() {
         echo "Moving from $PREVIOUS_DIR to $LIB_DIR..."
         rm -rf "$PREVIOUS_DIR"
     fi
+    # The same installer under the previous name (Cardfile): NoteChest replaces it.
+    # Only the program goes; the cards stay and are moved by NoteChest itself.
+    if [ -f "$RENAMED_DIR/cardfile" ]; then
+        echo "Replacing the Cardfile installation in $RENAMED_DIR (now NoteChest)..."
+        rm -rf "$RENAMED_DIR"
+        case "$(readlink "$BIN_DIR/cardfile" 2> /dev/null)" in
+            "$RENAMED_DIR"/*) rm -f "$BIN_DIR/cardfile" ;;
+        esac
+        rm -f "$APPS_DIR/$RENAMED_APP_ID.desktop" "$(desktop_dir)/$RENAMED_APP_ID.desktop"
+        for size in $ICON_SIZES; do
+            rm -f "$ICONS_DIR/${size}x${size}/apps/$RENAMED_APP_ID.png"
+        done
+    fi
     [ -f "$LEGACY_DIR/cardfile" ] || return 0
     echo "An older Cardfile installation was found in $LEGACY_DIR."
     if ask "Remove it (your cards are kept)?"; then
@@ -473,7 +491,7 @@ remove_legacy() {
 check_runtime() {
     # GPUI needs Vulkan and xkbcommon at run time; warn early instead of failing silently.
     if command -v ldd > /dev/null 2>&1; then
-        MISSING=$(ldd "$LIB_DIR/cardfile" 2> /dev/null | awk '/not found/ {print $1}' | tr '\n' ' ')
+        MISSING=$(ldd "$LIB_DIR/notechest" 2> /dev/null | awk '/not found/ {print $1}' | tr '\n' ' ')
         if [ -n "$MISSING" ]; then
             echo "${YELLOW}Missing system libraries: ${MISSING}${NC}"
             echo "On Debian/Ubuntu: sudo apt install libxkbcommon0 libxkbcommon-x11-0 libvulkan1 libasound2"
@@ -483,15 +501,15 @@ check_runtime() {
 
 print_summary() {
     echo "=============================="
-    echo "${GREEN}Cardfile ${VERSION} installed.${NC}"
-    echo "  Program:   ${BLUE}${LIB_DIR}/cardfile${NC}"
-    echo "  Command:   ${BLUE}${BIN_DIR}/cardfile${NC}"
+    echo "${GREEN}NoteChest ${VERSION} installed.${NC}"
+    echo "  Program:   ${BLUE}${LIB_DIR}/notechest${NC}"
+    echo "  Command:   ${BLUE}${BIN_DIR}/notechest${NC}"
     if [ "${DESKTOP_DONE:-false}" = "true" ]; then
         echo "  Shortcuts: application menu and desktop"
     else
         echo "  Shortcuts: application menu"
     fi
-    echo "  Updates:   automatic, from inside Cardfile"
+    echo "  Updates:   automatic, from inside NoteChest"
     case ":$PATH:" in
         *:"$BIN_DIR":*) ;;
         *)
@@ -501,7 +519,7 @@ print_summary() {
             ;;
     esac
     echo ""
-    echo "Open Cardfile from your application menu, or type: ${GREEN}cardfile${NC}"
+    echo "Open NoteChest from your application menu, or type: ${GREEN}notechest${NC}"
 }
 
 main() {
@@ -510,7 +528,7 @@ main() {
         uninstall
         return 0
     fi
-    echo "${BLUE}Cardfile installer for Linux${NC}"
+    echo "${BLUE}NoteChest installer for Linux${NC}"
     echo "=============================="
     detect_platform
     check_dependencies
@@ -523,7 +541,7 @@ main() {
     pick_release
     download_release
     if [ "$VERIFY_ONLY" = "true" ]; then
-        echo "${GREEN}Cardfile ${VERSION} downloaded and verified; nothing was installed (--verify-only).${NC}"
+        echo "${GREEN}NoteChest ${VERSION} downloaded and verified; nothing was installed (--verify-only).${NC}"
         return 0
     fi
     install_files

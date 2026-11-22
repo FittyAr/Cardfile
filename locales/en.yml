@@ -1,14 +1,14 @@
 _version: 1
 
 app:
-  data_missing: "The data folder %{path} was not found. Connect the drive that holds it and start Cardfile again. To go back to the default folder instead, delete %{pointer}."
-  synced_folder: "Your notes are in a folder synced by %{service}. Syncing an open database can damage it or create conflicting copies: close Cardfile before using it on another computer, or keep the data outside the synced folder."
+  data_missing: "The data folder %{path} was not found. Connect the drive that holds it and start NoteChest again. To go back to the default folder instead, delete %{pointer}."
+  synced_folder: "Your notes are in a folder synced by %{service}. Syncing an open database can damage it or create conflicting copies: close NoteChest before using it on another computer, or keep the data outside the synced folder."
   unsaved_quit:
     title: "Your last changes were not saved"
     body: "The open card could not be saved: %{error}. If you quit now, the changes since the last save are lost."
     quit: "Quit without saving"
-  name: Cardfile
-  db_error_title: Cardfile cannot open its database
+  name: NoteChest
+  db_error_title: NoteChest cannot open its database
   db_error_body: "The database %{path} could not be opened: %{error}"
   open_keymap_failed: "Could not open the keymap file: %{error}"
 test:
@@ -146,17 +146,17 @@ wizard:
     finish: Ready
   welcome:
     language: "Language"
-    title: Welcome to Cardfile
+    title: Welcome to NoteChest
     body: "Your digital card file for notes, ideas and anything you want to keep. Let's set it up in a few steps."
   storage:
     standard: Standard
     standard_desc: "Data is stored in your user profile:"
     portable: Portable
-    portable_desc: Data is stored in a "data" folder next to Cardfile, so you can carry it on a USB drive.
+    portable_desc: Data is stored in a "data" folder next to NoteChest, so you can carry it on a USB drive.
     portable_unavailable: Portable mode is unavailable because the program folder is not writable.
   security:
     none: No password
-    none_desc: Cardfile opens directly. Best for a personal computer.
+    none_desc: NoteChest opens directly. Best for a personal computer.
     single: Password
     single_desc: One account protected by a password.
     multi: Several users
@@ -177,7 +177,7 @@ wizard:
   finish:
     intro: "Everything is ready:"
     later: All of this can be changed later in Settings.
-    start: Start using Cardfile
+    start: Start using NoteChest
   error:
     username: Enter a user name.
     password_short: The password must have at least 4 characters.
@@ -187,7 +187,7 @@ wizard:
 login:
   title: Sign in
   register_title: Create account
-  locked_title: "Cardfile is locked, %{name}"
+  locked_title: "NoteChest is locked, %{name}"
   username: User name
   display_name: Display name
   password: Password
@@ -202,11 +202,11 @@ login:
     taken: That user name is already taken.
 
 welcome:
-  title: Welcome to Cardfile
+  title: Welcome to NoteChest
   body: |
     ## Getting started
 
-    Cardfile keeps your notes as **cards**. Create one with the **+** button or **Ctrl+N**.
+    NoteChest keeps your notes as **cards**. Create one with the **+** button or **Ctrl+N**.
 
     - Format text with the toolbar or shortcuts: **Ctrl+B** bold, *Ctrl+I* italic, Ctrl+U underline.
     - Type `# ` for a heading, `- ` for a list or `[] ` for a checklist.
@@ -333,7 +333,7 @@ menu:
   backup: Back up now
   open_data_folder: Open data folder
   check_updates: Check for updates
-  about: About Cardfile
+  about: About NoteChest
   lock: Lock
   sign_out: Sign out
   quit: Quit
@@ -343,19 +343,19 @@ palette:
 
 updates:
   title: Update available
-  available: "Cardfile %{version} is available. Click to download."
+  available: "NoteChest %{version} is available. Click to download."
   latest: You have the latest version.
   failed: "Could not check for updates: %{error}"
   managed: Updates for this installation are handled by your app store or package manager.
-  dialog_title: "Cardfile %{version} is available"
+  dialog_title: "NoteChest %{version} is available"
   current: "You have version %{version}."
   install: "Update and restart"
   later: "Later"
   open_page: "Release page"
   downloading: "Downloading… %{mb} MB"
   installing: "Installing…"
-  installed_restart: "The update is installed. Restart Cardfile to use it."
-  manual: "This copy of Cardfile can't update itself. Download the new version from the release page."
+  installed_restart: "The update is installed. Restart NoteChest to use it."
+  manual: "This copy of NoteChest can't update itself. Download the new version from the release page."
 
 about:
   description: A modern digital card file for your notes.
@@ -433,10 +433,10 @@ settings:
     mask_hint: The rest of the title is masked in the list.
     lock_modes: Available protection levels
     auth_mode: Sign-in mode
-    auth_mode_hint: How people open Cardfile on this computer.
+    auth_mode_hint: How people open NoteChest on this computer.
     auth_one_user: Remove the other user accounts before switching to a single-account mode.
     auth_needs_password: Set a password below first.
-    auth_changed: Sign-in mode changed. It applies the next time Cardfile starts.
+    auth_changed: Sign-in mode changed. It applies the next time NoteChest starts.
     change_password: Change password
     lock_password: Lock password
     password_hint: This password unlocks private and encrypted cards. Encrypted cards are re-encrypted when you change it.
@@ -459,11 +459,11 @@ settings:
     invalid: Enter a user name and a password of at least 4 characters.
   data:
     moved: "Custom folder, moved from the default location."
-    command_line: "Folder set with --data-dir when Cardfile was started."
+    command_line: "Folder set with --data-dir when NoteChest was started."
     location: Data folder
     portable: Portable mode is active.
     standard: Standard mode.
-    files: "Your cards and settings are in cardfile.db and your shortcuts in keymap.json, both in this folder. Copy or sync the whole folder to keep everything."
+    files: "Your cards and settings are in notechest.db and your shortcuts in keymap.json, both in this folder. Copy or sync the whole folder to keep everything."
     export: Export
     export_hint: Export all cards that are not private or encrypted.
   group:
@@ -535,7 +535,7 @@ ai:
     encrypted_note: "Encrypted cards are never available to any AI."
   mcp:
     title: "MCP server for AI clients"
-    hint: "Lets AI apps such as Claude, Cursor or VS Code use Cardfile while it is open, on this computer only (127.0.0.1). Each client needs an API key; changes it makes are recorded as made by Cardfile AI on your behalf."
+    hint: "Lets AI apps such as Claude, Cursor or VS Code use NoteChest while it is open, on this computer only (127.0.0.1). Each client needs an API key; changes it makes are recorded as made by NoteChest AI on your behalf."
     enable: "Run the MCP server"
     port: "Port"
     bad_port: "Use a port number between 1024 and 65535."
@@ -544,7 +544,7 @@ ai:
     stopped: "Stopped"
   keys:
     title: "API keys"
-    hint: "A key lets an AI client see and change what you can, as Cardfile AI. Revoke it at any time."
+    hint: "A key lets an AI client see and change what you can, as NoteChest AI. Revoke it at any time."
     name_placeholder: "Key name, e.g. Claude Desktop"
     default_name: "AI client"
     create: "Create key"
@@ -569,7 +569,7 @@ ai:
     cloud_title: "Cloud services"
     cloud_hint: "Powerful models run by the provider. You need an account and an API key."
     local_title: "On this computer"
-    local_hint: "Free and private: install the app, download a model, and Cardfile connects to it."
+    local_hint: "Free and private: install the app, download a model, and NoteChest connects to it."
     custom: "Other compatible service"
     custom_hint: "Any OpenAI-compatible URL"
     connect: "Connect %{name}"
@@ -578,7 +578,7 @@ ai:
     model_hint: "The suggested model is a good start. “Test connection” also loads the models your account can use."
     local_steps: "Make sure the app is running and has at least one model downloaded. No API key is needed."
     advanced: "Advanced (server URL and API format)"
-    no_keyring: "Your system's credential manager is not available, so API keys are stored in the Cardfile database."
+    no_keyring: "Your system's credential manager is not available, so API keys are stored in the NoteChest database."
 
 chat:
   report: "Report"
@@ -636,7 +636,7 @@ data_operations:
   move_tooltip: "Copy the database, backups and settings to another folder and use it from now on"
   move: "Move the data folder"
   choose_move: "Choose where to move the data folder"
-  move_confirm: "Cardfile will copy the database, its backups and your settings to %{path}, then restart using that folder. The current folder is left unchanged: delete it yourself once you have checked that everything is in the new one."
+  move_confirm: "NoteChest will copy the database, its backups and your settings to %{path}, then restart using that folder. The current folder is left unchanged: delete it yourself once you have checked that everything is in the new one."
   move_unavailable: "The data folder of a portable copy, or one chosen with --data-dir, cannot be moved from here."
   admin_required: Only an administrator can back up the entire collection.
   backups: Database backups
@@ -644,16 +644,16 @@ data_operations:
   open_backup: Open backup folder
   default_backup: Use default folder
   daily: Automatic daily backup
-  daily_hint: "While Cardfile is open, back up every 24 hours. Missed backups run after signing in; unavailable destinations are retried hourly."
+  daily_hint: "While NoteChest is open, back up every 24 hours. Missed backups run after signing in; unavailable destinations are retried hourly."
   retention: Automatic copies to keep
   contents: "Backups contain the entire collection, including all users, attachments and encrypted cards. They retain existing card encryption; they do not encrypt unencrypted content. System credential-store API keys are not included."
-  choose_restore: Choose a Cardfile database backup
+  choose_restore: Choose a NoteChest database backup
   restore: Restore backup
-  restore_confirm: "Replace ALL users, cards, attachments and permissions with this backup? Cardfile will create a safety backup and restart. Sign in using the restored accounts and passwords. This does not merge collections."
+  restore_confirm: "Replace ALL users, cards, attachments and permissions with this backup? NoteChest will create a safety backup and restart. Sign in using the restored accounts and passwords. This does not merge collections."
   portable: Create portable copy
-  portable_confirm: "Create a complete copy of all users, cards and attachments in a new 'Cardfile portable' folder? MCP and automatic backups will be disabled in the copy. Re-enter AI keys stored in this computer's credential store on another computer. Close Cardfile and finish OneDrive synchronization before changing computers."
-  choose_portable: Choose the parent folder for Cardfile portable
-  portable_unsupported: "Download the portable archive from https://github.com/FittyAr/Cardfile/releases to create a portable copy of this store or package-managed installation."
+  portable_confirm: "Create a complete copy of all users, cards and attachments in a new 'NoteChest portable' folder? MCP and automatic backups will be disabled in the copy. Re-enter AI keys stored in this computer's credential store on another computer. Close NoteChest and finish OneDrive synchronization before changing computers."
+  choose_portable: Choose the parent folder for NoteChest portable
+  portable_unsupported: "Download the portable archive from https://github.com/FittyAr/NoteChest/releases to create a portable copy of this store or package-managed installation."
   destination_exists: "The destination already exists. Choose another parent folder; existing data will not be overwritten."
   invalid_destination: The destination is not a valid folder.
   nested_destination: Choose a destination outside the active data folder and resource dictionaries.

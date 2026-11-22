@@ -1,11 +1,11 @@
 # Credits
 
-Cardfile stands on the shoulders of these projects. The full, generated list of every crate and
+NoteChest stands on the shoulders of these projects. The full, generated list of every crate and
 its license ships with each release as `THIRD_PARTY_LICENSES.html` (`cargo about`).
 
 ## Frameworks and major libraries
 
-| Project | Use in Cardfile | License |
+| Project | Use in NoteChest | License |
 |---------|-----------------|---------|
 | [GPUI](https://github.com/zed-industries/zed/tree/main/crates/gpui) by Zed Industries | GPU-accelerated UI framework | Apache-2.0 |
 | [gpui-kit / gpui-component](https://github.com/longbridge/gpui-component) by Longbridge | UI components, themes, icons | Apache-2.0 |
@@ -39,14 +39,15 @@ its license ships with each release as `THIRD_PARTY_LICENSES.html` (`cargo about
 | [cargo-deb](https://github.com/kornelski/cargo-deb), [cargo-generate-rpm](https://github.com/cat-in-136/cargo-generate-rpm), [linuxdeploy](https://github.com/linuxdeploy/linuxdeploy) | Linux packages (build tools, not shipped) | MIT |
 | [cargo-about](https://github.com/EmbarkStudios/cargo-about) | Third-party license report | MIT OR Apache-2.0 |
 | [minisign](https://jedisct1.github.io/minisign/) | Release signatures (CI tool) | ISC |
-| [minisign-verify](https://github.com/jedisct1/rust-minisign-verify) | Update signature check; its test vector is reused in `cardfile-updater` tests | MIT |
+| [minisign-verify](https://github.com/jedisct1/rust-minisign-verify) | Update signature check; its test vector is reused in `notechest-updater` tests | MIT |
 
 ## Brand
 
-| Project | Use in Cardfile | License |
+| Project | Use in NoteChest | License |
 |---------|-----------------|---------|
-| [Inter](https://github.com/rsms/inter) by Rasmus Andersson (Inter Display SemiBold) | Bundled text font (`assets/fonts/`) and the letterforms of the "Cardfile" wordmark (`assets/brand/wordmark.svg`) | SIL Open Font License 1.1 |
-| [resvg](https://github.com/linebender/resvg) (via `resvg-py`), [HarfBuzz](https://github.com/harfbuzz/harfbuzz) (via `uharfbuzz`), [fontTools](https://github.com/fonttools/fonttools), [Pillow](https://python-pillow.org) | Rendering the logo rasters and icons in `scripts/render_brand.py` (build tools, not shipped) | Apache-2.0 OR MIT / MIT, Apache-2.0 / MIT / MIT-CMU |
+| [Inter](https://github.com/rsms/inter) by Rasmus Andersson (Inter Display SemiBold) | Bundled text font (`assets/fonts/`) | SIL Open Font License 1.1 |
+| [Pillow](https://python-pillow.org), [NumPy](https://numpy.org), [SciPy](https://scipy.org) | Resizing the logo and writing icons in `assets/brand/notechest/export.py` (build tools, not shipped) | MIT-CMU / BSD-3-Clause / BSD-3-Clause |
+| NoteChest logo (the NC paper-fold mark and the wordmark) | Created for this project with an AI image-generation tool (OpenAI) and approved by the maintainer; the approved original is in `assets/brand/notechest/source/` | The NoteChest name and logo identify the project |
 
 ## Dictionaries
 
@@ -58,5 +59,5 @@ its license ships with each release as `THIRD_PARTY_LICENSES.html` (`cargo about
 
 ## Inspiration
 
-- Cardfile 1.x (Python/Flet), whose 9 themes were ported to Cardfile 2.
+- Cardfile 1.x (Python/Flet), whose 9 themes were ported to NoteChest 2.
 - [Zed](https://zed.dev), for keymap and theme design (concepts only, no code).

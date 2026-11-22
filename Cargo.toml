@@ -1,32 +1,32 @@
 [workspace]
 resolver = "3"
 members = ["crates/*"]
-default-members = ["crates/cardfile"]
+default-members = ["crates/notechest"]
 
 [workspace.package]
-version = "2.0.0-beta.7"
+version = "2.0.0"
 edition = "2024"
 rust-version = "1.99"
 license = "MIT OR Apache-2.0"
 authors = ["FittyAr"]
-repository = "https://github.com/FittyAr/Cardfile"
+repository = "https://github.com/FittyAr/NoteChest"
 homepage = "https://cardfile.fitty.ar/"
 publish = false
 
 [workspace.dependencies]
 # Internal crates
-cardfile-agent = { path = "crates/cardfile-agent" }
-cardfile-ai = { path = "crates/cardfile-ai" }
-cardfile-core = { path = "crates/cardfile-core" }
-cardfile-crypto = { path = "crates/cardfile-crypto" }
-cardfile-db = { path = "crates/cardfile-db" }
-cardfile-doc = { path = "crates/cardfile-doc" }
-cardfile-editor = { path = "crates/cardfile-editor" }
-cardfile-i18n = { path = "crates/cardfile-i18n" }
-cardfile-media = { path = "crates/cardfile-media" }
-cardfile-mcp = { path = "crates/cardfile-mcp" }
-cardfile-ui = { path = "crates/cardfile-ui" }
-cardfile-updater = { path = "crates/cardfile-updater" }
+notechest-agent = { path = "crates/notechest-agent" }
+notechest-ai = { path = "crates/notechest-ai" }
+notechest-core = { path = "crates/notechest-core" }
+notechest-crypto = { path = "crates/notechest-crypto" }
+notechest-db = { path = "crates/notechest-db" }
+notechest-doc = { path = "crates/notechest-doc" }
+notechest-editor = { path = "crates/notechest-editor" }
+notechest-i18n = { path = "crates/notechest-i18n" }
+notechest-media = { path = "crates/notechest-media" }
+notechest-mcp = { path = "crates/notechest-mcp" }
+notechest-ui = { path = "crates/notechest-ui" }
+notechest-updater = { path = "crates/notechest-updater" }
 
 # UI
 gpui-kit = "0.9.0"
@@ -114,7 +114,7 @@ todo = "warn"
 [profile.dev.package."*"]
 opt-level = 2
 # The audio callback and decoder thread must keep up in real time.
-[profile.dev.package.cardfile-media]
+[profile.dev.package.notechest-media]
 opt-level = 2
 
 [profile.release]
