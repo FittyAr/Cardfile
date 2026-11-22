@@ -1,6 +1,7 @@
 _version: 1
 
 app:
+  data_missing: "A pasta de dados %{path} não foi encontrada. Conecte a unidade que a contém e inicie o Cardfile novamente. Para voltar à pasta padrão, exclua %{pointer}."
   synced_folder: "Suas notas estão em uma pasta sincronizada pelo %{service}. Sincronizar um banco de dados aberto pode danificá-lo ou criar cópias em conflito: feche o Cardfile antes de usá-lo em outro computador ou mantenha os dados fora da pasta sincronizada."
   unsaved_quit:
     title: "Suas últimas alterações não foram salvas"
@@ -144,6 +145,7 @@ wizard:
     appearance: Aparência
     finish: Pronto
   welcome:
+    language: "Idioma"
     title: Boas-vindas ao Cardfile
     body: "Seu fichário digital para notas, ideias e tudo o que você quiser guardar. Vamos configurá-lo em poucos passos."
   storage:
@@ -456,6 +458,8 @@ settings:
     delete_body: A conta é removida. Seus cartões permanecem no banco de dados.
     invalid: Informe um nome de usuário e uma senha com pelo menos 4 caracteres.
   data:
+    moved: "Pasta personalizada, movida do local padrão."
+    command_line: "Pasta definida com --data-dir ao iniciar o Cardfile."
     location: Pasta de dados
     portable: O modo portátil está ativo.
     standard: Modo padrão.
@@ -627,6 +631,12 @@ attachment:
   no_app: "Nenhum aplicativo neste computador consegue abrir «%{name}». Instale um programa para este tipo de arquivo (para vídeos, um reprodutor de mídia como o VLC) e tente novamente."
   not_found: "O anexo não foi encontrado."
 data_operations:
+  move_button: "Mover…"
+  move_tooltip: "Copiar o banco de dados, os backups e as configurações para outra pasta e usá-la daqui em diante"
+  move: "Mover a pasta de dados"
+  choose_move: "Escolha para onde mover a pasta de dados"
+  move_confirm: "O Cardfile copiará o banco de dados, seus backups e suas configurações para %{path} e reiniciará usando essa pasta. A pasta atual fica inalterada: exclua-a você mesmo depois de conferir que tudo está na nova."
+  move_unavailable: "A pasta de dados de uma cópia portátil, ou uma escolhida com --data-dir, não pode ser movida por aqui."
   admin_required: "Somente um administrador pode fazer backup de toda a coleção."
   backups: "Backups do banco de dados"
   busy: "Preparando sua coleção. Aguarde…"

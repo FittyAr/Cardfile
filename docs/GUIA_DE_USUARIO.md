@@ -7,7 +7,9 @@ English: [USER_GUIDE.md](USER_GUIDE.md)
 
 ## Primer arranque
 
-La primera vez que abrís Cardfile, un asistente te pregunta cuatro cosas:
+La primera vez que abrís Cardfile, un asistente se abre en el idioma del sistema (en su
+primera pantalla podés elegir otro, que queda como idioma de tu cuenta) y te pregunta
+cuatro cosas:
 
 1. **Almacenamiento.**
    - *Estándar* guarda las tarjetas en tu perfil de usuario.
@@ -211,8 +213,20 @@ Cerrá Cardfile antes de extraer el pendrive o cambiar de equipo. En OneDrive es
 termine de sincronizar antes de abrir en otro equipo; no se admite uso simultáneo.
 Cardfile muestra un aviso al iniciar sesión si sus datos están en una carpeta sincronizada
 por OneDrive, Dropbox, Google Drive o un servicio similar.
-El bloqueo local no coordina equipos diferentes. El tamaño normal de ventana y el estado
-maximizado se recuerdan en `local-config.json`.
+El bloqueo local no coordina equipos diferentes. La app recuerda el tamaño, la posición y el estado
+maximizado de la ventana en `local-config.json`, y vuelve a abrir en el mismo monitor
+mientras siga conectado.
+
+**Mover la carpeta de datos.** Los administradores pueden mover toda la colección con
+**Configuración → Datos → Mover…**. Cardfile copia la base (una instantánea consistente),
+los respaldos, temas, atajos, diccionarios y preferencias locales a una carpeta `Cardfile`
+nueva dentro de la que elijas, y se reinicia usándola. La carpeta anterior queda intacta;
+bórrala cuando hayas comprobado la nueva. La ubicación se guarda en `data-location.txt`,
+en la carpeta de configuración del usuario (`%APPDATA%\FittyAr\Cardfile\config` en
+Windows, `~/.config/cardfile` en Linux). Si después esa carpeta no aparece (por
+ejemplo, un disco desconectado), Cardfile lo avisa al iniciar en vez de crear una colección
+vacía; borra `data-location.txt` para volver a la carpeta predeterminada. Las copias
+portables y las carpetas indicadas con `--data-dir` no se mueven de esta forma.
 
 
 ## Canal de actualizaciones

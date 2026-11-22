@@ -272,6 +272,166 @@ fn restore_confirmed(source: PathBuf, window: &mut Window, cx: &mut App) {
         .detach();
 }
 
+/// Ask for a new data folder and move the collection there (Settings → Data).
+pub(crate) fn move_data(window: &mut Window, cx: &mut App) {
+    if !administrator(cx) || busy() {
+        return;
+    }
+    if !AppState::get(cx).paths.movable() {
+        window.push_notification(
+            Notification::error(t("data_operations.move_unavailable")),
+            cx,
+        );
+        return;
+    }
+    let rx = cx.prompt_for_paths(PathPromptOptions {
+        files: false,
+        directories: true,
+        multiple: false,
+        prompt: Some(t("data_operations.choose_move").into()),
+    });
+    window
+        .spawn(cx, async move |cx| {
+            let Ok(Ok(Some(paths))) = rx.await else {
+                return;
+            };
+            let Some(base) = paths.into_iter().next() else {
+                return;
+            };
+            // Always a new folder inside the chosen one, so a move never mixes the
+            // collection with files already there.
+            let destination = base.join("Cardfile");
+            let _ = cx.update(|window, cx| {
+                if !administrator(cx) {
+                    return;
+                }
+                crate::dialogs::confirm(
+                    t("data_operations.move"),
+                    t_args(
+                        "data_operations.move_confirm",
+                        &[("path", &destination.display().to_string())],
+                    ),
+                    t("data_operations.move"),
+                    window,
+                    cx,
+                    move |window, cx| move_confirmed(destination.clone(), window, cx),
+                );
+            });
+        })
+        .detach();
+}
+
+fn move_confirmed(destination: PathBuf, window: &mut Window, cx: &mut App) {
+    let Some(operation) = begin(window, cx) else {
+        return;
+    };
+    let saved = flush(cx);
+    let db = AppState::db(cx);
+    let paths = AppState::get(cx).paths.clone();
+    let config = LocalPreferences::snapshot(cx);
+    // Stopping joins active MCP calls, so no write lands after the snapshot.
+    let stopped = crate::mcp_host::McpServer::stop(cx);
+    window
+        .spawn(cx, async move |cx| {
+            stopped.await;
+            let result = match saved.await {
+                Err(e) => Err(e),
+                Ok(()) => {
+                    cx.background_spawn(async move {
+                        let moved = relocate(&db, &paths, &destination, &config)?;
+                        DataPaths::set_location(&moved)?;
+                        anyhow::Ok(moved)
+                    })
+                    .await
+                }
+            };
+            let _ = cx.update(|window, cx| match result {
+                Ok(moved) => {
+                    tracing::info!(path = %moved.display(), "data folder moved; restarting");
+                    // The next process opens the new folder; this one must not
+                    // write to the old collection any more.
+                    let exe = std::env::var_os("APPIMAGE")
+                        .map(PathBuf::from)
+                        .or_else(|| std::env::current_exe().ok());
+                    if let Some(exe) = exe
+                        && let Err(e) = cardfile_updater::restart(&exe)
+                    {
+                        tracing::error!("restart after moving the data folder: {e}");
+                    }
+                    cx.quit();
+                }
+                Err(e) => {
+                    drop(operation);
+                    crate::mcp_host::McpServer::sync(cx);
+                    finished(window, cx, Err(e), false);
+                }
+            });
+        })
+        .detach();
+}
+
+/// Entries of the data folder a move does not copy: the live database with its
+/// journal and lock (a consistent snapshot is written instead), restore leftovers,
+/// staging folders and the logs, which are still open for writing.
+fn left_behind(name: &str) -> bool {
+    name.starts_with("cardfile.db")
+        || name == "cardfile.lock"
+        || name.starts_with(".restore-")
+        || name.starts_with(".cardfile-")
+        || name == "logs"
+}
+
+/// Copy the collection to `destination`, which must not exist yet: a consistent
+/// snapshot of the database plus everything else in the data folder (backups,
+/// themes, shortcuts, dictionaries, local preferences). Built in a staging folder
+/// next to the destination and renamed into place, so a failure leaves nothing
+/// half-copied. The current folder is not touched.
+pub(crate) fn relocate(
+    db: &Database,
+    paths: &DataPaths,
+    destination: &Path,
+    config: &LocalConfig,
+) -> anyhow::Result<PathBuf> {
+    anyhow::ensure!(
+        !destination.exists(),
+        "{}",
+        t("data_operations.destination_exists")
+    );
+    let parent = destination
+        .parent()
+        .ok_or_else(|| anyhow::anyhow!(t("data_operations.invalid_destination")))?;
+    let canonical_parent = parent.canonicalize()?;
+    let data_root = paths.root.canonicalize()?;
+    anyhow::ensure!(
+        !canonical_parent.starts_with(&data_root),
+        "{}",
+        t("data_operations.nested_destination")
+    );
+    let staging = tempfile::Builder::new()
+        .prefix(".cardfile-move-")
+        .tempdir_in(parent)?;
+    let root = staging.path();
+    for entry in std::fs::read_dir(&paths.root)? {
+        let entry = entry?;
+        let name = entry.file_name();
+        if left_behind(&name.to_string_lossy()) {
+            continue;
+        }
+        copy_tree(&entry.path(), &root.join(&name))?;
+    }
+    let snapshot = db.backup(root)?;
+    std::fs::rename(snapshot, root.join("cardfile.db"))?;
+    // The in-memory preferences may be newer than the file on disk.
+    config.save(root)?;
+    anyhow::ensure!(
+        !destination.exists(),
+        "{}",
+        t("data_operations.destination_exists")
+    );
+    std::fs::rename(root, destination)?;
+    Ok(destination.to_owned())
+}
+
 fn copy_tree(source: &Path, destination: &Path) -> std::io::Result<()> {
     if !source.exists() {
         return Ok(());
@@ -487,6 +647,7 @@ mod tests {
         let paths = DataPaths {
             root: temp.path().join("original-data"),
             portable: false,
+            origin: crate::paths::DataOrigin::Standard,
         };
         let db = Database::open(&paths.db(), None).unwrap();
         db.create_user("owner", "Owner", Some("password hash"), true)
@@ -530,6 +691,7 @@ mod tests {
         let paths = DataPaths {
             root: temp.path().join("data"),
             portable: true,
+            origin: crate::paths::DataOrigin::Portable,
         };
         let db = Database::open(&paths.db(), None).unwrap();
         let destination = temp.path().join("existing");
@@ -561,5 +723,90 @@ mod tests {
             .is_err()
         );
         assert!(!paths.root.join("nested").exists());
+    }
+
+    #[test]
+    fn relocate_copies_the_collection_and_its_backups_and_keeps_the_source() {
+        let temp = tempfile::tempdir().unwrap();
+        let paths = DataPaths {
+            root: temp.path().join("old"),
+            portable: false,
+            origin: crate::paths::DataOrigin::Standard,
+        };
+        let db = Database::open(&paths.db(), None).unwrap();
+        db.create_user("owner", "Owner", Some("password hash"), true)
+            .unwrap();
+        std::fs::create_dir_all(paths.backups()).unwrap();
+        std::fs::write(paths.backups().join("old.db"), b"a backup").unwrap();
+        std::fs::write(paths.keymap(), b"custom shortcuts").unwrap();
+        std::fs::create_dir_all(paths.logs()).unwrap();
+        std::fs::write(paths.logs().join("cardfile.log"), b"log").unwrap();
+        let config = LocalConfig {
+            daily_backup: false,
+            keep_automatic: 4,
+            ..Default::default()
+        };
+        std::fs::create_dir(temp.path().join("new")).unwrap();
+        let destination = temp.path().join("new").join("Cardfile");
+
+        let moved = relocate(&db, &paths, &destination, &config).unwrap();
+
+        assert_eq!(moved, destination);
+        // Opening the copy below creates its own lock; the move must not copy one.
+        assert!(!destination.join("cardfile.lock").exists());
+        let copied = Database::open(&destination.join("cardfile.db"), None).unwrap();
+        assert!(
+            copied
+                .list_users()
+                .unwrap()
+                .iter()
+                .any(|u| u.username == "owner")
+        );
+        assert_eq!(
+            std::fs::read(destination.join("backups").join("old.db")).unwrap(),
+            b"a backup"
+        );
+        assert_eq!(
+            std::fs::read(destination.join("keymap.json")).unwrap(),
+            b"custom shortcuts"
+        );
+        let local = LocalConfig::load(&destination);
+        assert_eq!(local.collection, config.collection);
+        assert_eq!(local.keep_automatic, 4);
+        assert!(!local.daily_backup);
+        // The logs stay behind; the source is untouched.
+        assert!(!destination.join("logs").exists());
+        assert!(paths.db().exists());
+        assert!(paths.backups().join("old.db").exists());
+        // No staging folder is left next to the destination.
+        let leftovers: Vec<_> = std::fs::read_dir(temp.path().join("new"))
+            .unwrap()
+            .map(|e| e.unwrap().file_name())
+            .collect();
+        assert_eq!(leftovers, vec![std::ffi::OsString::from("Cardfile")]);
+    }
+
+    #[test]
+    fn relocate_rejects_existing_and_nested_destinations() {
+        let temp = tempfile::tempdir().unwrap();
+        let paths = DataPaths {
+            root: temp.path().join("data"),
+            portable: false,
+            origin: crate::paths::DataOrigin::Moved,
+        };
+        let db = Database::open(&paths.db(), None).unwrap();
+        let config = LocalConfig::default();
+        let existing = temp.path().join("existing");
+        std::fs::create_dir(&existing).unwrap();
+        std::fs::write(existing.join("keep.txt"), b"do not replace").unwrap();
+        assert!(relocate(&db, &paths, &existing, &config).is_err());
+        assert_eq!(
+            std::fs::read(existing.join("keep.txt")).unwrap(),
+            b"do not replace"
+        );
+        let nested = paths.root.join("inside").join("Cardfile");
+        std::fs::create_dir_all(nested.parent().unwrap()).unwrap();
+        assert!(relocate(&db, &paths, &nested, &config).is_err());
+        assert!(!nested.exists());
     }
 }

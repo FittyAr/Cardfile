@@ -81,6 +81,77 @@ pub fn locale() -> String {
     rust_i18n::locale().to_string()
 }
 
+/// The compiled-in locale closest to the operating system's language, or `"en"`.
+/// Used before anyone has chosen a language (the first-run wizard, sign-in).
+pub fn system_locale() -> String {
+    sys_locale::get_locales()
+        .find_map(|tag| best_match(&tag, &available_locales()))
+        .unwrap_or_else(|| "en".to_owned())
+}
+
+/// The locale in `available` for a BCP 47 tag such as `es-AR`, `pt_PT` or
+/// `zh-Hans-CN`: an exact match first, then the same language in another region.
+fn best_match(tag: &str, available: &[String]) -> Option<String> {
+    let tag = tag
+        .split(['.', '@'])
+        .next()
+        .unwrap_or_default()
+        .replace('_', "-");
+    if let Some(exact) = available.iter().find(|l| l.eq_ignore_ascii_case(&tag)) {
+        return Some(exact.clone());
+    }
+    let language = tag
+        .split('-')
+        .next()
+        .unwrap_or_default()
+        .to_ascii_lowercase();
+    if language.is_empty() {
+        return None;
+    }
+    available
+        .iter()
+        .find(|l| {
+            l.split('-')
+                .next()
+                .is_some_and(|p| p.eq_ignore_ascii_case(&language))
+        })
+        .cloned()
+}
+
+/// A locale's name in its own language, ready to show in a language picker
+/// (Arabic and Persian names are put in visual order like other UI strings).
+pub fn language_name(code: &str) -> String {
+    let name = native_name(code);
+    if has_rtl(&name) { visual(&name) } else { name }
+}
+
+fn native_name(code: &str) -> String {
+    match code {
+        "en" => "English".into(),
+        "es" => "Español".into(),
+        "pt-BR" | "pt_BR" => "Português (Brasil)".into(),
+        "fr" => "Français".into(),
+        "de" => "Deutsch".into(),
+        "ru" => "Русский".into(),
+        "zh" | "zh-CN" => "中文".into(),
+        "hi" => "हिन्दी".into(),
+        "ar" => "العربية".into(),
+        "bn" => "বাংলা".into(),
+        "ja" => "日本語".into(),
+        "ko" => "한국어".into(),
+        "it" => "Italiano".into(),
+        "tr" => "Türkçe".into(),
+        "vi" => "Tiếng Việt".into(),
+        "id" => "Bahasa Indonesia".into(),
+        "pl" => "Polski".into(),
+        "uk" => "Українська".into(),
+        "nl" => "Nederlands".into(),
+        "th" => "ไทย".into(),
+        "fa" => "فارسی".into(),
+        other => other.to_owned(),
+    }
+}
+
 /// Locales compiled into the binary.
 pub fn available_locales() -> Vec<String> {
     let mut v: Vec<String> = rust_i18n::available_locales!()
@@ -102,6 +173,27 @@ mod tests {
         assert_eq!(t_args("test.greeting", &[("name", "Ada")]), "Hello, Ada!");
         assert!(available_locales().contains(&"en".to_owned()));
         assert!(!is_rtl_locale());
+    }
+
+    #[test]
+    fn system_tags_map_to_compiled_locales() {
+        let available: Vec<String> = ["en", "es", "pt-BR", "zh"]
+            .into_iter()
+            .map(String::from)
+            .collect();
+        let m = |tag: &str| best_match(tag, &available);
+        assert_eq!(m("es-AR").as_deref(), Some("es"));
+        assert_eq!(m("es_ES.UTF-8").as_deref(), Some("es"));
+        assert_eq!(m("pt-BR").as_deref(), Some("pt-BR"));
+        assert_eq!(m("pt-PT").as_deref(), Some("pt-BR"));
+        assert_eq!(m("zh-Hans-CN").as_deref(), Some("zh"));
+        assert_eq!(m("EN-us").as_deref(), Some("en"));
+        assert_eq!(m("sw-KE"), None);
+        assert_eq!(m(""), None);
+        // Every compiled locale has a display name of its own.
+        for code in available_locales() {
+            assert_ne!(native_name(&code), code, "{code}");
+        }
     }
 
     #[test]

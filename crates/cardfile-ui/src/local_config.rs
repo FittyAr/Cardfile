@@ -7,12 +7,16 @@ use gpui_kit::{App, AppContext as _, Global};
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 
-/// Normal window dimensions in logical pixels, plus its last maximized state.
+/// Normal window size and position in logical pixels, plus its last maximized state.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default)]
 pub(crate) struct WindowState {
     pub width: f32,
     pub height: f32,
+    /// Top-left corner in global display coordinates; `None` until first moved
+    /// or resized (the window then opens centered).
+    pub x: Option<f32>,
+    pub y: Option<f32>,
     pub maximized: bool,
 }
 
@@ -21,12 +25,53 @@ impl Default for WindowState {
         Self {
             width: 1180.,
             height: 760.,
+            x: None,
+            y: None,
             maximized: false,
         }
     }
 }
 
 impl WindowState {
+    /// Where to put a window of `size` so it reopens where it was, or `None` to
+    /// center it: when no position is saved, or the saved one is no longer on a
+    /// connected display (`displays` are their visible areas as x, y, width, height).
+    pub fn origin(
+        &self,
+        size: (f32, f32),
+        displays: &[(f32, f32, f32, f32)],
+    ) -> Option<(f32, f32)> {
+        let (x, y) = (self.x?, self.y?);
+        let (dx, dy, dw, dh) = self.display_at(size.0, displays)?;
+        // Keep the whole window on that display when it fits.
+        let x = x.min(dx + dw - size.0).max(dx);
+        let y = y.min(dy + dh - size.1).max(dy);
+        Some((x, y))
+    }
+
+    /// The display the window was last on, if it is still connected.
+    pub fn display(&self, displays: &[(f32, f32, f32, f32)]) -> Option<(f32, f32, f32, f32)> {
+        self.display_at(self.width, displays)
+    }
+
+    /// The display under the middle of the title bar of a window `width` wide at
+    /// the saved position: the title bar must stay reachable to move the window.
+    fn display_at(
+        &self,
+        width: f32,
+        displays: &[(f32, f32, f32, f32)],
+    ) -> Option<(f32, f32, f32, f32)> {
+        let (x, y) = (self.x?, self.y?);
+        if !x.is_finite() || !y.is_finite() || !width.is_finite() {
+            return None;
+        }
+        let (cx, cy) = (x + width / 2., y + 16.);
+        displays
+            .iter()
+            .copied()
+            .find(|(dx, dy, dw, dh)| cx >= *dx && cx < dx + dw && cy >= *dy && cy < dy + dh)
+    }
+
     pub fn clamped(&self, available: (f32, f32)) -> (f32, f32) {
         let d = Self::default();
         let clamp = |n: f32, default: f32, minimum: f32, maximum: f32| {
@@ -154,9 +199,37 @@ mod tests {
             width: f32::NAN,
             height: -2.,
             maximized: true,
+            ..Default::default()
         };
         assert_eq!(state.clamped((640., 400.)), (640., 400.));
         assert_eq!(state.clamped((1920., 1080.)), (1180., 760.));
+    }
+
+    #[test]
+    fn position_is_restored_only_on_a_connected_display() {
+        let primary = (0., 0., 2560., 1032.);
+        let second = (2560., 0., 1920., 1080.);
+        let at = |x, y| WindowState {
+            x: Some(x),
+            y: Some(y),
+            ..Default::default()
+        };
+        let size = (1000., 700.);
+        // Never moved: centered.
+        assert_eq!(WindowState::default().origin(size, &[primary]), None);
+        // On the second monitor, while it is connected.
+        assert_eq!(
+            at(3000., 100.).origin(size, &[primary, second]),
+            Some((3000., 100.))
+        );
+        // The second monitor was unplugged: centered on what is left.
+        assert_eq!(at(3000., 100.).origin(size, &[primary]), None);
+        // Partly off the bottom-right edge: pulled back inside the display.
+        assert_eq!(
+            at(2000., 900.).origin(size, &[primary]),
+            Some((1560., 332.))
+        );
+        assert_eq!(at(f32::NAN, 0.).origin(size, &[primary]), None);
     }
     #[test]
     fn unknown_version_falls_back_without_reusing_backup_path() {

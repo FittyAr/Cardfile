@@ -1,6 +1,7 @@
 _version: 1
 
 app:
+  data_missing: "Không tìm thấy thư mục dữ liệu %{path}. Hãy kết nối ổ chứa thư mục đó và khởi động lại Cardfile. Để quay về thư mục mặc định, hãy xóa %{pointer}."
   synced_folder: "Ghi chú của bạn nằm trong thư mục được %{service} đồng bộ. Đồng bộ một cơ sở dữ liệu đang mở có thể làm hỏng nó hoặc tạo bản sao xung đột: hãy đóng Cardfile trước khi dùng trên máy khác, hoặc để dữ liệu bên ngoài thư mục đồng bộ."
   unsaved_quit:
     title: "Các thay đổi gần đây chưa được lưu"
@@ -144,6 +145,7 @@ wizard:
     appearance: Giao diện
     finish: Sẵn sàng
   welcome:
+    language: "Ngôn ngữ"
     title: Chào mừng đến với Cardfile
     body: "Hộp thẻ kỹ thuật số của bạn cho ghi chú, ý tưởng và mọi thứ bạn muốn lưu giữ. Hãy thiết lập chỉ trong vài bước."
   storage:
@@ -456,6 +458,8 @@ settings:
     delete_body: Tài khoản sẽ bị xóa. Các thẻ của tài khoản vẫn còn trong cơ sở dữ liệu.
     invalid: Hãy nhập tên người dùng và mật khẩu có ít nhất 4 ký tự.
   data:
+    moved: "Thư mục tùy chỉnh, đã chuyển khỏi vị trí mặc định."
+    command_line: "Thư mục được đặt bằng --data-dir khi khởi động Cardfile."
     location: Thư mục dữ liệu
     portable: Chế độ di động đang bật.
     standard: Chế độ tiêu chuẩn.
@@ -627,6 +631,12 @@ attachment:
   no_app: "Không có ứng dụng nào trên máy tính này có thể mở “%{name}”. Hãy cài đặt một chương trình cho loại tệp này (với video, hãy dùng trình phát đa phương tiện như VLC) rồi thử lại."
   not_found: "Không tìm thấy tệp đính kèm."
 data_operations:
+  move_button: "Di chuyển…"
+  move_tooltip: "Sao chép cơ sở dữ liệu, bản sao lưu và cài đặt sang thư mục khác và dùng thư mục đó từ nay"
+  move: "Di chuyển thư mục dữ liệu"
+  choose_move: "Chọn nơi để di chuyển thư mục dữ liệu"
+  move_confirm: "Cardfile sẽ sao chép cơ sở dữ liệu, các bản sao lưu và cài đặt của bạn sang %{path}, rồi khởi động lại với thư mục đó. Thư mục hiện tại giữ nguyên: hãy tự xóa nó sau khi kiểm tra rằng mọi thứ đã có trong thư mục mới."
+  move_unavailable: "Không thể di chuyển thư mục dữ liệu của bản di động, hoặc thư mục được chọn bằng --data-dir, từ đây."
   admin_required: "Chỉ quản trị viên mới có thể sao lưu toàn bộ bộ sưu tập."
   backups: "Bản sao lưu cơ sở dữ liệu"
   busy: "Đang chuẩn bị bộ sưu tập. Vui lòng đợi…"

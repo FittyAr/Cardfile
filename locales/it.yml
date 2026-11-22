@@ -1,6 +1,7 @@
 _version: 1
 
 app:
+  data_missing: "La cartella dei dati %{path} non è stata trovata. Collega l’unità che la contiene e riavvia Cardfile. Per tornare alla cartella predefinita, elimina %{pointer}."
   synced_folder: "Le tue note si trovano in una cartella sincronizzata da %{service}. Sincronizzare un database aperto può danneggiarlo o creare copie in conflitto: chiudi Cardfile prima di usarlo su un altro computer, oppure tieni i dati fuori dalla cartella sincronizzata."
   unsaved_quit:
     title: "Le ultime modifiche non sono state salvate"
@@ -144,6 +145,7 @@ wizard:
     appearance: Aspetto
     finish: Fatto
   welcome:
+    language: "Lingua"
     title: Benvenuto in Cardfile
     body: "Il tuo schedario digitale per appunti, idee e tutto ciò che vuoi conservare. Configuriamolo in pochi passaggi."
   storage:
@@ -456,6 +458,8 @@ settings:
     delete_body: L'account viene rimosso. Le sue schede restano nel database.
     invalid: Inserisci un nome utente e una password di almeno 4 caratteri.
   data:
+    moved: "Cartella personalizzata, spostata dalla posizione predefinita."
+    command_line: "Cartella impostata con --data-dir all’avvio di Cardfile."
     location: Cartella dati
     portable: La modalità portatile è attiva.
     standard: Modalità standard.
@@ -627,6 +631,12 @@ attachment:
   no_app: "Nessuna applicazione su questo computer può aprire «%{name}». Installa un programma per questo tipo di file (per i video, un lettore multimediale come VLC) e riprova."
   not_found: "Allegato non trovato."
 data_operations:
+  move_button: "Sposta…"
+  move_tooltip: "Copia il database, i backup e le impostazioni in un’altra cartella e usala da ora in poi"
+  move: "Sposta la cartella dei dati"
+  choose_move: "Scegli dove spostare la cartella dei dati"
+  move_confirm: "Cardfile copierà il database, i suoi backup e le tue impostazioni in %{path}, poi si riavvierà usando quella cartella. La cartella attuale resta invariata: eliminala tu dopo aver verificato che tutto sia in quella nuova."
+  move_unavailable: "La cartella dei dati di una copia portatile, o una scelta con --data-dir, non può essere spostata da qui."
   admin_required: "Solo un amministratore può eseguire il backup dell’intera raccolta."
   backups: "Backup del database"
   busy: "Preparazione della raccolta. Attendi…"

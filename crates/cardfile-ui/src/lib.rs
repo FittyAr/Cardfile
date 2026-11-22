@@ -35,10 +35,10 @@ use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::{ActiveTheme as _, h_flex, v_flex};
 use gpui_kit::{
     App, AppContext as _, Bounds, Context, IntoElement, ParentElement as _, Render, SharedString,
-    Styled as _, TitlebarOptions, Window, WindowBounds, WindowOptions, div, px, size,
+    Styled as _, TitlebarOptions, Window, WindowBounds, WindowOptions, div, point, px, size,
 };
 
-pub use paths::DataPaths;
+pub use paths::{DataOrigin, DataPaths};
 
 fn window_icon() -> Option<std::sync::Arc<image::RgbaImage>> {
     let bytes = include_bytes!("../../../packaging/linux/icons/256x256/ar.fittyar.Cardfile.png");
@@ -63,12 +63,34 @@ pub fn run(paths: DataPaths) {
         .with_assets(assets::Assets)
         .run(move |cx| {
             gpui_kit::init(cx);
-            cardfile_i18n::set_locale("en");
+            // The system language until a signed-in user's own setting applies, so the
+            // first-run wizard and the sign-in screen are not always in English.
+            let locale = cardfile_i18n::system_locale();
+            tracing::info!(%locale, "interface language before sign-in");
+            cardfile_i18n::set_locale(&locale);
             themes::load_fonts(cx);
             themes::init(&paths, cx);
             themes::apply(themes::DEFAULT_THEME, cx);
             keymap::init(&paths, cx);
 
+            // A folder the user moved the data to is gone (a disconnected drive, a
+            // renamed folder): say so instead of starting the wizard on an empty one.
+            if initial_db.is_none() && paths.origin == paths::DataOrigin::Moved {
+                let pointer = DataPaths::location_file()
+                    .map(|p| p.display().to_string())
+                    .unwrap_or_default();
+                show_startup_error(
+                    cardfile_i18n::t_args(
+                        "app.data_missing",
+                        &[
+                            ("path", &paths.root.display().to_string()),
+                            ("pointer", &pointer),
+                        ],
+                    ),
+                    cx,
+                );
+                return;
+            }
             // Open the database if it already exists; the wizard creates it otherwise.
             let (db, app_settings) = if let Some(initial_db) = initial_db {
                 match initial_db {
@@ -106,13 +128,39 @@ pub fn run(paths: DataPaths) {
                 session: None,
             });
 
-            let available = cx
+            // Visible areas of the connected displays, to reopen the window where it
+            // was (if that display is still there) at a size that fits it.
+            let screens = cx.displays();
+            let displays: Vec<(f32, f32, f32, f32)> = screens
+                .iter()
+                .map(|d| {
+                    let b = d.visible_bounds();
+                    (
+                        b.origin.x.into(),
+                        b.origin.y.into(),
+                        b.size.width.into(),
+                        b.size.height.into(),
+                    )
+                })
+                .collect();
+            // GPUI only honours a position that lies on the display it is told to
+            // use (the primary one by default), so name the display explicitly.
+            let home = initial_config.window.display(&displays);
+            let home_id = home.and_then(|rect| {
+                displays
+                    .iter()
+                    .position(|d| *d == rect)
+                    .map(|i| screens[i].id())
+            });
+            let primary = cx
                 .primary_display()
                 .map(|d| d.visible_bounds().size)
                 .unwrap_or(size(px(1180.), px(760.)));
-            let (width, height) = initial_config
-                .window
-                .clamped((available.width.into(), available.height.into()));
+            let available = home.map_or((primary.width.into(), primary.height.into()), |d| {
+                (d.2, d.3)
+            });
+            let (width, height) = initial_config.window.clamped(available);
+            let origin = initial_config.window.origin((width, height), &displays);
             let maximized = initial_config.window.maximized;
             let prefs = local_config::LocalPreferences {
                 root: paths.root.clone(),
@@ -123,7 +171,13 @@ pub fn run(paths: DataPaths) {
             cx.set_global(prefs.clone());
             // Establish a stable collection ID even before a first backup.
             local_config::LocalPreferences::change(cx, |_| {});
-            let bounds = Bounds::centered(None, size(px(width), px(height)), cx);
+            let bounds = match origin {
+                Some((x, y)) => Bounds {
+                    origin: point(px(x), px(y)),
+                    size: size(px(width), px(height)),
+                },
+                None => Bounds::centered(None, size(px(width), px(height)), cx),
+            };
             // The app draws its own title bar (like Zed): no native frame.
             let options = WindowOptions {
                 window_bounds: Some(if maximized {
@@ -131,6 +185,7 @@ pub fn run(paths: DataPaths) {
                 } else {
                     WindowBounds::Windowed(bounds)
                 }),
+                display_id: home_id,
                 titlebar: Some(TitlebarOptions {
                     title: Some("Cardfile".into()),
                     ..gpui_kit::component::TitleBar::title_bar_options()
@@ -143,8 +198,8 @@ pub fn run(paths: DataPaths) {
                 window_background: gpui_kit::WindowBackgroundAppearance::Opaque,
                 app_id: Some("ar.fittyar.Cardfile".into()),
                 window_min_size: Some(size(
-                    px(760.).min(available.width),
-                    px(480.).min(available.height),
+                    px(760.).min(px(available.0)),
+                    px(480.).min(px(available.1)),
                 )),
                 // Used by X11; Windows takes the icon from the executable's resources.
                 icon: window_icon(),

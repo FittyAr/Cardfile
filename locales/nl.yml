@@ -1,6 +1,7 @@
 _version: 1
 
 app:
+  data_missing: "De gegevensmap %{path} is niet gevonden. Sluit de schijf aan waarop hij staat en start Cardfile opnieuw. Verwijder %{pointer} om terug te gaan naar de standaardmap."
   synced_folder: "Je notities staan in een map die door %{service} wordt gesynchroniseerd. Een geopende database synchroniseren kan deze beschadigen of conflicterende kopieën maken: sluit Cardfile voordat je het op een andere computer gebruikt, of bewaar de gegevens buiten de gesynchroniseerde map."
   unsaved_quit:
     title: "Je laatste wijzigingen zijn niet opgeslagen"
@@ -144,6 +145,7 @@ wizard:
     appearance: Uiterlijk
     finish: Klaar
   welcome:
+    language: "Taal"
     title: Welkom bij Cardfile
     body: "Je digitale kaartenbak voor notities, ideeën en alles wat je wilt bewaren. We stellen het in een paar stappen in."
   storage:
@@ -456,6 +458,8 @@ settings:
     delete_body: Het account wordt verwijderd. De kaarten blijven in de database.
     invalid: Voer een gebruikersnaam en een wachtwoord van minstens 4 tekens in.
   data:
+    moved: "Eigen map, verplaatst vanaf de standaardlocatie."
+    command_line: "Map ingesteld met --data-dir bij het starten van Cardfile."
     location: Gegevensmap
     portable: De draagbare modus is actief.
     standard: Standaardmodus.
@@ -627,6 +631,12 @@ attachment:
   no_app: "Geen enkele app op deze computer kan “%{name}” openen. Installeer een programma voor dit bestandstype (voor video's een mediaspeler zoals VLC) en probeer het opnieuw."
   not_found: "De bijlage is niet gevonden."
 data_operations:
+  move_button: "Verplaatsen…"
+  move_tooltip: "De database, back-ups en instellingen naar een andere map kopiëren en die voortaan gebruiken"
+  move: "Gegevensmap verplaatsen"
+  choose_move: "Kies waar de gegevensmap naartoe moet"
+  move_confirm: "Cardfile kopieert de database, de back-ups en je instellingen naar %{path} en start daarna opnieuw met die map. De huidige map blijft ongewijzigd: verwijder hem zelf zodra je hebt gecontroleerd dat alles in de nieuwe staat."
+  move_unavailable: "De gegevensmap van een draagbare kopie, of een map gekozen met --data-dir, kan hier niet worden verplaatst."
   admin_required: "Alleen een beheerder kan een back-up van de hele verzameling maken."
   backups: "Databaseback-ups"
   busy: "Uw verzameling wordt voorbereid. Even geduld…"

@@ -1,6 +1,7 @@
 _version: 1
 
 app:
+  data_missing: "找不到数据文件夹 %{path}。请连接存放它的驱动器，然后重新启动 Cardfile。若要改回默认文件夹，请删除 %{pointer}。"
   synced_folder: "你的笔记位于由 %{service} 同步的文件夹中。同步正在使用的数据库可能会损坏它或产生冲突副本：在另一台电脑上使用前请先关闭 Cardfile，或将数据放在同步文件夹之外。"
   unsaved_quit:
     title: "最近的更改尚未保存"
@@ -144,6 +145,7 @@ wizard:
     appearance: 外观
     finish: 完成
   welcome:
+    language: "语言"
     title: 欢迎使用 Cardfile
     body: "您的数字卡片盒，用来保存笔记、想法和一切您想留存的内容。只需几步即可完成设置。"
   storage:
@@ -456,6 +458,8 @@ settings:
     delete_body: 该账户将被移除。其卡片仍保留在数据库中。
     invalid: 请输入用户名和至少 4 个字符的密码。
   data:
+    moved: "自定义文件夹，已从默认位置移出。"
+    command_line: "启动 Cardfile 时通过 --data-dir 指定的文件夹。"
     location: 数据文件夹
     portable: 便携模式已启用。
     standard: 标准模式。
@@ -627,6 +631,12 @@ attachment:
   no_app: "本机上没有可以打开“%{name}”的应用程序。请安装支持此文件类型的程序（视频可使用 VLC 等媒体播放器），然后重试。"
   not_found: "未找到附件。"
 data_operations:
+  move_button: "移动…"
+  move_tooltip: "将数据库、备份和设置复制到另一个文件夹，并从此使用该文件夹"
+  move: "移动数据文件夹"
+  choose_move: "选择数据文件夹的新位置"
+  move_confirm: "Cardfile 会将数据库、其备份和你的设置复制到 %{path}，然后使用该文件夹重新启动。当前文件夹保持不变：确认新文件夹中内容齐全后，请自行删除它。"
+  move_unavailable: "便携版的数据文件夹或通过 --data-dir 指定的文件夹无法在此移动。"
   admin_required: "只有管理员可以备份整个集合。"
   backups: "数据库备份"
   busy: "正在准备集合，请稍候…"

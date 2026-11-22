@@ -1,6 +1,7 @@
 _version: 1
 
 app:
+  data_missing: "Der Datenordner %{path} wurde nicht gefunden. Schließe das Laufwerk an, auf dem er liegt, und starte Cardfile erneut. Um stattdessen zum Standardordner zurückzukehren, lösche %{pointer}."
   synced_folder: "Deine Notizen liegen in einem von %{service} synchronisierten Ordner. Das Synchronisieren einer geöffneten Datenbank kann sie beschädigen oder Konfliktkopien erzeugen: Schließe Cardfile, bevor du es auf einem anderen Computer nutzt, oder speichere die Daten außerhalb des synchronisierten Ordners."
   unsaved_quit:
     title: "Deine letzten Änderungen wurden nicht gespeichert"
@@ -144,6 +145,7 @@ wizard:
     appearance: Darstellung
     finish: Fertig
   welcome:
+    language: "Sprache"
     title: Willkommen bei Cardfile
     body: "Ihre digitale Kartei für Notizen, Ideen und alles, was Sie aufbewahren möchten. Richten wir sie in wenigen Schritten ein."
   storage:
@@ -456,6 +458,8 @@ settings:
     delete_body: Das Konto wird entfernt. Seine Karten bleiben in der Datenbank.
     invalid: Geben Sie einen Benutzernamen und ein Passwort mit mindestens 4 Zeichen ein.
   data:
+    moved: "Eigener Ordner, vom Standardort verschoben."
+    command_line: "Ordner, der beim Start von Cardfile mit --data-dir festgelegt wurde."
     location: Datenordner
     portable: Der portable Modus ist aktiv.
     standard: Standardmodus.
@@ -627,6 +631,12 @@ attachment:
   no_app: "Keine Anwendung auf diesem Computer kann „%{name}“ öffnen. Installieren Sie ein Programm für diesen Dateityp (für Videos einen Mediaplayer wie VLC) und versuchen Sie es erneut."
   not_found: "Der Anhang wurde nicht gefunden."
 data_operations:
+  move_button: "Verschieben…"
+  move_tooltip: "Datenbank, Sicherungen und Einstellungen in einen anderen Ordner kopieren und ab jetzt diesen verwenden"
+  move: "Datenordner verschieben"
+  choose_move: "Wähle, wohin der Datenordner verschoben werden soll"
+  move_confirm: "Cardfile kopiert die Datenbank, ihre Sicherungen und deine Einstellungen nach %{path} und startet dann mit diesem Ordner neu. Der aktuelle Ordner bleibt unverändert: Lösche ihn selbst, sobald du geprüft hast, dass alles im neuen ist."
+  move_unavailable: "Der Datenordner einer portablen Kopie oder ein mit --data-dir gewählter Ordner kann hier nicht verschoben werden."
   admin_required: "Nur Administratoren können die gesamte Sammlung sichern."
   backups: "Datenbanksicherungen"
   busy: "Ihre Sammlung wird vorbereitet. Bitte warten…"

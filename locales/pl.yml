@@ -1,6 +1,7 @@
 _version: 1
 
 app:
+  data_missing: "Nie znaleziono folderu danych %{path}. Podłącz dysk, na którym się znajduje, i uruchom Cardfile ponownie. Aby wrócić do domyślnego folderu, usuń %{pointer}."
   synced_folder: "Twoje notatki są w folderze synchronizowanym przez %{service}. Synchronizowanie otwartej bazy danych może ją uszkodzić lub utworzyć kopie powodujące konflikt: zamknij Cardfile przed użyciem go na innym komputerze albo trzymaj dane poza synchronizowanym folderem."
   unsaved_quit:
     title: "Ostatnie zmiany nie zostały zapisane"
@@ -144,6 +145,7 @@ wizard:
     appearance: Wygląd
     finish: Gotowe
   welcome:
+    language: "Język"
     title: Witamy w Cardfile
     body: "Twoja cyfrowa kartoteka na notatki, pomysły i wszystko, co chcesz zachować. Skonfigurujmy ją w kilku krokach."
   storage:
@@ -456,6 +458,8 @@ settings:
     delete_body: Konto zostanie usunięte. Jego karty pozostaną w bazie danych.
     invalid: Wpisz nazwę użytkownika i hasło o długości co najmniej 4 znaków.
   data:
+    moved: "Własny folder, przeniesiony z domyślnej lokalizacji."
+    command_line: "Folder ustawiony opcją --data-dir przy uruchomieniu Cardfile."
     location: Folder danych
     portable: Tryb przenośny jest aktywny.
     standard: Tryb standardowy.
@@ -627,6 +631,12 @@ attachment:
   no_app: "Na tym komputerze nie ma aplikacji, która może otworzyć „%{name}”. Zainstaluj program dla tego typu plików (dla filmów odtwarzacz multimedialny, np. VLC) i spróbuj ponownie."
   not_found: "Nie znaleziono załącznika."
 data_operations:
+  move_button: "Przenieś…"
+  move_tooltip: "Skopiuj bazę danych, kopie zapasowe i ustawienia do innego folderu i używaj go od teraz"
+  move: "Przenieś folder danych"
+  choose_move: "Wybierz, dokąd przenieść folder danych"
+  move_confirm: "Cardfile skopiuje bazę danych, jej kopie zapasowe i Twoje ustawienia do %{path}, a potem uruchomi się ponownie z tym folderem. Obecny folder pozostanie bez zmian: usuń go sam, gdy sprawdzisz, że wszystko jest w nowym."
+  move_unavailable: "Folderu danych kopii przenośnej ani folderu wybranego opcją --data-dir nie można przenieść stąd."
   admin_required: "Tylko administrator może wykonać kopię całej kolekcji."
   backups: "Kopie zapasowe bazy danych"
   busy: "Przygotowywanie kolekcji. Proszę czekać…"

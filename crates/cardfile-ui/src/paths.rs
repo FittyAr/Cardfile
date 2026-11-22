@@ -22,6 +22,23 @@ use std::path::{Path, PathBuf};
 
 pub const PORTABLE_FLAG: &str = "portable.flag";
 
+/// Name of the file, in the user's configuration folder, that points to a data
+/// folder moved away from the standard location (Settings → Data → Move).
+const LOCATION_FILE: &str = "data-location.txt";
+
+/// How the data folder was chosen.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DataOrigin {
+    /// The standard per-user folder.
+    Standard,
+    /// A `data` folder next to the executable.
+    Portable,
+    /// A folder the user moved the data to from inside Cardfile.
+    Moved,
+    /// The `--data-dir` command-line option.
+    CommandLine,
+}
+
 /// The data folder Cardfile uses and the files inside it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DataPaths {
@@ -29,6 +46,8 @@ pub struct DataPaths {
     pub root: PathBuf,
     /// Whether the folder sits next to the executable (portable mode).
     pub portable: bool,
+    /// How the folder was chosen; only standard and moved folders can be moved.
+    pub origin: DataOrigin,
 }
 
 impl DataPaths {
@@ -38,6 +57,7 @@ impl DataPaths {
             || exe_dir().is_some_and(|dir| {
                 dir.join("portable.flag").exists() || dir.join("installed.flag").exists()
             })
+            || location_file().is_some_and(|f| f.exists())
     }
     /// The SQLite database, `cardfile.db`.
     pub fn db(&self) -> PathBuf {
@@ -70,12 +90,20 @@ impl DataPaths {
             return Self {
                 root,
                 portable: false,
+                origin: DataOrigin::CommandLine,
             };
         }
         let exe_dir = exe_dir();
         let portable = force_portable || exe_dir.as_deref().is_some_and(is_portable_dir);
         if portable && let Some(dir) = exe_dir {
             return Self::portable_at(&dir);
+        }
+        if let Some(root) = location_file().as_deref().and_then(read_location) {
+            return Self {
+                root,
+                portable: false,
+                origin: DataOrigin::Moved,
+            };
         }
         Self::standard()
     }
@@ -86,6 +114,7 @@ impl DataPaths {
         Self {
             root: standard_root().unwrap_or_else(|| PathBuf::from(".cardfile")),
             portable: false,
+            origin: DataOrigin::Standard,
         }
     }
 
@@ -95,6 +124,7 @@ impl DataPaths {
         Self {
             root: exe_dir.join("data"),
             portable: true,
+            origin: DataOrigin::Portable,
         }
     }
 
@@ -128,12 +158,68 @@ impl DataPaths {
         ok
     }
 
+    /// Whether the folder can be moved from Settings: portable folders live next to
+    /// the executable by design, and `--data-dir` is chosen by whoever starts the app.
+    pub fn movable(&self) -> bool {
+        matches!(self.origin, DataOrigin::Standard | DataOrigin::Moved)
+    }
+
+    /// Use `root` from the next start on. Pointing back at the standard folder
+    /// removes the pointer file instead of writing it. Blocking (file system).
+    pub fn set_location(root: &Path) -> std::io::Result<()> {
+        let file = location_file()
+            .ok_or_else(|| std::io::Error::other("no configuration folder for this user"))?;
+        if standard_root().is_some_and(|standard| standard == root) {
+            return match std::fs::remove_file(&file) {
+                Err(e) if e.kind() != std::io::ErrorKind::NotFound => Err(e),
+                _ => Ok(()),
+            };
+        }
+        write_location(&file, root)
+    }
+
+    /// The pointer file, shown when a moved folder cannot be found.
+    pub fn location_file() -> Option<PathBuf> {
+        location_file()
+    }
+
     /// The file-sync service whose folder holds the data, if any. The sync client
     /// may upload the database between writes (the main file without its WAL) or
     /// make conflict copies when two computers use it, so the user is warned.
     pub fn sync_service(&self) -> Option<&'static str> {
         sync_service_of(&self.root, |name| std::env::var_os(name).map(PathBuf::from))
     }
+}
+
+/// Where the pointer to a moved data folder lives: the per-user configuration folder
+/// (`%APPDATA%\FittyAr\Cardfile\config` on Windows, `$XDG_CONFIG_HOME/cardfile`, usually
+/// `~/.config/cardfile`, on Linux), which stays put whatever happens to the data folder.
+fn location_file() -> Option<PathBuf> {
+    directories::ProjectDirs::from("ar", "FittyAr", "Cardfile")
+        .map(|d| d.config_dir().join(LOCATION_FILE))
+}
+
+/// The folder a pointer file names; `None` for a missing, empty or relative entry.
+fn read_location(file: &Path) -> Option<PathBuf> {
+    let text = std::fs::read_to_string(file).ok()?;
+    let path = PathBuf::from(text.trim());
+    path.is_absolute().then_some(path)
+}
+
+/// Write the pointer atomically: a torn write would send the next start to a wrong,
+/// empty folder.
+fn write_location(file: &Path, root: &Path) -> std::io::Result<()> {
+    use std::io::Write as _;
+    let dir = file
+        .parent()
+        .ok_or_else(|| std::io::Error::other("invalid configuration folder"))?;
+    std::fs::create_dir_all(dir)?;
+    let mut tmp = tempfile::NamedTempFile::new_in(dir)?;
+    tmp.write_all(root.as_os_str().to_string_lossy().as_bytes())?;
+    tmp.write_all(b"\n")?;
+    tmp.as_file().sync_all()?;
+    tmp.persist(file).map_err(|e| e.error)?;
+    Ok(())
 }
 
 /// [`DataPaths::sync_service`] with the environment lookup passed in (for tests).
@@ -247,6 +333,20 @@ fn exe_dir() -> Option<PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn location_pointer_round_trips_and_ignores_bad_entries() {
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("config").join(LOCATION_FILE);
+        assert_eq!(read_location(&file), None);
+        let target = dir.path().join("Notes");
+        write_location(&file, &target).unwrap();
+        assert_eq!(read_location(&file), Some(target));
+        std::fs::write(&file, "relative/path\n").unwrap();
+        assert_eq!(read_location(&file), None);
+        std::fs::write(&file, "  \n").unwrap();
+        assert_eq!(read_location(&file), None);
+    }
 
     #[test]
     fn synced_folders_are_recognised() {

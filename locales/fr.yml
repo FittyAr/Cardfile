@@ -1,6 +1,7 @@
 _version: 1
 
 app:
+  data_missing: "Le dossier de données %{path} est introuvable. Connectez le disque qui le contient et relancez Cardfile. Pour revenir au dossier par défaut, supprimez %{pointer}."
   synced_folder: "Vos notes se trouvent dans un dossier synchronisé par %{service}. Synchroniser une base de données ouverte peut l’endommager ou créer des copies en conflit : fermez Cardfile avant de l’utiliser sur un autre ordinateur, ou gardez les données hors du dossier synchronisé."
   unsaved_quit:
     title: "Vos dernières modifications n’ont pas été enregistrées"
@@ -144,6 +145,7 @@ wizard:
     appearance: Apparence
     finish: Terminé
   welcome:
+    language: "Langue"
     title: Bienvenue dans Cardfile
     body: "Votre fichier numérique pour vos notes, idées et tout ce que vous souhaitez conserver. Configurons-le en quelques étapes."
   storage:
@@ -456,6 +458,8 @@ settings:
     delete_body: Le compte est supprimé. Ses fiches restent dans la base de données.
     invalid: Saisissez un nom d'utilisateur et un mot de passe d'au moins 4 caractères.
   data:
+    moved: "Dossier personnalisé, déplacé depuis l’emplacement par défaut."
+    command_line: "Dossier défini avec --data-dir au lancement de Cardfile."
     location: Dossier de données
     portable: Le mode portable est actif.
     standard: Mode standard.
@@ -627,6 +631,12 @@ attachment:
   no_app: "Aucune application de cet ordinateur ne peut ouvrir « %{name} ». Installez un programme pour ce type de fichier (pour les vidéos, un lecteur multimédia comme VLC) et réessayez."
   not_found: "La pièce jointe est introuvable."
 data_operations:
+  move_button: "Déplacer…"
+  move_tooltip: "Copier la base de données, les sauvegardes et les réglages dans un autre dossier et l’utiliser désormais"
+  move: "Déplacer le dossier de données"
+  choose_move: "Choisissez où déplacer le dossier de données"
+  move_confirm: "Cardfile copiera la base de données, ses sauvegardes et vos réglages dans %{path}, puis redémarrera avec ce dossier. Le dossier actuel reste inchangé : supprimez-le vous-même une fois que vous aurez vérifié que tout se trouve dans le nouveau."
+  move_unavailable: "Le dossier de données d’une copie portable, ou d’un dossier choisi avec --data-dir, ne peut pas être déplacé d’ici."
   admin_required: "Seul un administrateur peut sauvegarder toute la collection."
   backups: "Sauvegardes de la base de données"
   busy: "Préparation de votre collection. Veuillez patienter…"

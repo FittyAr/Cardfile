@@ -611,3 +611,20 @@ ni registrar el compilador en el equipo del mantenedor.
   Windows 10 1903 como mínimo; el manifiesto declara los 21 idiomas.
 - Store: política de privacidad en `docs/PRIVACY.md` y botón *Reportar* en el asistente
   (política 11.16 de contenido generado por IA).
+
+### Ventana y ubicación de los datos (2026-11-22)
+
+- La ventana recuerda tamaño, posición y estado maximizado. Al abrir se usa el monitor donde
+  estaba (GPUI solo acepta una posición dentro del `display_id` indicado); si ese monitor ya
+  no está, se centra en el principal.
+- *Configuración → Datos → Mover…* (administradores): copia una instantánea consistente de la
+  base y el resto de la carpeta de datos (respaldos, temas, atajos, diccionarios, preferencias
+  locales) a `<elegida>/Cardfile`, vía carpeta temporal y `rename`, y reinicia. La carpeta
+  anterior no se toca. La nueva ruta se guarda en `data-location.txt` dentro de la carpeta de
+  configuración del usuario; si falta la carpeta apuntada, se muestra un error al iniciar en
+  vez de abrir el asistente. No disponible en modo portable ni con `--data-dir`.
+- Idioma antes de iniciar sesión: se usa el idioma del sistema (`sys-locale`, MIT/Apache-2.0,
+  con coincidencia por idioma si no hay variante regional), y el asistente de primer arranque
+  tiene un selector de idioma en la bienvenida. El idioma elegido queda en la cuenta, y el
+  corrector usa ese idioma si su diccionario está instalado. Los nombres de idioma en árabe y
+  persa se muestran en orden visual (también en Configuración).
