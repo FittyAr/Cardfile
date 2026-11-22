@@ -34,8 +34,17 @@ jobs:
   publish:
     runs-on: windows-latest
     if: ${{ github.event_name == 'workflow_dispatch' || !fromJson(inputs.plan).announcement_is_prerelease }}
+    env:
+      # Without the token there is nothing to submit with: say so instead of failing a
+      # release that is already published.
+      HAS_WINGET_TOKEN: ${{ secrets.WINGET_TOKEN != '' }}
     steps:
+      - name: Skip, no WINGET_TOKEN
+        if: ${{ env.HAS_WINGET_TOKEN != 'true' }}
+        shell: bash
+        run: echo "::notice::WINGET_TOKEN is not set, so nothing was submitted to winget. See docs/RELEASING.md."
       - uses: vedantmgoyal9/winget-releaser@b7370d4d152efdce803a26cc6ca9eee58cb2ad54 # v2
+        if: ${{ env.HAS_WINGET_TOKEN == 'true' }}
         with:
           identifier: FittyAr.NoteChest
           installers-regex: 'NoteChest-.*-setup-(x64|arm64)\.exe$'
