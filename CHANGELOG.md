@@ -3,6 +3,50 @@
 All notable changes to this project are documented here. Generated with
 [git-cliff](https://git-cliff.org) from Conventional Commits (`cliff.toml`).
 
+## [2.0.0-beta.5] - 2026-11-21
+
+Quality and security hardening from a full project audit. Testing release.
+
+### Security
+
+- Update the bundled SQLite to 3.54 (Diesel 2.4, libsqlite3-sys 0.40) for
+  RUSTSEC-2026-0459, which affects opening a database with a crafted `-wal` file,
+  such as a backup being restored.
+- Removing someone from an encrypted card now moves it to a new key, so the removed
+  user can no longer read later changes or the history.
+- The assistant asks before running tools that change or delete cards (allow once,
+  allow for the conversation, or deny).
+- AI services are reached over plain `http://` only on this computer (localhost);
+  remote services need `https://`, so API keys never travel in clear text.
+- The Windows updater locks the verified installer and checks it again right before
+  starting it.
+- Password and key hashes with out-of-range Argon2 parameters are rejected instead
+  of exhausting memory.
+
+### Fixes
+
+- An attachment, image or pasted content saved in the background is no longer
+  inserted into a different card when you switch cards meanwhile.
+- Moving a block to another card never removes a matching block from a third card.
+- A card whose content cannot be read opens read-only with a notice instead of
+  as an empty card that would overwrite it.
+- AI keys are kept in the settings until the system credential store has accepted
+  them, so none is lost when the store fails.
+- Cards in the recycle bin cannot be edited until restored.
+- Markdown export keeps code blocks and inline code intact when they contain
+  backticks.
+- The MCP server keeps answering after an internal error, and reordering cards from
+  the assistant is applied all at once or not at all.
+- Cardfile starts with command-line arguments that are not valid UTF-8, and crash
+  logs include a backtrace.
+
+### Internal
+
+- CI runs with read-only tokens, `--locked` builds and pinned tools; release jobs
+  receive only the secrets they use.
+- Public items are documented and the lint enforces it; golden-file tests cover the
+  exporters; large view functions were split and more logic is unit tested.
+
 ## [2.0.0-beta.4] - 2026-11-04
 
 ### Fixes
