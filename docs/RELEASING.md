@@ -150,6 +150,9 @@ The MSIX build detects that it runs from `WindowsApps` and turns off NoteChest's
 ## Cutting a release
 
 1. Update `version` in the root `Cargo.toml` (`workspace.package.version`) and the `<release>` entry in `packaging/linux/ar.fittyar.NoteChest.metainfo.xml`.
+   Write pre-releases there with a tilde (`2.0.0~beta.8`, not `2.0.0-beta.8`): AppStream sorts the
+   hyphen form after the stable version, and the AppImage build fails its validation with
+   `releases-not-in-order`.
 2. Update `CHANGELOG.md`:
    ```bash
    git cliff --tag v2.0.0 -o CHANGELOG.md
