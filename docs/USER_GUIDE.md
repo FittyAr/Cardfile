@@ -4,7 +4,8 @@ Español: [GUIA_DE_USUARIO.md](GUIA_DE_USUARIO.md)
 
 ## First run
 
-The first time you start Cardfile, a short wizard asks four things:
+The first time you start Cardfile, a short wizard opens in your system's language (you can
+pick another one on its first screen; it becomes your account's language) and asks four things:
 
 1. **Storage.**
    - *Standard* keeps your cards in your user profile.
@@ -206,7 +207,19 @@ Close Cardfile before removing a USB drive or changing computers. With OneDrive,
 until synchronization finishes before opening the folder on another computer; simultaneous
 use is unsupported. Cardfile shows a warning at sign-in when its data is in a folder synced
 by OneDrive, Dropbox, Google Drive or a similar service. The local process lock does not coordinate different computers.
-The app remembers normal window size and maximized state in `local-config.json`.
+The app remembers the window's size, position and maximized state in `local-config.json`
+and reopens on the same monitor while it is connected.
+
+**Move the data folder.** Administrators can move the whole collection with **Settings →
+Data → Move…**. Cardfile copies the database (a consistent snapshot), backups, themes,
+shortcuts, dictionaries and local preferences to a new `Cardfile` folder inside the one
+you choose, then restarts using it. The previous folder is left untouched; delete it
+once you have checked the new one. The new location is remembered in
+`data-location.txt` in the user configuration folder (`%APPDATA%\FittyAr\Cardfile\config`
+on Windows, `~/.config/cardfile` on Linux). If that folder later goes missing
+(for example, an unplugged drive), Cardfile says so at start instead of creating an empty
+collection; delete `data-location.txt` to go back to the default folder. Portable copies
+and folders set with `--data-dir` cannot be moved this way.
 
 
 ## Update channel

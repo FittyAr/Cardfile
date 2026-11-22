@@ -1257,10 +1257,11 @@ impl SettingsView {
                 cx,
             ))
             .child(hint(
-                if paths.portable {
-                    t("settings.data.portable")
-                } else {
-                    t("settings.data.standard")
+                match paths.origin {
+                    crate::paths::DataOrigin::Portable => t("settings.data.portable"),
+                    crate::paths::DataOrigin::Moved => t("settings.data.moved"),
+                    crate::paths::DataOrigin::CommandLine => t("settings.data.command_line"),
+                    crate::paths::DataOrigin::Standard => t("settings.data.standard"),
                 },
                 cx,
             ))
@@ -1277,6 +1278,18 @@ impl SettingsView {
                             .label(t("menu.open_data_folder"))
                             .on_click(self.dispatcher(OpenDataFolder, cx)),
                     )
+                    .when(admin && paths.movable(), |d| {
+                        d.child(
+                            Button::new("move-data")
+                                .small()
+                                .outline()
+                                .label(t("data_operations.move_button"))
+                                .tooltip(t("data_operations.move_tooltip"))
+                                .on_click(|_, window, cx| {
+                                    crate::data_operations::move_data(window, cx)
+                                }),
+                        )
+                    })
                     .when(admin, |d| {
                         d.child(
                             Button::new("backup")
@@ -1457,30 +1470,7 @@ fn export_all(format: crate::export::Format, window: &mut Window, cx: &mut App) 
 }
 
 fn language_name(code: &str) -> String {
-    match code {
-        "en" => "English".into(),
-        "es" => "Español".into(),
-        "pt-BR" | "pt_BR" => "Português (Brasil)".into(),
-        "fr" => "Français".into(),
-        "de" => "Deutsch".into(),
-        "ru" => "Русский".into(),
-        "zh" | "zh-CN" => "中文".into(),
-        "hi" => "हिन्दी".into(),
-        "ar" => "العربية".into(),
-        "bn" => "বাংলা".into(),
-        "ja" => "日本語".into(),
-        "ko" => "한국어".into(),
-        "it" => "Italiano".into(),
-        "tr" => "Türkçe".into(),
-        "vi" => "Tiếng Việt".into(),
-        "id" => "Bahasa Indonesia".into(),
-        "pl" => "Polski".into(),
-        "uk" => "Українська".into(),
-        "nl" => "Nederlands".into(),
-        "th" => "ไทย".into(),
-        "fa" => "فارسی".into(),
-        other => other.to_owned(),
-    }
+    cardfile_i18n::language_name(code)
 }
 
 /// A titled group of sidebar entries: (section, icon, label).

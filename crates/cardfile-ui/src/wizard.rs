@@ -70,6 +70,9 @@ pub struct Wizard {
     lock_modes: Vec<LockMode>,
     default_lock: LockMode,
     theme: SharedString,
+    /// Interface language, preselected from the system and changeable on the first
+    /// screen; saved as the new account's language.
+    language: String,
     username: Entity<InputState>,
     display_name: Entity<InputState>,
     password: Entity<InputState>,
@@ -148,6 +151,7 @@ impl Wizard {
             lock_modes: LockMode::ALL[1..].to_vec(),
             default_lock: LockMode::None,
             theme: crate::themes::DEFAULT_THEME.into(),
+            language: cardfile_i18n::locale(),
             username: {
                 let s = input(t("wizard.security.username"), false, window, cx);
                 s.update(cx, |s, cx| s.set_value(current_user.clone(), window, cx));
@@ -165,6 +169,46 @@ impl Wizard {
             storage: None,
             _storage_task: storage_task,
         }
+    }
+
+    /// Switch the interface language while the wizard runs. Placeholders are set when
+    /// an input is created, so the inputs are rebuilt (keeping what was typed).
+    fn set_language(&mut self, code: String, window: &mut Window, cx: &mut Context<Self>) {
+        cardfile_i18n::set_locale(&code);
+        self.language = code;
+        let rebuild = |old: &Entity<InputState>,
+                       key: &str,
+                       masked: bool,
+                       window: &mut Window,
+                       cx: &mut Context<Self>| {
+            let value = old.read(cx).value().to_string();
+            let input = cx.new(|cx| {
+                InputState::new(window, cx)
+                    .placeholder(t(key))
+                    .masked(masked)
+            });
+            input.update(cx, |s, cx| s.set_value(value, window, cx));
+            input
+        };
+        self.username = rebuild(
+            &self.username,
+            "wizard.security.username",
+            false,
+            window,
+            cx,
+        );
+        self.display_name = rebuild(
+            &self.display_name,
+            "wizard.security.display_name",
+            false,
+            window,
+            cx,
+        );
+        self.password = rebuild(&self.password, "wizard.security.password", true, window, cx);
+        self.confirm = rebuild(&self.confirm, "wizard.security.confirm", true, window, cx);
+        self.error = None;
+        cx.notify();
+        window.refresh();
     }
 
     fn current(&self) -> Step {
@@ -234,11 +278,14 @@ impl Wizard {
             display = username.clone();
         }
         let auth = self.auth;
-        let settings = UserSettings {
+        let mut settings = UserSettings {
             theme: self.theme.to_string(),
             default_lock_mode: self.default_lock,
+            language: self.language.clone(),
             ..UserSettings::default()
         };
+        let dictionary = crate::dictionaries::for_locale(&self.language);
+        let dictionary_dirs = crate::spell::search_dirs(cx);
         let existing_db = AppState::get(cx).db.clone();
         let task = cx.background_spawn(async move {
             let (paths, db) = match existing_db {
@@ -268,6 +315,15 @@ impl Wizard {
                     (paths, db)
                 }
             };
+            // Spell-check in the chosen language when its dictionary is installed
+            // (English and Spanish ship with the app).
+            if let Some(code) = dictionary
+                && crate::spell::languages_in(&dictionary_dirs)
+                    .iter()
+                    .any(|l| l == code)
+            {
+                settings.spellcheck_language = code.to_owned();
+            }
             let settings = settings;
             let hash = if password.is_empty() {
                 None
@@ -407,7 +463,45 @@ impl Wizard {
                     .text_color(cx.theme().muted_foreground)
                     .child(t("wizard.welcome.body")),
             )
+            .child(self.render_language_picker(cx))
             .into_any_element()
+    }
+
+    /// Language menu on the first screen, so the rest of the setup is in the user's
+    /// language. Names are shown in their own language.
+    fn render_language_picker(&self, cx: &Context<Self>) -> impl IntoElement {
+        use gpui_kit::component::menu::{DropdownMenu as _, PopupMenuItem};
+        let current = self.language.clone();
+        let view = cx.entity().downgrade();
+        h_flex()
+            .gap(px(8.))
+            .items_center()
+            .child(
+                div()
+                    .text_color(cx.theme().muted_foreground)
+                    .child(t("wizard.welcome.language")),
+            )
+            .child(
+                Button::new("wizard-language")
+                    .outline()
+                    .label(cardfile_i18n::language_name(&current))
+                    .dropdown_caret(true)
+                    .dropdown_menu(move |mut menu, _, _| {
+                        for code in cardfile_i18n::available_locales() {
+                            let view = view.clone();
+                            let name = cardfile_i18n::language_name(&code);
+                            let checked = code == current;
+                            menu = menu.item(PopupMenuItem::new(name).checked(checked).on_click(
+                                move |_, window, cx| {
+                                    let code = code.clone();
+                                    let _ = view
+                                        .update(cx, |this, cx| this.set_language(code, window, cx));
+                                },
+                            ));
+                        }
+                        menu
+                    }),
+            )
     }
 
     fn render_storage(&self, cx: &Context<Self>) -> gpui_kit::AnyElement {

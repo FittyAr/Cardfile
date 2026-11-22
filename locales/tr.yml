@@ -1,6 +1,7 @@
 _version: 1
 
 app:
+  data_missing: "%{path} veri klasörü bulunamadı. Klasörün bulunduğu sürücüyü bağlayın ve Cardfile’ı yeniden başlatın. Bunun yerine varsayılan klasöre dönmek için %{pointer} dosyasını silin."
   synced_folder: "Notlarınız %{service} tarafından eşitlenen bir klasörde. Açık bir veritabanını eşitlemek onu bozabilir veya çakışan kopyalar oluşturabilir: Cardfile’ı başka bir bilgisayarda kullanmadan önce kapatın ya da verileri eşitlenen klasörün dışında tutun."
   unsaved_quit:
     title: "Son değişiklikleriniz kaydedilmedi"
@@ -144,6 +145,7 @@ wizard:
     appearance: Görünüm
     finish: Hazır
   welcome:
+    language: "Dil"
     title: Cardfile'a hoş geldiniz
     body: "Notlarınız, fikirleriniz ve saklamak istediğiniz her şey için dijital kart dosyanız. Birkaç adımda kuralım."
   storage:
@@ -456,6 +458,8 @@ settings:
     delete_body: Hesap kaldırılır. Kartları veritabanında kalır.
     invalid: Bir kullanıcı adı ve en az 4 karakterlik bir parola girin.
   data:
+    moved: "Özel klasör, varsayılan konumdan taşındı."
+    command_line: "Cardfile başlatılırken --data-dir ile belirlenen klasör."
     location: Veri klasörü
     portable: Taşınabilir mod etkin.
     standard: Standart mod.
@@ -627,6 +631,12 @@ attachment:
   no_app: "Bu bilgisayarda “%{name}” dosyasını açabilecek bir uygulama yok. Bu dosya türü için bir program kurun (videolar için VLC gibi bir medya oynatıcı) ve yeniden deneyin."
   not_found: "Ek bulunamadı."
 data_operations:
+  move_button: "Taşı…"
+  move_tooltip: "Veritabanını, yedekleri ve ayarları başka bir klasöre kopyala ve bundan sonra onu kullan"
+  move: "Veri klasörünü taşı"
+  choose_move: "Veri klasörünün taşınacağı yeri seçin"
+  move_confirm: "Cardfile veritabanını, yedeklerini ve ayarlarınızı %{path} konumuna kopyalayacak, ardından o klasörle yeniden başlayacak. Mevcut klasör olduğu gibi kalır: her şeyin yenisinde olduğunu kontrol ettikten sonra onu kendiniz silin."
+  move_unavailable: "Taşınabilir bir kopyanın veri klasörü veya --data-dir ile seçilen klasör buradan taşınamaz."
   admin_required: "Koleksiyonun tamamını yalnızca bir yönetici yedekleyebilir."
   backups: "Veritabanı yedekleri"
   busy: "Koleksiyonunuz hazırlanıyor. Lütfen bekleyin…"

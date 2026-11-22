@@ -1,6 +1,7 @@
 _version: 1
 
 app:
+  data_missing: "데이터 폴더 %{path}을(를) 찾을 수 없습니다. 이 폴더가 있는 드라이브를 연결하고 Cardfile을 다시 시작하세요. 대신 기본 폴더로 돌아가려면 %{pointer}을(를) 삭제하세요."
   synced_folder: "메모가 %{service}에서 동기화하는 폴더에 있습니다. 열려 있는 데이터베이스를 동기화하면 손상되거나 충돌 사본이 생길 수 있습니다. 다른 컴퓨터에서 사용하기 전에 Cardfile을 닫거나, 데이터를 동기화 폴더 밖에 두세요."
   unsaved_quit:
     title: "마지막 변경 사항이 저장되지 않았습니다"
@@ -144,6 +145,7 @@ wizard:
     appearance: 모양
     finish: 완료
   welcome:
+    language: "언어"
     title: Cardfile에 오신 것을 환영합니다
     body: "메모, 아이디어, 간직하고 싶은 모든 것을 위한 디지털 카드 파일입니다. 몇 단계만 거쳐 설정해 보겠습니다."
   storage:
@@ -456,6 +458,8 @@ settings:
     delete_body: 계정이 삭제됩니다. 해당 카드는 데이터베이스에 남습니다.
     invalid: 사용자 이름과 4자 이상의 비밀번호를 입력하세요.
   data:
+    moved: "기본 위치에서 옮긴 사용자 지정 폴더입니다."
+    command_line: "Cardfile을 시작할 때 --data-dir로 지정한 폴더입니다."
     location: 데이터 폴더
     portable: 휴대용 모드가 켜져 있습니다.
     standard: 표준 모드입니다.
@@ -627,6 +631,12 @@ attachment:
   no_app: "이 컴퓨터에는 “%{name}”을(를) 열 수 있는 애플리케이션이 없습니다. 이 파일 형식용 프로그램(동영상의 경우 VLC 같은 미디어 플레이어)을 설치한 후 다시 시도하세요."
   not_found: "첨부 파일을 찾을 수 없습니다."
 data_operations:
+  move_button: "이동…"
+  move_tooltip: "데이터베이스, 백업, 설정을 다른 폴더로 복사하고 앞으로 그 폴더를 사용"
+  move: "데이터 폴더 이동"
+  choose_move: "데이터 폴더를 옮길 위치를 선택하세요"
+  move_confirm: "Cardfile이 데이터베이스, 백업, 설정을 %{path}(으)로 복사한 다음 해당 폴더를 사용해 다시 시작합니다. 현재 폴더는 그대로 남습니다. 새 폴더에 모든 것이 있는지 확인한 후 직접 삭제하세요."
+  move_unavailable: "휴대용 사본의 데이터 폴더나 --data-dir로 선택한 폴더는 여기에서 옮길 수 없습니다."
   admin_required: "관리자만 전체 모음을 백업할 수 있습니다."
   backups: "데이터베이스 백업"
   busy: "모음을 준비하고 있습니다. 잠시 기다려 주세요…"

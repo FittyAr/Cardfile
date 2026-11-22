@@ -1,6 +1,7 @@
 _version: 1
 
 app:
+  data_missing: "Folder data %{path} tidak ditemukan. Sambungkan drive yang menyimpannya lalu jalankan Cardfile lagi. Untuk kembali ke folder bawaan, hapus %{pointer}."
   synced_folder: "Catatan Anda berada di folder yang disinkronkan oleh %{service}. Menyinkronkan basis data yang sedang terbuka dapat merusaknya atau membuat salinan yang bentrok: tutup Cardfile sebelum memakainya di komputer lain, atau simpan data di luar folder yang disinkronkan."
   unsaved_quit:
     title: "Perubahan terakhir Anda belum disimpan"
@@ -144,6 +145,7 @@ wizard:
     appearance: Tampilan
     finish: Siap
   welcome:
+    language: "Bahasa"
     title: Selamat datang di Cardfile
     body: "Kotak kartu digital Anda untuk catatan, ide, dan apa pun yang ingin Anda simpan. Mari atur dalam beberapa langkah."
   storage:
@@ -456,6 +458,8 @@ settings:
     delete_body: Akun dihapus. Kartunya tetap ada di basis data.
     invalid: Masukkan nama pengguna dan kata sandi minimal 4 karakter.
   data:
+    moved: "Folder khusus, dipindahkan dari lokasi bawaan."
+    command_line: "Folder yang ditetapkan dengan --data-dir saat Cardfile dijalankan."
     location: Folder data
     portable: Mode portabel aktif.
     standard: Mode standar.
@@ -627,6 +631,12 @@ attachment:
   no_app: "Tidak ada aplikasi di komputer ini yang dapat membuka “%{name}”. Instal program untuk jenis file ini (untuk video, pemutar media seperti VLC) lalu coba lagi."
   not_found: "Lampiran tidak ditemukan."
 data_operations:
+  move_button: "Pindahkan…"
+  move_tooltip: "Salin basis data, cadangan, dan pengaturan ke folder lain lalu gunakan folder itu mulai sekarang"
+  move: "Pindahkan folder data"
+  choose_move: "Pilih tempat untuk memindahkan folder data"
+  move_confirm: "Cardfile akan menyalin basis data, cadangannya, dan pengaturan Anda ke %{path}, lalu memulai ulang dengan folder tersebut. Folder saat ini tidak diubah: hapus sendiri setelah Anda memastikan semuanya ada di folder baru."
+  move_unavailable: "Folder data salinan portabel, atau folder yang dipilih dengan --data-dir, tidak dapat dipindahkan dari sini."
   admin_required: "Hanya administrator yang dapat mencadangkan seluruh koleksi."
   backups: "Cadangan basis data"
   busy: "Menyiapkan koleksi Anda. Harap tunggu…"

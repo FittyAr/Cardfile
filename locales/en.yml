@@ -1,6 +1,7 @@
 _version: 1
 
 app:
+  data_missing: "The data folder %{path} was not found. Connect the drive that holds it and start Cardfile again. To go back to the default folder instead, delete %{pointer}."
   synced_folder: "Your notes are in a folder synced by %{service}. Syncing an open database can damage it or create conflicting copies: close Cardfile before using it on another computer, or keep the data outside the synced folder."
   unsaved_quit:
     title: "Your last changes were not saved"
@@ -144,6 +145,7 @@ wizard:
     appearance: Appearance
     finish: Ready
   welcome:
+    language: "Language"
     title: Welcome to Cardfile
     body: "Your digital card file for notes, ideas and anything you want to keep. Let's set it up in a few steps."
   storage:
@@ -456,6 +458,8 @@ settings:
     delete_body: The account is removed. Its cards stay in the database.
     invalid: Enter a user name and a password of at least 4 characters.
   data:
+    moved: "Custom folder, moved from the default location."
+    command_line: "Folder set with --data-dir when Cardfile was started."
     location: Data folder
     portable: Portable mode is active.
     standard: Standard mode.
@@ -628,6 +632,12 @@ attachment:
   no_app: "No application on this computer can open “%{name}”. Install a program for this file type (for videos, a media player such as VLC) and try again."
 
 data_operations:
+  move_button: "Move…"
+  move_tooltip: "Copy the database, backups and settings to another folder and use it from now on"
+  move: "Move the data folder"
+  choose_move: "Choose where to move the data folder"
+  move_confirm: "Cardfile will copy the database, its backups and your settings to %{path}, then restart using that folder. The current folder is left unchanged: delete it yourself once you have checked that everything is in the new one."
+  move_unavailable: "The data folder of a portable copy, or one chosen with --data-dir, cannot be moved from here."
   admin_required: Only an administrator can back up the entire collection.
   backups: Database backups
   choose_backup: Choose backup folder

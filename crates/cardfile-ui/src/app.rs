@@ -57,13 +57,16 @@ impl CardfileApp {
                 if !window.is_visible() || window.is_fullscreen() {
                     return;
                 }
-                let normal = window.window_bounds().get_bounds().size;
+                // While maximized these are the bounds the window returns to.
+                let normal = window.window_bounds().get_bounds();
                 let maximized = window.is_maximized();
                 crate::local_config::LocalPreferences::change(cx, |s| {
                     s.window.maximized = maximized;
-                    if !maximized && normal.width >= px(100.) && normal.height >= px(100.) {
-                        s.window.width = normal.width.into();
-                        s.window.height = normal.height.into();
+                    if normal.size.width >= px(100.) && normal.size.height >= px(100.) {
+                        s.window.width = normal.size.width.into();
+                        s.window.height = normal.size.height.into();
+                        s.window.x = Some(normal.origin.x.into());
+                        s.window.y = Some(normal.origin.y.into());
                     }
                 });
             }),
