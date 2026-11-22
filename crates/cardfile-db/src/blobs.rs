@@ -9,19 +9,27 @@ type BlobRow = (String, String, i64, Option<String>, Vec<u8>);
 
 impl Database {
     /// Store bytes (deduplicated by BLAKE3 hash) and return their metadata.
+    ///
+    /// Storing bytes that already exist refreshes `created_at`, so an orphaned copy
+    /// pasted again gets the same one-hour grace from garbage collection as a new
+    /// blob (the editor may not have saved the card that references it yet).
     pub fn put_blob(&self, data: &[u8], mime: &str, file_name: Option<&str>) -> DbResult<BlobMeta> {
         let id = blake3::hash(data).to_hex().to_string();
         let size = i64::try_from(data.len()).unwrap_or(i64::MAX);
+        let now = now_millis();
         self.with(|conn| {
-            diesel::insert_or_ignore_into(blobs::table)
+            diesel::insert_into(blobs::table)
                 .values((
                     blobs::id.eq(&id),
                     blobs::mime.eq(mime),
                     blobs::size.eq(size),
                     blobs::file_name.eq(file_name),
                     blobs::data.eq(data),
-                    blobs::created_at.eq(now_millis()),
+                    blobs::created_at.eq(now),
                 ))
+                .on_conflict(blobs::id)
+                .do_update()
+                .set(blobs::created_at.eq(now))
                 .execute(conn)?;
             Ok(BlobMeta {
                 id: BlobId(id),
@@ -147,5 +155,26 @@ mod tests {
         assert!(db.blob("missing").unwrap().is_none());
         // Fresh blobs survive garbage collection.
         assert_eq!(db.collect_garbage_blobs().unwrap(), 0);
+    }
+
+    #[test]
+    fn pasting_an_orphaned_blob_again_restarts_its_grace_period() {
+        use diesel::prelude::*;
+
+        use crate::schema::blobs;
+
+        let db = db();
+        let meta = db.put_blob(b"old image", "image/png", None).unwrap();
+        // An orphan from a paste more than an hour ago.
+        db.with(|conn| {
+            diesel::update(blobs::table.find(&meta.id.0))
+                .set(blobs::created_at.eq(0))
+                .execute(conn)?;
+            Ok(())
+        })
+        .unwrap();
+        db.put_blob(b"old image", "image/png", None).unwrap();
+        assert_eq!(db.collect_garbage_blobs().unwrap(), 0);
+        assert!(db.blob(&meta.id.0).unwrap().is_some());
     }
 }

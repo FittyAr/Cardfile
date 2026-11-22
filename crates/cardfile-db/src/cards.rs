@@ -207,7 +207,13 @@ impl Database {
                 let changed = old.content != update.content
                     || old.title != update.title
                     || old.encrypted != payload_json(update.encrypted.as_ref());
-                if changed && newest.is_none_or(|t| now - t >= snapshot_every_ms) {
+                // A version written by someone else (the AI, an MCP client, another
+                // user) is always kept: the editor may still hold older content and
+                // overwrite it, and the throttle would otherwise drop it unseen.
+                let other_author =
+                    old.updated_by.as_deref() != Some(actor.user.to_string().as_str());
+                if changed && (other_author || newest.is_none_or(|t| now - t >= snapshot_every_ms))
+                {
                     insert_revision(conn, &old, now)?;
                     prune_revisions(conn, id, keep_revisions)?;
                 }
@@ -687,6 +693,38 @@ mod tests {
         assert_eq!(db.card_revisions(card.id).unwrap().len(), 3);
         let rev = db.card_revision(revs[0].id).unwrap();
         assert_eq!(rev.title, revs[0].title);
+    }
+
+    #[test]
+    fn another_authors_version_is_kept_despite_the_throttle() {
+        let (db, user) = db_with_user();
+        let ai = db.ai_user().unwrap();
+        let me = Actor::user(user.id);
+        let bot = Actor::ai(ai.id, user.id, "Claude");
+        let card = db.create_card(&me, new_card("Mine")).unwrap();
+        let upd = |t: &str| ContentUpdate {
+            title: t.into(),
+            content: format!("{{\"t\":\"{t}\"}}"),
+            ..Default::default()
+        };
+        db.update_card_content(&me, card.id, upd("Typed"), 10, 0)
+            .unwrap();
+        db.update_card_content(&bot, card.id, upd("AI edit"), 10, i64::MAX)
+            .unwrap();
+        // The editor still held older content and saves within the throttle window.
+        db.update_card_content(&me, card.id, upd("Typed more"), 10, i64::MAX)
+            .unwrap();
+        let titles: Vec<_> = db
+            .card_revisions(card.id)
+            .unwrap()
+            .into_iter()
+            .map(|r| r.title)
+            .collect();
+        assert!(titles.contains(&"AI edit".to_string()), "{titles:?}");
+        // Our own consecutive saves stay throttled.
+        db.update_card_content(&me, card.id, upd("Typed again"), 10, i64::MAX)
+            .unwrap();
+        assert_eq!(db.card_revisions(card.id).unwrap().len(), titles.len());
     }
 
     #[test]
