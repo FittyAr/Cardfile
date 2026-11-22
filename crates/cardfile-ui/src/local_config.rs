@@ -60,7 +60,9 @@ impl Default for LocalConfig {
             collection: uuid::Uuid::now_v7().to_string(),
             window: WindowState::default(),
             backup_directory: "backups".into(),
-            daily_backup: false,
+            // On by default: losing notes costs far more than a few backups on disk
+            // (`keep_automatic` bounds how many are kept).
+            daily_backup: true,
             keep_automatic: 10,
             last_automatic: None,
             last_result: None,
@@ -166,7 +168,20 @@ mod tests {
         .unwrap();
         let config = LocalConfig::load(dir.path());
         assert_eq!(config.backup_directory, PathBuf::from("backups"));
-        assert!(!config.daily_backup);
+        assert_eq!(config.daily_backup, LocalConfig::default().daily_backup);
+    }
+
+    #[test]
+    fn saved_preferences_keep_daily_backups_off() {
+        // Configs from earlier versions store the field, so the new default does not
+        // turn the schedule on for people who left it off.
+        let dir = tempfile::tempdir().unwrap();
+        let config = LocalConfig {
+            daily_backup: false,
+            ..Default::default()
+        };
+        config.save(dir.path()).unwrap();
+        assert!(!LocalConfig::load(dir.path()).daily_backup);
     }
 
     #[test]
