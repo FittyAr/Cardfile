@@ -3,6 +3,38 @@
 All notable changes to this project are documented here. Generated with
 [git-cliff](https://git-cliff.org) from Conventional Commits (`cliff.toml`).
 
+## [2.0.0-beta.6] - 2026-11-22
+
+Data-safety fixes and Microsoft Store preparation from a pre-release audit. Testing release.
+
+### Bug Fixes
+
+- Closing the window right after typing no longer loses the last changes: closing
+  (X, Alt+F4, the Linux title-bar button) and quitting now save the open card first,
+  and ask before quitting if the save failed.
+- A version of a card written by the assistant, an MCP client or another user is
+  always kept in the history before your edits overwrite it.
+- An image pasted again after it was left unused is no longer removed by the
+  automatic clean-up before the card is saved.
+- Microsoft Store package: notes, backups and the database's journal are kept in the
+  real `%APPDATA%\FittyAr\Cardfile`, so uninstalling or reinstalling the Store app
+  never removes them. Requires Windows 10 version 1903 or later.
+
+### Features
+
+- Daily automatic backups are on by default for new installations.
+- Cardfile warns at sign-in when its data is in a folder synced by OneDrive,
+  Dropbox, Google Drive or a similar service.
+- The assistant panel has a **Report** button for inappropriate answers.
+
+### Security
+
+- Update `url` to 2.5.9 (RUSTSEC-2026-0592).
+
+### Documentation
+
+- Privacy policy (`docs/PRIVACY.md`) and Microsoft Store submission notes.
+
 ## [2.0.0-beta.5] - 2026-11-21
 
 Quality and security hardening from a full project audit. Testing release.
