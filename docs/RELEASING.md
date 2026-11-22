@@ -113,6 +113,13 @@ minisign -G -W -p minisign.pub -s minisign.key
 
 ### 3. Microsoft Store
 
+Status: the product is reserved as **NoteChest** (Store ID `9P52V0PJCKFD`, identity
+`30176FittyDev.NoteChest`) and the four repository variables below are set. The listing texts
+(English and Spanish), screenshots, tile icon, hero, box and poster art are in `docs/store/`;
+`python assets/brand/notechest/compose_store.py` rebuilds the images. Partner Center only shows the
+listing languages after the `.msix` packages are uploaded, and the file picker has to be driven by a
+person.
+
 1. In Partner Center, reserve the app name and open **Product identity**. Save these as repository **variables**:
    - `MSIX_IDENTITY_NAME`: Package/Identity/Name
    - `MSIX_PUBLISHER`: Package/Identity/Publisher, e.g. `CN=…`
