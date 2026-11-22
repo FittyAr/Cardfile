@@ -1,6 +1,11 @@
 _version: 1
 
 app:
+  synced_folder: "Deine Notizen liegen in einem von %{service} synchronisierten Ordner. Das Synchronisieren einer geöffneten Datenbank kann sie beschädigen oder Konfliktkopien erzeugen: Schließe Cardfile, bevor du es auf einem anderen Computer nutzt, oder speichere die Daten außerhalb des synchronisierten Ordners."
+  unsaved_quit:
+    title: "Deine letzten Änderungen wurden nicht gespeichert"
+    body: "Die geöffnete Karte konnte nicht gespeichert werden: %{error}. Wenn du jetzt beendest, gehen die Änderungen seit dem letzten Speichern verloren."
+    quit: "Ohne Speichern beenden"
   name: Cardfile
   db_error_body: "Die Datenbank %{path} konnte nicht geöffnet werden: %{error}"
   open_keymap_failed: "Die Tastenbelegungsdatei konnte nicht geöffnet werden: %{error}"
@@ -572,6 +577,8 @@ ai:
     no_keyring: "Die Anmeldeinformationsverwaltung Ihres Systems ist nicht verfügbar, daher werden API-Schlüssel in der Cardfile-Datenbank gespeichert."
 
 chat:
+  report: "Melden"
+  report_tooltip: "Eine unangemessene oder schädliche Antwort melden"
   title: "Assistent"
   toggle: "Assistent"
   placeholder: "Fragen Sie den Assistenten…"

@@ -1,6 +1,11 @@
 _version: 1
 
 app:
+  synced_folder: "Notlarınız %{service} tarafından eşitlenen bir klasörde. Açık bir veritabanını eşitlemek onu bozabilir veya çakışan kopyalar oluşturabilir: Cardfile’ı başka bir bilgisayarda kullanmadan önce kapatın ya da verileri eşitlenen klasörün dışında tutun."
+  unsaved_quit:
+    title: "Son değişiklikleriniz kaydedilmedi"
+    body: "Açık kart kaydedilemedi: %{error}. Şimdi çıkarsanız son kayıttan bu yana yapılan değişiklikler kaybolur."
+    quit: "Kaydetmeden çık"
   name: Cardfile
   db_error_body: "%{path} veritabanı açılamadı: %{error}"
   open_keymap_failed: "Kısayol dosyası açılamadı: %{error}"
@@ -572,6 +577,8 @@ ai:
     no_keyring: "Sisteminizin kimlik bilgisi yöneticisi kullanılamıyor; bu nedenle API anahtarları Cardfile veritabanında saklanır."
 
 chat:
+  report: "Bildir"
+  report_tooltip: "Uygunsuz veya zararlı bir yanıtı bildir"
   title: "Asistan"
   toggle: "Asistan"
   placeholder: "Asistana sorun…"

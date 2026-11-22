@@ -1,6 +1,11 @@
 _version: 1
 
 app:
+  synced_folder: "Tus notas están en una carpeta sincronizada por %{service}. Sincronizar una base de datos abierta puede dañarla o crear copias en conflicto: cierra Cardfile antes de usarlo en otra computadora, o guarda los datos fuera de la carpeta sincronizada."
+  unsaved_quit:
+    title: "Tus últimos cambios no se guardaron"
+    body: "No se pudo guardar la tarjeta abierta: %{error}. Si sales ahora, se pierden los cambios desde el último guardado."
+    quit: "Salir sin guardar"
   name: Cardfile
   db_error_body: "No se pudo abrir la base de datos %{path}: %{error}"
   open_keymap_failed: "No se pudo abrir el archivo de atajos: %{error}"
@@ -572,6 +577,8 @@ ai:
     no_keyring: "El gestor de credenciales del sistema no está disponible, así que las claves de API se guardan en la base de datos de Cardfile."
 
 chat:
+  report: "Reportar"
+  report_tooltip: "Reportar una respuesta inapropiada o dañina"
   title: "Asistente"
   toggle: "Asistente"
   placeholder: "Pregunta al asistente…"

@@ -1,6 +1,11 @@
 _version: 1
 
 app:
+  synced_folder: "Je notities staan in een map die door %{service} wordt gesynchroniseerd. Een geopende database synchroniseren kan deze beschadigen of conflicterende kopieën maken: sluit Cardfile voordat je het op een andere computer gebruikt, of bewaar de gegevens buiten de gesynchroniseerde map."
+  unsaved_quit:
+    title: "Je laatste wijzigingen zijn niet opgeslagen"
+    body: "De geopende kaart kon niet worden opgeslagen: %{error}. Als je nu afsluit, gaan de wijzigingen sinds de laatste keer opslaan verloren."
+    quit: "Afsluiten zonder opslaan"
   name: Cardfile
   db_error_body: "De database %{path} kon niet worden geopend: %{error}"
   open_keymap_failed: "Kan het sneltoetsenbestand niet openen: %{error}"
@@ -572,6 +577,8 @@ ai:
     no_keyring: "De referentiebeheerder van je systeem is niet beschikbaar, dus API-sleutels worden opgeslagen in de Cardfile-database."
 
 chat:
+  report: "Melden"
+  report_tooltip: "Een ongepast of schadelijk antwoord melden"
   title: "Assistent"
   toggle: "Assistent"
   placeholder: "Vraag het de assistent…"

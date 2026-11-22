@@ -1,6 +1,11 @@
 _version: 1
 
 app:
+  synced_folder: "Suas notas estão em uma pasta sincronizada pelo %{service}. Sincronizar um banco de dados aberto pode danificá-lo ou criar cópias em conflito: feche o Cardfile antes de usá-lo em outro computador ou mantenha os dados fora da pasta sincronizada."
+  unsaved_quit:
+    title: "Suas últimas alterações não foram salvas"
+    body: "Não foi possível salvar a ficha aberta: %{error}. Se você sair agora, as alterações desde o último salvamento serão perdidas."
+    quit: "Sair sem salvar"
   name: Cardfile
   db_error_body: "Não foi possível abrir o banco de dados %{path}: %{error}"
   open_keymap_failed: "Não foi possível abrir o arquivo de atalhos: %{error}"
@@ -572,6 +577,8 @@ ai:
     no_keyring: "O gerenciador de credenciais do sistema não está disponível, então as chaves de API são armazenadas no banco de dados do Cardfile."
 
 chat:
+  report: "Denunciar"
+  report_tooltip: "Denunciar uma resposta inadequada ou prejudicial"
   title: "Assistente"
   toggle: "Assistente"
   placeholder: "Pergunte ao assistente…"

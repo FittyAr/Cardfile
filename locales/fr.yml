@@ -1,6 +1,11 @@
 _version: 1
 
 app:
+  synced_folder: "Vos notes se trouvent dans un dossier synchronisé par %{service}. Synchroniser une base de données ouverte peut l’endommager ou créer des copies en conflit : fermez Cardfile avant de l’utiliser sur un autre ordinateur, ou gardez les données hors du dossier synchronisé."
+  unsaved_quit:
+    title: "Vos dernières modifications n’ont pas été enregistrées"
+    body: "La fiche ouverte n’a pas pu être enregistrée : %{error}. Si vous quittez maintenant, les modifications depuis le dernier enregistrement seront perdues."
+    quit: "Quitter sans enregistrer"
   name: Cardfile
   db_error_body: "Impossible d’ouvrir la base de données %{path} : %{error}"
   open_keymap_failed: "Impossible d’ouvrir le fichier de raccourcis : %{error}"
@@ -572,6 +577,8 @@ ai:
     no_keyring: "Le gestionnaire d'identifiants de votre système n'est pas disponible : les clés d'API sont donc stockées dans la base de données de Cardfile."
 
 chat:
+  report: "Signaler"
+  report_tooltip: "Signaler une réponse inappropriée ou nuisible"
   title: "Assistant"
   toggle: "Assistant"
   placeholder: "Demandez à l'assistant…"

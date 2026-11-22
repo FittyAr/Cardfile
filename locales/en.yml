@@ -1,6 +1,11 @@
 _version: 1
 
 app:
+  synced_folder: "Your notes are in a folder synced by %{service}. Syncing an open database can damage it or create conflicting copies: close Cardfile before using it on another computer, or keep the data outside the synced folder."
+  unsaved_quit:
+    title: "Your last changes were not saved"
+    body: "The open card could not be saved: %{error}. If you quit now, the changes since the last save are lost."
+    quit: "Quit without saving"
   name: Cardfile
   db_error_title: Cardfile cannot open its database
   db_error_body: "The database %{path} could not be opened: %{error}"
@@ -572,6 +577,8 @@ ai:
     no_keyring: "Your system's credential manager is not available, so API keys are stored in the Cardfile database."
 
 chat:
+  report: "Report"
+  report_tooltip: "Report an inappropriate or harmful answer"
   title: "Assistant"
   toggle: "Assistant"
   placeholder: "Ask the assistant…"

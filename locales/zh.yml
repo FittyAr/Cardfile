@@ -1,6 +1,11 @@
 _version: 1
 
 app:
+  synced_folder: "你的笔记位于由 %{service} 同步的文件夹中。同步正在使用的数据库可能会损坏它或产生冲突副本：在另一台电脑上使用前请先关闭 Cardfile，或将数据放在同步文件夹之外。"
+  unsaved_quit:
+    title: "最近的更改尚未保存"
+    body: "无法保存打开的卡片：%{error}。如果现在退出，上次保存后的更改将会丢失。"
+    quit: "不保存并退出"
   name: Cardfile
   db_error_body: "无法打开数据库 %{path}：%{error}"
   open_keymap_failed: "无法打开快捷键文件：%{error}"
@@ -572,6 +577,8 @@ ai:
     no_keyring: "系统的凭据管理器不可用，因此 API 密钥将保存在 Cardfile 数据库中。"
 
 chat:
+  report: "举报"
+  report_tooltip: "举报不当或有害的回答"
   title: "助手"
   toggle: "助手"
   placeholder: "向助手提问…"
