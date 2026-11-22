@@ -916,8 +916,11 @@ impl Model {
                 blocks.push(b);
             }
         } else {
-            for b in start.slot.block..=end.slot.block {
-                let block = &self.doc.blocks[b];
+            let range = start.slot.block..=end.slot.block;
+            for (b, block) in self.doc.blocks.iter().enumerate() {
+                if !range.contains(&b) {
+                    continue;
+                }
                 let inner = b > start.slot.block && b < end.slot.block;
                 match &block.kind {
                     BlockKind::Table(_) if inner => blocks.push(block.clone()),
