@@ -3,6 +3,28 @@
 All notable changes to this project are documented here. Generated with
 [git-cliff](https://git-cliff.org) from Conventional Commits (`cliff.toml`).
 
+## [2.0.0-beta.7] - 2026-11-22
+
+Setup in your language, window placement and moving the data folder. Testing release.
+
+### Features
+
+- The first-run wizard starts in your system's language and has a language menu on
+  its welcome screen; the language you pick becomes your account's language.
+- The window remembers its position as well as its size and reopens on the same
+  monitor while it is connected.
+- **Settings → Data → Move…** copies the database, backups and settings to a new
+  folder and restarts using it. The previous folder is kept until you delete it.
+
+### Bug Fixes
+
+- Arabic and Persian language names are shown correctly in language menus.
+
+### Dependencies
+
+- Update harfrust to 0.16.1, uuid to 1.29.3, ureq to 3.5.2 and zip to 9.8.1; add
+  sys-locale 0.3.2 to detect the system language.
+
 ## [2.0.0-beta.6] - 2026-11-22
 
 Data-safety fixes and Microsoft Store preparation from a pre-release audit. Testing release.
